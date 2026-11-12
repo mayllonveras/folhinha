@@ -142,7 +142,7 @@ async function logout(){
 var prep=null;
 function prepKey(){var m=S.me;return [FC.today(),m.level_idx,m.stamps,m.done_today].join("|")}
 async function buildSheet(){
-  var m=S.me,day=FC.today(),items,intro="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.";
+  var m=S.me,day=FC.today(),items,base="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.",intro=base;
   var plan=null;
   try{plan=await rpc("student_sheet_plan",{p_token:S.token})}catch(e){if(FC.isSessionErr(e))throw e}
   if(plan&&plan.mode==="mesma"&&plan.repeat&&plan.repeat.length===10){
@@ -153,9 +153,14 @@ async function buildSheet(){
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
   }else{items=FC.makeItems(m.level_idx)}
-  var id=await rpc("student_start_sheet",{p_token:S.token,p_day:day,
+  /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
+  var o=await rpc("student_open_sheet",{p_token:S.token,p_day:day,
     p_problems:items.map(function(i){return{pre:i.pre,post:i.post,a:i.a}})});
-  return{id:id,items:items,intro:intro,level:m.level_idx,day:day};
+  if(o.reused){
+    items=o.problems.map(function(p){return{pre:p.pre,post:p.post||"",a:p.a}});
+    intro="Esta é a folha que você deixou aberta. "+base;
+  }
+  return{id:o.id,items:items,intro:intro,level:m.level_idx,day:day};
 }
 function prepare(){
   if(!S.me||!S.token||S.me.quota-S.me.done_today<=0)return null;
@@ -252,6 +257,10 @@ async function send(payload,score){
   try{res=await rpc("student_submit_sheet",payload)}
   catch(e){
     if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
+    if(String(e.message||"").indexOf("folha_invalida")>=0){
+      FC.render('<div class="panel center"><h1>Esta folha já foi entregue</h1><p class="muted">Ela foi entregue em outro aparelho, então esta cópia não vale pontos. Volte ao início para ver a sua folha de hoje.</p><p><button class="btn" id="goHome">Ir ao início</button></p></div>');
+      $("#goHome").onclick=async function(){try{await loadHome()}catch(x){fail(x)}};return;
+    }
     FC.render('<div class="panel center"><h1>Não consegui enviar</h1><p class="muted">'+esc(FC.err(e))+' Seu resultado está guardado nesta tela.</p><p><button class="btn" id="again">Enviar de novo</button></p></div>');
     $("#again").onclick=function(){send(payload,score)};return;
   }
