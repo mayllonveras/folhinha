@@ -129,21 +129,22 @@ function home(){
    '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>'+FC.installBox());
   FC.refreshInstall();
   $("#logout").onclick=logout;
-  if(canStart)$("#start").onclick=startSheet;
+  if(canStart){$("#start").onclick=startSheet;prepare()}
 }
 async function logout(){
   try{await rpc("student_logout",{p_token:S.token})}catch(e){}
-  setTok(null);S.token=null;pinScreen("login",null);
+  setTok(null);S.token=null;prep=null;pinScreen("login",null);
 }
 
 /* ---------- folha ---------- */
-async function startSheet(){
-  var m=S.me,id,items,intro="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.";
-  var btn=$("#start");if(btn){btn.disabled=true;btn.textContent="Preparando…"}
+/* A folha é preparada em segundo plano assim que a tela inicial abre (e logo depois de entregar uma folha):
+   plano de reforço, contas sorteadas e registro da folha no banco. Ao tocar em "Começar", ela só abre. */
+var prep=null;
+function prepKey(){var m=S.me;return [FC.today(),m.level_idx,m.stamps,m.done_today].join("|")}
+async function buildSheet(){
+  var m=S.me,day=FC.today(),items,intro="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.";
   var plan=null;
-  try{plan=await rpc("student_sheet_plan",{p_token:S.token})}catch(e){
-    if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
-  }
+  try{plan=await rpc("student_sheet_plan",{p_token:S.token})}catch(e){if(FC.isSessionErr(e))throw e}
   if(plan&&plan.mode==="mesma"&&plan.repeat&&plan.repeat.length===10){
     items=plan.repeat.map(function(p){return{pre:p.pre,post:p.post||"",a:p.a}});
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
@@ -152,15 +153,35 @@ async function startSheet(){
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
   }else{items=FC.makeItems(m.level_idx)}
+  var id=await rpc("student_start_sheet",{p_token:S.token,p_day:day,
+    p_problems:items.map(function(i){return{pre:i.pre,post:i.post,a:i.a}})});
+  return{id:id,items:items,intro:intro,level:m.level_idx,day:day};
+}
+function prepare(){
+  if(!S.me||!S.token||S.me.quota-S.me.done_today<=0)return null;
+  var key=prepKey();
+  if(prep&&prep.key===key&&!prep.err)return prep.promise;
+  var p={key:key,ok:false,err:null};
+  p.promise=buildSheet().then(function(r){p.ok=true;return r},function(e){p.err=e;throw e});
+  p.promise.catch(function(){});
+  prep=p;return p.promise;
+}
+async function startSheet(){
+  var b=$("#start")||$("#resNext"),r;
+  if(!(prep&&prep.ok&&prep.key===prepKey())&&b){b.disabled=true;b.textContent="Preparando…"}
   try{
-    id=await rpc("student_start_sheet",{p_token:S.token,p_day:FC.today(),
-      p_problems:items.map(function(i){return{pre:i.pre,post:i.post,a:i.a}})});
+    var pr=prepare();
+    if(!pr)throw new Error("meta_cumprida");
+    r=await pr;
+    if(r.day!==FC.today())r=await prepare();   // passou da meia-noite com a tela aberta
   }catch(e){
+    prep=null;
     if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
     FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return;
   }
-  items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal=""});
-  cur={id:id,level:m.level_idx,items:items,t0:Date.now(),secs:null,round:0,intro:intro};
+  prep=null;
+  r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal=""});
+  cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro};
   renderSheet();
 }
 function renderSheet(){
@@ -251,7 +272,7 @@ async function send(payload,score){
     (res.advanced?'<div class="up">Nível concluído! Você subiu para o nível '+newL.id+' · '+esc(newL.name)+'.</div>':'')+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
-  if(left>0)$("#resNext").onclick=startSheet;
+  if(left>0){$("#resNext").onclick=startSheet;prepare()}
   $("#resHome").onclick=async function(){try{await loadHome()}catch(e){fail(e)}};
 }
 })();
