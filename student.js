@@ -11,7 +11,7 @@ function setTok(t){try{if(t)localStorage.setItem(tokKey(),t);else localStorage.r
 async function rpc(name,args){var r=await sb.rpc(name,args);if(r.error)throw r.error;return r.data}
 
 FC.studentApp=async function(code){
-  S.code=code;FC.setKeys(null);
+  S.code=code;FC.setKeys(null);FC.studentManifest(code);
   FC.render('<p class="loading">Carregando…</p>');
   var info;
   try{info=await rpc("student_info",{p_code:code})}catch(e){return fail(e)}
@@ -126,7 +126,8 @@ function home(){
    '<p class="today">'+goalTxt+'</p>'+
    (m.week_reward?'<p class="reward">Prêmio: <b>'+esc(m.week_reward)+'</b></p>':'')+
    '<p class="muted small-t">A semana fecha '+FC.DOW_LONG[FC.dow(m.week_end)].toLowerCase()+', dia '+FC.dm(m.week_end)+'.</p>'+prev+
-   '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>');
+   '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>'+FC.installBox());
+  FC.refreshInstall();
   $("#logout").onclick=logout;
   if(canStart)$("#start").onclick=startSheet;
 }

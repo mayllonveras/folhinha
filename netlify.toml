@@ -1,3 +1,15 @@
 # Site estático: não precisa de build. A pasta raiz é publicada como está.
 [build]
   publish = "."
+
+# O service worker e o manifesto precisam ser sempre revalidados, para o app atualizar.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=0, must-revalidate"

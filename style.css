@@ -167,3 +167,6 @@ details .form{margin-top:12px}
 }
 
 .miss .q{font-family:var(--font-num)}
+
+.installbox{display:flex;gap:12px;align-items:center}
+.installbox img{border-radius:12px;flex:none}

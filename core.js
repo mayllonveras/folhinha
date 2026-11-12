@@ -173,4 +173,40 @@ FC.timeFactor=function(secs,target){
 };
 /* Nome curto de um nível pelo índice. */
 FC.lv=function(i){var l=FC.LEVELS[i];return l?l.id:"?"};
+
+/* ---------- instalação como app (PWA) ---------- */
+var deferredInstall=null;
+FC.isStandalone=function(){return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true};
+FC.installBox=function(){return '<div id="installBox" hidden></div>'};
+FC.refreshInstall=function(){
+  var box=FC.$("#installBox");if(!box)return;
+  if(FC.isStandalone()){box.hidden=true;return}
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(deferredInstall){
+    box.hidden=false;
+    box.innerHTML='<div class="panel installbox"><img src="icons/icon-192.png" width="48" height="48" alt=""><div class="grow"><b>Instalar no aparelho</b><div class="muted small-t">Abre direto da tela inicial, como um app.</div></div><button class="btn small" id="doInstall">Instalar</button></div>';
+    FC.$("#doInstall").onclick=async function(){
+      try{deferredInstall.prompt();await deferredInstall.userChoice}catch(e){}
+      deferredInstall=null;FC.refreshInstall();
+    };
+  }else if(ios){
+    box.hidden=false;
+    box.innerHTML='<div class="panel installbox"><img src="icons/icon-192.png" width="48" height="48" alt=""><div class="grow"><b>Instalar no iPhone ou iPad</b><div class="muted small-t">Toque em Compartilhar e depois em “Adicionar à Tela de Início”.</div></div></div>';
+  }else box.hidden=true;
+};
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredInstall=e;FC.refreshInstall()});
+window.addEventListener("appinstalled",function(){deferredInstall=null;FC.refreshInstall()});
+
+/* Cada link de aluno vira um app próprio: o manifesto é refeito com o link dele como página inicial. */
+FC.studentManifest=async function(code){
+  try{
+    var m=await (await fetch("manifest.webmanifest")).json();
+    var base=location.origin+location.pathname.replace(/[^/]*$/,"");
+    var start=base+"?aluno="+encodeURIComponent(code);
+    m.id=start;m.start_url=start;m.scope=base;
+    m.icons=m.icons.map(function(i){i.src=base+i.src;return i});
+    var link=document.querySelector('link[rel="manifest"]');
+    link.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));
+  }catch(e){}
+};
 })();
