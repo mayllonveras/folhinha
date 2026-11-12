@@ -112,7 +112,7 @@ function home(){
   FC.render(
    '<header class="top"><div class="brand">Folhinha de Cálculo<small>Oi, '+esc(m.name)+'</small></div><button class="btn ghost small" id="logout">Sair</button></header>'+
    '<div class="grid"><div class="col">'+
-   '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
+   '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
    '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
    '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+m.stamps+' de 3</span></div>'+
    '<p class="muted small-t">Acerte as 10 contas de primeira dentro de <b>'+FC.fmtTime(L.target)+'</b> para ganhar um carimbo. Com 3 carimbos você sobe de nível.</p>'+
@@ -248,7 +248,7 @@ async function send(payload,score){
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
     '<div><b>'+Math.min(res.stamps,3)+'/3</b><span>carimbos no nível '+newL.id+'</span></div></div>'+
-    (res.advanced?'<div class="up">Nível concluído! Você subiu para o '+newL.id+' · '+esc(newL.name)+'.</div>':'')+
+    (res.advanced?'<div class="up">Nível concluído! Você subiu para o nível '+newL.id+' · '+esc(newL.name)+'.</div>':'')+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   if(left>0)$("#resNext").onclick=startSheet;

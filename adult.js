@@ -5,7 +5,7 @@ var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 var U={user:null,profile:null};
 var MODES={
   reforco:["Reforço dos erros (recomendado)","A folha seguinte traz de volta até 4 contas que ele errou, misturadas com contas novas. Cada conta sai da lista depois de 2 acertos seguidos."],
-  mesma:["Repetir a mesma folha","Se a folha não deu carimbo, ele refaz a mesma folha, como no Kumon."],
+  mesma:["Repetir a mesma folha","Se a folha não deu carimbo, ele refaz exatamente a mesma folha até dominar."],
   nova:["Sempre folha nova","Cada folha é sorteada do zero. As contas erradas não voltam."]
 };
 
@@ -117,7 +117,7 @@ async function dash(){
     var L=FC.LEVELS[s.level_idx],wp=weekPoints(s,sheets),pct=s.weekly_goal>0?Math.min(100,Math.round(wp/s.weekly_goal*100)):100;
     var isStudy=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date,done=todayDone(s,sheets);
     var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):isStudy?"Hoje: "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
-    return '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">'+L.id+'</span></div>'+
+    return '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+st+'</div>'+
       '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+wp+' de '+s.weekly_goal+' pontos na semana</div></button>';
   }).join("");
@@ -140,7 +140,7 @@ function programFields(s){
   var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:1000,reward:"",repeat_mode:"reforco"};
   var lv="",lastG=null;
   FC.LEVELS.forEach(function(l,i){
-    if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(FC.GROUP_NAMES[l.group])+'">';lastG=l.group}
+    if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
     lv+='<option value="'+i+'"'+(i===v.level_idx?" selected":"")+'>'+l.id+" · "+esc(l.name)+'</option>';
   });
   lv+="</optgroup>";
@@ -262,7 +262,7 @@ async function detail(id){
   FC.render(topbar("Aluno")+
     '<div class="section-head"><div><button class="link" id="back">← Todos os alunos</button><h1>'+esc(s.name)+'</h1></div></div>'+
     '<div class="grid"><div class="col">'+
-    '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div><div class="nm">'+esc(L.name)+'</div>'+
+    '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div><div class="nm">'+esc(L.name)+'</div>'+
     '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+s.stamps+' de 3</span></div>'+
     '<p class="muted small-t">O aluno sobe de nível sozinho ao juntar 3 carimbos. Você vê o aviso no histórico. Para mudar o nível agora, use o programa abaixo.</p></div>'+
     '<div class="panel"><div class="eyebrow gap">Pontos desta semana</div><div class="big-pts">'+curPts+'<span> / '+goal+'</span></div>'+
