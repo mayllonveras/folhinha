@@ -1,0 +1,3 @@
+# Site estático: não precisa de build. A pasta raiz é publicada como está.
+[build]
+  publish = "."
