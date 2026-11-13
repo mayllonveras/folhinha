@@ -1,5 +1,5 @@
 /* Catálogo de figurinhas: temas com 52 figurinhas cada (uma por semana do ano).
-   Por enquanto são dois: Bandeiras (aqui) e Dinossauros (dinos.js). Os outros temas voltam quando tiverem imagens boas, raridade e verso. */
+   Por enquanto são quatro: Bandeiras (aqui), Dinossauros (dinos.js), Gatinhos e cachorrinhos (pets.js) e Animais ameaçados (ameacados.js). Os outros temas voltam quando tiverem imagens boas, raridade e verso. */
 (function(){
 "use strict";
 var FC=window.FC;
