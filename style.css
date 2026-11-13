@@ -352,3 +352,4 @@ details .form{margin-top:12px}
 .theme-opt .to-txt{flex:1;min-width:0}
 .theme-opt .to-txt small{display:block;color:var(--muted)}
 .album-detail summary{cursor:pointer;font-weight:600}
+.field small.bad,small.bad{color:var(--mark)}

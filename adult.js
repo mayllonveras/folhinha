@@ -3,6 +3,10 @@
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 var U={user:null,profile:null};
+/* Limites mínimos do programa: 3 folhas por dia, 3 dias por semana e meta de pelo menos 70% do máximo de pontos da semana. */
+var MIN_SHEETS=3,MIN_DAYS=3,MIN_PCT=0.7;
+function maxWeek(days,per){return days*per*100}
+function minGoal(days,per){return Math.ceil(MIN_PCT*maxWeek(days,per)/10)*10}
 var MODES={
   reforco:["Reforço dos erros (recomendado)","A folha seguinte traz de volta até 4 contas que ele errou, misturadas com contas novas. Cada conta sai da lista depois de 2 acertos seguidos."],
   mesma:["Repetir a mesma folha","Se a folha não deu carimbo, ele refaz exatamente a mesma folha até dominar."],
@@ -137,7 +141,7 @@ async function dash(){
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
 function programFields(s){
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:1000,sticker_themes:["animais"],repeat_mode:"reforco",stamps_needed:3};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:minGoal(5,3),sticker_themes:["animais"],repeat_mode:"reforco",stamps_needed:3};
   var lv="",lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
@@ -147,12 +151,12 @@ function programFields(s){
   var days=FC.DOW.map(function(d,i){return '<label class="chk"><input type="checkbox" name="days" value="'+i+'"'+(v.study_days.indexOf(i)>=0?" checked":"")+'><span>'+d+'</span></label>'}).join("");
   var close=FC.DOW_LONG.map(function(d,i){return '<option value="'+i+'"'+(i===v.week_close_dow?" selected":"")+'>'+d+'</option>'}).join("");
   var chosen=v.sticker_themes||[v.sticker_theme||"animais"];
-  var per="";for(var i=1;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
+  var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
     '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>Escolha o nível em que ele resolve as folhas com facilidade, sem ajuda.</small></label>'+
     '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select></label></div>'+
-    '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div></fieldset>'+
+    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small></label></div>'+
+    '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
     '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCover(t.id)+'</label>'+
         '<label class="to-txt" for="th_'+t.id+'"><b>'+esc(t.name)+'</b><small>'+esc(t.desc)+'</small></label><button type="button" class="btn ghost small" data-view="'+t.id+'">Ver</button></div>'}).join("")+'</div>'+
@@ -164,19 +168,29 @@ function programFields(s){
 }
 function bindProgram(){
   var g=$("#pGoal");
-  function upd(){
-    var per=Number($("#pPer").value),n=$$('input[name="days"]:checked').length;
-    $("#pMax").textContent="Máximo possível na semana: "+(n*per*100)+" pontos ("+n+" dias × "+per+" folhas × 100).";
+  var adjusted=false;
+  function limits(){var per=Number($("#pPer").value),n=$$('input[name="days"]:checked').length;return{per:per,n:n,max:maxWeek(n,per),min:minGoal(n,per)}}
+  function upd(fix){
+    var L=limits(),goal=Number(g.value)||0;
+    $("#pDaysHint").textContent=L.n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias por semana.":"Mínimo: "+MIN_DAYS+" dias por semana.";
+    $("#pDaysHint").className=L.n<MIN_DAYS?"bad":"";
+    if(L.n>=MIN_DAYS){
+      g.min=L.min;
+      if(fix===true&&goal<L.min){g.value=L.min;goal=L.min;adjusted=true}
+      $("#pMax").textContent="Mínimo para ganhar o pacotinho: "+L.min+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo de "+L.max+": "+L.n+" dias × "+L.per+" folhas × 100)."+(adjusted?" A meta foi ajustada ao mínimo.":"");
+      $("#pMax").className=goal<L.min?"bad":"";
+    }else{$("#pMax").textContent="";$("#pMax").className=""}
   }
   $$("[data-view]").forEach(function(btn){btn.onclick=function(){
     var th=FC.theme(btn.getAttribute("data-view")),cells="";
     for(var i=0;i<FC.ALBUM_SIZE;i++)cells+=FC.stickerHtml(th.id,i);
     FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p>'+FC.rarityLegend(th.id)+'<div class="album">'+cells+'</div>',{wide:true});
   }});
-  g.addEventListener("input",upd);
-  $$('input[name="days"]').forEach(function(c){c.onchange=upd});
-  $("#pPer").addEventListener("change",upd);$("#pClose").addEventListener("change",upd);$("#pStart").addEventListener("change",upd);
-  upd();
+  g.addEventListener("input",function(){adjusted=false;upd()});
+  g.addEventListener("change",function(){upd(true)});
+  $$('input[name="days"]').forEach(function(c){c.onchange=function(){upd(true)}});
+  $("#pPer").addEventListener("change",function(){upd(true)});
+  upd(true);
   function rep(){$("#pRepeatDesc").textContent=MODES[$("#pRepeat").value][1]}
   $("#pRepeat").onchange=rep;rep();
   function stp(){var per=Number($("#pPer").value),need=Number($("#pStamps").value);
@@ -186,11 +200,13 @@ function bindProgram(){
 function readProgram(){
   var days=$$('input[name="days"]:checked').map(function(c){return Number(c.value)}),name=$("#pName").value.trim();
   if(!name)return{error:"Digite o nome do aluno."};
-  if(!days.length)return{error:"Marque pelo menos um dia de estudo."};
+  if(days.length<MIN_DAYS)return{error:"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana."};
+  if(Number($("#pPer").value)<MIN_SHEETS)return{error:"O mínimo é de "+MIN_SHEETS+" folhas por dia."};
   if(!$("#pStart").value)return{error:"Informe a data de início."};
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
-  var wk=Math.max(0,Math.round(Number($("#pGoal").value)||0));
+  var wk=Math.max(0,Math.round(Number($("#pGoal").value)||0)),mg=minGoal(days.length,Number($("#pPer").value));
+  if(wk<mg)return{error:"A meta precisa ser de pelo menos "+mg+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo da semana)."};
   return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
     sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:wk,sticker_themes:themes,sticker_theme:themes[0],
     repeat_mode:$("#pRepeat").value,stamps_needed:Number($("#pStamps").value)}};
