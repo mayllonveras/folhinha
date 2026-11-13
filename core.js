@@ -201,6 +201,12 @@ FC.sfx={
     if(!FC.sfx.enabled())return;
     [523.25,659.25,783.99,1046.5].forEach(function(f,i){tone(f,i*0.13,0.35,"triangle",0.22)});
     tone(1318.5,0.58,0.7,"sine",0.18);tone(1568,0.66,0.8,"sine",0.12);
+  },
+  chest:function(){   // rangido da tampa + chuva de moedas
+    if(!FC.sfx.enabled())return;
+    tone(110,0,0.4,"sawtooth",0.09);tone(150,0.1,0.35,"sawtooth",0.08);
+    [1046.5,1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.45+i*0.09,0.3,"sine",0.15)});
+    tone(3136,0.95,0.5,"sine",0.08);
   }
 };
 FC.confetti=function(){
@@ -215,6 +221,95 @@ FC.confetti=function(){
     wrap.appendChild(p);
   }
   document.body.appendChild(wrap);setTimeout(function(){wrap.remove()},4400);
+};
+
+/* ---------- período do prêmio (semana ou mês), pontos de passagem e baú ---------- */
+FC.MONTHS=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+FC.periodOf=function(day,mode,close){
+  if(mode==="mensal"){var ms=day.slice(0,7)+"-01",d=FC.date(ms);d.setMonth(d.getMonth()+1);d.setDate(0);return{start:ms,end:FC.ymd(d)}}
+  var end=FC.weekEnd(day,close);return{start:FC.addDays(end,-6),end:end};
+};
+FC.studyDaysIn=function(prog,ps,pe){
+  var out=[];
+  for(var d=ps;d<=pe;d=FC.addDays(d,1))if(d>=prog.start_date&&prog.study_days.indexOf(FC.dow(d))>=0)out.push(d);
+  return out;
+};
+/* Pontos de passagem do mês: ao fim de cada semana, a parte da meta proporcional aos dias de estudo já passados. */
+FC.milestones=function(prog,ps,pe,goal){
+  var days=FC.studyDaysIn(prog,ps,pe),out=[];
+  if(!days.length||goal<=0)return out;
+  for(var d=ps;d<pe;d=FC.addDays(d,1)){
+    if(FC.dow(d)!==prog.week_close_dow)continue;
+    var cnt=days.filter(function(x){return x<=d}).length;
+    if(cnt===0||cnt>=days.length)continue;           // semana sem estudo, ou já é o fim do mês (o baú)
+    var t=Math.round(goal*cnt/days.length/10)*10;
+    if(t<=0||t>=goal)continue;
+    if(out.length&&out[out.length-1].target>=t)continue;
+    out.push({date:d,target:t});
+  }
+  return out;
+};
+FC.chestSvg=function(){
+  var rays="";
+  for(var a=-70;a<=70;a+=20){var r=a*Math.PI/180;rays+='<line x1="60" y1="46" x2="'+(60+Math.sin(r)*52).toFixed(1)+'" y2="'+(46-Math.cos(r)*52).toFixed(1)+'"/>'}
+  return '<svg viewBox="0 0 120 104" class="chest-svg" aria-hidden="true">'+
+    '<ellipse class="c-shadow" cx="60" cy="98" rx="48" ry="5"/><g class="rays">'+rays+'</g>'+
+    '<g class="c-inside"><ellipse class="c-gold" cx="60" cy="50" rx="40" ry="9"/><circle class="c-coin" cx="40" cy="45" r="6"/><circle class="c-coin" cx="60" cy="41" r="7"/><circle class="c-coin" cx="80" cy="45" r="6"/></g>'+
+    '<rect class="c-wood" x="14" y="48" width="92" height="46" rx="7"/><rect class="c-dark" x="14" y="72" width="92" height="5"/>'+
+    '<rect class="c-metal" x="28" y="48" width="10" height="46"/><rect class="c-metal" x="82" y="48" width="10" height="46"/>'+
+    '<g class="lid"><path class="c-wood" d="M14 50 V38 C14 14 106 14 106 38 V50 Z"/><path class="c-dark" d="M14 44 H106 V50 H14 Z"/>'+
+    '<rect class="c-metal" x="28" y="29" width="10" height="21"/><rect class="c-metal" x="82" y="29" width="10" height="21"/>'+
+    '<text class="q" x="60" y="40" text-anchor="middle">?</text></g>'+
+    '<g class="lock"><rect class="c-gold" x="52" y="44" width="16" height="17" rx="3"/><circle class="c-dark" cx="60" cy="51" r="2.6"/><rect class="c-dark" x="59" y="52" width="2" height="5"/></g></svg>';
+};
+/* Trilha até o baú. p = {mode,start,end,points,goal,reached,reward}. A criança só recebe o texto do prêmio quando o baú abre. */
+FC.trailHtml=function(p,o){
+  o=o||{};
+  var goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts,miles=o.miles||[],mensal=p.mode==="mensal";
+  var pct=function(v){return goal>0?Math.min(100,v/goal*100):0};
+  var pins=miles.map(function(m,i){
+    return '<span class="pin'+(from>=m.target?" hit":"")+'" data-hit="'+(pts>=m.target?1:0)+'" style="left:'+Math.min(96,pct(m.target)).toFixed(1)+'%" title="Semana '+(i+1)+': '+m.target+' pontos">'+(i+1)+'</span>';
+  }).join("");
+  var legend=miles.length?'<div class="legend">'+miles.map(function(m,i){
+    return '<span class="chip'+(from>=m.target?" hit":"")+'" data-hit="'+(pts>=m.target?1:0)+'">'+(from>=m.target?"✓ ":"")+'Semana '+(i+1)+' · '+m.target+' pontos</span>';
+  }).join("")+'</div>':"";
+  var left=Math.max(0,goal-pts),next=null;
+  for(var i=0;i<miles.length;i++)if(pts<miles[i].target){next=miles[i];break}
+  var hint="";
+  if(!p.reached&&mensal&&miles.length)hint=next?'Próximo ponto no caminho: <b>'+next.target+'</b> (faltam '+(next.target-pts)+').':'Você passou por todos os pontos do caminho. Falta só o baú.';
+  var closes=mensal?"O baú do mês fecha dia "+FC.dm(p.end)+".":"O baú da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".";
+  var rw=p.reward?FC.esc(p.reward):"",box,chestOpen;
+  if(o.adult){
+    chestOpen=!!p.reached;
+    box='<div class="prizebox'+(p.reached?" show":"")+'"><div class="pz-closed">Prêmio no baú: <b>'+(rw||"nenhum definido")+'</b>. Faltam <b>'+left+'</b> pontos para abrir.</div>'+
+      '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">Prêmio: <b>'+(rw||"nenhum definido")+'</b></div></div></div>';
+  }else{
+    var show=!!p.reached&&!o.opening;chestOpen=show;
+    box='<div class="prizebox'+(show?" show":"")+'" id="prizebox"><div class="pz-closed">'+
+      (o.opening?'Você chegou ao baú!':'Dentro do baú tem um <b>prêmio escondido</b>. Faltam <b>'+left+'</b> pontos para abrir.')+'</div>'+
+      '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">'+(rw?'Seu prêmio: <b>'+rw+'</b>':'Meta batida! Parabéns!')+'</div></div></div>';
+  }
+  return '<div class="trail" id="trail"><div class="eyebrow">Baú '+(mensal?"do mês":"da semana")+'</div>'+
+    '<div class="big-pts">'+pts+'<span> / '+goal+' pontos</span></div>'+
+    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o baú" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
+    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div>'+pins+'</div>'+
+    '<div class="chest'+(chestOpen?" open":"")+'" id="chest">'+FC.chestSvg()+'</div></div>'+
+    legend+(hint?'<p class="small-t">'+hint+'</p>':'')+box+'<p class="muted small-t">'+closes+'</p></div>';
+};
+/* A barra enche até o valor novo e os pontos de passagem alcançados acendem um a um. */
+FC.animateTrail=function(){
+  var f=FC.$("#trailFill");if(!f)return;
+  setTimeout(function(){
+    f.style.width=f.getAttribute("data-now")+"%";
+    FC.$$("#trail .pin,#trail .chip").forEach(function(el,i){
+      if(el.getAttribute("data-hit")==="1"&&!el.classList.contains("hit"))setTimeout(function(){el.classList.add("hit");if(el.classList.contains("chip"))el.textContent="✓ "+el.textContent},700+i*120);
+    });
+  },350);
+};
+FC.openChest=function(){
+  var c=FC.$("#chest"),b=FC.$("#prizebox");if(!c)return;
+  c.classList.add("shake");
+  setTimeout(function(){c.classList.remove("shake");c.classList.add("open");if(b)b.classList.add("show");FC.sfx.chest();FC.confetti()},650);
 };
 
 /* ---------- instalação como app (PWA) ---------- */

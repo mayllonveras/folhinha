@@ -95,8 +95,11 @@ function showNewPassword(msg){
 
 /* ---------- lista de alunos ---------- */
 function weekPoints(s,sheets){
-  var we=FC.weekEnd(FC.today(),s.week_close_dow),n=0;
-  sheets.forEach(function(x){if(x.student_id===s.id&&x.week_end===we)n+=x.points});
+  var p=FC.periodOf(FC.today(),s.reward_period,s.week_close_dow),n=0;
+  sheets.forEach(function(x){
+    if(x.student_id!==s.id)return;
+    if(s.reward_period==="mensal"?(x.study_day>=p.start&&x.study_day<=p.end):x.week_end===p.end)n+=x.points;
+  });
   return n;
 }
 function todayDone(s,sheets){var t=FC.today();return sheets.filter(function(x){return x.student_id===s.id&&x.study_day===t}).length}
@@ -114,12 +117,12 @@ async function dash(){
   }catch(e){return errScreen(e,dash)}
   U.profile=prof||{name:"",role:"pai"};
   var today=FC.today(),cards=students.map(function(s){
-    var L=FC.LEVELS[s.level_idx],wp=weekPoints(s,sheets),pct=s.weekly_goal>0?Math.min(100,Math.round(wp/s.weekly_goal*100)):100;
+    var L=FC.LEVELS[s.level_idx],wp=weekPoints(s,sheets),pg=s.reward_period==="mensal"?s.monthly_goal:s.weekly_goal,pct=pg>0?Math.min(100,Math.round(wp/pg*100)):100;
     var isStudy=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date,done=todayDone(s,sheets);
     var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):isStudy?"Hoje: "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
     return '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+st+'</div>'+
-      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+wp+' de '+s.weekly_goal+' pontos na semana</div></button>';
+      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+wp+' de '+pg+' pontos '+(s.reward_period==="mensal"?"no mês":"na semana")+'</div></button>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
@@ -137,7 +140,7 @@ async function dash(){
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
 function programFields(s){
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:1000,reward:"",repeat_mode:"reforco",stamps_needed:3};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:1000,monthly_goal:4000,reward_period:"semanal",reward:"",repeat_mode:"reforco",stamps_needed:3};
   var lv="",lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
@@ -152,18 +155,41 @@ function programFields(s){
     '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
     '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select></label></div>'+
     '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div></fieldset>'+
-    '<div class="two"><label class="field">A semana fecha na<select id="pClose">'+close+'</select><small>Os pontos de cada semana somam até este dia.</small></label>'+
-    '<label class="field">Meta de pontos da semana<input id="pGoal" type="number" min="0" max="100000" step="10" value="'+v.weekly_goal+'"><small id="pMax"></small></label></div>'+
-    '<label class="field">Prêmio ao bater a meta (opcional)<input id="pReward" maxlength="120" value="'+esc(v.reward)+'" placeholder="Ex.: sorvete no fim de semana"></label>'+
+    '<div class="two"><label class="field">O prêmio é por<select id="pPeriod"><option value="semanal"'+(v.reward_period!=="mensal"?" selected":"")+'>Semana</option><option value="mensal"'+(v.reward_period==="mensal"?" selected":"")+'>Mês</option></select><small id="pPeriodDesc"></small></label>'+
+    '<label class="field">A semana fecha na<select id="pClose">'+close+'</select><small>Os pontos de cada semana somam até este dia.</small></label></div>'+
+    '<label class="field"><span id="pGoalLabel">Meta de pontos da semana</span><input id="pGoal" type="number" min="0" max="1000000" step="10" value="'+(v.reward_period==="mensal"?v.monthly_goal:v.weekly_goal)+'" data-weekly="'+v.weekly_goal+'" data-monthly="'+v.monthly_goal+'"><small id="pMax"></small></label>'+
+    '<div id="pMilesBox" class="miles-preview" hidden></div>'+
+    '<label class="field">Prêmio escondido no baú (opcional)<input id="pReward" maxlength="120" value="'+esc(v.reward)+'" placeholder="Ex.: sorvete no fim de semana"><small>A criança só descobre o prêmio quando abrir o baú.</small></label>'+
     '<label class="field">Quando ele erra ou não ganha o carimbo<select id="pRepeat">'+Object.keys(MODES).map(function(k){return '<option value="'+k+'"'+(k===v.repeat_mode?" selected":"")+'>'+MODES[k][0]+'</option>'}).join("")+'</select><small id="pRepeatDesc"></small></label>'+
     '<label class="field">Carimbos para subir de nível<select id="pStamps">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'"'+(n===v.stamps_needed?" selected":"")+'>'+n+'</option>'}).join("")+'</select><small id="pStampsDesc"></small></label>';
 }
 function bindProgram(){
+  var g=$("#pGoal"),mode=$("#pPeriod").value;
+  function key(m){return m==="mensal"?"data-monthly":"data-weekly"}
+  function prog(){return{study_days:$$('input[name="days"]:checked').map(function(c){return Number(c.value)}),
+    start_date:$("#pStart").value||FC.today(),week_close_dow:Number($("#pClose").value)}}
   function upd(){
-    var n=$$('input[name="days"]:checked').length,per=Number($("#pPer").value);
-    $("#pMax").textContent="Máximo possível na semana: "+(n*per*100)+" pontos ("+n+" dias × "+per+" folhas × 100).";
+    var p=prog(),per=Number($("#pPer").value),box=$("#pMilesBox"),goal=Number(g.value)||0;
+    $("#pGoalLabel").textContent=mode==="mensal"?"Meta de pontos do mês":"Meta de pontos da semana";
+    $("#pPeriodDesc").textContent=mode==="mensal"?"Um baú por mês, com pontos de passagem a cada semana no caminho.":"Um baú novo a cada semana.";
+    if(mode==="mensal"){
+      var pr=FC.periodOf(FC.today(),"mensal",p.week_close_dow),n=FC.studyDaysIn(p,pr.start,pr.end).length;
+      $("#pMax").textContent="Máximo possível neste mês: "+(n*per*100)+" pontos ("+n+" dias de estudo × "+per+" folhas × 100).";
+      var ms=FC.milestones(p,pr.start,pr.end,goal);
+      box.hidden=false;
+      box.innerHTML='<b>Pontos de passagem neste mês</b> <span class="muted">(a criança vê no caminho até o baú)</span><br>'+
+        (ms.length?ms.map(function(m,i){return 'Semana '+(i+1)+' (até '+FC.dm(m.date)+'): <b>'+m.target+'</b>'}).join(' · ')+' · Baú: <b>'+goal+'</b>':'Nenhum: o mês tem poucos dias de estudo.');
+    }else{
+      var n2=p.study_days.length;
+      $("#pMax").textContent="Máximo possível na semana: "+(n2*per*100)+" pontos ("+n2+" dias × "+per+" folhas × 100).";
+      box.hidden=true;
+    }
   }
-  $$('input[name="days"]').forEach(function(c){c.onchange=upd});$("#pPer").onchange=upd;upd();
+  $("#pPeriod").onchange=function(){g.setAttribute(key(mode),g.value);mode=this.value;g.value=g.getAttribute(key(mode));upd()};
+  g.addEventListener("input",function(){g.setAttribute(key(mode),g.value);upd()});
+  $$('input[name="days"]').forEach(function(c){c.onchange=upd});
+  $("#pPer").addEventListener("change",upd);$("#pClose").addEventListener("change",upd);$("#pStart").addEventListener("change",upd);
+  upd();
   function rep(){$("#pRepeatDesc").textContent=MODES[$("#pRepeat").value][1]}
   $("#pRepeat").onchange=rep;rep();
   function stp(){var per=Number($("#pPer").value),need=Number($("#pStamps").value);
@@ -175,9 +201,10 @@ function readProgram(){
   if(!name)return{error:"Digite o nome do aluno."};
   if(!days.length)return{error:"Marque pelo menos um dia de estudo."};
   if(!$("#pStart").value)return{error:"Informe a data de início."};
-  var goal=Math.max(0,Math.round(Number($("#pGoal").value)||0));
+  var g=$("#pGoal"),wk=Math.max(0,Math.round(Number(g.getAttribute("data-weekly"))||0)),mo=Math.max(0,Math.round(Number(g.getAttribute("data-monthly"))||0));
   return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
-    sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:goal,reward:$("#pReward").value.trim(),repeat_mode:$("#pRepeat").value,stamps_needed:Number($("#pStamps").value)}};
+    sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:wk,monthly_goal:mo,reward_period:$("#pPeriod").value,
+    reward:$("#pReward").value.trim(),repeat_mode:$("#pRepeat").value,stamps_needed:Number($("#pStamps").value)}};
 }
 
 function showForm(){
@@ -189,7 +216,7 @@ function showForm(){
     if(r.error){$("#fMsg").textContent=r.error;return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:r.v.week_close_dow,p_goal:r.v.weekly_goal,p_reward:r.v.reward,p_repeat:r.v.repeat_mode,p_stamps:r.v.stamps_needed});
+      p_per_day:r.v.sheets_per_day,p_close:r.v.week_close_dow,p_goal:r.v.weekly_goal,p_reward:r.v.reward,p_repeat:r.v.repeat_mode,p_stamps:r.v.stamps_needed,p_period:r.v.reward_period,p_monthly:r.v.monthly_goal});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
@@ -209,34 +236,51 @@ function created(name,code,id){
 /* ---------- página do aluno ---------- */
 async function detail(id){
   FC.render('<p class="loading">Carregando…</p>');
-  var s,sheets,weeks,guards,profs,weak;
+  var s,sheets,weeks,months,guards,profs,weak;
   try{
     var res=await Promise.all([
       q(sb.from("students").select("*").eq("id",id).single()),
       q(sb.from("sheets").select("id,study_day,week_end,level_idx,first_ok,total,secs,corrections,stamp,advanced,points,finished_at").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(300)),
       q(sb.from("week_settings").select("*").eq("student_id",id)),
       q(sb.from("guardians").select("user_id,role").eq("student_id",id)),
-      q(sb.from("weak_items").select("pre,post,ans,misses,level_idx").eq("student_id",id).order("misses",{ascending:false}).limit(12))]);
-    s=res[0];sheets=res[1];weeks=res[2];guards=res[3];weak=res[4];
+      q(sb.from("weak_items").select("pre,post,ans,misses,level_idx").eq("student_id",id).order("misses",{ascending:false}).limit(12)),
+      q(sb.from("month_settings").select("*").eq("student_id",id))]);
+    s=res[0];sheets=res[1];weeks=res[2];guards=res[3];weak=res[4];months=res[5];
     profs=await q(sb.from("profiles").select("id,name,role").in("id",guards.map(function(g){return g.user_id})));
   }catch(e){return errScreen(e,function(){detail(id)})}
   var iAmOwner=guards.some(function(g){return g.user_id===U.user.id&&g.role==="owner"});
   var link=linkFor(s.link_code),today=FC.today(),L=FC.LEVELS[s.level_idx];
-  var curEnd=FC.weekEnd(today,s.week_close_dow),curPts=0;
-  sheets.forEach(function(x){if(x.week_end===curEnd)curPts+=x.points});
-  var curSet=weeks.filter(function(w){return w.week_end===curEnd})[0],goal=curSet?curSet.goal:s.weekly_goal,reward=curSet?curSet.reward:s.reward;
-  var pct=goal>0?Math.min(100,Math.round(curPts/goal*100)):100;
+  var mensal=s.reward_period==="mensal",per=FC.periodOf(today,s.reward_period,s.week_close_dow),weekEnd=FC.weekEnd(today,s.week_close_dow),curPts=0;
+  sheets.forEach(function(x){if(mensal?(x.study_day>=per.start&&x.study_day<=per.end):x.week_end===per.end)curPts+=x.points});
+  var curSet=mensal?months.filter(function(m){return m.month_start===per.start})[0]:weeks.filter(function(w){return w.week_end===per.end})[0];
+  var goal=curSet?curSet.goal:(mensal?s.monthly_goal:s.weekly_goal),reward=curSet?curSet.reward:s.reward;
+  var miles=mensal?FC.milestones(s,per.start,per.end,goal):[];
+  var trailHtml=FC.trailHtml({mode:s.reward_period,start:per.start,end:per.end,points:curPts,goal:goal,reached:goal>0&&curPts>=goal,reward:reward},{miles:miles,adult:true});
 
   /* semanas */
   var by={};
   sheets.forEach(function(x){var w=by[x.week_end]||(by[x.week_end]={pts:0,n:0});w.pts+=x.points;w.n++});
   weeks.forEach(function(w){by[w.week_end]=by[w.week_end]||{pts:0,n:0}});
-  by[curEnd]=by[curEnd]||{pts:0,n:0};
+  by[weekEnd]=by[weekEnd]||{pts:0,n:0};
   var wk=Object.keys(by).sort().reverse().slice(0,12).map(function(end){
     var set=weeks.filter(function(w){return w.week_end===end})[0],g=set?set.goal:s.weekly_goal,r=set?set.reward:s.reward,w=by[end];
     var open=end>=today,hit=g>0&&w.pts>=g;
-    return "<tr><td>até "+FC.dayLabel(end)+"</td><td>"+w.n+"</td><td>"+w.pts+"</td><td>"+g+"</td><td>"+esc(r||"–")+"</td><td>"+(hit?'<span class="tag ok">meta batida</span>':open?'<span class="tag">em andamento</span>':'<span class="tag bad">não batida</span>')+"</td></tr>";
+    return "<tr><td>até "+FC.dayLabel(end)+"</td><td>"+w.n+"</td><td>"+w.pts+"</td>"+(mensal?"":"<td>"+g+"</td><td>"+esc(r||"–")+"</td><td>"+(hit?'<span class="tag ok">meta batida</span>':open?'<span class="tag">em andamento</span>':'<span class="tag bad">não batida</span>')+"</td>")+"</tr>";
   }).join("");
+  var weeksHtml='<div class="panel"><div class="eyebrow gap">Semanas</div><div class="tablewrap"><table><thead><tr><th>Semana</th><th>Folhas</th><th>Pontos</th>'+(mensal?'':'<th>Meta</th><th>Prêmio</th><th>Situação</th>')+'</tr></thead><tbody>'+wk+'</tbody></table></div></div>';
+  var monthsHtml="";
+  if(mensal){
+    var mo={};
+    sheets.forEach(function(x){var k=x.study_day.slice(0,7),m=mo[k]||(mo[k]={pts:0,n:0});m.pts+=x.points;m.n++});
+    months.forEach(function(m){var k=m.month_start.slice(0,7);mo[k]=mo[k]||{pts:0,n:0}});
+    var curK=per.start.slice(0,7);mo[curK]=mo[curK]||{pts:0,n:0};
+    var mrows=Object.keys(mo).sort().reverse().slice(0,12).map(function(k){
+      var set=months.filter(function(m){return m.month_start===k+"-01"})[0],g=set?set.goal:s.monthly_goal,r=set?set.reward:s.reward,w=mo[k];
+      var open=k>=curK,hit=g>0&&w.pts>=g;
+      return "<tr><td>"+FC.MONTHS[Number(k.slice(5,7))-1]+"/"+k.slice(0,4)+"</td><td>"+w.n+"</td><td>"+w.pts+"</td><td>"+g+"</td><td>"+esc(r||"–")+"</td><td>"+(hit?'<span class="tag ok">baú aberto</span>':open?'<span class="tag">em andamento</span>':'<span class="tag bad">não aberto</span>')+"</td></tr>";
+    }).join("");
+    monthsHtml='<div class="panel"><div class="eyebrow gap">Meses</div><div class="tablewrap"><table><thead><tr><th>Mês</th><th>Folhas</th><th>Pontos</th><th>Meta</th><th>Prêmio</th><th>Situação</th></tr></thead><tbody>'+mrows+'</tbody></table></div></div>';
+  }
 
   /* faltas */
   var doneBy={};sheets.forEach(function(x){doneBy[x.study_day]=(doneBy[x.study_day]||0)+1});
@@ -269,8 +313,7 @@ async function detail(id){
     '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div><div class="nm">'+esc(L.name)+'</div>'+
     '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(s.stamps,need)+' de '+need+'</span></div>'+
     '<p class="muted small-t">O aluno sobe de nível sozinho ao juntar '+need+' carimbo'+(need>1?'s':'')+'. Você vê o aviso no histórico. Para mudar o nível agora, use o programa abaixo.</p></div>'+
-    '<div class="panel"><div class="eyebrow gap">Pontos desta semana</div><div class="big-pts">'+curPts+'<span> / '+goal+'</span></div>'+
-    '<div class="bar"><i style="width:'+pct+'%"></i></div><p class="muted small-t">Fecha '+FC.DOW_LONG[FC.dow(curEnd)].toLowerCase()+', '+FC.dm(curEnd)+'.'+(reward?' Prêmio: <b>'+esc(reward)+'</b>.':'')+'</p></div>'+
+    '<div class="panel">'+trailHtml+'</div>'+
     '<div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
     '<div class="actions gap"><button class="btn ghost small" id="rstPin">Redefinir PIN</button><button class="btn ghost small" id="newLink">Gerar novo link</button></div>'+
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
@@ -281,7 +324,7 @@ async function detail(id){
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>'+
     '<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div>'+weakHtml+
     '</div></div>'+
-    '<div class="panel"><div class="eyebrow gap">Semanas</div><div class="tablewrap"><table><thead><tr><th>Semana</th><th>Folhas</th><th>Pontos</th><th>Meta</th><th>Prêmio</th><th>Situação</th></tr></thead><tbody>'+wk+'</tbody></table></div></div>'+
+    monthsHtml+weeksHtml+
     '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>'+
     (iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><button class="btn ghost small" id="del">Apagar aluno e todo o histórico</button></div>':''));
   bindTop();bindProgram();

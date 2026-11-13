@@ -101,12 +101,10 @@ function home(){
     canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas.";
   }
   var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
-  var pct=m.week_goal>0?Math.min(100,Math.round(m.week_points/m.week_goal*100)):100;
-  var reached=m.week_points>=m.week_goal&&m.week_goal>0;
-  var goalTxt=reached?"Meta batida! 🎉":"Faltam "+Math.max(0,m.week_goal-m.week_points)+" pontos";
+  var per=m.period,miles=per.mode==="mensal"?FC.milestones(m,per.start,per.end,per.goal):[];
   var prev="";
-  if(m.prev_week){var pw=m.prev_week,ok=pw.points>=pw.goal;
-    prev='<p class="muted">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(ok?'Meta batida'+(pw.reward?': '+esc(pw.reward):''):'Meta não batida')+'.</p>'}
+  if(m.prev_period){var pw=m.prev_period;
+    prev='<p class="muted small-t">'+(pw.mode==="mensal"?"Mês passado":"Semana passada")+': <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você abriu o baú'+(pw.reward?': <b>'+esc(pw.reward)+'</b>':'')+'.':'O baú não abriu.')+'</p>'}
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+"</td></tr>"}).join("");
   FC.render(
@@ -120,12 +118,7 @@ function home(){
    (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
    '</div>'+
    (rows?'<div class="panel"><div class="eyebrow gap">Suas últimas folhas</div><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'')+
-   '</div><div class="col"><div class="panel"><div class="eyebrow">Pontos da semana</div>'+
-   '<div class="big-pts">'+m.week_points+'<span> / '+m.week_goal+'</span></div>'+
-   '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+m.week_goal+'" aria-valuenow="'+m.week_points+'"><i style="width:'+pct+'%"></i></div>'+
-   '<p class="today">'+goalTxt+'</p>'+
-   (m.week_reward?'<p class="reward">Prêmio: <b>'+esc(m.week_reward)+'</b></p>':'')+
-   '<p class="muted small-t">A semana fecha '+FC.DOW_LONG[FC.dow(m.week_end)].toLowerCase()+', dia '+FC.dm(m.week_end)+'.</p>'+prev+
+   '</div><div class="col"><div class="panel">'+FC.trailHtml(per,{miles:miles})+prev+
    '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>'+FC.installBox());
   FC.refreshInstall();
   $("#logout").onclick=logout;
@@ -274,7 +267,9 @@ async function send(payload,score){
     fixes+" conta"+(fixes>1?"s":"")+" precisaram de correção. Releia essas contas e repita a folha.";
   var newL=FC.LEVELS[res.level_idx];
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;
-  S.me.week_points=(S.me.week_points||0)+res.points;S.me.total_points=(S.me.total_points||0)+res.points;
+  var before=S.me.period?S.me.period.points:0,np=res.period,crossed=!(S.me.period&&S.me.period.reached)&&np.reached;
+  S.me.period=np;S.me.week_points=np.points;S.me.total_points=(S.me.total_points||0)+res.points;
+  var miles=np.mode==="mensal"?FC.milestones(S.me,np.start,np.end,np.goal):[];
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
   for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&i===shown-1)?" pop":"")+'">✓</span>';
   FC.render('<div class="res panel">'+
@@ -282,11 +277,14 @@ async function send(payload,score){
     '<div class="grow"><h2>'+(res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
-    '<div><b>'+S.me.week_points+'</b><span>pontos na semana (meta '+S.me.week_goal+')</span></div></div>'+
+    '<div><b>'+np.points+'</b><span>pontos '+(np.mode==="mensal"?"no mês":"na semana")+' (meta '+np.goal+')</span></div></div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'.</div></div></div>':'')+
+    '<div class="trailbox">'+FC.trailHtml(np,{miles:miles,fromPoints:before,opening:crossed})+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
+  FC.animateTrail();
+  if(crossed)setTimeout(FC.openChest,res.advanced?3400:2000);
   if(res.stamp)FC.sfx.stamp();
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}
