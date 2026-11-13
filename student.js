@@ -100,7 +100,7 @@ function home(){
   }else{
     canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas.";
   }
-  var stamps="";for(var i=0;i<3;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
+  var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
   var pct=m.week_goal>0?Math.min(100,Math.round(m.week_points/m.week_goal*100)):100;
   var reached=m.week_points>=m.week_goal&&m.week_goal>0;
   var goalTxt=reached?"Meta batida! 🎉":"Faltam "+Math.max(0,m.week_goal-m.week_points)+" pontos";
@@ -110,12 +110,12 @@ function home(){
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+"</td></tr>"}).join("");
   FC.render(
-   '<header class="top"><div class="brand">Folhinha de Cálculo<small>Oi, '+esc(m.name)+'</small></div><button class="btn ghost small" id="logout">Sair</button></header>'+
+   '<header class="top"><div class="brand">Folhinha de Cálculo<small>Oi, '+esc(m.name)+'</small></div><div class="actions"><button class="btn ghost small" id="sndBtn"></button><button class="btn ghost small" id="logout">Sair</button></div></header>'+
    '<div class="grid"><div class="col">'+
    '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
    '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
-   '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+m.stamps+' de 3</span></div>'+
-   '<p class="muted small-t">Acerte as 10 contas de primeira dentro de <b>'+FC.fmtTime(L.target)+'</b> para ganhar um carimbo. Com 3 carimbos você sobe de nível.</p>'+
+   '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(m.stamps,need)+' de '+need+'</span></div>'+
+   '<p class="muted small-t">Acerte as 10 contas de primeira dentro de <b>'+FC.fmtTime(L.target)+'</b> para ganhar um carimbo. Com '+need+' carimbo'+(need>1?'s':'')+' você sobe de nível.</p>'+
    '<p class="today">'+status+'</p>'+
    (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
    '</div>'+
@@ -129,6 +129,9 @@ function home(){
    '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>'+FC.installBox());
   FC.refreshInstall();
   $("#logout").onclick=logout;
+  function sndLabel(){$("#sndBtn").textContent=FC.sfx.enabled()?"Som ligado":"Som desligado"}
+  sndLabel();
+  $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
 }
 async function logout(){
@@ -271,16 +274,21 @@ async function send(payload,score){
     fixes+" conta"+(fixes>1?"s":"")+" precisaram de correção. Releia essas contas e repita a folha.";
   var newL=FC.LEVELS[res.level_idx];
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;
-  var left=S.me.quota-S.me.done_today;
+  S.me.week_points=(S.me.week_points||0)+res.points;S.me.total_points=(S.me.total_points||0)+res.points;
+  var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
+  for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&i===shown-1)?" pop":"")+'">✓</span>';
   FC.render('<div class="res panel">'+
     '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.stamp?"":" no")+'">'+(res.stamp?"Aprovada":"Repetir")+'</div>'+
     '<div class="grow"><h2>'+(res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
-    '<div><b>'+Math.min(res.stamps,3)+'/3</b><span>carimbos no nível '+newL.id+'</span></div></div>'+
-    (res.advanced?'<div class="up">Nível concluído! Você subiu para o nível '+newL.id+' · '+esc(newL.name)+'.</div>':'')+
+    '<div><b>'+S.me.week_points+'</b><span>pontos na semana (meta '+S.me.week_goal+')</span></div></div>'+
+    '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
+    (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'.</div></div></div>':'')+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
+  if(res.stamp)FC.sfx.stamp();
+  if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}
   $("#resHome").onclick=async function(){try{await loadHome()}catch(e){fail(e)}};
 }

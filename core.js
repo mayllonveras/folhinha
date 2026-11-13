@@ -173,6 +173,50 @@ FC.timeFactor=function(secs,target){
 /* Nome curto de um nível pelo índice. */
 FC.lv=function(i){var l=FC.LEVELS[i];return l?l.id:"?"};
 
+/* ---------- sons (sintetizados, sem arquivos) e confete ---------- */
+var actx=null;
+function audio(){
+  try{
+    if(!actx){var C=window.AudioContext||window.webkitAudioContext;if(!C)return null;actx=new C()}
+    if(actx.state==="suspended")actx.resume();
+    return actx;
+  }catch(e){return null}
+}
+function tone(freq,t0,dur,type,gain){
+  var c=audio();if(!c)return;
+  var o=c.createOscillator(),g=c.createGain(),t=c.currentTime+t0;
+  o.type=type||"sine";o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(gain||0.2,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+0.05);
+}
+/* O navegador só libera o som depois de um toque; preparamos o áudio no primeiro toque do aluno. */
+["pointerdown","keydown","touchstart"].forEach(function(ev){
+  window.addEventListener(ev,function unlock(){audio();window.removeEventListener(ev,unlock)},{passive:true});
+});
+FC.sfx={
+  enabled:function(){try{return localStorage.getItem("fc_sound")!=="off"}catch(e){return true}},
+  set:function(on){try{localStorage.setItem("fc_sound",on?"on":"off")}catch(e){}},
+  stamp:function(){if(!FC.sfx.enabled())return;tone(150,0,0.2,"triangle",0.4);tone(85,0.02,0.25,"sine",0.45);tone(880,0.14,0.14,"sine",0.12)},
+  levelUp:function(){
+    if(!FC.sfx.enabled())return;
+    [523.25,659.25,783.99,1046.5].forEach(function(f,i){tone(f,i*0.13,0.35,"triangle",0.22)});
+    tone(1318.5,0.58,0.7,"sine",0.18);tone(1568,0.66,0.8,"sine",0.12);
+  }
+};
+FC.confetti=function(){
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  var wrap=document.createElement("div");wrap.className="confetti";
+  var cols=["var(--accent)","var(--mark)","var(--ok)","var(--warn)","var(--ink)"];
+  for(var i=0;i<48;i++){
+    var p=document.createElement("i");
+    p.style.left=Math.random()*100+"%";p.style.background=cols[i%cols.length];
+    p.style.setProperty("--dx",(Math.random()*180-90)+"px");p.style.setProperty("--rot",(Math.random()*900-450)+"deg");
+    p.style.animationDuration=(1.8+Math.random()*1.6)+"s";p.style.animationDelay=(Math.random()*0.5)+"s";
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);setTimeout(function(){wrap.remove()},4400);
+};
+
 /* ---------- instalação como app (PWA) ---------- */
 var deferredInstall=null;
 FC.isStandalone=function(){return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true};
