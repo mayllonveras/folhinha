@@ -209,6 +209,12 @@ FC.sfx={
     [1046.5,1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.45+i*0.09,0.3,"sine",0.15)});
     tone(3136,0.95,0.5,"sine",0.08);
   },
+  rare:function(){if(!FC.sfx.enabled())return;[1568,1976,2349,3136].forEach(function(f,i){tone(f,i*0.09,0.4,"sine",0.14)});tone(784,0,0.6,"triangle",0.1)},
+  ultra:function(){   // fanfarra grande: escala subindo e acorde final brilhante
+    if(!FC.sfx.enabled())return;
+    [523.25,659.25,783.99,1046.5,1318.5,1568,2093].forEach(function(f,i){tone(f,i*0.1,0.45,"triangle",0.2)});
+    [1046.5,1318.5,1568,2093].forEach(function(f){tone(f,0.85,1.1,"sine",0.14)});tone(261.6,0.85,1.1,"sawtooth",0.06);
+  },
   star:function(){if(!FC.sfx.enabled())return;[880,1108.7,1318.5,1760].forEach(function(f,i){tone(f,i*0.1,0.3,"triangle",0.2)});tone(2349,0.45,0.6,"sine",0.1)},
   pack:function(){   // rasgar o pacotinho e revelar
     if(!FC.sfx.enabled())return;
@@ -216,11 +222,12 @@ FC.sfx={
     [1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.5+i*0.08,0.3,"sine",0.15)});
   }
 };
-FC.confetti=function(){
+FC.confetti=function(o){
+  o=o||{};
   if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
   var wrap=document.createElement("div");wrap.className="confetti";
-  var cols=["var(--accent)","var(--mark)","var(--ok)","var(--warn)","var(--ink)"];
-  for(var i=0;i<48;i++){
+  var cols=o.gold?["#FFD45A","#F5C432","#FFF3B0","#E0A21F","#ffffff"]:["var(--accent)","var(--mark)","var(--ok)","var(--warn)","var(--ink)"];
+  for(var i=0;i<(o.n||48);i++){
     var p=document.createElement("i");
     p.style.left=Math.random()*100+"%";p.style.background=cols[i%cols.length];
     p.style.setProperty("--dx",(Math.random()*180-90)+"px");p.style.setProperty("--rot",(Math.random()*900-450)+"deg");
@@ -283,7 +290,7 @@ FC.packSvg=function(){
 FC.overlay=function(html,opts){
   opts=opts||{};
   var ov=document.createElement("div");ov.className="overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
-  ov.innerHTML='<div class="ov-card'+(opts.wide?" wide":"")+'">'+html+'<div class="actions ov-actions"><button class="btn" id="ovClose">'+(opts.button||"Fechar")+'</button></div></div>';
+  ov.innerHTML='<div class="ov-card'+(opts.wide?" wide":"")+(opts.cls?" "+opts.cls:"")+'">'+html+'<div class="actions ov-actions"><button class="btn" id="ovClose">'+(opts.button||"Fechar")+'</button></div></div>';
   document.body.appendChild(ov);
   function key(e){if(e.key==="Escape")close()}
   function close(){if(!ov.parentNode)return;ov.remove();document.removeEventListener("keydown",key);if(opts.onClose)opts.onClose()}

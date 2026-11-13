@@ -205,7 +205,7 @@ function bindProgram(){
   $("#pThemeView").onclick=function(){
     var th=FC.theme($("#pTheme").value),cells="";
     for(var i=0;i<FC.ALBUM_SIZE;i++)cells+=FC.stickerHtml(th.id,i);
-    FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p><div class="album">'+cells+'</div>',{wide:true});
+    FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p>'+FC.rarityLegend(th.id)+'<div class="album">'+cells+'</div>',{wide:true});
   };
   $("#pPeriod").onchange=function(){g.setAttribute(key(mode),g.value);mode=this.value;g.value=g.getAttribute(key(mode));upd()};
   g.addEventListener("input",function(){g.setAttribute(key(mode),g.value);upd()});
@@ -285,7 +285,7 @@ async function detail(id){
   }
   if(s.reward_system==="figurinhas"){
     var th=FC.theme(s.sticker_theme),got=awards.filter(function(a){return a.kind==="figurinha"&&a.theme===th.id}).map(function(a){return{slot:a.slot,end:a.period_end}});
-    rewardPanel='<div class="panel"><div class="eyebrow gap">Álbum · '+esc(th.name)+'</div><p class="muted small-t">'+got.length+' de '+FC.ALBUM_SIZE+' figurinhas conquistadas. As apagadas ainda não foram ganhas: a criança só vê as que conquistou.</p>'+FC.albumHtml(th.id,got,{adult:true})+'</div>';
+    rewardPanel='<div class="panel"><div class="eyebrow gap">Álbum · '+esc(th.name)+'</div><p class="muted small-t">'+got.length+' de '+FC.ALBUM_SIZE+' figurinhas conquistadas. As apagadas ainda não foram ganhas: a criança só vê as que conquistou.</p>'+FC.rarityLegend(th.id)+FC.albumHtml(th.id,got,{adult:true})+'</div>';
   }
   var trailHtml=FC.trailHtml({mode:effM,start:per.start,end:per.end,points:curPts,goal:goal,reached:goal>0&&curPts>=goal,reward:reward},{miles:miles,adult:true,system:s.reward_system});
 

@@ -292,6 +292,29 @@ details .form{margin-top:12px}
 [hidden]{display:none!important}
 
 .sticker .st-sub{font-size:.62rem;line-height:1.1;opacity:.78}
-.sticker .st-art img{display:block;width:100%;height:auto;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.28)}
-.sticker .st-name.long{font-size:.6rem;letter-spacing:-.01em;hyphens:auto;-webkit-hyphens:auto}
+.sticker .st-art img.flag{display:block;width:100%;height:auto;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.28)}
+.sticker .st-art img:not(.flag){display:block;width:100%;height:100%;object-fit:contain}
+.sticker .st-name.long{font-size:.58rem;letter-spacing:-.01em;hyphens:auto;-webkit-hyphens:auto}
 .sticker.big .st-name.long{font-size:.9rem}
+
+/* raridade das figurinhas */
+.sticker{position:relative}
+.sticker .st-tier{position:absolute;top:-1px;right:-1px;font:700 .55rem var(--font-num);letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:0 11px 0 9px;color:#fff;background:#4a78c8;z-index:2}
+.sticker.tier-rara{border-color:#cfe0ff;box-shadow:0 0 0 2px #7aa5ee,0 0 12px 2px rgba(90,140,230,.55)}
+.sticker.tier-ultra{border-color:#fff3b0;box-shadow:0 0 0 2px #f5c432,0 0 16px 4px rgba(245,196,50,.7)}
+.sticker.tier-ultra .st-tier{background:linear-gradient(90deg,#e0a21f,#f5c432,#e0a21f);color:#3a2800}
+.sticker.big .st-tier{font-size:.7rem;padding:3px 10px}
+.ov-card.tier-rara{box-shadow:0 0 0 3px #7aa5ee,0 0 40px 6px rgba(90,140,230,.55)}
+.ov-card.tier-ultra{box-shadow:0 0 0 3px #f5c432,0 0 60px 12px rgba(245,196,50,.6)}
+.tier-title{font-size:1.5rem;letter-spacing:.02em}
+.tier-title.tier-rara{color:#3a6fd0}
+.tier-title.tier-ultra{color:#b9770e}
+.tier-msg{font-weight:600;color:var(--ink)}
+.rarity-legend{line-height:1.5}
+@media (prefers-reduced-motion:no-preference){
+  .sticker.tier-ultra::after{content:"";position:absolute;inset:0;border-radius:11px;pointer-events:none;mix-blend-mode:overlay;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.7) 50%,transparent 60%);background-size:250% 100%;animation:shine 2.8s linear infinite}
+  .sticker.tier-rara::after{content:"";position:absolute;inset:0;border-radius:11px;pointer-events:none;mix-blend-mode:overlay;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);background-size:250% 100%;animation:shine 4.5s linear infinite}
+  @keyframes shine{0%{background-position:150% 0}100%{background-position:-100% 0}}
+  .ov-card.tier-ultra{animation:ultraGlow 1.6s ease-in-out infinite alternate}
+  @keyframes ultraGlow{from{box-shadow:0 0 0 3px #f5c432,0 0 40px 6px rgba(245,196,50,.45)}to{box-shadow:0 0 0 3px #ffe27a,0 0 80px 18px rgba(245,196,50,.8)}}
+}

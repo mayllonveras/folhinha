@@ -156,10 +156,17 @@ function showAward(aw,already){
     FC.overlay('<div class="award-star">'+FC.starSvg(true)+'</div><h2>Você ganhou uma estrela!</h2><p class="muted">Cartela de estrelas: <b>'+filled+' de '+N+'</b>.</p>',{button:"Legal!"});
   }else{
     if(!already)m.stickers=(m.stickers||[]).concat([{slot:aw.slot,end:aw.period_end}]);
-    var th=FC.theme(aw.theme),n=(m.stickers||[]).length;
+    var th=FC.theme(aw.theme),n=(m.stickers||[]).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
+    var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
+    var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
     FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-      '<h2>Figurinha nova!</h2><p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum"});
-    setTimeout(function(){FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");FC.confetti()},800);
+      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier});
+    setTimeout(function(){
+      FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
+      if(tier==="comum"){FC.confetti();return}
+      setTimeout(function(){FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64});
+        if(tier==="ultra")setTimeout(function(){FC.confetti({gold:true,n:70})},700)},350);
+    },800);
   }
 }
 async function logout(){
