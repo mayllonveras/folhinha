@@ -1,12 +1,10 @@
-/* Painel de pais e professores: cadastro/login, alunos, programa de estudos, pontos e histórico. */
+/* Painel de pais e professores: cadastro/login, alunos, programa de estudos, sequência de estudo e histórico. */
 (function(){
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 var U={user:null,profile:null};
-/* Limites mínimos do programa: 3 folhas por dia, 3 dias por semana e meta de pelo menos 70% do máximo de pontos da semana. */
-var MIN_SHEETS=3,MIN_DAYS=3,MIN_PCT=0.7,MAX_THEMES=2;
-function maxWeek(days,per){return days*per*100}
-function minGoal(days,per){return Math.ceil(MIN_PCT*maxWeek(days,per)/10)*10}
+/* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
+var MIN_SHEETS=3,MIN_DAYS=3,MAX_THEMES=2;
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 FC.adultApp=async function(){
@@ -92,11 +90,6 @@ function showNewPassword(msg){
 }
 
 /* ---------- lista de alunos ---------- */
-function weekPoints(s,sheets){
-  var p=FC.periodOf(FC.today(),s.week_close_dow),n=0;
-  sheets.forEach(function(x){if(x.student_id===s.id&&x.week_end===p.end)n+=x.points});
-  return n;
-}
 function todayDone(s,sheets){var t=FC.today();return sheets.filter(function(x){return x.student_id===s.id&&x.study_day===t}).length}
 
 async function dash(){
@@ -107,17 +100,17 @@ async function dash(){
     var res=await Promise.all([
       q(sb.from("profiles").select("name,role").eq("id",U.user.id).maybeSingle()),
       q(sb.from("students").select("*").order("created_at")),
-      q(sb.from("sheets").select("student_id,study_day,week_end,points").eq("status","done").gte("study_day",FC.addDays(FC.today(),-60)))]);
+      q(sb.from("sheets").select("student_id,study_day").eq("status","done").gte("study_day",FC.addDays(FC.today(),-60)))]);
     prof=res[0];students=res[1];sheets=res[2];
   }catch(e){return errScreen(e,dash)}
   U.profile=prof||{name:"",role:"pai"};
   var today=FC.today(),cards=students.map(function(s){
-    var L=FC.LEVELS[s.level_idx],wp=weekPoints(s,sheets),pg=s.weekly_goal,pct=pg>0?Math.min(100,Math.round(wp/pg*100)):100;
+    var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),pct=Math.min(100,Math.round(100*Math.min(s.stamps,5)/5));
     var isStudy=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date,done=todayDone(s,sheets);
     var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):isStudy?"Hoje: "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
     return '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+st+'</div>'+
-      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+wp+' de '+pg+' pontos na semana</div></button>';
+      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,5)+' de 5 carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div></button>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
@@ -135,7 +128,7 @@ async function dash(){
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
 function programFields(s){
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:minGoal(5,3),sticker_themes:["dinossauros"]};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["dinossauros"]};
   var lv="",lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
@@ -143,7 +136,6 @@ function programFields(s){
   });
   lv+="</optgroup>";
   var days=FC.DOW.map(function(d,i){return '<label class="chk"><input type="checkbox" name="days" value="'+i+'"'+(v.study_days.indexOf(i)>=0?" checked":"")+'><span>'+d+'</span></label>'}).join("");
-  var close=FC.DOW_LONG.map(function(d,i){return '<option value="'+i+'"'+(i===v.week_close_dow?" selected":"")+'>'+d+'</option>'}).join("");
   var chosen=v.sticker_themes||[v.sticker_theme||"dinossauros"];
   var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
@@ -154,45 +146,33 @@ function programFields(s){
     '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCover(t.id)+'</label>'+
         '<label class="to-txt" for="th_'+t.id+'"><b>'+esc(t.name)+'</b><small>'+esc(t.desc)+'</small></label><button type="button" class="btn ghost small" data-view="'+t.id+'">Ver</button></div>'}).join("")+'</div>'+
-      '<small id="pThemeHint">Marque 1 ou 2 álbuns. Ao bater a meta da semana, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.</small></fieldset>'+
-    '<label class="field">A semana fecha na<select id="pClose">'+close+'</select><small>Os pontos de cada semana somam até este dia. Bater a meta dá um pacotinho com uma figurinha (até 52 por ano em cada álbum).</small></label>'+
-    '<label class="field">Meta de pontos da semana<input id="pGoal" type="number" min="0" max="1000000" step="10" value="'+v.weekly_goal+'"><small id="pMax"></small></label>'+
+      '<small id="pThemeHint">Marque 1 ou 2 álbuns. A criança ganha pacotinhos nos dias de estudo e escolhe de qual álbum quer cada figurinha surpresa.</small></fieldset>'+
     '<div class="rule-box"><b>Como o aluno avança (regra fixa)</b><ul>'+
       '<li>Cada dia em que ele acerta <b>80% ou mais</b> das contas de primeira, com tempo médio por folha dentro da meta do nível, vale <b>1 carimbo</b>. O carimbo sai ao fechar a última folha do dia.</li>'+
       '<li>Com <b>5 carimbos</b> ele sobe de nível.</li>'+
       '<li>As contas que ele erra voltam nas próximas folhas, até 4 por folha, e continuam voltando no nível seguinte até ele acertar 2 vezes seguidas.</li>'+
-      '<li>Os pontos da semana funcionam em paralelo: ele ganha o pacotinho de figurinhas mesmo sem subir de nível.</li></ul></div>';
+      '<li>Cada <b>carimbo</b> vale <b>1 pacotinho</b> de figurinhas.</li>'+
+      '<li>Fechar <b>todas as folhas do dia</b>, com ou sem carimbo, vale mais <b>1 pacotinho</b> (perseverança). A cota precisa fechar no mesmo dia.</li>'+
+      '<li>Dias de estudo seguidos com a cota fechada dão pacotinhos extras aos <b>3, 7 e 14 dias</b> (2, 3 e 5 pacotinhos) e depois <b>a cada 30 dias</b> (5 pacotinhos). Faltar a um dia de estudo zera a sequência.</li></ul></div>';
 }
 function bindProgram(){
-  var g=$("#pGoal");
   $$('input[name="themes"]').forEach(function(c){c.addEventListener("change",function(){
     var on=$$('input[name="themes"]:checked'),h=$("#pThemeHint");
     if(on.length>MAX_THEMES){c.checked=false;if(h){h.textContent="Só dá para escolher "+MAX_THEMES+" álbuns por criança. Desmarque um para trocar.";h.className="bad"}}
-    else if(h){h.textContent="Marque 1 ou 2 álbuns. Ao bater a meta, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.";h.className=""}
+    else if(h){h.textContent="Marque 1 ou 2 álbuns. A criança ganha pacotinhos nos dias de estudo e escolhe de qual álbum quer cada figurinha surpresa.";h.className=""}
   })});
-  var adjusted=false;
-  function limits(){var per=Number($("#pPer").value),n=$$('input[name="days"]:checked').length;return{per:per,n:n,max:maxWeek(n,per),min:minGoal(n,per)}}
-  function upd(fix){
-    var L=limits(),goal=Number(g.value)||0;
-    $("#pDaysHint").textContent=L.n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias por semana.":"Mínimo: "+MIN_DAYS+" dias por semana.";
-    $("#pDaysHint").className=L.n<MIN_DAYS?"bad":"";
-    if(L.n>=MIN_DAYS){
-      g.min=L.min;
-      if(fix===true&&goal<L.min){g.value=L.min;goal=L.min;adjusted=true}
-      $("#pMax").textContent="Mínimo para ganhar o pacotinho: "+L.min+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo de "+L.max+": "+L.n+" dias × "+L.per+" folhas × 100)."+(adjusted?" A meta foi ajustada ao mínimo.":"");
-      $("#pMax").className=goal<L.min?"bad":"";
-    }else{$("#pMax").textContent="";$("#pMax").className=""}
+  function upd(){
+    var n=$$('input[name="days"]:checked').length;
+    $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias por semana.":"Mínimo: "+MIN_DAYS+" dias por semana.";
+    $("#pDaysHint").className=n<MIN_DAYS?"bad":"";
   }
   $$("[data-view]").forEach(function(btn){btn.onclick=function(){
     var th=FC.theme(btn.getAttribute("data-view")),cells="";
     for(var i=0;i<FC.ALBUM_SIZE;i++)cells+=FC.stickerHtml(th.id,i);
     FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p>'+FC.rarityLegend(th.id)+'<div class="album">'+cells+'</div>',{wide:true});
   }});
-  g.addEventListener("input",function(){adjusted=false;upd()});
-  g.addEventListener("change",function(){upd(true)});
-  $$('input[name="days"]').forEach(function(c){c.onchange=function(){upd(true)}});
-  $("#pPer").addEventListener("change",function(){upd(true)});
-  upd(true);
+  $$('input[name="days"]').forEach(function(c){c.onchange=upd});
+  upd();
 }
 function readProgram(){
   var days=$$('input[name="days"]:checked').map(function(c){return Number(c.value)}),name=$("#pName").value.trim();
@@ -203,10 +183,8 @@ function readProgram(){
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
   if(themes.length>MAX_THEMES)return{error:"Escolha no máximo "+MAX_THEMES+" álbuns para a criança."};
-  var wk=Math.max(0,Math.round(Number($("#pGoal").value)||0)),mg=minGoal(days.length,Number($("#pPer").value));
-  if(wk<mg)return{error:"A meta precisa ser de pelo menos "+mg+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo da semana)."};
   return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
-    sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:wk,sticker_themes:themes,sticker_theme:themes[0]}};
+    sheets_per_day:Number($("#pPer").value),sticker_themes:themes,sticker_theme:themes[0]}};
 }
 
 function showForm(){
@@ -218,7 +196,7 @@ function showForm(){
     if(r.error){$("#fMsg").textContent=r.error;return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:r.v.week_close_dow,p_goal:r.v.weekly_goal,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes});
+      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
@@ -239,24 +217,20 @@ function created(name,code,id){
 /* ---------- página do aluno ---------- */
 async function detail(id){
   FC.render('<p class="loading">Carregando…</p>');
-  var s,sheets,weeks,guards,profs,weak,awards;
+  var s,sheets,guards,profs,weak,awards;
   try{
     var res=await Promise.all([
       q(sb.from("students").select("*").eq("id",id).single()),
-      q(sb.from("sheets").select("id,study_day,week_end,level_idx,first_ok,total,secs,corrections,stamp,advanced,points,finished_at").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(300)),
-      q(sb.from("week_settings").select("*").eq("student_id",id)),
+      q(sb.from("sheets").select("id,study_day,level_idx,first_ok,total,secs,corrections,stamp,advanced,finished_at").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(300)),
       q(sb.from("guardians").select("user_id,role").eq("student_id",id)),
       q(sb.from("weak_items").select("pre,post,ans,misses,level_idx").eq("student_id",id).order("misses",{ascending:false}).limit(12)),
-      q(sb.from("awards").select("kind,theme,slot,period_mode,period_end").eq("student_id",id).order("period_end"))]);
-    s=res[0];sheets=res[1];weeks=res[2];guards=res[3];weak=res[4];awards=res[5];
+      q(sb.from("awards").select("kind,theme,slot,source,period_end").eq("student_id",id).order("period_end"))]);
+    s=res[0];sheets=res[1];guards=res[2];weak=res[3];awards=res[4];
     profs=await q(sb.from("profiles").select("id,name,role").in("id",guards.map(function(g){return g.user_id})));
   }catch(e){return errScreen(e,function(){detail(id)})}
   var iAmOwner=guards.some(function(g){return g.user_id===U.user.id&&g.role==="owner"});
   var link=linkFor(s.link_code),today=FC.today(),L=FC.LEVELS[s.level_idx];
-  var per=FC.periodOf(today,s.week_close_dow),weekEnd=per.end,curPts=0;
-  sheets.forEach(function(x){if(x.week_end===per.end)curPts+=x.points});
-  var curSet=weeks.filter(function(w){return w.week_end===per.end})[0];
-  var goal=curSet?curSet.goal:s.weekly_goal;
+  var sk=FC.streakNow(s,today);
   var themeIds=s.sticker_themes&&s.sticker_themes.length?s.sticker_themes:[s.sticker_theme];
   var packsWaiting=awards.filter(function(a){return a.kind==="pacote"}).length;
   var rewardPanel='<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
@@ -266,19 +240,14 @@ async function detail(id){
       var th=FC.theme(id),got=awards.filter(function(a){return a.kind==="figurinha"&&a.theme===id}).map(function(a){return{slot:a.slot,end:a.period_end}});
       return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</summary>'+FC.rarityLegend(id)+FC.albumHtml(id,got,{adult:true})+'</details>';
     }).join("")+'</div>';
-  var trailHtml=FC.trailHtml({start:per.start,end:per.end,points:curPts,goal:goal,reached:goal>0&&curPts>=goal},{adult:true});
+  var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
 
-  /* semanas */
-  var by={};
-  sheets.forEach(function(x){var w=by[x.week_end]||(by[x.week_end]={pts:0,n:0});w.pts+=x.points;w.n++});
-  weeks.forEach(function(w){by[w.week_end]=by[w.week_end]||{pts:0,n:0}});
-  by[weekEnd]=by[weekEnd]||{pts:0,n:0};
-  var wk=Object.keys(by).sort().reverse().slice(0,12).map(function(end){
-    var set=weeks.filter(function(w){return w.week_end===end})[0],g=set?set.goal:s.weekly_goal,w=by[end];
-    var open=end>=today,hit=g>0&&w.pts>=g;
-    return "<tr><td>até "+FC.dayLabel(end)+"</td><td>"+w.n+"</td><td>"+w.pts+"</td>"+"<td>"+g+"</td><td>"+(hit?'<span class="tag ok">meta batida</span>':open?'<span class="tag">em andamento</span>':'<span class="tag bad">não batida</span>')+"</td></tr>";
-  }).join("");
-  var weeksHtml='<div class="panel"><div class="eyebrow gap">Semanas</div><div class="tablewrap"><table><thead><tr><th>Semana</th><th>Folhas</th><th>Pontos</th><th>Meta</th><th>Situação</th></tr></thead><tbody>'+wk+'</tbody></table></div></div>';
+  /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
+  var by={carimbo:0,perseveranca:0,marco:0};
+  awards.forEach(function(a){if(a.source&&by[a.source]!=null)by[a.source]++});
+  var packsHtml='<div class="panel"><div class="eyebrow gap">Pacotinhos ganhos</div><ul class="plain">'+
+    '<li><b>'+by.carimbo+'</b> pelo carimbo do dia</li><li><b>'+by.perseveranca+'</b> pela perseverança (dia fechado)</li><li><b>'+by.marco+'</b> pelos marcos de sequência</li></ul>'+
+    '<p class="muted small-t">Total: <b>'+(by.carimbo+by.perseveranca+by.marco)+'</b>. Melhor sequência: <b>'+s.best_streak+'</b> dia'+(s.best_streak===1?"":"s")+'.</p></div>';
 
   /* faltas */
   var doneBy={};sheets.forEach(function(x){doneBy[x.study_day]=(doneBy[x.study_day]||0)+1});
@@ -291,7 +260,7 @@ async function detail(id){
   miss.reverse();
 
   var rows=sheets.slice(0,40).map(function(x){
-    return '<tr><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+x.points+'</td><td>'+
+    return '<tr><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+
       (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td><button class="btn ghost small" data-sheet="'+x.id+'">Ver</button></td></tr>';
   }).join("");
   var names=guards.map(function(g){
@@ -308,18 +277,18 @@ async function detail(id){
   var isStudyToday=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date;
   var todaySheets=sheets.filter(function(x){return x.study_day===today}),tdOk=0,tdTot=0;
   todaySheets.forEach(function(x){tdOk+=x.first_ok;tdTot+=x.total});
-  var tdPct=tdTot?Math.round(100*tdOk/tdTot):null,wkPct=goal>0?Math.round(100*curPts/goal):0;
+  var tdPct=tdTot?Math.round(100*tdOk/tdTot):null;
   var stats='<div class="stats">'+
     '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div></div>'+
-    '<div class="panel stat"><div class="eyebrow">Pontos na semana</div><div class="v num">'+curPts+'</div><small>meta '+goal+' · '+wkPct+'%</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
       (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?'ainda sem folhas hoje':'hoje é descanso')+'</small>')+'</div></div>';
-  var resumo=stats+'<div class="grid"><div class="col"><div class="panel">'+trailHtml+'</div></div>'+
-    '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com 80% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
-  var historico='<div class="grid"><div class="col">'+weeksHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
+  var resumo=stats+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
+    '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com 80% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
+  var historico='<div class="grid"><div class="col">'+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
-    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>';
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
@@ -400,7 +369,7 @@ async function loadSlow(id){
 
 async function openSheet(sid,btn){
   var box=$("#sheetView");box.innerHTML='<p class="loading">Carregando folha…</p>';
-  var r=await sb.from("sheets").select("problems,answers,level_idx,study_day,first_ok,secs,points").eq("id",sid).single();
+  var r=await sb.from("sheets").select("problems,answers,level_idx,study_day,first_ok,secs").eq("id",sid).single();
   if(r.error){box.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
   var sh=r.data,ans=sh.answers||[];
   var exp=FC.LEVELS[sh.level_idx].target/10*1000,msAll=ans.map(function(a){return a&&a.ms>0?a.ms:0}).filter(function(x){return x>0});
@@ -413,7 +382,7 @@ async function openSheet(sid,btn){
       (a.tries>1?' <span class="muted small-t">('+a.tries+' tentativas)</span>':'')+'</li>';
   }).join("");
   box.innerHTML='<div class="sheetview"><h3>Folha de '+FC.dayLabel(sh.study_day)+' · nível '+esc(FC.lv(sh.level_idx))+'</h3>'+
-    '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+' · '+sh.points+' pontos'+(avg?' · tempo médio por conta '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+')':'')+'</p><ol class="sv">'+li+'</ol></div>';
+    '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+(avg?' · tempo médio por conta '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+')':'')+'</p><ol class="sv">'+li+'</ol></div>';
   box.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 })();

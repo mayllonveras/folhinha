@@ -259,26 +259,42 @@ FC.overlay=function(html,opts){
   var btn=ov.querySelector("#ovClose");btn.onclick=close;btn.focus();
   return{close:close,el:ov};
 };
-/* Trilha até a figurinha da semana. p = {start,end,points,goal,reached}. */
-FC.trailHtml=function(p,o){
-  o=o||{};
-  var goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts;
-  var pct=function(v){return goal>0?Math.min(100,v/goal*100):0};
-  var left=Math.max(0,goal-pts),open=!!p.reached;
-  var closes="A meta da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".";
-  var box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar o pacotinho de figurinhas.</div>'+
-    '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(o.adult?"O pacotinho da semana já foi ganho.":"Você ganhou um pacotinho de figurinhas!")+'</div></div></div>';
-  return '<div class="trail" id="trail"><div class="eyebrow">Pacotinho da semana</div>'+
-    '<div class="big-pts">'+pts+'<span> / '+goal+' pontos</span></div>'+
-    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o pacotinho" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
-    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div></div>'+
-    '<div class="goalicon'+(open?" open":"")+'">'+FC.packSvg()+'</div></div>'+
-    box+'<p class="muted small-t">'+closes+'</p></div>';
+/* Próximo marco de sequência: 3, 7, 14 e depois a cada 30 dias. Precisa bater com public._next_marco no banco. */
+FC.nextMarco=function(st){
+  if(st<3)return{at:3,packs:2};
+  if(st<7)return{at:7,packs:3};
+  if(st<14)return{at:14,packs:5};
+  return{at:(Math.floor(st/30)+1)*30,packs:5};
 };
-/* A barra enche até o valor novo. */
-FC.animateTrail=function(){
-  var f=FC.$("#trailFill");if(!f)return;
-  setTimeout(function(){f.style.width=f.getAttribute("data-now")+"%"},350);
+/* Sequência que vale hoje para um aluno (linha de students). Mesma regra de public._streak_view:
+   só contam dias de estudo, e faltar a um deles zera. */
+FC.streakNow=function(s,today){
+  if(!s.last_streak_day)return 0;
+  function isStudy(d){return s.study_days.indexOf(FC.dow(d))>=0&&d>=s.start_date}
+  function prev(d){for(var i=1;i<=14;i++){var x=FC.addDays(d,-i);if(x<s.start_date)return null;if(isStudy(x))return x}return null}
+  var ref=isStudy(today)?today:prev(today);
+  if(!ref)return 0;
+  if(s.last_streak_day===ref)return s.streak;
+  if(ref===today&&s.last_streak_day===prev(ref))return s.streak;
+  return 0;
+};
+/* Perseverança: sequência de dias de estudo com a cota fechada e o caminho até o próximo marco.
+   i = {streak,best_streak,next_marco}. */
+FC.streakHtml=function(i,o){
+  o=o||{};
+  var st=i.streak||0,best=i.best_streak||0,nx=i.next_marco||FC.nextMarco(st);
+  var base=nx.at<=3?0:nx.at<=7?3:nx.at<=14?7:nx.at<=30?14:nx.at-30;
+  var pct=Math.max(0,Math.min(100,(st-base)/(nx.at-base)*100)),left=nx.at-st;
+  var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" pacotinhos extras.":
+    "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" pacotinhos extras.";
+  return '<div class="trail"><div class="eyebrow">Perseverança</div>'+
+    '<div class="big-pts">'+st+'<span> '+(st===1?"dia seguido":"dias seguidos")+'</span></div>'+
+    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o próximo marco de sequência" aria-valuemin="0" aria-valuemax="'+nx.at+'" aria-valuenow="'+st+'">'+
+    '<div class="fill" style="width:'+pct.toFixed(1)+'%"></div></div><div class="goalicon">'+FC.packSvg()+'</div></div>'+
+    '<p class="small-t">'+msg+'</p>'+
+    '<p class="muted small-t">Melhor sequência: <b>'+best+'</b> dia'+(best===1?"":"s")+'. '+
+    (o.adult?"Fechar todas as folhas de um dia de estudo soma 1 dia. Faltar a um dia de estudo zera a sequência.":
+      "Fechou todas as folhas do dia? Soma 1 dia. Faltar a um dia de estudo zera a sequência.")+'</p></div>';
 };
 
 /* ---------- ícones, abas (topo) e menu inferior (celular) ---------- */
