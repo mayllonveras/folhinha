@@ -106,9 +106,41 @@ FC.stickerInfo=function(themeId,slot){
 /* Cartão de uma figurinha. opts.dim deixa a figurinha apagada (visão do adulto para as que ainda não foram ganhas). */
 FC.stickerHtml=function(themeId,slot,opts){
   var it=FC.stickerInfo(themeId,slot),hue=(slot*37+20)%360,tier=FC.tierOf(themeId,slot);
-  return '<div class="sticker'+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+(tier!=="comum"?" tier-"+tier:"")+'" style="--sh:'+hue+'" title="'+FC.esc(it.name)+'">'+
+  var flip=!(opts&&opts.big)&&FC.theme(themeId).backOf;   // figurinha com verso: ao tocar, vira
+  return '<div class="sticker'+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+(tier!=="comum"?" tier-"+tier:"")+(flip?" flippable":"")+'" style="--sh:'+hue+'" title="'+FC.esc(it.name)+'"'+
+    (flip?' data-theme="'+themeId+'" data-slot="'+slot+'" role="button" tabindex="0" aria-label="'+FC.esc(it.name)+': tocar para ver o verso"':'')+'>'+
     '<div class="st-art">'+it.art+'</div>'+(tier!=="comum"?'<div class="st-tier">'+FC.tierName(tier)+'</div>':'')+'<div class="st-name'+(it.name.length>10?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div></div>';
 };
+/* Verso da figurinha: o cartão cresce no meio da tela, vira sozinho e mostra os detalhes. Tocar nele vira de novo. */
+FC.flipCard=function(themeId,slot){
+  var t=FC.theme(themeId);if(!t.backOf)return;
+  var it=FC.stickerInfo(themeId,slot),b=t.backOf(slot),tier=FC.tierOf(themeId,slot),hue=(slot*37+20)%360;
+  var facts=b.facts.map(function(f){return '<div class="fb-row"><span class="fb-ic" aria-hidden="true">'+f[0]+'</span><div><small>'+FC.esc(f[1])+'</small><span>'+FC.esc(f[2])+'</span></div></div>'}).join("");
+  var back='<div class="fc-back" style="--sh:'+hue+'"><div class="fb-head"><b class="fb-name">'+FC.esc(it.name)+'</b>'+(it.sub?'<span class="fb-sub">'+FC.esc(it.sub)+'</span>':'')+
+    (tier!=="comum"?'<span class="fb-tier tier-'+tier+'">'+FC.tierName(tier)+'</span>':'')+'</div>'+
+    '<div class="fb-facts">'+facts+'</div>'+
+    (b.fun?'<div class="fb-fun"><b>⭐ Você sabia?</b><p>'+FC.esc(b.fun)+'</p></div>':'')+
+    '<div class="fb-no">nº '+(slot+1)+' de '+FC.ALBUM_SIZE+'</div></div>';
+  var html='<div class="flip" role="button" tabindex="0" aria-label="Figurinha '+FC.esc(it.name)+'. Toque para virar."><div class="flip-in">'+
+    '<div class="flip-face flip-front">'+FC.stickerHtml(themeId,slot,{big:true})+'</div>'+
+    '<div class="flip-face flip-back">'+back+'</div></div></div><p class="muted small-t flip-hint">Toque na figurinha para virar</p>';
+  var ov=FC.overlay(html,{cls:"flip-ov"+(tier!=="comum"?" tier-"+tier:"")});
+  var card=ov.el.querySelector(".flip");
+  ov.el.scrollTop=0;   // o foco no botão Fechar pode ter rolado a tela; o cartão deve aparecer inteiro
+  function toggle(){card.classList.toggle("flipped");if(FC.sfx&&FC.sfx.flip)FC.sfx.flip()}
+  card.onclick=toggle;
+  card.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle()}};
+  setTimeout(function(){if(card.isConnected&&!card.classList.contains("flipped"))toggle()},380);
+};
+function openFlip(el){
+  if(!el||el.closest(".overlay")||el.classList.contains("locked"))return;
+  FC.flipCard(el.getAttribute("data-theme"),Number(el.getAttribute("data-slot")));
+}
+document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest(".sticker.flippable");if(el)openFlip(el)});
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var el=document.activeElement;if(el&&el.classList&&el.classList.contains("flippable")){e.preventDefault();openFlip(el)}
+});
 FC.lockedHtml=function(slot){
   return '<div class="sticker locked" aria-label="Figurinha '+(slot+1)+' ainda não conquistada"><div class="st-art"><span class="st-q">?</span></div><div class="st-name">&nbsp;</div><div class="st-no">nº '+(slot+1)+'</div></div>';
 };

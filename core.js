@@ -216,6 +216,7 @@ FC.sfx={
     [1046.5,1318.5,1568,2093].forEach(function(f){tone(f,0.85,1.1,"sine",0.14)});tone(261.6,0.85,1.1,"sawtooth",0.06);
   },
   star:function(){if(!FC.sfx.enabled())return;[880,1108.7,1318.5,1760].forEach(function(f,i){tone(f,i*0.1,0.3,"triangle",0.2)});tone(2349,0.45,0.6,"sine",0.1)},
+  flip:function(){if(!FC.sfx.enabled())return;tone(420,0,0.09,"triangle",0.1);tone(760,0.07,0.12,"sine",0.09)},
   pack:function(){   // rasgar o pacotinho e revelar
     if(!FC.sfx.enabled())return;
     tone(260,0,0.1,"sawtooth",0.08);tone(420,0.06,0.1,"sawtooth",0.07);tone(640,0.12,0.1,"sawtooth",0.06);
