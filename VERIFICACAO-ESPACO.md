@@ -1,6 +1,6 @@
 # Álbum "Corpos do espaço": registro de verificação
 
-Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando não existe foto, ilustração oficial), e cada fato do verso foi conferido em página oficial. Este arquivo registra o resultado, item por item.
+Cada figurinha foi comparada lado a lado com uma foto oficial, e cada fato do verso foi conferido em página oficial. Este arquivo registra o resultado, item por item.
 
 ## Legenda das fontes do verso
 - **N** = NASA Science (páginas de fatos, "Namesake", Messier, Caldwell, exoplanetas)
@@ -14,8 +14,8 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 
 ## Legenda do veredito visual
 - **bate** = a figurinha mostra o que a imagem oficial mostra (forma, cor, feições principais); o estilo é de desenho.
+- **ilustração** = não existe foto do disco da estrela; a comparação foi com a ilustração oficial (só Proxima Centauri).
 - **refeita** = divergia da imagem oficial e foi gerada de novo.
-- **ilustração** = não existe foto; a comparação foi com a ilustração oficial, e o verso avisa que é ilustração.
 
 ## As 52 figurinhas
 
@@ -36,7 +36,7 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 | 13 | Netuno | NASA, Voyager 2 | refeita (anéis fortes demais) | N, F, J |
 | 14 | Plutão | NASA, New Horizons | refeita (coração perfeito demais) | N, F, J |
 | 15 | Ceres | NASA, Dawn (PIA21079) | bate | N, F, J |
-| 16 | Éris | NASA PIA17307 (ilustração) | refeita; ilustração | N, J, ESO |
+| 16 | Dione | NASA, Cassini (disco meio iluminado) | bate (cinza-claro craterado com linhas claras de penhascos de gelo) | N, J |
 | 17 | Réia | NASA, Cassini PIA12648 | bate | N, J |
 | 18 | Tétis | NASA, Cassini PIA08400 | bate | N, J |
 | 19 | Lua | NASA | bate | N, F, J |
@@ -59,10 +59,10 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 | 36 | Cometa Halley | ESA, Giotto | bate | N, J |
 | 37 | Cometa Hale-Bopp | NASA/Hubble | bate | N, J |
 | 38 | Cometa 67P | ESA, Rosetta | bate | N, J |
-| 39 | Proxima b | ESO (ilustração) | ilustração, bate | X, N |
-| 40 | TRAPPIST-1e | NASA (ilustração) | refeita; ilustração | X, N |
-| 41 | Kepler-452b | NASA (ilustração) | ilustração, bate | X, N |
-| 42 | 51 Pegasi b | NASA (ilustração) | refeita; ilustração | X, N |
+| 39 | Hiperião | NASA, Cassini (cor falsa) | bate (batata cheia de buracos, como esponja) | N, J |
+| 40 | Ariel | NASA, Voyager 2 | bate (cinza-claro com cânions e vales) | N, J |
+| 41 | Nebulosa do Anel | NASA/ESA Hubble (M57) | bate (anel vermelho por fora, azul por dentro, miolo azul-verde) | N |
+| 42 | Galáxia do Sombreiro | NASA/Hubble (M104) | bate (de perfil, miolo branco, faixa escura fina) | N |
 | 43 | Sagitário A* | EHT / ESO eso2208 | refeita (agora só o anel e o centro escuro) | N, E |
 | 44 | Nebulosa do Caranguejo | NASA/ESA Hubble (mosaico) | bate | N, C |
 | 45 | Nebulosa da Hélice | NASA/Hubble | bate | N |
@@ -70,7 +70,7 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 | 47 | Quasar 3C 273 | NASA/ESA Hubble | bate | N, S |
 | 48 | Nebulosa de Órion | NASA/ESA Hubble | bate | N |
 | 49 | Pilares da Criação | NASA/ESA Hubble e Webb | bate | N |
-| 50 | Via Láctea | NASA/JPL PIA19341 (ilustração) | ilustração, bate (vista inclinada) | N |
+| 50 | Plêiades | NASA/Hubble (M45) | bate (estrelas azul-esbranquiçadas com filetes azuis de poeira) | N |
 | 51 | Andrômeda | NASA | bate | N |
 | 52 | Galáxia do Redemoinho | NASA/ESA Hubble | bate | N |
 
@@ -79,8 +79,10 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 - **Eros** (26,7 milhões de km em 31/01/2012) e **Halley** (62,4 milhões de km em 11/04/1986): lidos do JPL Horizons.
 - **Hale-Bopp** (1,315 UA, 197 milhões de km): página oficial do JPL.
 
-## Figurinhas retiradas por não terem imagem oficial utilizável
-Haumea, Makemake, Pulsar do Caranguejo e Sirius B saíram do álbum (PR #11) e foram trocadas por Réia, Tétis, Nebulosa do Caranguejo e Nebulosa da Hélice, que têm foto oficial. Com isso, as 52 figurinhas têm foto ou ilustração oficial para comparação.
+## Figurinhas trocadas por não terem foto oficial
+- **PR #11:** Haumea, Makemake, Pulsar do Caranguejo e Sirius B (sem imagem utilizável) deram lugar a Réia, Tétis, Nebulosa do Caranguejo e Nebulosa da Hélice.
+- **Este PR:** Éris, Proxima b, TRAPPIST-1e, Kepler-452b, 51 Pegasi b e Via Láctea (só tinham ilustração oficial) deram lugar a Dione, Hiperião, Ariel, Nebulosa do Anel, Galáxia do Sombreiro e Plêiades, que têm foto oficial.
+Com isso, as 52 figurinhas têm foto oficial para comparação.
 
 ## Origens de nomes que foram retiradas do verso por falta de fonte oficial
 Io, Calisto, Lua, Via Láctea, Andrômeda, Sirius e Polaris.
