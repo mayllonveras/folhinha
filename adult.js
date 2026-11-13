@@ -4,7 +4,7 @@
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 var U={user:null,profile:null};
 /* Limites mínimos do programa: 3 folhas por dia, 3 dias por semana e meta de pelo menos 70% do máximo de pontos da semana. */
-var MIN_SHEETS=3,MIN_DAYS=3,MIN_PCT=0.7;
+var MIN_SHEETS=3,MIN_DAYS=3,MIN_PCT=0.7,MAX_THEMES=2;
 function maxWeek(days,per){return days*per*100}
 function minGoal(days,per){return Math.ceil(MIN_PCT*maxWeek(days,per)/10)*10}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
@@ -154,7 +154,7 @@ function programFields(s){
     '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCover(t.id)+'</label>'+
         '<label class="to-txt" for="th_'+t.id+'"><b>'+esc(t.name)+'</b><small>'+esc(t.desc)+'</small></label><button type="button" class="btn ghost small" data-view="'+t.id+'">Ver</button></div>'}).join("")+'</div>'+
-      '<small>Marque um ou mais. Ao bater a meta da semana, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.</small></fieldset>'+
+      '<small id="pThemeHint">Marque 1 ou 2 álbuns. Ao bater a meta da semana, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.</small></fieldset>'+
     '<label class="field">A semana fecha na<select id="pClose">'+close+'</select><small>Os pontos de cada semana somam até este dia. Bater a meta dá um pacotinho com uma figurinha (até 52 por ano em cada álbum).</small></label>'+
     '<label class="field">Meta de pontos da semana<input id="pGoal" type="number" min="0" max="1000000" step="10" value="'+v.weekly_goal+'"><small id="pMax"></small></label>'+
     '<div class="rule-box"><b>Como o aluno avança (regra fixa)</b><ul>'+
@@ -165,6 +165,11 @@ function programFields(s){
 }
 function bindProgram(){
   var g=$("#pGoal");
+  $$('input[name="themes"]').forEach(function(c){c.addEventListener("change",function(){
+    var on=$$('input[name="themes"]:checked'),h=$("#pThemeHint");
+    if(on.length>MAX_THEMES){c.checked=false;if(h){h.textContent="Só dá para escolher "+MAX_THEMES+" álbuns por criança. Desmarque um para trocar.";h.className="bad"}}
+    else if(h){h.textContent="Marque 1 ou 2 álbuns. Ao bater a meta, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.";h.className=""}
+  })});
   var adjusted=false;
   function limits(){var per=Number($("#pPer").value),n=$$('input[name="days"]:checked').length;return{per:per,n:n,max:maxWeek(n,per),min:minGoal(n,per)}}
   function upd(fix){
@@ -197,6 +202,7 @@ function readProgram(){
   if(!$("#pStart").value)return{error:"Informe a data de início."};
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
+  if(themes.length>MAX_THEMES)return{error:"Escolha no máximo "+MAX_THEMES+" álbuns para a criança."};
   var wk=Math.max(0,Math.round(Number($("#pGoal").value)||0)),mg=minGoal(days.length,Number($("#pPer").value));
   if(wk<mg)return{error:"A meta precisa ser de pelo menos "+mg+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo da semana)."};
   return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
