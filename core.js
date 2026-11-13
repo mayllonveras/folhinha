@@ -208,6 +208,12 @@ FC.sfx={
     tone(110,0,0.4,"sawtooth",0.09);tone(150,0.1,0.35,"sawtooth",0.08);
     [1046.5,1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.45+i*0.09,0.3,"sine",0.15)});
     tone(3136,0.95,0.5,"sine",0.08);
+  },
+  star:function(){if(!FC.sfx.enabled())return;[880,1108.7,1318.5,1760].forEach(function(f,i){tone(f,i*0.1,0.3,"triangle",0.2)});tone(2349,0.45,0.6,"sine",0.1)},
+  pack:function(){   // rasgar o pacotinho e revelar
+    if(!FC.sfx.enabled())return;
+    tone(260,0,0.1,"sawtooth",0.08);tone(420,0.06,0.1,"sawtooth",0.07);tone(640,0.12,0.1,"sawtooth",0.06);
+    [1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.5+i*0.08,0.3,"sine",0.15)});
   }
 };
 FC.confetti=function(){
@@ -263,10 +269,34 @@ FC.chestSvg=function(){
     '<text class="q" x="60" y="40" text-anchor="middle">?</text></g>'+
     '<g class="lock"><rect class="c-gold" x="52" y="44" width="16" height="17" rx="3"/><circle class="c-dark" cx="60" cy="51" r="2.6"/><rect class="c-dark" x="59" y="52" width="2" height="5"/></g></svg>';
 };
-/* Trilha até o baú. p = {mode,start,end,points,goal,reached,reward}. A criança só recebe o texto do prêmio quando o baú abre. */
+FC.starSvg=function(on){
+  return '<svg viewBox="0 0 24 24" class="star-svg'+(on===false?"":" on")+'" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
+};
+FC.packSvg=function(){
+  return '<svg viewBox="0 0 100 120" class="pack-svg" aria-hidden="true">'+
+    '<path class="pk-body" d="M16 8 L24 14 L32 8 L40 14 L48 8 L56 14 L64 8 L72 14 L80 8 L84 14 V106 L80 112 L72 106 L64 112 L56 106 L48 112 L40 106 L32 112 L24 106 L16 112 L12 106 V14Z"/>'+
+    '<path class="pk-shine" d="M22 20 H46 L30 100 H22Z"/>'+
+    '<circle class="pk-badge" cx="50" cy="60" r="22"/><path class="pk-star" d="M50 44l4.6 9.6 10.4 1.3-7.7 7.2 2 10.4L50 67.5 40.7 72.5l2-10.4-7.7-7.2 10.4-1.3z"/>'+
+    '<text class="pk-q" x="50" y="102" text-anchor="middle">?</text></svg>';
+};
+/* Aviso no meio da tela (usado ao ganhar estrela ou figurinha e na galeria de figurinhas do adulto). */
+FC.overlay=function(html,opts){
+  opts=opts||{};
+  var ov=document.createElement("div");ov.className="overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
+  ov.innerHTML='<div class="ov-card'+(opts.wide?" wide":"")+'">'+html+'<div class="actions ov-actions"><button class="btn" id="ovClose">'+(opts.button||"Fechar")+'</button></div></div>';
+  document.body.appendChild(ov);
+  function key(e){if(e.key==="Escape")close()}
+  function close(){if(!ov.parentNode)return;ov.remove();document.removeEventListener("keydown",key);if(opts.onClose)opts.onClose()}
+  document.addEventListener("keydown",key);
+  ov.addEventListener("click",function(e){if(e.target===ov)close()});
+  var btn=ov.querySelector("#ovClose");btn.onclick=close;btn.focus();
+  return{close:close,el:ov};
+};
+/* Trilha até a recompensa. p = {mode,start,end,points,goal,reached,reward}. o.system: bau | estrelas | figurinhas.
+   No baú, a criança só recebe o texto do prêmio quando ele abre. */
 FC.trailHtml=function(p,o){
   o=o||{};
-  var goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts,miles=o.miles||[],mensal=p.mode==="mensal";
+  var sys=o.system||"bau",goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts,miles=o.miles||[],mensal=p.mode==="mensal";
   var pct=function(v){return goal>0?Math.min(100,v/goal*100):0};
   var pins=miles.map(function(m,i){
     return '<span class="pin'+(from>=m.target?" hit":"")+'" data-hit="'+(pts>=m.target?1:0)+'" style="left:'+Math.min(96,pct(m.target)).toFixed(1)+'%" title="Semana '+(i+1)+': '+m.target+' pontos">'+(i+1)+'</span>';
@@ -276,25 +306,35 @@ FC.trailHtml=function(p,o){
   }).join("")+'</div>':"";
   var left=Math.max(0,goal-pts),next=null;
   for(var i=0;i<miles.length;i++)if(pts<miles[i].target){next=miles[i];break}
+  var dest=sys==="bau"?"o baú":sys==="estrelas"?"a estrela":"o pacotinho";
   var hint="";
-  if(!p.reached&&mensal&&miles.length)hint=next?'Próximo ponto no caminho: <b>'+next.target+'</b> (faltam '+(next.target-pts)+').':'Você passou por todos os pontos do caminho. Falta só o baú.';
-  var closes=mensal?"O baú do mês fecha dia "+FC.dm(p.end)+".":"O baú da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".";
-  var rw=p.reward?FC.esc(p.reward):"",box,chestOpen;
-  if(o.adult){
-    chestOpen=!!p.reached;
-    box='<div class="prizebox'+(p.reached?" show":"")+'"><div class="pz-closed">Prêmio no baú: <b>'+(rw||"nenhum definido")+'</b>. Faltam <b>'+left+'</b> pontos para abrir.</div>'+
-      '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">Prêmio: <b>'+(rw||"nenhum definido")+'</b></div></div></div>';
+  if(!p.reached&&mensal&&miles.length)hint=next?'Próximo ponto no caminho: <b>'+next.target+'</b> (faltam '+(next.target-pts)+').':'Você passou por todos os pontos do caminho. Falta só '+dest+'.';
+  var closes=sys==="bau"?(mensal?"O baú do mês fecha dia "+FC.dm(p.end)+".":"O baú da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+"."):
+    (mensal?"A meta do mês fecha dia "+FC.dm(p.end)+".":"A meta da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".");
+  var rw=p.reward?FC.esc(p.reward):"",box,open;
+  if(sys==="bau"){
+    if(o.adult){
+      open=!!p.reached;
+      box='<div class="prizebox'+(p.reached?" show":"")+'"><div class="pz-closed">Prêmio no baú: <b>'+(rw||"nenhum definido")+'</b>. Faltam <b>'+left+'</b> pontos para abrir.</div>'+
+        '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">Prêmio: <b>'+(rw||"nenhum definido")+'</b></div></div></div>';
+    }else{
+      var show=!!p.reached&&!o.opening;open=show;
+      box='<div class="prizebox'+(show?" show":"")+'" id="prizebox"><div class="pz-closed">'+
+        (o.opening?'Você chegou ao baú!':'Dentro do baú tem um <b>prêmio escondido</b>. Faltam <b>'+left+'</b> pontos para abrir.')+'</div>'+
+        '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">'+(rw?'Seu prêmio: <b>'+rw+'</b>':'Meta batida! Parabéns!')+'</div></div></div>';
+    }
   }else{
-    var show=!!p.reached&&!o.opening;chestOpen=show;
-    box='<div class="prizebox'+(show?" show":"")+'" id="prizebox"><div class="pz-closed">'+
-      (o.opening?'Você chegou ao baú!':'Dentro do baú tem um <b>prêmio escondido</b>. Faltam <b>'+left+'</b> pontos para abrir.')+'</div>'+
-      '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">'+(rw?'Seu prêmio: <b>'+rw+'</b>':'Meta batida! Parabéns!')+'</div></div></div>';
+    open=!!p.reached;
+    box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar '+(sys==="estrelas"?"a estrela":"a figurinha")+'.</div>'+
+      '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(sys==="estrelas"?"Você ganhou uma estrela.":"Você ganhou uma figurinha nova. Ela está no seu álbum.")+'</div></div></div>';
   }
-  return '<div class="trail" id="trail"><div class="eyebrow">Baú '+(mensal?"do mês":"da semana")+'</div>'+
+  var icon=sys==="bau"?'<div class="chest'+(open?" open":"")+'" id="chest">'+FC.chestSvg()+'</div>':
+    '<div class="goalicon'+(open?" open":"")+'" id="chest">'+(sys==="estrelas"?FC.starSvg(true):FC.packSvg())+'</div>';
+  var title=sys==="bau"?"Baú "+(mensal?"do mês":"da semana"):sys==="estrelas"?"Meta "+(mensal?"do mês":"da semana"):"Figurinha da semana";
+  return '<div class="trail" id="trail"><div class="eyebrow">'+title+'</div>'+
     '<div class="big-pts">'+pts+'<span> / '+goal+' pontos</span></div>'+
-    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o baú" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
-    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div>'+pins+'</div>'+
-    '<div class="chest'+(chestOpen?" open":"")+'" id="chest">'+FC.chestSvg()+'</div></div>'+
+    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até a recompensa" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
+    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div>'+pins+'</div>'+icon+'</div>'+
     legend+(hint?'<p class="small-t">'+hint+'</p>':'')+box+'<p class="muted small-t">'+closes+'</p></div>';
 };
 /* A barra enche até o valor novo e os pontos de passagem alcançados acendem um a um. */

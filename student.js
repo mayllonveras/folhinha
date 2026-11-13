@@ -101,10 +101,20 @@ function home(){
     canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas.";
   }
   var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
-  var per=m.period,miles=per.mode==="mensal"?FC.milestones(m,per.start,per.end,per.goal):[];
+  var sys=m.reward_system||"bau",per=m.period,miles=per.mode==="mensal"?FC.milestones(m,per.start,per.end,per.goal):[];
   var prev="";
   if(m.prev_period){var pw=m.prev_period;
-    prev='<p class="muted small-t">'+(pw.mode==="mensal"?"Mês passado":"Semana passada")+': <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você abriu o baú'+(pw.reward?': <b>'+esc(pw.reward)+'</b>':'')+'.':'O baú não abriu.')+'</p>'}
+    prev='<p class="muted small-t">'+(pw.mode==="mensal"?"Mês passado":"Semana passada")+': <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+
+      (pw.reached?(sys==="bau"?'Você abriu o baú'+(pw.reward?': <b>'+esc(pw.reward)+'</b>':'')+'.':sys==="estrelas"?'Você ganhou uma estrela.':'Você ganhou uma figurinha.'):(sys==="bau"?'O baú não abriu.':'A meta não foi batida.'))+'</p>'}
+  var extra="";
+  if(sys==="estrelas")extra='<div class="panel">'+FC.starCardHtml(m.stars||[],per.mode)+'</div>';
+  if(sys==="figurinhas"){
+    var got=m.stickers||[],th=FC.theme(m.sticker_theme);
+    extra='<div class="panel"><div class="eyebrow">Meu álbum · '+esc(th.name)+'</div><div class="big-pts">'+got.length+'<span> de '+FC.ALBUM_SIZE+' figurinhas</span></div>'+
+      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+      (got.length?'<div class="recent-stk">'+got.slice(-3).reverse().map(function(g){return FC.stickerHtml(th.id,g.slot)}).join("")+'</div>':'<p class="muted small-t">Bata a meta da semana para ganhar a primeira figurinha. Você só vê qual é quando ganhar!</p>')+
+      '<p class="actions"><button class="btn" id="albumBtn">Abrir o álbum</button></p></div>';
+  }
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+"</td></tr>"}).join("");
   FC.render(
@@ -118,14 +128,39 @@ function home(){
    (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
    '</div>'+
    (rows?'<div class="panel"><div class="eyebrow gap">Suas últimas folhas</div><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'')+
-   '</div><div class="col"><div class="panel">'+FC.trailHtml(per,{miles:miles})+prev+
-   '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div></div></div>'+FC.installBox());
+   '</div><div class="col"><div class="panel">'+FC.trailHtml(per,{miles:miles,system:sys})+prev+
+   '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div>'+extra+'</div></div>'+FC.installBox());
   FC.refreshInstall();
   $("#logout").onclick=logout;
   function sndLabel(){$("#sndBtn").textContent=FC.sfx.enabled()?"Som ligado":"Som desligado"}
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
+  if($("#albumBtn"))$("#albumBtn").onclick=albumScreen;
+  if(m.new_award){var aw=m.new_award;m.new_award=null;setTimeout(function(){showAward(aw,true)},500)}
+}
+function albumScreen(){
+  FC.setKeys(null);
+  var m=S.me,th=FC.theme(m.sticker_theme),got=m.stickers||[];
+  FC.render('<header class="top"><div class="brand">Meu álbum<small>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</small></div><button class="btn ghost small" id="albumBack">Voltar</button></header>'+
+    '<div class="panel">'+FC.albumHtml(th.id,got)+'</div>');
+  $("#albumBack").onclick=home;
+}
+/* Estrela ou figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
+function showAward(aw,already){
+  var m=S.me;
+  if(aw.kind==="estrela"){
+    if(!already)m.stars=(m.stars||[]).concat([{end:aw.period_end,mode:aw.mode}]);
+    var N=aw.mode==="mensal"?12:52,total=(m.stars||[]).length,filled=total?((total-1)%N)+1:1;
+    FC.sfx.star();FC.confetti();
+    FC.overlay('<div class="award-star">'+FC.starSvg(true)+'</div><h2>Você ganhou uma estrela!</h2><p class="muted">Cartela de estrelas: <b>'+filled+' de '+N+'</b>.</p>',{button:"Legal!"});
+  }else{
+    if(!already)m.stickers=(m.stickers||[]).concat([{slot:aw.slot,end:aw.period_end}]);
+    var th=FC.theme(aw.theme),n=(m.stickers||[]).length;
+    FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
+      '<h2>Figurinha nova!</h2><p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum"});
+    setTimeout(function(){FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");FC.confetti()},800);
+  }
 }
 async function logout(){
   try{await rpc("student_logout",{p_token:S.token})}catch(e){}
@@ -285,11 +320,12 @@ async function send(payload,score){
     '<div><b>'+np.points+'</b><span>pontos '+(np.mode==="mensal"?"no mês":"na semana")+' (meta '+np.goal+')</span></div></div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'.</div></div></div>':'')+
-    '<div class="trailbox">'+FC.trailHtml(np,{miles:miles,fromPoints:before,opening:crossed})+'</div>'+
+    '<div class="trailbox">'+FC.trailHtml(np,{miles:miles,fromPoints:before,opening:crossed,system:S.me.reward_system||"bau"})+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   FC.animateTrail();
-  if(crossed)setTimeout(FC.openChest,res.advanced?3400:2000);
+  if(crossed&&(S.me.reward_system||"bau")==="bau")setTimeout(FC.openChest,res.advanced?3400:2000);
+  if(res.award)setTimeout(function(){showAward(res.award,false)},res.advanced?3600:2300);
   if(res.stamp)FC.sfx.stamp();
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}

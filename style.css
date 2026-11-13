@@ -236,3 +236,57 @@ details .form{margin-top:12px}
 @media (max-width:760px){.chest{width:76px}}
 
 .tag.warn{color:var(--warn);border-color:var(--warn)}
+
+/* estrelas, figurinhas e avisos */
+.star-svg{width:100%;height:auto;display:block;fill:none;stroke:var(--line);stroke-width:1.2;stroke-linejoin:round}
+.star-svg.on{fill:var(--chest-gold);stroke:var(--chest-dark)}
+.starcard{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:4px;margin-top:8px}
+.goalicon{width:70px;flex:none}
+.goalicon:not(.open) .star-svg.on{fill:none;stroke:var(--muted)}
+.goalicon.open{filter:drop-shadow(0 0 8px var(--chest-gold))}
+.pack-svg{width:100%;height:auto;display:block}
+.pk-body{fill:hsl(265 70% 55%);stroke:hsl(265 60% 32%);stroke-width:2;stroke-linejoin:round}
+.pk-shine{fill:#fff;opacity:.18} .pk-badge{fill:hsl(45 95% 60%)} .pk-star{fill:#fff}
+.pk-q{font:700 14px var(--font-num);fill:#fff}
+.sticker{--sh:200;background:hsl(var(--sh) 80% 91%);color:#1d2433;border:3px solid #fff;border-radius:14px;box-shadow:0 0 0 1px hsl(var(--sh) 40% 75%),0 3px 8px rgba(20,35,60,.18);padding:8px 6px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.sticker .st-art{width:100%;aspect-ratio:1/1;display:grid;place-items:center;line-height:1}
+.sticker .st-art svg{width:100%;height:100%;display:block;border-radius:12px}
+.sticker .emo{font-size:2.5rem;line-height:1}
+.sticker .st-name{font-weight:600;font-size:.74rem;line-height:1.15;overflow-wrap:anywhere}
+.sticker .st-no{font:500 .65rem var(--font-num);color:rgba(29,36,51,.6)}
+.sticker.dim{opacity:.38;filter:grayscale(.5)}
+.sticker.locked{background:var(--soft);border:2px dashed var(--line);box-shadow:none;color:var(--muted)}
+.sticker.locked .st-no{color:var(--muted)}
+.sticker .st-q{font:700 1.8rem var(--font-num);color:var(--muted)}
+.sticker.big{width:180px;margin:0 auto;padding:12px 10px}
+.sticker.big .emo{font-size:5rem} .sticker.big .st-name{font-size:1rem}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.recent-stk{display:flex;gap:8px;margin:10px 0}
+.recent-stk .sticker{width:92px}
+.theme-box{display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--soft);border-radius:10px;padding:12px}
+.theme-box .field{width:100%}
+@media (prefers-color-scheme:dark){
+  .sticker{background:hsl(var(--sh) 40% 27%);color:#fff;border-color:#2b3a52;box-shadow:0 0 0 1px hsl(var(--sh) 35% 40%),0 3px 8px rgba(0,0,0,.4)}
+  .sticker .st-no{color:rgba(255,255,255,.65)}
+}
+.overlay{position:fixed;inset:0;z-index:70;background:rgba(8,14,26,.62);display:grid;place-items:center;padding:16px}
+.ov-card{background:var(--paper);border-radius:18px;padding:22px;max-width:380px;width:100%;max-height:92vh;overflow:auto;text-align:center;display:flex;flex-direction:column;gap:12px}
+.ov-card.wide{max-width:900px;text-align:left}
+.ov-actions{justify-content:center}
+.award-star{width:120px;margin:0 auto}
+.award-star .star-svg{filter:drop-shadow(0 0 10px var(--chest-gold))}
+.pack-reveal{min-height:220px;display:grid;place-items:center}
+.pack-reveal .pack-closed{width:110px}
+.pack-reveal .pack-card{display:none}
+.pack-reveal.opened .pack-closed{display:none}
+.pack-reveal.opened .pack-card{display:block}
+@media (prefers-reduced-motion:no-preference){
+  .pack-reveal .pack-closed{animation:packShake .7s linear infinite}
+  @keyframes packShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}40%{transform:rotate(7deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
+  .pack-reveal.opened .pack-card{animation:cardPop .7s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes cardPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}100%{transform:none;opacity:1}}
+  .award-star .star-svg,.goalicon.open .star-svg{animation:starPop .8s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes starPop{0%{transform:scale(.3) rotate(-50deg);opacity:0}100%{transform:none;opacity:1}}
+}
+
+[hidden]{display:none!important}
