@@ -131,7 +131,7 @@ function home(){
   if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
 }
 /* ---------- álbuns e pacotinhos ---------- */
-function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"animais"]}
+function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}
 function gotOf(m,id){return (m.stickers||[]).filter(function(g){return (g.theme||m.sticker_theme)===id})}
 function packPanel(m){
   var n=m.pending_packs||0;if(n<1)return "";

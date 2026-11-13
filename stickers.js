@@ -1,53 +1,13 @@
 /* Catálogo de figurinhas: temas com 52 figurinhas cada (uma por semana do ano).
-   Temas com emoji (reconhecíveis em qualquer aparelho) e temas desenhados em vetor pelo próprio app (cada figurinha é única). */
+   Por enquanto são dois: Bandeiras (aqui) e Dinossauros (dinos.js). Os outros temas voltam quando tiverem imagens boas, raridade e verso. */
 (function(){
 "use strict";
 var FC=window.FC;
 FC.ALBUM_SIZE=52;
 
-function rng(seed){var a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
-
-/* ---------- temas com emoji ---------- */
-var ANIMAIS=[["🦁","Leão"],["🐯","Tigre"],["🐘","Elefante"],["🦒","Girafa"],["🦓","Zebra"],["🦛","Hipopótamo"],["🦏","Rinoceronte"],["🐒","Macaco"],["🦍","Gorila"],["🐻","Urso"],["🐼","Panda"],["🐨","Coala"],["🦘","Canguru"],["🐫","Camelo"],["🦙","Lhama"],["🦊","Raposa"],["🐺","Lobo"],["🦉","Coruja"],["🦅","Águia"],["🐧","Pinguim"],["🦩","Flamingo"],["🦚","Pavão"],["🦜","Papagaio"],["🦢","Cisne"],["🐊","Crocodilo"],["🐢","Tartaruga"],["🐍","Cobra"],["🐸","Sapo"],["🐙","Polvo"],["🐳","Baleia"],["🐬","Golfinho"],["🦈","Tubarão"],["🦀","Caranguejo"],["🦞","Lagosta"],["🐠","Peixe-tropical"],["🦋","Borboleta"],["🐞","Joaninha"],["🐝","Abelha"],["🐜","Formiga"],["🕷️","Aranha"],["🐌","Caracol"],["🐿️","Esquilo"],["🐰","Coelho"],["🐴","Cavalo"],["🐮","Vaca"],["🐷","Porco"],["🐑","Ovelha"],["🐔","Galinha"],["🦆","Pato"],["🐱","Gato"],["🐶","Cachorro"],["🦔","Ouriço"]];
-var FRUTAS=[["🍎","Maçã"],["🍐","Pera"],["🍊","Laranja"],["🍋","Limão"],["🍌","Banana"],["🍉","Melancia"],["🍇","Uva"],["🍓","Morango"],["🍈","Melão"],["🍒","Cereja"],["🍑","Pêssego"],["🥭","Manga"],["🍍","Abacaxi"],["🥥","Coco"],["🥝","Kiwi"],["🍅","Tomate"],["🍆","Berinjela"],["🥑","Abacate"],["🥦","Brócolis"],["🥕","Cenoura"],["🌽","Milho"],["🥒","Pepino"],["🥔","Batata"],["🍠","Batata-doce"],["🍄","Cogumelo"],["🥜","Amendoim"],["🍞","Pão"],["🥐","Croissant"],["🥖","Baguete"],["🥨","Pretzel"],["🧀","Queijo"],["🥚","Ovo"],["🥞","Panqueca"],["🍔","Hambúrguer"],["🍟","Batata frita"],["🍕","Pizza"],["🌭","Cachorro-quente"],["🌮","Taco"],["🍝","Espaguete"],["🍜","Lámen"],["🍣","Sushi"],["🍙","Onigiri"],["🍦","Sorvete"],["🍩","Rosquinha"],["🍪","Biscoito"],["🎂","Bolo"],["🧁","Cupcake"],["🍫","Chocolate"],["🍬","Bala"],["🍭","Pirulito"],["🍿","Pipoca"],["🍯","Mel"]];
-var VEICULOS=[["🚗","Carro"],["🚕","Táxi"],["🚙","Utilitário"],["🚌","Ônibus"],["🚎","Trólebus"],["🏎️","Carro de corrida"],["🚓","Viatura"],["🚑","Ambulância"],["🚒","Bombeiros"],["🚐","Van"],["🚚","Caminhão de entrega"],["🚛","Carreta"],["🚜","Trator"],["🏍️","Moto"],["🛵","Lambreta"],["🚲","Bicicleta"],["🛴","Patinete"],["🛹","Skate"],["🚂","Locomotiva"],["🚆","Trem"],["🚄","Trem-bala"],["🚅","Trem-bala veloz"],["🚇","Metrô"],["🚊","Bonde"],["🚝","Monotrilho"],["🚞","Trem de montanha"],["🚋","Vagão de bonde"],["✈️","Avião"],["🛩️","Avião pequeno"],["🛫","Decolagem"],["🛬","Aterrissagem"],["🚁","Helicóptero"],["🚀","Foguete"],["🛸","Disco voador"],["🛰️","Satélite"],["🚡","Teleférico"],["🚠","Bondinho de montanha"],["🚟","Trem suspenso"],["⛵","Veleiro"],["🚤","Lancha"],["🛥️","Barco a motor"],["🚢","Navio"],["⛴️","Balsa"],["🛶","Canoa"],["🎈","Balão"],["🪂","Paraquedas"],["🛷","Trenó"],["🛺","Tuk-tuk"],["🚔","Carro de polícia"],["🚃","Vagão de trem"],["🚈","Trem leve"],["🛳️","Transatlântico"]];
-
-/* ---------- temas desenhados em vetor ---------- */
-var planetCounter=0;
-function planetName(slot){
-  var S=["Zor","Kel","Mar","Tho","Vyn","Qua","Nex","Lum","Ost","Pry","Dra","Fen","Gal","Hel","Ixo","Jur","Kyr","Lor"],E=["bus","aria","on"];
-  return cap(S[slot%18]+E[(slot%18+Math.floor(slot/18))%3]);
-}
-function planetArt(slot){
-  var R=rng(5000+slot*104729),P=function(a){return a[Math.floor(R()*a.length)]},id="pl"+(++planetCounter),i;
-  var h1=(slot*31+Math.floor(R()*40))%360,h2=(h1+P([30,60,140,180,200]))%360;
-  var ring=R()<.45,bands=P([0,0,3,4,6]),moons=P([0,1,1,2]),craters=P([0,3,5]),tilt=P([-25,-15,0,15,25]);
-  var s='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img"><defs>'+
-    '<radialGradient id="'+id+'g" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="hsl('+h1+' 85% 72%)"/><stop offset="1" stop-color="hsl('+h2+' 70% 35%)"/></radialGradient>'+
-    '<clipPath id="'+id+'c"><circle cx="50" cy="50" r="24"/></clipPath></defs><rect width="100" height="100" rx="14" fill="#15133a"/>';
-  for(i=0;i<16;i++)s+='<circle cx="'+(R()*96+2).toFixed(1)+'" cy="'+(R()*96+2).toFixed(1)+'" r="'+(0.6+R()*1.1).toFixed(2)+'" fill="#fff" opacity="'+(0.5+R()*0.5).toFixed(2)+'"/>';
-  s+='<g transform="rotate('+tilt+' 50 50)">';
-  var ringColor='hsl('+h2+' 60% 78%)';
-  if(ring)s+='<path d="M10 50 A40 11 0 0 1 90 50" stroke="'+ringColor+'" stroke-width="5" fill="none" opacity=".9"/>';
-  s+='<circle cx="50" cy="50" r="24" fill="url(#'+id+'g)"/><g clip-path="url(#'+id+'c)">';
-  for(i=0;i<bands;i++)s+='<rect x="24" y="'+(30+i*(40/bands)).toFixed(1)+'" width="52" height="3.2" fill="hsl('+h2+' 60% 85%)" opacity=".35"/>';
-  for(i=0;i<craters;i++)s+='<circle cx="'+(36+R()*28).toFixed(1)+'" cy="'+(36+R()*28).toFixed(1)+'" r="'+(2+R()*3.5).toFixed(1)+'" fill="hsl('+h2+' 50% 22%)" opacity=".28"/>';
-  s+='</g>';
-  if(ring)s+='<path d="M10 50 A40 11 0 0 0 90 50" stroke="'+ringColor+'" stroke-width="5" fill="none"/>';
-  s+='</g>';
-  var pos=[[80,24],[20,76]];
-  for(i=0;i<moons;i++)s+='<circle cx="'+pos[i][0]+'" cy="'+pos[i][1]+'" r="'+(3+i)+'" fill="#d9d9e6"/>';
-  return s+'</svg>';
-}
-
 var BANDEIRAS=[["br","Brasil","América do Sul"],["ar","Argentina","América do Sul"],["uy","Uruguai","América do Sul"],["py","Paraguai","América do Sul"],["cl","Chile","América do Sul"],["bo","Bolívia","América do Sul"],["pe","Peru","América do Sul"],["co","Colômbia","América do Sul"],["ve","Venezuela","América do Sul"],["ec","Equador","América do Sul"],["mx","México","América do Norte"],["us","Estados Unidos","América do Norte"],["ca","Canadá","América do Norte"],["cu","Cuba","América Central"],["jm","Jamaica","América Central"],["pt","Portugal","Europa"],["es","Espanha","Europa"],["fr","França","Europa"],["it","Itália","Europa"],["de","Alemanha","Europa"],["gb","Reino Unido","Europa"],["ie","Irlanda","Europa"],["nl","Países Baixos","Europa"],["be","Bélgica","Europa"],["ch","Suíça","Europa"],["se","Suécia","Europa"],["no","Noruega","Europa"],["dk","Dinamarca","Europa"],["fi","Finlândia","Europa"],["gr","Grécia","Europa"],["ru","Rússia","Europa e Ásia"],["pl","Polônia","Europa"],["ua","Ucrânia","Europa"],["tr","Turquia","Ásia e Europa"],["jp","Japão","Ásia"],["cn","China","Ásia"],["kr","Coreia do Sul","Ásia"],["in","Índia","Ásia"],["id","Indonésia","Ásia"],["th","Tailândia","Ásia"],["vn","Vietnã","Ásia"],["il","Israel","Ásia"],["sa","Arábia Saudita","Ásia"],["eg","Egito","África"],["za","África do Sul","África"],["ng","Nigéria","África"],["ma","Marrocos","África"],["ke","Quênia","África"],["ao","Angola","África"],["mz","Moçambique","África"],["au","Austrália","Oceania"],["nz","Nova Zelândia","Oceania"]];
 
 FC.THEMES=[
-  {id:"animais",name:"Animais do mundo",desc:"Leão, panda, pinguim, golfinho e mais 48 bichos.",kind:"emoji",items:ANIMAIS},
-  {id:"frutas",name:"Frutas e comidas",desc:"Das frutas aos doces, 52 delícias para colecionar.",kind:"emoji",items:FRUTAS},
-  {id:"veiculos",name:"Veículos",desc:"Carros, trens, barcos, aviões e foguetes.",kind:"emoji",items:VEICULOS},
-  {id:"planetas",name:"Planetas misteriosos",desc:"52 mundos imaginários, com anéis, luas e crateras.",kind:"svg",art:planetArt,nameOf:planetName},
   {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS}
 ];
 /* Imagem de capa de um tema (para escolher o álbum). O tema pode indicar qual figurinha usar em "cover". */
