@@ -98,22 +98,22 @@ function home(){
     var n2=FC.nextStudy(today,m.study_days,m.start_date,false);
     status="Meta de hoje cumprida: <b>"+m.done_today+" de "+m.quota+"</b> folhas."+(n2?" Próxima folha: <b>"+FC.dayLabel(n2)+"</b>.":"");
   }else{
-    canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas.";
+    canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas."+(m.today_total>0?" Acertos de primeira hoje: <b>"+m.today_ok+" de "+m.today_total+"</b> ("+Math.round(100*m.today_ok/m.today_total)+"%).":"");
   }
-  var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
+  var need=m.stamps_needed||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
   var per=m.period,prev="";
   if(m.prev_period){var pw=m.prev_period;
     prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou um pacotinho.':'A meta não foi batida.')+'</p>'}
   var extra=packPanel(m)+albumsPanel(m);
   var rows=m.recent.map(function(r){
-    return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+"</td></tr>"}).join("");
+    return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
   FC.render(
    '<header class="top"><div class="brand">Folhinha de Cálculo<small>Oi, '+esc(m.name)+'</small></div><div class="actions"><button class="btn ghost small" id="sndBtn"></button><button class="btn ghost small" id="logout">Sair</button></div></header>'+
    '<div class="grid"><div class="col">'+
    '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
    '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
    '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(m.stamps,need)+' de '+need+'</span></div>'+
-   '<p class="muted small-t">Acerte as 10 contas de primeira dentro de <b>'+FC.fmtTime(L.target)+'</b> para ganhar um carimbo. Com '+need+' carimbo'+(need>1?'s':'')+' você sobe de nível.</p>'+
+   '<p class="muted small-t">Cada dia em que você acerta <b>80% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p>'+
    '<p class="today">'+status+'</p>'+
    (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
    '</div>'+
@@ -342,25 +342,30 @@ async function send(payload,score){
   }
   var L=FC.LEVELS[cur.level],secs=payload.p_secs,fixes=payload.p_corrections;
   var fac=Math.round(FC.timeFactor(secs,L.target)*100);
-  var note=res.stamp?"Folha aprovada: 10 acertos de primeira, dentro da meta de tempo.":
-    score===10?"Nenhum erro, mas o tempo passou da meta. Repita a folha para ganhar o carimbo.":
-    fixes+" conta"+(fixes>1?"s":"")+" precisaram de correção. Releia essas contas e repita a folha.";
+  var rules="80% ou mais de acertos de primeira no dia e tempo médio de até "+FC.fmtTime(L.target)+" por folha";
+  var note;
+  if(res.day_closed&&res.stamp)note="Dia fechado com carimbo! Você acertou "+res.day_ok+" de "+res.day_total+" contas de primeira ("+res.day_pct+"%), com tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha.";
+  else if(res.day_closed){
+    var acertos="Hoje você acertou "+res.day_pct+"% de primeira (o carimbo pede 80% ou mais)",tempo="o tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha passou da meta de "+FC.fmtTime(L.target);
+    note=(res.why==="tempo"?"Você acertou "+res.day_pct+"% de primeira, mas "+tempo+".":res.why==="acertos_tempo"?acertos+", e "+tempo+".":acertos+".")+" Sem carimbo hoje. Amanhã tem outra chance. As contas que você errou voltam nas próximas folhas.";
+  }else note="Acertos de primeira hoje: "+res.day_ok+" de "+res.day_total+" ("+res.day_pct+"%). O carimbo do dia sai ao fechar a última folha, com "+rules+"."+(fixes>0?" As contas que você errou voltam nas próximas folhas.":"");
   var newL=FC.LEVELS[res.level_idx];
-  S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;
+  S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;S.me.today_ok=res.day_ok;S.me.today_total=res.day_total;
   var before=S.me.period?S.me.period.points:0,np=res.period;
   S.me.period=np;S.me.week_points=np.points;S.me.total_points=(S.me.total_points||0)+res.points;
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
   for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&i===shown-1)?" pop":"")+'">✓</span>';
+  var seal=res.day_closed?(res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
   FC.render('<div class="res panel">'+
-    '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.stamp?"":" no")+'">'+(res.stamp?"Aprovada":"Repetir")+'</div>'+
+    '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.day_closed&&res.stamp?"":" no")+'">'+seal+'</div>'+
     '<div class="grow"><h2>'+(res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
-    '<div><b>'+np.points+'</b><span>pontos '+"na semana"+' (meta '+np.goal+')</span></div></div>'+
+    '<div><b>'+np.points+'</b><span>pontos na semana (meta '+np.goal+')</span></div></div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
-    (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'.</div></div></div>':'')+
+    (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'. As contas que você ainda errou vêm junto para as próximas folhas.</div></div></div>':'')+
     '<div class="trailbox">'+FC.trailHtml(np,{fromPoints:before})+'</div>'+
-    '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
+    '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para fechar o dia.":"Dia fechado. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   FC.animateTrail();
   if(res.award&&res.award.kind==="pacote"){

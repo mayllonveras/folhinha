@@ -353,3 +353,5 @@ details .form{margin-top:12px}
 .theme-opt .to-txt small{display:block;color:var(--muted)}
 .album-detail summary{cursor:pointer;font-weight:600}
 .field small.bad,small.bad{color:var(--mark)}
+.rule-box{background:var(--soft);border-radius:10px;padding:10px 14px;font-size:.88rem}
+.rule-box ul{margin:6px 0 0;padding-left:18px}.rule-box li{margin:3px 0}

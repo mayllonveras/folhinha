@@ -7,12 +7,6 @@ var U={user:null,profile:null};
 var MIN_SHEETS=3,MIN_DAYS=3,MIN_PCT=0.7;
 function maxWeek(days,per){return days*per*100}
 function minGoal(days,per){return Math.ceil(MIN_PCT*maxWeek(days,per)/10)*10}
-var MODES={
-  reforco:["Reforço dos erros (recomendado)","A folha seguinte traz de volta até 4 contas que ele errou, misturadas com contas novas. Cada conta sai da lista depois de 2 acertos seguidos."],
-  mesma:["Repetir a mesma folha","Se a folha não deu carimbo, ele refaz exatamente a mesma folha até dominar."],
-  nova:["Sempre folha nova","Cada folha é sorteada do zero. As contas erradas não voltam."]
-};
-
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 FC.adultApp=async function(){
@@ -141,7 +135,7 @@ async function dash(){
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
 function programFields(s){
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:minGoal(5,3),sticker_themes:["dinossauros"],repeat_mode:"reforco",stamps_needed:3};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,week_close_dow:0,weekly_goal:minGoal(5,3),sticker_themes:["dinossauros"]};
   var lv="",lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
@@ -163,8 +157,11 @@ function programFields(s){
       '<small>Marque um ou mais. Ao bater a meta da semana, a criança ganha um pacotinho e escolhe de qual álbum quer a figurinha surpresa.</small></fieldset>'+
     '<label class="field">A semana fecha na<select id="pClose">'+close+'</select><small>Os pontos de cada semana somam até este dia. Bater a meta dá um pacotinho com uma figurinha (até 52 por ano em cada álbum).</small></label>'+
     '<label class="field">Meta de pontos da semana<input id="pGoal" type="number" min="0" max="1000000" step="10" value="'+v.weekly_goal+'"><small id="pMax"></small></label>'+
-    '<label class="field">Quando ele erra ou não ganha o carimbo<select id="pRepeat">'+Object.keys(MODES).map(function(k){return '<option value="'+k+'"'+(k===v.repeat_mode?" selected":"")+'>'+MODES[k][0]+'</option>'}).join("")+'</select><small id="pRepeatDesc"></small></label>'+
-    '<label class="field">Carimbos para subir de nível<select id="pStamps">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'"'+(n===v.stamps_needed?" selected":"")+'>'+n+'</option>'}).join("")+'</select><small id="pStampsDesc"></small></label>';
+    '<div class="rule-box"><b>Como o aluno avança (regra fixa)</b><ul>'+
+      '<li>Cada dia em que ele acerta <b>80% ou mais</b> das contas de primeira, com tempo médio por folha dentro da meta do nível, vale <b>1 carimbo</b>. O carimbo sai ao fechar a última folha do dia.</li>'+
+      '<li>Com <b>5 carimbos</b> ele sobe de nível.</li>'+
+      '<li>As contas que ele erra voltam nas próximas folhas, até 4 por folha, e continuam voltando no nível seguinte até ele acertar 2 vezes seguidas.</li>'+
+      '<li>Os pontos da semana funcionam em paralelo: ele ganha o pacotinho de figurinhas mesmo sem subir de nível.</li></ul></div>';
 }
 function bindProgram(){
   var g=$("#pGoal");
@@ -191,11 +188,6 @@ function bindProgram(){
   $$('input[name="days"]').forEach(function(c){c.onchange=function(){upd(true)}});
   $("#pPer").addEventListener("change",function(){upd(true)});
   upd(true);
-  function rep(){$("#pRepeatDesc").textContent=MODES[$("#pRepeat").value][1]}
-  $("#pRepeat").onchange=rep;rep();
-  function stp(){var per=Number($("#pPer").value),need=Number($("#pStamps").value);
-    $("#pStampsDesc").textContent="Cada carimbo exige 10 acertos de primeira dentro da meta de tempo. Com "+per+" folha"+(per>1?"s":"")+" por dia, ele pode ganhar até "+per+" carimbo"+(per>1?"s":"")+" num dia. Com "+need+", sobe de nível em, no mínimo, "+Math.ceil(need/per)+" dia"+(Math.ceil(need/per)>1?"s":"")+".";}
-  $("#pStamps").onchange=stp;$("#pPer").addEventListener("change",stp);stp();
 }
 function readProgram(){
   var days=$$('input[name="days"]:checked').map(function(c){return Number(c.value)}),name=$("#pName").value.trim();
@@ -208,8 +200,7 @@ function readProgram(){
   var wk=Math.max(0,Math.round(Number($("#pGoal").value)||0)),mg=minGoal(days.length,Number($("#pPer").value));
   if(wk<mg)return{error:"A meta precisa ser de pelo menos "+mg+" pontos ("+Math.round(MIN_PCT*100)+"% do máximo da semana)."};
   return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
-    sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:wk,sticker_themes:themes,sticker_theme:themes[0],
-    repeat_mode:$("#pRepeat").value,stamps_needed:Number($("#pStamps").value)}};
+    sheets_per_day:Number($("#pPer").value),week_close_dow:Number($("#pClose").value),weekly_goal:wk,sticker_themes:themes,sticker_theme:themes[0]}};
 }
 
 function showForm(){
@@ -221,7 +212,7 @@ function showForm(){
     if(r.error){$("#fMsg").textContent=r.error;return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:r.v.week_close_dow,p_goal:r.v.weekly_goal,p_reward:"",p_repeat:r.v.repeat_mode,p_stamps:r.v.stamps_needed,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes});
+      p_per_day:r.v.sheets_per_day,p_close:r.v.week_close_dow,p_goal:r.v.weekly_goal,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
@@ -294,25 +285,25 @@ async function detail(id){
 
   var rows=sheets.slice(0,40).map(function(x){
     return '<tr><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+x.points+'</td><td>'+
-      (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+'</td><td><button class="btn ghost small" data-sheet="'+x.id+'">Ver</button></td></tr>';
+      (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td><button class="btn ghost small" data-sheet="'+x.id+'">Ver</button></td></tr>';
   }).join("");
   var names=guards.map(function(g){
     var p=profs.filter(function(x){return x.id===g.user_id})[0];
     return '<li>'+esc(p?p.name||"Sem nome":"Adulto")+' <span class="muted">· '+(p&&p.role==="professor"?"professor(a)":"responsável")+(g.role==="owner"?" · cadastrou o aluno":"")+(g.user_id===U.user.id?" · você":"")+'</span></li>';
   }).join("");
-  var need=s.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<s.stamps?" on":"")+'">✓</span>';
+  var need=5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<s.stamps?" on":"")+'">✓</span>';
   var weakHtml='<div class="panel"><div class="eyebrow gap">Contas em reforço</div>'+(weak.length?
     '<ul class="plain miss">'+weak.map(function(w){
       return '<li><span class="q">'+esc(w.pre)+' <b>'+esc(w.ans)+'</b>'+esc(w.post)+'</span> <span class="muted small-t">nível '+esc(FC.lv(w.level_idx))+' · errou '+w.misses+' vez'+(w.misses>1?'es':'')+'</span></li>'}).join("")+'</ul>':
     '<p class="muted">Nenhuma conta em reforço agora.</p>')+
-    '<p class="muted small-t gap">'+(s.repeat_mode==="reforco"?"Estas contas voltam nas próximas folhas até ele acertar 2 vezes seguidas.":"Modo atual: “"+esc(MODES[s.repeat_mode][0])+"”. As contas erradas são registradas, mas não voltam sozinhas.")+'</p></div>';
+    '<p class="muted small-t gap">'+"Estas contas voltam nas próximas folhas, inclusive no nível seguinte, até ele acertar 2 vezes seguidas."+'</p></div>';
 
   FC.render(topbar("Aluno")+
     '<div class="section-head"><div><button class="link" id="back">← Todos os alunos</button><h1>'+esc(s.name)+'</h1></div></div>'+
     '<div class="grid"><div class="col">'+
     '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div><div class="nm">'+esc(L.name)+'</div>'+
     '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(s.stamps,need)+' de '+need+'</span></div>'+
-    '<p class="muted small-t">O aluno sobe de nível sozinho ao juntar '+need+' carimbo'+(need>1?'s':'')+'. Você vê o aviso no histórico. Para mudar o nível agora, use o programa abaixo.</p></div>'+
+    '<p class="muted small-t">Cada dia com 80% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo. Com '+need+' carimbos o aluno sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use o programa abaixo.</p></div>'+
     '<div class="panel">'+trailHtml+'</div>'+rewardPanel+
     '<div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
     '<div class="actions gap"><button class="btn ghost small" id="rstPin">Redefinir PIN</button><button class="btn ghost small" id="newLink">Gerar novo link</button></div>'+
@@ -356,7 +347,6 @@ async function detail(id){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
     var patch=r.v;if(patch.level_idx!==s.level_idx)patch.stamps=0;
-    else if(s.stamps>=patch.stamps_needed)patch.stamps=Math.max(0,patch.stamps_needed-1);
     $("#fBtn").disabled=true;
     var res=await sb.from("students").update(patch).eq("id",id);
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
