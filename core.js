@@ -203,19 +203,12 @@ FC.sfx={
     [523.25,659.25,783.99,1046.5].forEach(function(f,i){tone(f,i*0.13,0.35,"triangle",0.22)});
     tone(1318.5,0.58,0.7,"sine",0.18);tone(1568,0.66,0.8,"sine",0.12);
   },
-  chest:function(){   // rangido da tampa + chuva de moedas
-    if(!FC.sfx.enabled())return;
-    tone(110,0,0.4,"sawtooth",0.09);tone(150,0.1,0.35,"sawtooth",0.08);
-    [1046.5,1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.45+i*0.09,0.3,"sine",0.15)});
-    tone(3136,0.95,0.5,"sine",0.08);
-  },
   rare:function(){if(!FC.sfx.enabled())return;[1568,1976,2349,3136].forEach(function(f,i){tone(f,i*0.09,0.4,"sine",0.14)});tone(784,0,0.6,"triangle",0.1)},
   ultra:function(){   // fanfarra grande: escala subindo e acorde final brilhante
     if(!FC.sfx.enabled())return;
     [523.25,659.25,783.99,1046.5,1318.5,1568,2093].forEach(function(f,i){tone(f,i*0.1,0.45,"triangle",0.2)});
     [1046.5,1318.5,1568,2093].forEach(function(f){tone(f,0.85,1.1,"sine",0.14)});tone(261.6,0.85,1.1,"sawtooth",0.06);
   },
-  star:function(){if(!FC.sfx.enabled())return;[880,1108.7,1318.5,1760].forEach(function(f,i){tone(f,i*0.1,0.3,"triangle",0.2)});tone(2349,0.45,0.6,"sine",0.1)},
   flip:function(){if(!FC.sfx.enabled())return;tone(420,0,0.09,"triangle",0.1);tone(760,0.07,0.12,"sine",0.09)},
   pack:function(){   // rasgar o pacotinho e revelar
     if(!FC.sfx.enabled())return;
@@ -238,47 +231,9 @@ FC.confetti=function(o){
   document.body.appendChild(wrap);setTimeout(function(){wrap.remove()},4400);
 };
 
-/* ---------- período do prêmio (semana ou mês), pontos de passagem e baú ---------- */
-FC.MONTHS=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-FC.periodOf=function(day,mode,close){
-  if(mode==="mensal"){var ms=day.slice(0,7)+"-01",d=FC.date(ms);d.setMonth(d.getMonth()+1);d.setDate(0);return{start:ms,end:FC.ymd(d)}}
+/* ---------- período da meta (sempre a semana) ---------- */
+FC.periodOf=function(day,close){
   var end=FC.weekEnd(day,close);return{start:FC.addDays(end,-6),end:end};
-};
-FC.studyDaysIn=function(prog,ps,pe){
-  var out=[];
-  for(var d=ps;d<=pe;d=FC.addDays(d,1))if(d>=prog.start_date&&prog.study_days.indexOf(FC.dow(d))>=0)out.push(d);
-  return out;
-};
-/* Pontos de passagem do mês: ao fim de cada semana, a parte da meta proporcional aos dias de estudo já passados. */
-FC.milestones=function(prog,ps,pe,goal){
-  var days=FC.studyDaysIn(prog,ps,pe),out=[];
-  if(!days.length||goal<=0)return out;
-  for(var d=ps;d<pe;d=FC.addDays(d,1)){
-    if(FC.dow(d)!==prog.week_close_dow)continue;
-    var cnt=days.filter(function(x){return x<=d}).length;
-    if(cnt===0||cnt>=days.length)continue;           // semana sem estudo, ou já é o fim do mês (o baú)
-    var t=Math.round(goal*cnt/days.length/10)*10;
-    if(t<=0||t>=goal)continue;
-    if(out.length&&out[out.length-1].target>=t)continue;
-    out.push({date:d,target:t});
-  }
-  return out;
-};
-FC.chestSvg=function(){
-  var rays="";
-  for(var a=-70;a<=70;a+=20){var r=a*Math.PI/180;rays+='<line x1="60" y1="46" x2="'+(60+Math.sin(r)*52).toFixed(1)+'" y2="'+(46-Math.cos(r)*52).toFixed(1)+'"/>'}
-  return '<svg viewBox="0 0 120 104" class="chest-svg" aria-hidden="true">'+
-    '<ellipse class="c-shadow" cx="60" cy="98" rx="48" ry="5"/><g class="rays">'+rays+'</g>'+
-    '<g class="c-inside"><ellipse class="c-gold" cx="60" cy="50" rx="40" ry="9"/><circle class="c-coin" cx="40" cy="45" r="6"/><circle class="c-coin" cx="60" cy="41" r="7"/><circle class="c-coin" cx="80" cy="45" r="6"/></g>'+
-    '<rect class="c-wood" x="14" y="48" width="92" height="46" rx="7"/><rect class="c-dark" x="14" y="72" width="92" height="5"/>'+
-    '<rect class="c-metal" x="28" y="48" width="10" height="46"/><rect class="c-metal" x="82" y="48" width="10" height="46"/>'+
-    '<g class="lid"><path class="c-wood" d="M14 50 V38 C14 14 106 14 106 38 V50 Z"/><path class="c-dark" d="M14 44 H106 V50 H14 Z"/>'+
-    '<rect class="c-metal" x="28" y="29" width="10" height="21"/><rect class="c-metal" x="82" y="29" width="10" height="21"/>'+
-    '<text class="q" x="60" y="40" text-anchor="middle">?</text></g>'+
-    '<g class="lock"><rect class="c-gold" x="52" y="44" width="16" height="17" rx="3"/><circle class="c-dark" cx="60" cy="51" r="2.6"/><rect class="c-dark" x="59" y="52" width="2" height="5"/></g></svg>';
-};
-FC.starSvg=function(on){
-  return '<svg viewBox="0 0 24 24" class="star-svg'+(on===false?"":" on")+'" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
 };
 FC.packSvg=function(){
   return '<svg viewBox="0 0 100 120" class="pack-svg" aria-hidden="true">'+
@@ -287,7 +242,7 @@ FC.packSvg=function(){
     '<circle class="pk-badge" cx="50" cy="60" r="22"/><path class="pk-star" d="M50 44l4.6 9.6 10.4 1.3-7.7 7.2 2 10.4L50 67.5 40.7 72.5l2-10.4-7.7-7.2 10.4-1.3z"/>'+
     '<text class="pk-q" x="50" y="102" text-anchor="middle">?</text></svg>';
 };
-/* Aviso no meio da tela (usado ao ganhar estrela ou figurinha e na galeria de figurinhas do adulto). */
+/* Aviso no meio da tela (usado ao ganhar figurinha, no verso da figurinha e na galeria do adulto). */
 FC.overlay=function(html,opts){
   opts=opts||{};
   var ov=document.createElement("div");ov.className="overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
@@ -300,65 +255,26 @@ FC.overlay=function(html,opts){
   var btn=ov.querySelector("#ovClose");btn.onclick=close;btn.focus();
   return{close:close,el:ov};
 };
-/* Trilha até a recompensa. p = {mode,start,end,points,goal,reached,reward}. o.system: bau | estrelas | figurinhas.
-   No baú, a criança só recebe o texto do prêmio quando ele abre. */
+/* Trilha até a figurinha da semana. p = {start,end,points,goal,reached}. */
 FC.trailHtml=function(p,o){
   o=o||{};
-  var sys=o.system||"bau",goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts,miles=o.miles||[],mensal=p.mode==="mensal";
+  var goal=p.goal||0,pts=p.points||0,from=o.fromPoints!=null?o.fromPoints:pts;
   var pct=function(v){return goal>0?Math.min(100,v/goal*100):0};
-  var pins=miles.map(function(m,i){
-    return '<span class="pin'+(from>=m.target?" hit":"")+'" data-hit="'+(pts>=m.target?1:0)+'" style="left:'+Math.min(96,pct(m.target)).toFixed(1)+'%" title="Semana '+(i+1)+': '+m.target+' pontos">'+(i+1)+'</span>';
-  }).join("");
-  var legend=miles.length?'<div class="legend">'+miles.map(function(m,i){
-    return '<span class="chip'+(from>=m.target?" hit":"")+'" data-hit="'+(pts>=m.target?1:0)+'">'+(from>=m.target?"✓ ":"")+'Semana '+(i+1)+' · '+m.target+' pontos</span>';
-  }).join("")+'</div>':"";
-  var left=Math.max(0,goal-pts),next=null;
-  for(var i=0;i<miles.length;i++)if(pts<miles[i].target){next=miles[i];break}
-  var dest=sys==="bau"?"o baú":sys==="estrelas"?"a estrela":"o pacotinho";
-  var hint="";
-  if(!p.reached&&mensal&&miles.length)hint=next?'Próximo ponto no caminho: <b>'+next.target+'</b> (faltam '+(next.target-pts)+').':'Você passou por todos os pontos do caminho. Falta só '+dest+'.';
-  var closes=sys==="bau"?(mensal?"O baú do mês fecha dia "+FC.dm(p.end)+".":"O baú da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+"."):
-    (mensal?"A meta do mês fecha dia "+FC.dm(p.end)+".":"A meta da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".");
-  var rw=p.reward?FC.esc(p.reward):"",box,open;
-  if(sys==="bau"){
-    if(o.adult){
-      open=!!p.reached;
-      box='<div class="prizebox'+(p.reached?" show":"")+'"><div class="pz-closed">Prêmio no baú: <b>'+(rw||"nenhum definido")+'</b>. Faltam <b>'+left+'</b> pontos para abrir.</div>'+
-        '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">Prêmio: <b>'+(rw||"nenhum definido")+'</b></div></div></div>';
-    }else{
-      var show=!!p.reached&&!o.opening;open=show;
-      box='<div class="prizebox'+(show?" show":"")+'" id="prizebox"><div class="pz-closed">'+
-        (o.opening?'Você chegou ao baú!':'Dentro do baú tem um <b>prêmio escondido</b>. Faltam <b>'+left+'</b> pontos para abrir.')+'</div>'+
-        '<div class="pz-open"><div class="pz-title">Baú aberto!</div><div class="pz-name">'+(rw?'Seu prêmio: <b>'+rw+'</b>':'Meta batida! Parabéns!')+'</div></div></div>';
-    }
-  }else{
-    open=!!p.reached;
-    box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar '+(sys==="estrelas"?"a estrela":"a figurinha")+'.</div>'+
-      '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(sys==="estrelas"?"Você ganhou uma estrela.":"Você ganhou uma figurinha nova. Ela está no seu álbum.")+'</div></div></div>';
-  }
-  var icon=sys==="bau"?'<div class="chest'+(open?" open":"")+'" id="chest">'+FC.chestSvg()+'</div>':
-    '<div class="goalicon'+(open?" open":"")+'" id="chest">'+(sys==="estrelas"?FC.starSvg(true):FC.packSvg())+'</div>';
-  var title=sys==="bau"?"Baú "+(mensal?"do mês":"da semana"):sys==="estrelas"?"Meta "+(mensal?"do mês":"da semana"):"Figurinha da semana";
-  return '<div class="trail" id="trail"><div class="eyebrow">'+title+'</div>'+
+  var left=Math.max(0,goal-pts),open=!!p.reached;
+  var closes="A meta da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".";
+  var box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar a figurinha.</div>'+
+    '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(o.adult?"A figurinha da semana já foi ganha.":"Você ganhou uma figurinha nova. Ela está no seu álbum.")+'</div></div></div>';
+  return '<div class="trail" id="trail"><div class="eyebrow">Figurinha da semana</div>'+
     '<div class="big-pts">'+pts+'<span> / '+goal+' pontos</span></div>'+
-    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até a recompensa" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
-    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div>'+pins+'</div>'+icon+'</div>'+
-    legend+(hint?'<p class="small-t">'+hint+'</p>':'')+box+'<p class="muted small-t">'+closes+'</p></div>';
+    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até a figurinha" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
+    '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div></div>'+
+    '<div class="goalicon'+(open?" open":"")+'">'+FC.packSvg()+'</div></div>'+
+    box+'<p class="muted small-t">'+closes+'</p></div>';
 };
-/* A barra enche até o valor novo e os pontos de passagem alcançados acendem um a um. */
+/* A barra enche até o valor novo. */
 FC.animateTrail=function(){
   var f=FC.$("#trailFill");if(!f)return;
-  setTimeout(function(){
-    f.style.width=f.getAttribute("data-now")+"%";
-    FC.$$("#trail .pin,#trail .chip").forEach(function(el,i){
-      if(el.getAttribute("data-hit")==="1"&&!el.classList.contains("hit"))setTimeout(function(){el.classList.add("hit");if(el.classList.contains("chip"))el.textContent="✓ "+el.textContent},700+i*120);
-    });
-  },350);
-};
-FC.openChest=function(){
-  var c=FC.$("#chest"),b=FC.$("#prizebox");if(!c)return;
-  c.classList.add("shake");
-  setTimeout(function(){c.classList.remove("shake");c.classList.add("open");if(b)b.classList.add("show");FC.sfx.chest();FC.confetti()},650);
+  setTimeout(function(){f.style.width=f.getAttribute("data-now")+"%"},350);
 };
 
 /* ---------- instalação como app (PWA) ---------- */

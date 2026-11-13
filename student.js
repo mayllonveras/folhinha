@@ -101,14 +101,11 @@ function home(){
     canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas.";
   }
   var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
-  var sys=m.reward_system||"bau",per=m.period,miles=per.mode==="mensal"?FC.milestones(m,per.start,per.end,per.goal):[];
-  var prev="";
+  var per=m.period,prev="";
   if(m.prev_period){var pw=m.prev_period;
-    prev='<p class="muted small-t">'+(pw.mode==="mensal"?"Mês passado":"Semana passada")+': <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+
-      (pw.reached?(sys==="bau"?'Você abriu o baú'+(pw.reward?': <b>'+esc(pw.reward)+'</b>':'')+'.':sys==="estrelas"?'Você ganhou uma estrela.':'Você ganhou uma figurinha.'):(sys==="bau"?'O baú não abriu.':'A meta não foi batida.'))+'</p>'}
+    prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou uma figurinha.':'A meta não foi batida.')+'</p>'}
   var extra="";
-  if(sys==="estrelas")extra='<div class="panel">'+FC.starCardHtml(m.stars||[],per.mode)+'</div>';
-  if(sys==="figurinhas"){
+  {
     var got=m.stickers||[],th=FC.theme(m.sticker_theme);
     extra='<div class="panel"><div class="eyebrow">Meu álbum · '+esc(th.name)+'</div><div class="big-pts">'+got.length+'<span> de '+FC.ALBUM_SIZE+' figurinhas</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
@@ -128,7 +125,7 @@ function home(){
    (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
    '</div>'+
    (rows?'<div class="panel"><div class="eyebrow gap">Suas últimas folhas</div><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'')+
-   '</div><div class="col"><div class="panel">'+FC.trailHtml(per,{miles:miles,system:sys})+prev+
+   '</div><div class="col"><div class="panel">'+FC.trailHtml(per)+prev+
    '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div>'+extra+'</div></div>'+FC.installBox());
   FC.refreshInstall();
   $("#logout").onclick=logout;
@@ -146,28 +143,21 @@ function albumScreen(){
     '<div class="panel">'+FC.albumHtml(th.id,got)+'</div>');
   $("#albumBack").onclick=home;
 }
-/* Estrela ou figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
+/* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
 function showAward(aw,already){
   var m=S.me;
-  if(aw.kind==="estrela"){
-    if(!already)m.stars=(m.stars||[]).concat([{end:aw.period_end,mode:aw.mode}]);
-    var N=aw.mode==="mensal"?12:52,total=(m.stars||[]).length,filled=total?((total-1)%N)+1:1;
-    FC.sfx.star();FC.confetti();
-    FC.overlay('<div class="award-star">'+FC.starSvg(true)+'</div><h2>Você ganhou uma estrela!</h2><p class="muted">Cartela de estrelas: <b>'+filled+' de '+N+'</b>.</p>',{button:"Legal!"});
-  }else{
-    if(!already)m.stickers=(m.stickers||[]).concat([{slot:aw.slot,end:aw.period_end}]);
-    var th=FC.theme(aw.theme),n=(m.stickers||[]).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
-    var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
-    var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
-    FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier});
-    setTimeout(function(){
-      FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
-      if(tier==="comum"){FC.confetti();return}
-      setTimeout(function(){FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64});
-        if(tier==="ultra")setTimeout(function(){FC.confetti({gold:true,n:70})},700)},350);
-    },800);
-  }
+  if(!already)m.stickers=(m.stickers||[]).concat([{slot:aw.slot,end:aw.period_end}]);
+  var th=FC.theme(aw.theme),n=(m.stickers||[]).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
+  var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
+  var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
+  FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier});
+  setTimeout(function(){
+    FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
+    if(tier==="comum"){FC.confetti();return}
+    setTimeout(function(){FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64});
+      if(tier==="ultra")setTimeout(function(){FC.confetti({gold:true,n:70})},700)},350);
+  },800);
 }
 async function logout(){
   try{await rpc("student_logout",{p_token:S.token})}catch(e){}
@@ -314,9 +304,8 @@ async function send(payload,score){
     fixes+" conta"+(fixes>1?"s":"")+" precisaram de correção. Releia essas contas e repita a folha.";
   var newL=FC.LEVELS[res.level_idx];
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;
-  var before=S.me.period?S.me.period.points:0,np=res.period,crossed=!(S.me.period&&S.me.period.reached)&&np.reached;
+  var before=S.me.period?S.me.period.points:0,np=res.period;
   S.me.period=np;S.me.week_points=np.points;S.me.total_points=(S.me.total_points||0)+res.points;
-  var miles=np.mode==="mensal"?FC.milestones(S.me,np.start,np.end,np.goal):[];
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
   for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&i===shown-1)?" pop":"")+'">✓</span>';
   FC.render('<div class="res panel">'+
@@ -324,14 +313,13 @@ async function send(payload,score){
     '<div class="grow"><h2>'+(res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
-    '<div><b>'+np.points+'</b><span>pontos '+(np.mode==="mensal"?"no mês":"na semana")+' (meta '+np.goal+')</span></div></div>'+
+    '<div><b>'+np.points+'</b><span>pontos '+"na semana"+' (meta '+np.goal+')</span></div></div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'.</div></div></div>':'')+
-    '<div class="trailbox">'+FC.trailHtml(np,{miles:miles,fromPoints:before,opening:crossed,system:S.me.reward_system||"bau"})+'</div>'+
+    '<div class="trailbox">'+FC.trailHtml(np,{fromPoints:before})+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   FC.animateTrail();
-  if(crossed&&(S.me.reward_system||"bau")==="bau")setTimeout(FC.openChest,res.advanced?3400:2000);
   if(res.award)setTimeout(function(){showAward(res.award,false)},res.advanced?3600:2300);
   if(res.stamp)FC.sfx.stamp();
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);

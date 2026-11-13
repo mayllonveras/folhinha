@@ -14,43 +14,6 @@ var FRUTAS=[["🍎","Maçã"],["🍐","Pera"],["🍊","Laranja"],["🍋","Limão
 var VEICULOS=[["🚗","Carro"],["🚕","Táxi"],["🚙","Utilitário"],["🚌","Ônibus"],["🚎","Trólebus"],["🏎️","Carro de corrida"],["🚓","Viatura"],["🚑","Ambulância"],["🚒","Bombeiros"],["🚐","Van"],["🚚","Caminhão de entrega"],["🚛","Carreta"],["🚜","Trator"],["🏍️","Moto"],["🛵","Lambreta"],["🚲","Bicicleta"],["🛴","Patinete"],["🛹","Skate"],["🚂","Locomotiva"],["🚆","Trem"],["🚄","Trem-bala"],["🚅","Trem-bala veloz"],["🚇","Metrô"],["🚊","Bonde"],["🚝","Monotrilho"],["🚞","Trem de montanha"],["🚋","Vagão de bonde"],["✈️","Avião"],["🛩️","Avião pequeno"],["🛫","Decolagem"],["🛬","Aterrissagem"],["🚁","Helicóptero"],["🚀","Foguete"],["🛸","Disco voador"],["🛰️","Satélite"],["🚡","Teleférico"],["🚠","Bondinho de montanha"],["🚟","Trem suspenso"],["⛵","Veleiro"],["🚤","Lancha"],["🛥️","Barco a motor"],["🚢","Navio"],["⛴️","Balsa"],["🛶","Canoa"],["🎈","Balão"],["🪂","Paraquedas"],["🛷","Trenó"],["🛺","Tuk-tuk"],["🚔","Carro de polícia"],["🚃","Vagão de trem"],["🚈","Trem leve"],["🛳️","Transatlântico"]];
 
 /* ---------- temas desenhados em vetor ---------- */
-function monsterName(slot){
-  var S=["Bo","Zu","Pi","Gru","Mo","Ti","Fa","Ku","Ni","Lo","Ba","Zi","Re","Su","Do","Mi","Ta","Vo"],E=["","bi","ço"];
-  var a=S[slot%18],b=S[(slot*7+5)%18].toLowerCase();return cap(a+b+E[Math.floor(slot/18)]);
-}
-function monsterArt(slot){
-  var R=rng(1000+slot*7919),P=function(a){return a[Math.floor(R()*a.length)]},i;
-  var hue=(slot*47+Math.floor(R()*35))%360;
-  var c="hsl("+hue+" 68% 60%)",d="hsl("+hue+" 55% 32%)",l="hsl("+hue+" 85% 80%)",ink="#2a1f3d";
-  var shape=P(["round","tall","wide","blob"]),extra=P(["horns","antenna","ears","spikes","tuft","none"]),eyes=P([1,2,2,3]),mouth=P(["smile","open","teeth","fangs","oh","tongue"]);
-  var s='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img">';
-  s+='<ellipse cx="36" cy="92" rx="10" ry="5" fill="'+d+'"/><ellipse cx="64" cy="92" rx="10" ry="5" fill="'+d+'"/>';
-  if(extra==="horns")s+='<path d="M30 30 L24 8 L44 26Z M70 30 L76 8 L56 26Z" fill="'+d+'"/>';
-  if(extra==="antenna")s+='<path d="M38 28 Q34 14 28 10 M62 28 Q66 14 72 10" stroke="'+d+'" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="28" cy="10" r="4.5" fill="'+l+'" stroke="'+d+'" stroke-width="2"/><circle cx="72" cy="10" r="4.5" fill="'+l+'" stroke="'+d+'" stroke-width="2"/>';
-  if(extra==="ears")s+='<circle cx="18" cy="42" r="11" fill="'+d+'"/><circle cx="82" cy="42" r="11" fill="'+d+'"/><circle cx="18" cy="42" r="6" fill="'+l+'"/><circle cx="82" cy="42" r="6" fill="'+l+'"/>';
-  if(extra==="spikes")for(i=0;i<5;i++)s+='<path d="M'+(26+i*12)+' 30 L'+(32+i*12)+' 12 L'+(38+i*12)+' 30Z" fill="'+d+'"/>';
-  if(extra==="tuft")s+='<path d="M50 28 Q44 10 36 6 M50 28 Q50 8 50 2 M50 28 Q56 10 64 6" stroke="'+d+'" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
-  var body={round:'<ellipse cx="50" cy="58" rx="34" ry="32"/>',tall:'<rect x="20" y="24" width="60" height="68" rx="30"/>',wide:'<ellipse cx="50" cy="62" rx="42" ry="28"/>',blob:'<path d="M16 62 C12 34 38 22 52 24 C78 26 90 46 84 68 C80 88 56 94 38 90 C22 86 20 74 16 62Z"/>'}[shape];
-  s+='<g fill="'+c+'" stroke="'+d+'" stroke-width="2.5" stroke-linejoin="round">'+body+'</g>';
-  var n=P([0,2,3,4]);
-  for(i=0;i<n;i++)s+='<circle cx="'+(30+R()*40).toFixed(1)+'" cy="'+(66+R()*16).toFixed(1)+'" r="'+(3+R()*4).toFixed(1)+'" fill="'+l+'" opacity=".7"/>';
-  var ex={1:[[50,50,12]],2:[[37,50,9],[63,50,9]],3:[[30,52,7.5],[50,44,8.5],[70,52,7.5]]}[eyes];
-  ex.forEach(function(e){
-    var dx=(R()-.5)*3,dy=(R()-.2)*3;
-    s+='<circle cx="'+e[0]+'" cy="'+e[1]+'" r="'+e[2]+'" fill="#fff" stroke="'+ink+'" stroke-width="2"/><circle cx="'+(e[0]+dx).toFixed(1)+'" cy="'+(e[1]+dy).toFixed(1)+'" r="'+(e[2]*.5).toFixed(1)+'" fill="'+ink+'"/><circle cx="'+(e[0]+dx-1.2).toFixed(1)+'" cy="'+(e[1]+dy-1.4).toFixed(1)+'" r="1.4" fill="#fff"/>';
-  });
-  var m={
-    smile:'<path d="M38 70 Q50 82 62 70" stroke="'+ink+'" stroke-width="3" fill="none" stroke-linecap="round"/>',
-    open:'<ellipse cx="50" cy="75" rx="12" ry="8" fill="'+ink+'"/><ellipse cx="50" cy="79" rx="7" ry="3.5" fill="#ff6b81"/>',
-    teeth:'<path d="M38 70 Q50 88 62 70Z" fill="'+ink+'"/><rect x="42" y="70" width="5" height="5" fill="#fff"/><rect x="53" y="70" width="5" height="5" fill="#fff"/>',
-    fangs:'<path d="M38 70 Q50 82 62 70" stroke="'+ink+'" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M40 71 L43 79 L46 72Z M54 72 L57 79 L60 71Z" fill="#fff" stroke="'+ink+'" stroke-width="1"/>',
-    oh:'<circle cx="50" cy="75" r="6" fill="'+ink+'"/>',
-    tongue:'<path d="M38 70 Q50 82 62 70" stroke="'+ink+'" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="55" cy="78" rx="5" ry="6" fill="#ff6b81" stroke="'+ink+'" stroke-width="1.5"/>'
-  }[mouth];
-  s+=m;
-  if(R()<.5)s+='<circle cx="27" cy="66" r="5" fill="#ff8fa3" opacity=".55"/><circle cx="73" cy="66" r="5" fill="#ff8fa3" opacity=".55"/>';
-  return s+'</svg>';
-}
 var planetCounter=0;
 function planetName(slot){
   var S=["Zor","Kel","Mar","Tho","Vyn","Qua","Nex","Lum","Ost","Pry","Dra","Fen","Gal","Hel","Ixo","Jur","Kyr","Lor"],E=["bus","aria","on"];
@@ -84,7 +47,6 @@ FC.THEMES=[
   {id:"animais",name:"Animais do mundo",desc:"Leão, panda, pinguim, golfinho e mais 48 bichos.",kind:"emoji",items:ANIMAIS},
   {id:"frutas",name:"Frutas e comidas",desc:"Das frutas aos doces, 52 delícias para colecionar.",kind:"emoji",items:FRUTAS},
   {id:"veiculos",name:"Veículos",desc:"Carros, trens, barcos, aviões e foguetes.",kind:"emoji",items:VEICULOS},
-  {id:"monstrinhos",name:"Monstrinhos",desc:"52 monstrinhos desenhados um a um, cada qual com seu nome.",kind:"svg",art:monsterArt,nameOf:monsterName},
   {id:"planetas",name:"Planetas misteriosos",desc:"52 mundos imaginários, com anéis, luas e crateras.",kind:"svg",art:planetArt,nameOf:planetName},
   {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS}
 ];
@@ -154,18 +116,6 @@ FC.albumHtml=function(themeId,earned,opts){
   }
   return '<div class="album">'+cells+'</div>';
 };
-/* Cartela de estrelas. stars = [{end,mode}]. A cartela tem 52 casas (semanas) ou 12 (meses); ao encher, começa outra. */
-FC.starCardHtml=function(stars,mode){
-  var N=mode==="mensal"?12:52,total=stars.length,filled=total===0?0:((total-1)%N)+1,card=total===0?1:Math.floor((total-1)/N)+1,cells="";
-  for(var i=0;i<N;i++){
-    var st=i<filled?stars[(card-1)*N+i]:null;
-    cells+='<span class="sc'+(st?" on":"")+'" title="'+(st?"Estrela de "+FC.dm(st.end):"Estrela "+(i+1))+'">'+FC.starSvg(!!st)+'</span>';
-  }
-  return '<div class="eyebrow">Minha cartela de estrelas'+(card>1?" · cartela "+card:"")+'</div>'+
-    '<div class="big-pts">'+filled+'<span> de '+N+' estrelas</span></div><div class="starcard">'+cells+'</div>'+
-    (total===0?'<p class="muted small-t">Bata a meta de pontos para ganhar a sua primeira estrela.</p>':'');
-};
-
 /* Nomes de figurinha nunca quebram no meio da palavra: se uma palavra não couber na largura do cartão,
    a fonte diminui até caber. Roda sozinho sempre que aparece um cartão novo na tela. */
 function fitName(el){

@@ -197,23 +197,6 @@ details .form{margin-top:12px}
 .trail-line{display:flex;align-items:center;gap:14px}
 .track{position:relative;flex:1;min-width:0;height:18px;background:var(--soft);border-radius:99px;margin:8px 0}
 .track .fill{height:100%;background:var(--ok);border-radius:99px;min-width:18px}
-.pin{position:absolute;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--paper);border:2px solid var(--line);display:grid;place-items:center;font:600 .72rem var(--font-num);color:var(--muted)}
-.pin.hit{background:var(--ok);border-color:var(--ok);color:#fff}
-.legend{display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:3px 10px;border-radius:99px;border:1px solid var(--line);font-size:.78rem;color:var(--muted)}
-.chip.hit{color:var(--ok);border-color:var(--ok)}
-.chest{width:92px;flex:none}
-.chest-svg{display:block;width:100%;height:auto;overflow:visible}
-.c-wood{fill:var(--chest-wood)} .c-dark{fill:var(--chest-dark)} .c-metal{fill:var(--chest-metal)} .c-gold{fill:var(--chest-gold)}
-.c-coin{fill:var(--chest-gold);stroke:var(--chest-dark);stroke-width:1.2}
-.c-shadow{fill:var(--ink);opacity:.12}
-.chest-svg .q{font:700 20px var(--font-num);fill:var(--chest-gold)}
-.rays{opacity:0} .rays line{stroke:var(--chest-gold);stroke-width:3;stroke-linecap:round}
-.c-inside{opacity:0}
-.lid{transform-box:fill-box;transform-origin:0 100%}
-.chest.open .lid{transform:translate(-2px,-26px) rotate(-24deg)}
-.chest.open .lock,.chest.open .q{opacity:0}
-.chest.open .rays{opacity:.55} .chest.open .c-inside{opacity:1}
 .prizebox{background:var(--soft);border-radius:12px;padding:12px 14px;font-size:.95rem}
 .prizebox .pz-open{display:none}
 .prizebox.show{border:2px solid var(--chest-gold)}
@@ -222,27 +205,16 @@ details .form{margin-top:12px}
 .pz-name{font-size:1.05rem}
 .trailbox{background:var(--soft);border-radius:12px;padding:14px}
 .trailbox .track{background:var(--paper)} .trailbox .prizebox{background:var(--paper)}
-.miles-preview{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:.85rem;line-height:1.6}
 @media (prefers-reduced-motion:no-preference){
-  .lid{transition:transform .8s cubic-bezier(.3,1.5,.5,1)}
-  .lock,.q,.rays,.c-inside{transition:opacity .5s}
   .track .fill{transition:width 1.3s cubic-bezier(.3,.8,.3,1)}
-  .pin,.chip{transition:background .4s,border-color .4s,color .4s}
-  .chest.shake{animation:chestShake .65s linear}
-  @keyframes chestShake{0%,100%{transform:rotate(0)}15%{transform:rotate(-6deg)}30%{transform:rotate(6deg)}45%{transform:rotate(-5deg)}60%{transform:rotate(5deg)}80%{transform:rotate(-2deg)}}
   .prizebox.show .pz-open{animation:pzIn .6s cubic-bezier(.2,1.4,.4,1)}
   @keyframes pzIn{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:none}}
 }
-@media (max-width:760px){.chest{width:76px}}
 
 .tag.warn{color:var(--warn);border-color:var(--warn)}
 
-/* estrelas, figurinhas e avisos */
-.star-svg{width:100%;height:auto;display:block;fill:none;stroke:var(--line);stroke-width:1.2;stroke-linejoin:round}
-.star-svg.on{fill:var(--chest-gold);stroke:var(--chest-dark)}
-.starcard{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:4px;margin-top:8px}
+/* figurinhas e avisos */
 .goalicon{width:70px;flex:none}
-.goalicon:not(.open) .star-svg.on{fill:none;stroke:var(--muted)}
 .goalicon.open{filter:drop-shadow(0 0 8px var(--chest-gold))}
 .pack-svg{width:100%;height:auto;display:block}
 .pk-body{fill:hsl(265 70% 55%);stroke:hsl(265 60% 32%);stroke-width:2;stroke-linejoin:round}
@@ -312,8 +284,6 @@ details .form{margin-top:12px}
 .ov-card{background:var(--paper);border-radius:18px;padding:22px;max-width:380px;width:100%;max-height:92vh;overflow:auto;text-align:center;display:flex;flex-direction:column;gap:12px}
 .ov-card.wide{max-width:900px;text-align:left}
 .ov-actions{justify-content:center}
-.award-star{width:120px;margin:0 auto}
-.award-star .star-svg{filter:drop-shadow(0 0 10px var(--chest-gold))}
 .pack-reveal{min-height:220px;display:grid;place-items:center}
 .pack-reveal .pack-closed{width:110px}
 .pack-reveal .pack-card{display:none}
@@ -324,8 +294,6 @@ details .form{margin-top:12px}
   @keyframes packShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}40%{transform:rotate(7deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
   .pack-reveal.opened .pack-card{animation:cardPop .7s cubic-bezier(.2,1.5,.4,1)}
   @keyframes cardPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}100%{transform:none;opacity:1}}
-  .award-star .star-svg,.goalicon.open .star-svg{animation:starPop .8s cubic-bezier(.2,1.6,.4,1)}
-  @keyframes starPop{0%{transform:scale(.3) rotate(-50deg);opacity:0}100%{transform:none;opacity:1}}
 }
 
 [hidden]{display:none!important}
