@@ -11,7 +11,7 @@ var FC=window.FC;
 var IC={"De onde vem o nome":"📖","Onde fica":"📍","Distância da Terra":"🚀","Distância do Sol":"☀️","Tamanho":"📏","Temperatura":"🌡️","Luas":"🌙","Descoberta":"🔭",
  "Cor":"🎨","Cores":"🎨","Tipo":"🏷️","Companheira":"👯","Planetas":"🪐","Brilho":"✨","Sistema":"🔗","Um ano":"📅","Volta":"🔄","Visita":"🛰️","Visitada":"🛰️",
  "Cratera":"🕳️","Dia":"⏱️","Giro":"🌀","Rotação":"🌀","Superfície":"🧊","Massa":"⚖️","Foto":"📸","Fotos":"📸","Origem":"💥","Vista em":"👀","Idade":"⏳",
- "Visível":"👁️","Estrelas":"⭐","Berçário":"🍼","Material":"🌫️","Próxima visita":"📆","Mancha":"🔴","Catálogo":"🗂️"};
+ "Visível":"👁️","Estrelas":"⭐","Berçário":"🍼","Material":"🌫️","Próxima visita":"📆","Mancha":"🔴","Catálogo":"🗂️","O que é":"❓","Também conhecida como":"🏷️"};
 
 var NOME="De onde vem o nome",ONDE="Onde fica",DT="Distância da Terra",DS="Distância do Sol",TAM="Tamanho",TEMP="Temperatura",LUAS="Luas",DESC="Descoberta";
 var J="Fica na região de Júpiter: de uns 590 a 965 milhões de km da Terra.";
@@ -59,7 +59,7 @@ var D=[
   "É esticada como uma bola de rúgbi porque gira muito depressa. Ela também tem um anel, descoberto em 2017."],
  ["Makemake","Planeta anão",[[NOME,"Deus da fertilidade e criador da humanidade para o povo Rapa Nui, da Ilha de Páscoa."],[ONDE,"No Cinturão de Kuiper, além de Netuno."],[DS,"Em média 6,8 bilhões de km (45,8× a distância da Terra)."],[TAM,"1.430 km (60% de Plutão)"],["Superfície","Gelo de metano, avermelhado"],[LUAS,"1: MK 2"]],
   "Foi achado pouco depois da Páscoa de 2005, e a equipe o apelidou de “Coelhinho da Páscoa”. O nome oficial homenageia a Ilha de Páscoa."],
- ["Lua","Lua da Terra",[[NOME,"Vem do latim “luna”."],[ONDE,"Gira em volta da Terra. É o nosso satélite natural."],[DT,"384.400 km em média: de 363.300 km (mais perto) a 405.500 km."],[TAM,"3.475 km (1/4 da Terra)"],[TEMP,"−20 °C em média"],["Visita","Apollo 11, em 1969"]],
+ ["Lua","Lua da Terra",[["O que é","O único satélite natural da Terra. O lado oculto dela só foi visto em 1959, por uma nave soviética."],[ONDE,"Gira em volta da Terra. É o nosso satélite natural."],[DT,"384.400 km em média: de 363.300 km (mais perto) a 405.500 km."],[TAM,"3.475 km (1/4 da Terra)"],[TEMP,"−20 °C em média"],["Visita","Apollo 11, em 1969"]],
   "A Lua se afasta da Terra uns 3,8 cm por ano, mais ou menos o quanto crescem as unhas. E ela sempre mostra o mesmo lado para nós."],
  ["Fobos","Lua de Marte",[[NOME,"“Medo”, em grego. Era filho de Ares, o deus da guerra (o Marte dos romanos)."],[ONDE,"Gira em volta de Marte, bem pertinho: a 9.375 km do centro do planeta."],[DT,MA],[TAM,"22 km (forma de batata)"],["Volta","7 h 39 min em Marte"],[DESC,"Asaph Hall, 1877"]],
   "Fobos chega perto de Marte uns 2 cm por ano. Em cerca de 50 milhões de anos vai cair em Marte ou virar um anel."],
@@ -123,9 +123,9 @@ var D=[
   "É a região de nascimento de estrelas grande mais próxima da Terra. No centro há quatro estrelas jovens e quentes, o Trapézio, que fazem o gás brilhar."],
  ["Pilares da Criação","Nebulosa",[[NOME,"Têm esse nome porque dentro das colunas de gás e poeira estão nascendo estrelas."],[ONDE,"Na Nebulosa da Águia (M16), na constelação da Serpente."],[DT,"Entre 6.500 e 7.000 anos-luz."],[TAM,"Colunas de 4 a 5 anos-luz de altura"],["Material","Gás e poeira"],["Fotos","Hubble (1995) e Webb (2022)"]],
   "A luz que vemos dos pilares saiu de lá há mais de 6.000 anos. A foto do Hubble, de 1995, ficou famosa no mundo todo."],
- ["Via Láctea","Galáxia",[[NOME,"Do latim, “caminho de leite”, pela faixa branca que se vê no céu. “Galáxia” vem do grego “gala”, leite."],[ONDE,"É a nossa galáxia! O Sol fica a uns 26.000 anos-luz do centro dela."],[DT,"Estamos dentro dela. O centro fica a uns 26.000 anos-luz de nós."],[TAM,"≈ 100.000 anos-luz de largura"],["Estrelas","100 a 400 bilhões"],["Tipo","Espiral com uma barra"]],
+ ["Via Láctea","Galáxia",[["O que é","A galáxia onde fica o Sistema Solar, com 100 a 400 bilhões de estrelas."],[ONDE,"É a nossa galáxia! O Sol fica a uns 26.000 anos-luz do centro dela."],[DT,"Estamos dentro dela. O centro fica a uns 26.000 anos-luz de nós."],[TAM,"≈ 100.000 anos-luz de largura"],["Estrelas","100 a 400 bilhões"],["Tipo","Espiral com uma barra"]],
   "O Sistema Solar dá uma volta na galáxia a cada uns 230 milhões de anos. No centro mora o buraco negro Sagitário A*."],
- ["Andrômeda","Galáxia",[[NOME,"Andrômeda era uma princesa da mitologia grega e dá nome à constelação onde a galáxia aparece."],[ONDE,"Na constelação de Andrômeda. É a grande galáxia mais próxima da Via Láctea."],[DT,"Cerca de 2,5 milhões de anos-luz."],[TAM,"Mais de 200.000 anos-luz"],["Estrelas","≈ 1 trilhão"],["Visível","A olho nu, no céu escuro"]],
+ ["Andrômeda","Galáxia",[["Também conhecida como","M31, o objeto nº 31 do catálogo do astrônomo Charles Messier."],[ONDE,"Na constelação de Andrômeda. É a grande galáxia mais próxima da Via Láctea."],[DT,"Cerca de 2,5 milhões de anos-luz."],[TAM,"Mais de 200.000 anos-luz"],["Estrelas","≈ 1 trilhão"],["Visível","A olho nu, no céu escuro"]],
   "É o objeto mais distante que dá para ver a olho nu: a luz que chega tem 2,5 milhões de anos. Ela e a Via Láctea estão se aproximando."],
  ["Galáxia do Redemoinho","Galáxia",[[NOME,"Os braços em espiral lembram um redemoinho (“whirlpool”, em inglês). M51 é o número 51 do catálogo de Messier."],[ONDE,"Constelação dos Cães de Caça."],[DT,"Cerca de 31 milhões de anos-luz."],["Companheira","Galáxia menor NGC 5195"],["Tipo","Espiral vista de frente"],[DESC,"Messier, 1773"]],
   "A galáxia menor, NGC 5195, passa ao lado há centenas de milhões de anos, e a gravidade dela ajuda a criar estrelas nos braços. Em 1845, Lord Rosse desenhou o formato de redemoinho dela, que ninguém tinha visto antes."]
