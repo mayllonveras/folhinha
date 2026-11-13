@@ -42,7 +42,7 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 | 19 | Lua | NASA | bate | N, F, J |
 | 20 | Fobos | NASA, MRO | bate (formato e cratera Stickney; a cor da foto é mais marrom) | N, J |
 | 21 | Deimos | NASA, MRO PIA11826 | bate (formato e crateras; a cor da foto é mais bege) | N, J |
-| 22 | Io | NASA, Galileo (a página só traz mapa e gráfico, sem foto global) | sem foto global utilizável; cores e vulcões seguem o texto oficial | N, J |
+| 22 | Io | NASA, Galileo PIA00282 (disco inteiro) | refeita (era amarelo saturado com anéis vermelhos enormes; agora amarelo-oliva com manchas claras e pontos escuros) | N, J |
 | 23 | Europa | NASA, Galileo | bate | N, J |
 | 24 | Ganimedes | NASA, Galileo | bate | N, J |
 | 25 | Calisto | NASA, Voyager e Galileo | bate | N, J |
@@ -79,9 +79,8 @@ Cada figurinha foi comparada lado a lado com uma imagem oficial (foto ou, quando
 - **Eros** (26,7 milhões de km em 31/01/2012) e **Halley** (62,4 milhões de km em 11/04/1986): lidos do JPL Horizons.
 - **Hale-Bopp** (1,315 UA, 197 milhões de km): página oficial do JPL.
 
-## O que não tem imagem oficial utilizável
-- **Io:** a NASA só publica mapas e gráficos na página; a aparência segue o texto oficial (enxofre amarelo, vulcões).
-- Haumea, Makemake, Pulsar do Caranguejo e Sirius B foram retiradas do álbum justamente por não terem imagem oficial.
+## Figurinhas retiradas por não terem imagem oficial utilizável
+Haumea, Makemake, Pulsar do Caranguejo e Sirius B saíram do álbum (PR #11) e foram trocadas por Réia, Tétis, Nebulosa do Caranguejo e Nebulosa da Hélice, que têm foto oficial. Com isso, as 52 figurinhas têm foto ou ilustração oficial para comparação.
 
 ## Origens de nomes que foram retiradas do verso por falta de fonte oficial
 Io, Calisto, Lua, Via Láctea, Andrômeda, Sirius e Polaris.
