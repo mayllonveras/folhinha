@@ -133,4 +133,24 @@ FC.starCardHtml=function(stars,mode){
     '<div class="big-pts">'+filled+'<span> de '+N+' estrelas</span></div><div class="starcard">'+cells+'</div>'+
     (total===0?'<p class="muted small-t">Bata a meta de pontos para ganhar a sua primeira estrela.</p>':'');
 };
+
+/* Nomes de figurinha nunca quebram no meio da palavra: se uma palavra não couber na largura do cartão,
+   a fonte diminui até caber. Roda sozinho sempre que aparece um cartão novo na tela. */
+function fitName(el){
+  if(!el.clientWidth)return;                 // ainda escondido: não dá para medir
+  el.style.fontSize="";
+  var size=parseFloat(getComputedStyle(el).fontSize),guard=0;
+  while(el.scrollWidth>el.clientWidth+0.5&&size>7&&guard++<40){size-=0.4;el.style.fontSize=size+"px"}
+}
+FC.fitNames=function(root){
+  var list=(root||document).querySelectorAll(".st-name");
+  for(var i=0;i<list.length;i++)fitName(list[i]);
+};
+var fitPending=false;
+function scheduleFit(){if(fitPending)return;fitPending=true;requestAnimationFrame(function(){fitPending=false;FC.fitNames()})}
+if(typeof MutationObserver!=="undefined"&&document.body){
+  new MutationObserver(scheduleFit).observe(document.body,{childList:true,subtree:true});
+  window.addEventListener("resize",scheduleFit);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleFit);
+}
 })();
