@@ -254,7 +254,7 @@ FC.overlay=function(html,opts){
   var ov=document.createElement("div");ov.className="overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
   ov.innerHTML='<div class="ov-card'+(opts.wide?" wide":"")+(opts.cls?" "+opts.cls:"")+'">'+html+'<div class="actions ov-actions"><button class="btn" id="ovClose">'+(opts.button||"Fechar")+'</button></div></div>';
   document.body.appendChild(ov);
-  function key(e){if(e.key==="Escape")close()}
+  function key(e){if(e.key!=="Escape")return;var all=document.querySelectorAll(".overlay");if(all[all.length-1]===ov)close()}   // Esc fecha só a janela de cima
   function close(){if(!ov.parentNode)return;ov.remove();document.removeEventListener("keydown",key);if(opts.onClose)opts.onClose()}
   document.addEventListener("keydown",key);
   ov.addEventListener("click",function(e){if(e.target===ov)close()});

@@ -99,7 +99,7 @@ FC.flipCard=function(themeId,slot){
   setTimeout(function(){if(card.isConnected&&!card.classList.contains("flipped"))toggle()},380);
 };
 function openFlip(el){
-  if(!el||el.closest(".overlay")||el.classList.contains("locked"))return;
+  if(!el||el.classList.contains("locked"))return;
   FC.flipCard(el.getAttribute("data-theme"),Number(el.getAttribute("data-slot")));
 }
 document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest(".sticker.flippable");if(el)openFlip(el)});
