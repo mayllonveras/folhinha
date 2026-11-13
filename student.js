@@ -1,7 +1,7 @@
 /* Área do aluno: PIN, tela inicial, folha de exercícios e resultado. */
 (function(){
 "use strict";
-var FC=window.FC,$=FC.$,esc=FC.esc,sb=FC.sb;
+var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 var S={code:null,token:null,me:null,info:null};
 var cur=null,timerId=null,busy=false;
 
@@ -103,15 +103,8 @@ function home(){
   var need=m.stamps_needed||3,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
   var per=m.period,prev="";
   if(m.prev_period){var pw=m.prev_period;
-    prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou uma figurinha.':'A meta não foi batida.')+'</p>'}
-  var extra="";
-  {
-    var got=m.stickers||[],th=FC.theme(m.sticker_theme);
-    extra='<div class="panel"><div class="eyebrow">Meu álbum · '+esc(th.name)+'</div><div class="big-pts">'+got.length+'<span> de '+FC.ALBUM_SIZE+' figurinhas</span></div>'+
-      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-      (got.length?'<div class="recent-stk">'+got.slice(-3).reverse().map(function(g){return FC.stickerHtml(th.id,g.slot)}).join("")+'</div>':'<p class="muted small-t">Bata a meta da semana para ganhar a primeira figurinha. Você só vê qual é quando ganhar!</p>')+
-      '<p class="actions"><button class="btn" id="albumBtn">Abrir o álbum</button></p></div>';
-  }
+    prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou um pacotinho.':'A meta não foi batida.')+'</p>'}
+  var extra=packPanel(m)+albumsPanel(m);
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.stamp?'<span class="tag ok">carimbo</span>':'<span class="tag">repetir</span>')+"</td></tr>"}).join("");
   FC.render(
@@ -133,25 +126,75 @@ function home(){
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
-  if($("#albumBtn"))$("#albumBtn").onclick=albumScreen;
-  if(m.new_award){var aw=m.new_award;m.new_award=null;setTimeout(function(){showAward(aw,true)},500)}
+  $$("[data-album]").forEach(function(b){b.onclick=function(){albumScreen(b.getAttribute("data-album"))}});
+  if($("#packBtn"))$("#packBtn").onclick=openPackFlow;
+  if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
 }
-function albumScreen(){
+/* ---------- álbuns e pacotinhos ---------- */
+function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"animais"]}
+function gotOf(m,id){return (m.stickers||[]).filter(function(g){return (g.theme||m.sticker_theme)===id})}
+function packPanel(m){
+  var n=m.pending_packs||0;if(n<1)return "";
+  return '<div class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+    '<div class="muted small-t">'+(themesOf(m).length>1?'Escolha de qual álbum você quer a figurinha.':'Toque para descobrir a figurinha.')+'</div></div>'+
+    '<button class="btn" id="packBtn">Abrir pacotinho</button></div>';
+}
+function albumsPanel(m){
+  var ids=themesOf(m);
+  if(ids.length===1){
+    var th=FC.theme(ids[0]),got=gotOf(m,th.id);
+    return '<div class="panel"><div class="eyebrow">Meu álbum · '+esc(th.name)+'</div><div class="big-pts">'+got.length+'<span> de '+FC.ALBUM_SIZE+' figurinhas</span></div>'+
+      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+      (got.length?'<div class="recent-stk">'+got.slice(-3).reverse().map(function(g){return FC.stickerHtml(th.id,g.slot)}).join("")+'</div>':'<p class="muted small-t">Bata a meta da semana para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!</p>')+
+      '<p class="actions"><button class="btn" data-album="'+th.id+'">Abrir o álbum</button></p></div>';
+  }
+  return '<div class="panel"><div class="eyebrow">Meus álbuns</div><div class="albums-list">'+ids.map(function(id){
+    var th=FC.theme(id),got=gotOf(m,id);
+    return '<button class="album-row" data-album="'+id+'"><span class="al-art">'+FC.themeCover(id)+'</span><span class="grow"><b>'+esc(th.name)+'</b>'+
+      '<span class="small-t muted"> '+got.length+' de '+FC.ALBUM_SIZE+'</span><span class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></span></span></button>';
+  }).join("")+'</div></div>';
+}
+/* Ganhou pacotinho: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
+function openPackFlow(){
+  var m=S.me;if(!(m.pending_packs>0))return;
+  var open=themesOf(m).filter(function(id){return gotOf(m,id).length<FC.ALBUM_SIZE});
+  if(!open.length){FC.toast("Seus álbuns já estão completos!");return}
+  if(open.length===1)return openPack(open[0]);
+  var ids=themesOf(m);
+  var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum você quer?</p>'+
+    '<div class="pack-choices">'+ids.map(function(id){
+      var th=FC.theme(id),n=gotOf(m,id).length,full=n>=FC.ALBUM_SIZE;
+      return '<button class="pack-choice" data-t="'+id+'"'+(full?" disabled":"")+'><span class="pc-art">'+FC.themeCover(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Álbum completo!":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
+    }).join("")+'</div>',{button:"Agora não"});
+  $$(".pack-choice",ov.el).forEach(function(b){b.onclick=function(){ov.close();openPack(b.getAttribute("data-t"))}});
+}
+async function openPack(theme){
+  var m=S.me,res;
+  try{res=await rpc("student_open_pack",{p_token:S.token,p_theme:theme})}
+  catch(e){FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
+  m.pending_packs=res.pending;
+  m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
+  showAward(res);
+}
+function albumScreen(id){
   FC.setKeys(null);
-  var m=S.me,th=FC.theme(m.sticker_theme),got=m.stickers||[];
-  FC.render('<header class="top"><div class="brand">Meu álbum<small>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</small></div><button class="btn ghost small" id="albumBack">Voltar</button></header>'+
-    '<div class="panel">'+FC.albumHtml(th.id,got)+'</div>');
+  var m=S.me,ids=themesOf(m);id=ids.indexOf(id)>=0?id:ids[0];
+  var th=FC.theme(id),got=gotOf(m,id);
+  var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button class="chip-btn'+(x===id?" on":"")+'" data-t="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
+  FC.render('<header class="top"><div class="brand">Meu álbum<small>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</small></div><div class="actions">'+((m.pending_packs>0)?'<button class="btn small" id="albumPack">Abrir pacotinho ('+m.pending_packs+')</button>':'')+'<button class="btn ghost small" id="albumBack">Voltar</button></div></header>'+
+    '<div class="panel">'+tabs+'<p class="muted small-t">Toque em uma figurinha para virar e ver os detalhes.</p>'+FC.albumHtml(th.id,got)+'</div>');
   $("#albumBack").onclick=home;
+  if($("#albumPack"))$("#albumPack").onclick=openPackFlow;
+  $$(".album-tabs [data-t]").forEach(function(b){b.onclick=function(){albumScreen(b.getAttribute("data-t"))}});
 }
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
-function showAward(aw,already){
+function showAward(aw){
   var m=S.me;
-  if(!already)m.stickers=(m.stickers||[]).concat([{slot:aw.slot,end:aw.period_end}]);
-  var th=FC.theme(aw.theme),n=(m.stickers||[]).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
+  var th=FC.theme(aw.theme),n=aw.count||gotOf(m,aw.theme).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
   var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum.</p>',{button:"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:m.pending_packs>0?"Abrir o próximo":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(m.pending_packs>0)openPackFlow();else if(!cur&&S.me===m&&document.querySelector(".panel.now"))home()}});
   setTimeout(function(){
     FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
     if(tier==="comum"){FC.confetti();return}
@@ -320,7 +363,14 @@ async function send(payload,score){
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para a meta de hoje.":"Meta de hoje cumprida. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   FC.animateTrail();
-  if(res.award)setTimeout(function(){showAward(res.award,false)},res.advanced?3600:2300);
+  if(res.award&&res.award.kind==="pacote"){
+    S.me.pending_packs=(S.me.pending_packs||0)+1;
+    setTimeout(function(){
+      FC.sfx.pack();FC.confetti();
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>Meta batida!</h2><p class="muted">Você ganhou um pacotinho de figurinhas'+(themesOf(S.me).length>1?'. Você escolhe de qual álbum quer a figurinha.':'.')+'</p>',
+        {button:"Abrir o pacotinho",onClose:openPackFlow});
+    },res.advanced?3600:2300);
+  }
   if(res.stamp)FC.sfx.stamp();
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}

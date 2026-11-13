@@ -134,7 +134,7 @@ var RARIDADE={20:"ultra",41:"ultra",28:"ultra",11:"rara",13:"rara",14:"rara",25:
 function pad(n){return (n<10?"0":"")+n}
 FC.THEMES.push({id:"dinossauros",name:"Dinossauros",desc:"52 dinossauros de verdade, catalogados por período e alimentação. Os 8 mais famosos são raros.",kind:"dino",
   rarity:RARIDADE,
-  backOf:verso,
+  cover:20,backOf:verso,
   nameOf:function(i){return D[i][0]},subOf:function(i){return D[i][1]+" · "+D[i][2]},
   art:function(i){return '<img src="stickers/dinossauros/'+pad(i+1)+'.webp" alt="'+FC.esc(D[i][0])+'" loading="lazy">'}});
 FC.DINOS=D;

@@ -50,6 +50,10 @@ FC.THEMES=[
   {id:"planetas",name:"Planetas misteriosos",desc:"52 mundos imaginários, com anéis, luas e crateras.",kind:"svg",art:planetArt,nameOf:planetName},
   {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS}
 ];
+/* Imagem de capa de um tema (para escolher o álbum). O tema pode indicar qual figurinha usar em "cover". */
+FC.themeCover=function(id){
+  var t=FC.theme(id);return FC.stickerInfo(id,t.cover||0).art;
+};
 FC.tierOf=function(themeId,slot){var t=FC.theme(themeId);return (t.rarity&&t.rarity[slot])||"comum"};
 FC.tierName=function(tier){return tier==="ultra"?"Ultrarrara":tier==="rara"?"Rara":"Comum"};
 /* Quais figurinhas são raras, para o painel dos adultos. */

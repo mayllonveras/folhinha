@@ -50,6 +50,9 @@ FC.err=function(e){
     ["User already registered","Este e-mail já tem cadastro. Entre com a senha."],
     ["sessao_invalida","Sessão expirada."],
     ["sem_folha_hoje","Hoje não é dia de folha para este aluno."],
+    ["sem_pacote","Você não tem pacotinho para abrir agora."],
+    ["album_completo","Este álbum já está completo. Escolha outro."],
+    ["album_invalido","Este álbum não está disponível para você."],
     ["meta_cumprida","A meta de folhas de hoje já foi cumprida."],
     ["convite_invalido","Convite inválido, vencido ou já usado."],
     ["sem_permissao","Você não tem permissão para isso."],
@@ -262,11 +265,11 @@ FC.trailHtml=function(p,o){
   var pct=function(v){return goal>0?Math.min(100,v/goal*100):0};
   var left=Math.max(0,goal-pts),open=!!p.reached;
   var closes="A meta da semana fecha "+FC.DOW_LONG[FC.dow(p.end)].toLowerCase()+", dia "+FC.dm(p.end)+".";
-  var box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar a figurinha.</div>'+
-    '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(o.adult?"A figurinha da semana já foi ganha.":"Você ganhou uma figurinha nova. Ela está no seu álbum.")+'</div></div></div>';
-  return '<div class="trail" id="trail"><div class="eyebrow">Figurinha da semana</div>'+
+  var box='<div class="prizebox'+(open?" show":"")+'"><div class="pz-closed">Faltam <b>'+left+'</b> pontos para ganhar o pacotinho de figurinhas.</div>'+
+    '<div class="pz-open"><div class="pz-title">Meta batida!</div><div class="pz-name">'+(o.adult?"O pacotinho da semana já foi ganho.":"Você ganhou um pacotinho de figurinhas!")+'</div></div></div>';
+  return '<div class="trail" id="trail"><div class="eyebrow">Pacotinho da semana</div>'+
     '<div class="big-pts">'+pts+'<span> / '+goal+' pontos</span></div>'+
-    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até a figurinha" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
+    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o pacotinho" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+pts+'">'+
     '<div class="fill" id="trailFill" data-now="'+pct(pts).toFixed(1)+'" style="width:'+pct(from).toFixed(1)+'%"></div></div>'+
     '<div class="goalicon'+(open?" open":"")+'">'+FC.packSvg()+'</div></div>'+
     box+'<p class="muted small-t">'+closes+'</p></div>';
