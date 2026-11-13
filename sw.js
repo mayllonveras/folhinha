@@ -1,7 +1,7 @@
 /* Service worker: a tela do app abre mesmo sem internet; os dados continuam vindo do Supabase.
    Estratégia: rede primeiro (sempre a versão nova quando online), cache como reserva. */
 var CACHE = "folhinha-v1";
-var SHELL = ["./", "index.html", "style.css", "core.js", "stickers.js", "student.js", "adult.js", "main.js", "config.js",
+var SHELL = ["./", "index.html", "style.css", "core.js", "stickers.js", "dinos.js", "student.js", "adult.js", "main.js", "config.js",
   "vendor/supabase.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png",
   "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 

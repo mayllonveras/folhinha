@@ -78,24 +78,28 @@ function planetArt(slot){
   return s+'</svg>';
 }
 
+var BANDEIRAS=[["br","Brasil","América do Sul"],["ar","Argentina","América do Sul"],["uy","Uruguai","América do Sul"],["py","Paraguai","América do Sul"],["cl","Chile","América do Sul"],["bo","Bolívia","América do Sul"],["pe","Peru","América do Sul"],["co","Colômbia","América do Sul"],["ve","Venezuela","América do Sul"],["ec","Equador","América do Sul"],["mx","México","América do Norte"],["us","Estados Unidos","América do Norte"],["ca","Canadá","América do Norte"],["cu","Cuba","América Central"],["jm","Jamaica","América Central"],["pt","Portugal","Europa"],["es","Espanha","Europa"],["fr","França","Europa"],["it","Itália","Europa"],["de","Alemanha","Europa"],["gb","Reino Unido","Europa"],["ie","Irlanda","Europa"],["nl","Países Baixos","Europa"],["be","Bélgica","Europa"],["ch","Suíça","Europa"],["se","Suécia","Europa"],["no","Noruega","Europa"],["dk","Dinamarca","Europa"],["fi","Finlândia","Europa"],["gr","Grécia","Europa"],["ru","Rússia","Europa e Ásia"],["pl","Polônia","Europa"],["ua","Ucrânia","Europa"],["tr","Turquia","Ásia e Europa"],["jp","Japão","Ásia"],["cn","China","Ásia"],["kr","Coreia do Sul","Ásia"],["in","Índia","Ásia"],["id","Indonésia","Ásia"],["th","Tailândia","Ásia"],["vn","Vietnã","Ásia"],["il","Israel","Ásia"],["sa","Arábia Saudita","Ásia"],["eg","Egito","África"],["za","África do Sul","África"],["ng","Nigéria","África"],["ma","Marrocos","África"],["ke","Quênia","África"],["ao","Angola","África"],["mz","Moçambique","África"],["au","Austrália","Oceania"],["nz","Nova Zelândia","Oceania"]];
+
 FC.THEMES=[
   {id:"animais",name:"Animais do mundo",desc:"Leão, panda, pinguim, golfinho e mais 48 bichos.",kind:"emoji",items:ANIMAIS},
   {id:"frutas",name:"Frutas e comidas",desc:"Das frutas aos doces, 52 delícias para colecionar.",kind:"emoji",items:FRUTAS},
   {id:"veiculos",name:"Veículos",desc:"Carros, trens, barcos, aviões e foguetes.",kind:"emoji",items:VEICULOS},
   {id:"monstrinhos",name:"Monstrinhos",desc:"52 monstrinhos desenhados um a um, cada qual com seu nome.",kind:"svg",art:monsterArt,nameOf:monsterName},
-  {id:"planetas",name:"Planetas misteriosos",desc:"52 mundos imaginários, com anéis, luas e crateras.",kind:"svg",art:planetArt,nameOf:planetName}
+  {id:"planetas",name:"Planetas misteriosos",desc:"52 mundos imaginários, com anéis, luas e crateras.",kind:"svg",art:planetArt,nameOf:planetName},
+  {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS}
 ];
 FC.theme=function(id){for(var i=0;i<FC.THEMES.length;i++)if(FC.THEMES[i].id===id)return FC.THEMES[i];return FC.THEMES[0]};
 FC.stickerInfo=function(themeId,slot){
   var t=FC.theme(themeId);
   if(t.kind==="emoji"){var it=t.items[slot];return{name:it[1],art:'<span class="emo" aria-hidden="true">'+it[0]+'</span>'}}
-  return{name:t.nameOf(slot),art:t.art(slot)};
+  if(t.kind==="flag"){var c=t.items[slot];return{name:c[1],sub:c[2],art:'<img src="flags/'+c[0]+'.svg" alt="Bandeira: '+FC.esc(c[1])+'" loading="lazy">'}}
+  return{name:t.nameOf(slot),sub:t.subOf?t.subOf(slot):"",art:t.art(slot)};
 };
 /* Cartão de uma figurinha. opts.dim deixa a figurinha apagada (visão do adulto para as que ainda não foram ganhas). */
 FC.stickerHtml=function(themeId,slot,opts){
   var it=FC.stickerInfo(themeId,slot),hue=(slot*37+20)%360;
   return '<div class="sticker'+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+'" style="--sh:'+hue+'" title="'+FC.esc(it.name)+'">'+
-    '<div class="st-art">'+it.art+'</div><div class="st-name">'+FC.esc(it.name)+'</div><div class="st-no">nº '+(slot+1)+'</div></div>';
+    '<div class="st-art">'+it.art+'</div><div class="st-name'+(it.name.length>13?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div></div>';
 };
 FC.lockedHtml=function(slot){
   return '<div class="sticker locked" aria-label="Figurinha '+(slot+1)+' ainda não conquistada"><div class="st-art"><span class="st-q">?</span></div><div class="st-name">&nbsp;</div><div class="st-no">nº '+(slot+1)+'</div></div>';

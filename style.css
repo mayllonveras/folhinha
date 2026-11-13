@@ -290,3 +290,8 @@ details .form{margin-top:12px}
 }
 
 [hidden]{display:none!important}
+
+.sticker .st-sub{font-size:.62rem;line-height:1.1;opacity:.78}
+.sticker .st-art img{display:block;width:100%;height:auto;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.28)}
+.sticker .st-name.long{font-size:.6rem;letter-spacing:-.01em;hyphens:auto;-webkit-hyphens:auto}
+.sticker.big .st-name.long{font-size:.9rem}
