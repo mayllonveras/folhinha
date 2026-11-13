@@ -73,10 +73,28 @@ Cada figurinha foi comparada lado a lado com uma foto oficial, e cada fato do ve
 | 51 | Andrômeda | NASA | bate | N |
 | 52 | Galáxia do Redemoinho | NASA/ESA Hubble | bate | N |
 
-## O que ainda é cálculo, com método explícito
-- **Distâncias da Terra** a Mercúrio, Vênus, Marte, Júpiter, Saturno, Urano, Netuno, Plutão, Ceres e Vesta: mínimo e máximo de 1900 a 2100, lidos do JPL Horizons.
-- **Eros** (26,7 milhões de km em 31/01/2012) e **Halley** (62,4 milhões de km em 11/04/1986): lidos do JPL Horizons.
-- **Hale-Bopp** (1,315 UA, 197 milhões de km): página oficial do JPL.
+## Distâncias da Terra: leitura valor por valor do JPL Horizons
+Serviço oficial do JPL (`ssd.jpl.nasa.gov/api/horizons.api`), consulta "observador" com centro na Terra (500@399), grandeza *delta* (distância ao observador), de 1900 a 2100. O verso arredonda o mínimo e o máximo.
+
+| Corpo | Mínimo (milhões de km) | Máximo (milhões de km) | O que o verso diz |
+|---|---|---|---|
+| Mercúrio | 82,1 (1936-jun-01) | 217,1 (2034-dez-04) | de uns 82 a 217 |
+| Vênus | 39,5 (2085-dez-20) | 259,7 (1960-jun-23) | de uns 40 a 260 |
+| Marte | 55,8 (1924-ago-23) | 400,4 (2066-ago-26) | de uns 56 a 400 |
+| Júpiter | 590,8 (1951-out-01) | 965,8 (1945-out-02) | de uns 590 a 965 |
+| Saturno | 1.201,5 (1914-dez-24) | 1.653,1 (2076-dez-23) | de uns 1,2 a 1,65 bilhão |
+| Urano | 2.587,1 (2051-mar-10) | 3.155,1 (2009-mar-10) | de uns 2,6 a 3,2 bilhões |
+| Netuno | 4.310,6 (2041-out-28) | 4.685,8 (1958-out-24) | de uns 4,3 a 4,7 bilhões |
+| Plutão | 4.291,5 (1990-mai-09) | 7.458,4 (2099-abr-27) | de uns 4,3 a 7,5 bilhões |
+| Ceres | 236,9 (2009-fev-28) | 592,9 (2085-mar-01) | de uns 240 a 590 |
+| Vesta | 170,2 (1949-jun-13) | 536,6 (2027-jun-04) | de uns 170 a 540 |
+| Eros | 26,7 (2012-jan-31) | | "chegou a 26,7 milhões de km em 31/01/2012" |
+| Halley | 62,4 (1986-abr-11) | | "passou a 62 milhões de km em 11/04/1986" |
+
+Hale-Bopp (1,315 UA, 197 milhões de km, 22/03/1997): página oficial do JPL. Bennu ("a cada 6 anos chega a uns 300 mil km"): página da NASA (299.000 km).
+
+## Sirius B
+Sirius B não está mais no álbum (saiu no PR #11). Os números de Sirius B que ela trazia (cerca de 25.000 °C, massa igual à do Sol, 90% da largura da Terra, gravidade 400 mil vezes) foram conferidos na página oficial do Chandra (NASA/SAO/CXC, imagem 2000/0065) antes de a figurinha sair.
 
 ## Figurinhas trocadas por não terem foto oficial
 - **PR #11:** Haumea, Makemake, Pulsar do Caranguejo e Sirius B (sem imagem utilizável) deram lugar a Réia, Tétis, Nebulosa do Caranguejo e Nebulosa da Hélice.
