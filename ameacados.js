@@ -15,7 +15,7 @@ var D=[
  ["Panda-gigante","vu"],["Tigre","en"],["Orangotango","cr"],["Gorila-de-montanha","en"],["Rinoceronte-negro","cr"],["Elefante-asiático","en"],
  ["Leopardo-das-neves","vu"],["Lêmure-catta","en"],["Coala","vu"],["Diabo-da-tasmânia","en"],["Okapi","en"],["Pangolim-malaio","cr"],
  // Folha 3: mares
- ["Baleia-azul","en"],["Vaquita","cr"],["Dugongo","vu"],["Foca-monge-havaiana","en"],["Tartaruga-de-couro","vu"],["Tartaruga-verde","en"],
+ ["Baleia-azul","en"],["Vaquita","cr"],["Dugongo","vu"],["Foca-monge-havaiana","en"],["Tartaruga-de-couro","vu"],["Mero","vu"],
  ["Tartaruga-de-pente","cr"],["Tubarão-martelo","cr"],["Tubarão-baleia","en"],["Raia-manta","en"],["Cavalo-marinho","vu"],["Albatroz-errante","vu"],
  // Folha 4: aves, répteis, anfíbios e insetos
  ["Kakapo","cr"],["Condor-dos-Andes","vu"],["Águia-filipina","cr"],["Pinguim-imperador","en"],["Dragão-de-komodo","en"],["Gavial","cr"],
@@ -56,7 +56,7 @@ var F=[
  ["Mares quentes do Oceano Índico e do Pacífico","ervas marinhas","2,5 a 3 m","250 a 400 kg","perde as ervas marinhas e é pego em redes","Áreas marinhas protegidas cuidam das ervas de que ele se alimenta.","Dizem que os marinheiros antigos confundiam o dugongo com sereias."],
  ["Ilhas do Havaí, no Oceano Pacífico","peixes, lulas e polvos","2,1 a 2,4 m","170 a 270 kg","fica preso em redes e perde as praias","Voluntários protegem os filhotes nas praias, e a população vem crescendo devagar.","Descansa nas praias, e as pessoas devem observar de longe, para não assustar."],
  ["Mares tropicais e temperados do mundo. No Brasil desova no Espírito Santo","águas-vivas","1,5 a 2 m","250 a 700 kg","engole sacos plásticos e morre em redes de pesca","O Projeto Tamar vigia as praias onde elas põem os ovos.","É a maior tartaruga do mundo e mergulha a mais de 1.000 m de profundidade."],
- ["Mares tropicais do mundo, inclusive o do Brasil","algas e ervas marinhas, quando adulta","1 a 1,5 m","110 a 190 kg","perde as praias e é pega em redes","O Projeto Tamar protege os ninhos e solta os filhotes no mar.","O nome vem da cor da gordura, e não da casca."],
+ ["Recifes, mangues e costas quentes do Atlântico, inclusive o litoral do Brasil","caranguejos, lagostas, polvos e peixes","2 a 2,5 m","200 a 400 kg","foi pescado demais e perde os mangues onde os filhotes crescem. No mundo é considerado vulnerável","A pesca do mero é proibida no Brasil desde 2002, e proteger os mangues ajuda os filhotes.","É um dos maiores peixes de recife do Atlântico e faz um ronco grave que dá para ouvir debaixo d'água."],
  ["Mares tropicais do mundo, inclusive o do Brasil","esponjas do mar","80 a 90 cm","45 a 70 kg","foi caçada pelo casco bonito","A venda de objetos de casco de tartaruga é proibida em quase todo o mundo.","O bico fino e pontudo alcança esponjas escondidas nos recifes."],
  ["Mares tropicais e quentes do mundo, inclusive o litoral do Brasil","peixes, lulas e raias","3 a 4 m","80 a 150 kg","é pescado demais, por exemplo pelas nadadeiras","Limites de pesca e a proibição de cortar nadadeiras protegem os tubarões.","Os olhos nas pontas da cabeça dão uma visão muito ampla."],
  ["Mares quentes e tropicais do mundo","plâncton e peixes pequenos","10 a 12 m","10 a 20 t","é pescado demais e atingido por barcos","Áreas de proteção e passeios com regras ajudam os tubarões-baleia.","É o maior peixe do mundo, mas só come bichinhos minúsculos. As pintas são únicas em cada um."],
@@ -82,7 +82,7 @@ var F=[
 ];
 
 var NIVEL={ew:"Extinto na natureza",cr:"Criticamente em perigo",en:"Em perigo",vu:"Vulnerável",nt:"Quase ameaçado"};
-var STATUS_EXTRA={34:"Vulnerável no Brasil"};   // Cavalo-marinho: vulnerável na lista do Brasil, quase ameaçado no mundo
+var STATUS_EXTRA={34:"Vulnerável no Brasil",29:"Criticamente em perigo no Brasil"};   // Cavalo-marinho: vulnerável na lista do Brasil (quase ameaçado no mundo). Mero: crítico no Brasil (vulnerável no mundo)
 function status(i){
   var d=D[i],n=d[1];
   if(STATUS_EXTRA[i])return STATUS_EXTRA[i];
