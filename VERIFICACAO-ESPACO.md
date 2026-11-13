@@ -14,7 +14,6 @@ Cada figurinha foi comparada lado a lado com uma foto oficial, e cada fato do ve
 
 ## Legenda do veredito visual
 - **bate** = a figurinha mostra o que a imagem oficial mostra (forma, cor, feições principais); o estilo é de desenho.
-- **ilustração** = não existe foto do disco da estrela; a comparação foi com a ilustração oficial (só Proxima Centauri).
 - **refeita** = divergia da imagem oficial e foi gerada de novo.
 
 ## As 52 figurinhas
@@ -24,7 +23,7 @@ Cada figurinha foi comparada lado a lado com uma foto oficial, e cada fato do ve
 | 1 | Sol | NASA, SDO (disco com manchas) | bate (disco alaranjado com manchas; a figurinha é mais amarela e tem chamas de desenho) | N |
 | 2 | Sirius | ESA/Hubble heic0516a | bate | N, C |
 | 3 | Betelgeuse | ESO, ALMA potw1726a | bate | N, E, S |
-| 4 | Proxima Centauri | ESO eso1629a (ilustração) | ilustração, bate | N, E |
+| 4 | Alfa do Centauro | NASA/ESA Hubble, WFPC2 (as estrelas A e B) | bate (duas estrelas lado a lado com raios de brilho; A mais branca e maior, B mais laranja e menor) | N, S |
 | 5 | Estrela Polar | NASA/Hubble (ponto de luz) | bate | N, E |
 | 6 | Mercúrio | NASA, MESSENGER | bate | N, F, J |
 | 7 | Vênus | NASA, Mariner 10 e Magellan | refeita (era laranja saturada; agora creme-claro com veios bege) | N, F, J |
@@ -81,7 +80,8 @@ Cada figurinha foi comparada lado a lado com uma foto oficial, e cada fato do ve
 
 ## Figurinhas trocadas por não terem foto oficial
 - **PR #11:** Haumea, Makemake, Pulsar do Caranguejo e Sirius B (sem imagem utilizável) deram lugar a Réia, Tétis, Nebulosa do Caranguejo e Nebulosa da Hélice.
-- **Este PR:** Éris, Proxima b, TRAPPIST-1e, Kepler-452b, 51 Pegasi b e Via Láctea (só tinham ilustração oficial) deram lugar a Dione, Hiperião, Ariel, Nebulosa do Anel, Galáxia do Sombreiro e Plêiades, que têm foto oficial.
+- **PR #15:** Éris, Proxima b, TRAPPIST-1e, Kepler-452b, 51 Pegasi b e Via Láctea (só tinham ilustração oficial) deram lugar a Dione, Hiperião, Ariel, Nebulosa do Anel, Galáxia do Sombreiro e Plêiades, que têm foto oficial.
+- **Este PR:** Proxima Centauri (o disco da estrela nunca foi fotografado) deu lugar a Alfa do Centauro, cuja foto do Hubble mostra as estrelas A e B.
 Com isso, as 52 figurinhas têm foto oficial para comparação.
 
 ## Origens de nomes que foram retiradas do verso por falta de fonte oficial
