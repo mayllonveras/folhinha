@@ -322,13 +322,14 @@ async function detail(id){
     '</div><div class="col">'+
     '<div class="panel"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>'+
-    '<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div>'+weakHtml+
+    '<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div>'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div>'+
     '</div></div>'+
     monthsHtml+weeksHtml+
     '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>'+
     (iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><button class="btn ghost small" id="del">Apagar aluno e todo o histórico</button></div>':''));
   bindTop();bindProgram();
   $("#back").onclick=dash;
+  loadSlow(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
@@ -364,18 +365,46 @@ async function detail(id){
   $$("[data-sheet]").forEach(function(b){b.onclick=function(){openSheet(b.getAttribute("data-sheet"),b)}});
 }
 
+/* Contas em que o aluno mais demora, nas últimas 20 folhas: média do tempo na conta contra o tempo esperado do nível. */
+async function loadSlow(id){
+  var box=$("#slowBox");if(!box)return;
+  var r=await sb.from("sheets").select("level_idx,problems,answers").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(20);
+  if(r.error){box.innerHTML='<div class="eyebrow gap">Contas mais demoradas</div><p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
+  var g={};
+  r.data.forEach(function(sh){
+    var exp=FC.LEVELS[sh.level_idx].target/10*1000;
+    (sh.answers||[]).forEach(function(a,i){
+      var p=sh.problems[i];if(!p||!a||!(a.ms>0))return;
+      var k=sh.level_idx+"|"+p.pre+"|"+(p.post||""),x=g[k]||(g[k]={p:p,exp:exp,sum:0,n:0,lv:sh.level_idx});
+      x.sum+=a.ms;x.n++;
+    });
+  });
+  var rows=Object.keys(g).map(function(k){var x=g[k];x.avg=x.sum/x.n;x.ratio=x.avg/x.exp;return x})
+    .filter(function(x){return x.ratio>1}).sort(function(a,b){return b.ratio-a.ratio}).slice(0,8);
+  var any=Object.keys(g).length;
+  box.innerHTML='<div class="eyebrow gap">Contas mais demoradas</div>'+(rows.length?
+    '<ul class="plain miss">'+rows.map(function(x){
+      return '<li><span class="q">'+esc(x.p.pre)+' <b>'+esc(x.p.a)+'</b>'+esc(x.p.post||"")+'</span> <span class="muted small-t">nível '+esc(FC.lv(x.lv))+' · média '+FC.fmtSec(x.avg)+' (esperado '+FC.fmtSec(x.exp)+')'+(x.n>1?' · '+x.n+' vezes':'')+'</span></li>'}).join("")+'</ul>':
+    '<p class="muted">'+(any?'Nenhuma conta ficou acima do tempo esperado nas últimas folhas.':'Ainda não há tempos por conta. Eles aparecem nas próximas folhas.')+'</p>')+
+    '<p class="muted small-t gap">O tempo de cada conta conta enquanto a caixa de resposta dela está selecionada, só na primeira tentativa.</p>';
+}
+
 async function openSheet(sid,btn){
   var box=$("#sheetView");box.innerHTML='<p class="loading">Carregando folha…</p>';
   var r=await sb.from("sheets").select("problems,answers,level_idx,study_day,first_ok,secs,points").eq("id",sid).single();
   if(r.error){box.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
   var sh=r.data,ans=sh.answers||[];
+  var exp=FC.LEVELS[sh.level_idx].target/10*1000,msAll=ans.map(function(a){return a&&a.ms>0?a.ms:0}).filter(function(x){return x>0});
+  var avg=msAll.length?msAll.reduce(function(a,b){return a+b},0)/msAll.length:0;
   var li=sh.problems.map(function(p,i){
-    var a=ans[i]||{},ok=a.ok;
+    var a=ans[i]||{},ok=a.ok,ms=a.ms||0;
     return '<li class="'+(ok?"ok":"bad")+'"><span class="q">'+esc(p.pre)+' '+esc(a.v===""||a.v==null?"–":a.v)+(p.post?" "+esc(p.post):"")+'</span> '+
-      (ok?'<span class="tag ok">certa de primeira</span>':'<span class="tag bad">errou · resposta certa: '+esc(p.a)+'</span>')+(a.tries>1?' <span class="muted small-t">('+a.tries+' tentativas)</span>':'')+'</li>';
+      (ok?'<span class="tag ok">certa de primeira</span>':'<span class="tag bad">errou · resposta certa: '+esc(p.a)+'</span>')+
+      (ms>0?' <span class="muted small-t">'+FC.fmtSec(ms)+'</span>':'')+(ms>exp*1.5?' <span class="tag warn">lenta</span>':'')+
+      (a.tries>1?' <span class="muted small-t">('+a.tries+' tentativas)</span>':'')+'</li>';
   }).join("");
   box.innerHTML='<div class="sheetview"><h3>Folha de '+FC.dayLabel(sh.study_day)+' · nível '+esc(FC.lv(sh.level_idx))+'</h3>'+
-    '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+' · '+sh.points+' pontos</p><ol class="sv">'+li+'</ol></div>';
+    '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+' · '+sh.points+' pontos'+(avg?' · tempo médio por conta '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+')':'')+'</p><ol class="sv">'+li+'</ol></div>';
   box.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 })();

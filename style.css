@@ -234,3 +234,5 @@ details .form{margin-top:12px}
   @keyframes pzIn{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:none}}
 }
 @media (max-width:760px){.chest{width:76px}}
+
+.tag.warn{color:var(--warn);border-color:var(--warn)}

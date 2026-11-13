@@ -182,9 +182,12 @@ async function startSheet(){
   }
   prep=null;
   r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal=""});
-  cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro};
+  cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro,dwell:r.items.map(function(){return 0}),active:null,since:0};
   renderSheet();
 }
+/* Tempo por conta: soma dos períodos em que a caixa de resposta daquela conta ficou em foco (só na 1ª tentativa). */
+function startDwell(i){if(!cur||cur.round>0)return;stopDwell();cur.active=i;cur.since=performance.now()}
+function stopDwell(){if(cur&&cur.active!=null){cur.dwell[cur.active]+=performance.now()-cur.since;cur.active=null}}
 function renderSheet(){
   var L=FC.LEVELS[cur.level],d=new Date();
   FC.render('<div class="paper"><div class="sh-head">'+
@@ -199,6 +202,8 @@ function renderSheet(){
   cur.items.forEach(function(it){
     var inp=$("#in"+it.i);
     inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad")});
+    inp.addEventListener("focus",function(){startDwell(it.i)});
+    inp.addEventListener("blur",stopDwell);
     inp.addEventListener("keydown",function(e){
       if(e.key!=="Enter")return;e.preventDefault();
       for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){$("#in"+k).focus();return}
@@ -218,7 +223,7 @@ function renderSheet(){
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
   if(!cur||busy)return;
-  if(cur.round===0){cur.secs=(Date.now()-cur.t0)/1000;clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
+  if(cur.round===0){stopDwell();cur.secs=(Date.now()-cur.t0)/1000;clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
   cur.round++;
   var wrong=0,focus=null;
   cur.items.forEach(function(it){
@@ -243,7 +248,7 @@ async function finish(){
   clearInterval(timerId);
   var items=cur.items,score=items.filter(function(i){return i.first}).length;
   var payload={p_token:S.token,p_sheet:cur.id,p_first_ok:score,p_secs:Math.round(cur.secs*10)/10,
-    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries}}),
+    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries,ms:Math.round(cur.dwell[i.i]||0)}}),
     p_corrections:items.filter(function(i){return i.tries>1}).length};
   await send(payload,score);
 }

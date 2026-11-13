@@ -27,6 +27,7 @@ FC.addDays=function(s,n){var d=FC.date(s);d.setDate(d.getDate()+n);return FC.ymd
 FC.dm=function(s){return s.slice(8,10)+"/"+s.slice(5,7)};
 FC.dow=function(s){return FC.date(s).getDay()};
 FC.weekEnd=function(day,close){return FC.addDays(day,((close-FC.dow(day))+7)%7)};
+FC.fmtSec=function(ms){return (ms/1000).toFixed(1).replace(".",",")+" s"};
 FC.fmtTime=function(s){s=Math.round(s);return FC.pad(Math.floor(s/60))+":"+FC.pad(s%60)};
 FC.dayLabel=function(s){return FC.DOW[FC.dow(s)]+" "+FC.dm(s)};
 /* Próximo dia de estudo a partir de 'from' (inclusive se pedido), respeitando a data de início. */
