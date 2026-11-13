@@ -18,7 +18,7 @@ var D=[
  ["Baleia-azul","en"],["Vaquita","cr"],["Dugongo","vu"],["Foca-monge-havaiana","en"],["Tartaruga-de-couro","vu"],["Tartaruga-verde","en"],
  ["Tartaruga-de-pente","cr"],["Tubarão-martelo","cr"],["Tubarão-baleia","en"],["Raia-manta","en"],["Cavalo-marinho","vu"],["Albatroz-errante","vu"],
  // Folha 4: aves, répteis, anfíbios e insetos
- ["Kakapo","cr"],["Condor-dos-Andes","vu"],["Águia-filipina","cr"],["Pinguim-imperador","nt","o"],["Dragão-de-komodo","en"],["Gavial","cr"],
+ ["Kakapo","cr"],["Condor-dos-Andes","vu"],["Águia-filipina","cr"],["Pinguim-imperador","en"],["Dragão-de-komodo","en"],["Gavial","cr"],
  ["Salamandra-gigante","cr"],["Axolote","cr"],["Borboleta-monarca","en"],["Iguana-azul","en"],["Rã-dourada","cr"],["Calau-de-capacete","cr"],
  // Folha 5: extras
  ["Urso-polar","vu"],["Lince-ibérico","vu"],["Bonobo","en"],["Elefante-africano","en"]
@@ -61,9 +61,9 @@ var F=[
  ["Mares tropicais e quentes do mundo, inclusive o litoral do Brasil","peixes, lulas e raias","3 a 4 m","80 a 150 kg","é pescado demais, por exemplo pelas nadadeiras","Limites de pesca e a proibição de cortar nadadeiras protegem os tubarões.","Os olhos nas pontas da cabeça dão uma visão muito ampla."],
  ["Mares quentes e tropicais do mundo","plâncton e peixes pequenos","10 a 12 m","10 a 20 t","é pescado demais e atingido por barcos","Áreas de proteção e passeios com regras ajudam os tubarões-baleia.","É o maior peixe do mundo, mas só come bichinhos minúsculos. As pintas são únicas em cada um."],
  ["Mares tropicais e temperados do mundo","plâncton","5 a 7 m com as asas abertas","cerca de 1 t","é pescada demais e fica presa em redes","Proteção internacional e passeios de mergulho com regras ajudam as raias-mantas.","As manchas da barriga são únicas, como impressão digital."],
- ["Águas rasas tropicais e temperadas do mundo","bichinhos minúsculos, os crustáceos","de 2 a 35 cm, conforme a espécie","poucos gramas","perde os mangues e os recifes e é pescado","Protege-se os recifes e os mangues, onde eles se escondem.","É o pai que carrega os ovos numa bolsa na barriga e “dá à luz”."],
+ ["Águas rasas tropicais e temperadas do mundo","bichinhos minúsculos, os crustáceos","de 2 a 35 cm, conforme a espécie","poucos gramas","perde os mangues e os recifes e é pescado (no mundo todo, é considerado quase ameaçado)","Protege-se os recifes e os mangues, onde eles se escondem.","É o pai que carrega os ovos numa bolsa na barriga e “dá à luz”."],
  ["Oceanos do Sul, perto da Antártida","lulas e peixes","3 a 3,5 m com as asas abertas","6 a 12 kg","morre presa em linhas de pesca","Linhas de pesca com fitas que espantam as aves reduzem os acidentes.","É a ave de asas mais compridas do mundo e voa milhares de km quase sem bater as asas."],
- ["Florestas das ilhas da Nova Zelândia","folhas, frutos e sementes","cerca de 60 cm","1 a 4 kg","gatos e ratos trazidos por pessoas comem os filhotes","Cuidadores monitoram cada kakapo: de 51 aves em 1995 a mais de 240 hoje.","É o único papagaio que não voa e o mais pesado do mundo. Tem um cheiro adocicado."],
+ ["Florestas das ilhas da Nova Zelândia","folhas, frutos e sementes","cerca de 60 cm","1 a 4 kg","gatos e ratos trazidos por pessoas comem os filhotes","Cuidadores monitoram cada kakapo: de 51 aves em 1995 para 325 em 2026.","É o único papagaio que não voa e o mais pesado do mundo. Tem um cheiro adocicado."],
  ["Cordilheira dos Andes, na América do Sul","animais que já estavam mortos","1 m, com asas de até 3,2 m abertas","11 a 15 kg","sofre envenenamento e perde o ambiente","Programas de criação soltam condores nos Andes.","É uma das maiores aves que voam e plana horas sem bater as asas."],
  ["Florestas das Filipinas","macacos, morcegos e aves","cerca de 1 m, com asas de uns 2 m abertas","4 a 8 kg","perde a floresta onde vive","Centros criam filhotes, e a ave é protegida por lei.","É a ave-símbolo das Filipinas e já foi chamada de “águia comedora de macacos”."],
  ["Antártida","peixes, lulas e krill","1,1 a 1,3 m","22 a 45 kg","o gelo do mar derrete e os filhotes perdem o chão","Cientistas acompanham as colônias por satélite, e proteger o gelo é a esperança.","O pai choca o ovo sobre os pés por cerca de dois meses, em pleno inverno gelado."],
@@ -72,8 +72,8 @@ var F=[
  ["Riachos de montanha da China","peixes, caranguejos e outros bichos de rio","1 a 1,5 m","25 a 50 kg","é pescada e perde os rios limpos","Reservas e criadouros ajudam a salvar as salamandras.","É o maior anfíbio do mundo e respira também pela pele."],
  ["Canais e lagos de Xochimilco, no México","vermes, larvas e peixinhos","15 a 30 cm","60 a 110 g","a água da cidade está poluída","Refúgios nos canais e hortas flutuantes protegem os axolotes.","Pode crescer de novo as patas perdidas e vive nas águas com as guelras para sempre."],
  ["Américas do Norte e Central; migra para o México","as lagartas comem só asclépias; os adultos bebem néctar","asas de 9 a 10 cm abertas","menos de 1 g","perde as asclépias e a floresta onde passa o inverno","Plantar asclépias em jardins ajuda as monarcas.","Voa até uns 4.000 km, sem nunca ter feito o caminho antes."],
- ["Ilha Grand Cayman, no Mar do Caribe","plantas, frutas e flores","1,2 a 1,5 m","11 a 14 kg","as florestas da ilha foram derrubadas","Um programa de criação e soltura fez as iguanas passarem de menos de 25 a mais de mil.","Vive quase sempre sozinha, esquentando-se ao sol sobre as pedras."],
- ["Florestas de montanha do Panamá","insetos pequenos","4 a 6 cm","3 a 15 g","um fungo mortal ataca os anfíbios","Centros de criação mantêm rãs-douradas salvas do fungo.","Acena com uma pata para as outras rãs, porque o barulho dos riachos abafa o som."],
+ ["Ilha Grand Cayman, no Mar do Caribe","plantas, frutas e flores","1,2 a 1,5 m","11 a 14 kg","as florestas da ilha foram derrubadas","Um programa de criação e soltura fez as iguanas passarem de menos de 25 em 2002 para centenas hoje.","Vive quase sempre sozinha, esquentando-se ao sol sobre as pedras."],
+ ["Florestas de montanha do Panamá","insetos pequenos","4 a 6 cm","3 a 15 g","um fungo mortal ataca os anfíbios, e talvez já não existam rãs-douradas livres na natureza","Centros de criação mantêm rãs-douradas salvas do fungo.","Acena com uma pata para as outras rãs, porque o barulho dos riachos abafa o som."],
  ["Florestas do Sudeste da Ásia: Bornéu, Sumatra e Malásia","figos e frutos","cerca de 1,2 m","cerca de 3 kg","é caçado pelo “capacete” e perde a floresta","Campanhas e leis tentam acabar com o comércio do capacete.","O canto parece uma gargalhada, e o “capacete” é feito de osso maciço."],
  ["Gelo do Ártico","focas, principalmente","2 a 2,5 m","300 a 600 kg","o gelo do mar derrete","Menos poluição e proteção do gelo do Ártico ajudam os ursos-polares.","A pele é preta, e o pelo não é branco, é transparente."],
  ["Sul da Espanha e de Portugal","coelhos, quase um por dia","80 a 110 cm","8 a 15 kg","perdeu os coelhos de que se alimenta","Programas de criação fizeram os linces passarem de cerca de 100 a mais de 2.000.","Os tufos pretos nas orelhas e a barba nas bochechas são a sua marca registrada."],
@@ -82,8 +82,10 @@ var F=[
 ];
 
 var NIVEL={ew:"Extinto na natureza",cr:"Criticamente em perigo",en:"Em perigo",vu:"Vulnerável",nt:"Quase ameaçado"};
+var STATUS_EXTRA={34:"Vulnerável no Brasil"};   // Cavalo-marinho: vulnerável na lista do Brasil, quase ameaçado no mundo
 function status(i){
   var d=D[i],n=d[1];
+  if(STATUS_EXTRA[i])return STATUS_EXTRA[i];
   if(n==="ew")return d[2]==="a"?"Extinta na natureza":"Extinto na natureza";
   if(n==="nt")return d[2]==="a"?"Quase ameaçada":"Quase ameaçado";
   return NIVEL[n];
