@@ -10,7 +10,7 @@ FC.$=function(s,r){return (r||document).querySelector(s)};
 FC.$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 FC.esc=function(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
-FC.render=function(html){FC.$("#app").innerHTML=html;window.scrollTo(0,0)};
+FC.render=function(html){document.body.classList.remove("has-nav");FC.$("#app").innerHTML=html;window.scrollTo(0,0)};
 FC.setKeys=function(fn){
   if(FC._kh)document.removeEventListener("keydown",FC._kh);
   FC._kh=fn||null;if(fn)document.addEventListener("keydown",fn);
@@ -242,11 +242,9 @@ FC.periodOf=function(day,close){
   var end=FC.weekEnd(day,close);return{start:FC.addDays(end,-6),end:end};
 };
 FC.packSvg=function(){
-  return '<svg viewBox="0 0 100 120" class="pack-svg" aria-hidden="true">'+
-    '<path class="pk-body" d="M16 8 L24 14 L32 8 L40 14 L48 8 L56 14 L64 8 L72 14 L80 8 L84 14 V106 L80 112 L72 106 L64 112 L56 106 L48 112 L40 106 L32 112 L24 106 L16 112 L12 106 V14Z"/>'+
-    '<path class="pk-shine" d="M22 20 H46 L30 100 H22Z"/>'+
-    '<circle class="pk-badge" cx="50" cy="60" r="22"/><path class="pk-star" d="M50 44l4.6 9.6 10.4 1.3-7.7 7.2 2 10.4L50 67.5 40.7 72.5l2-10.4-7.7-7.2 10.4-1.3z"/>'+
-    '<text class="pk-q" x="50" y="102" text-anchor="middle">?</text></svg>';
+  return '<svg viewBox="0 0 64 76" class="pack-svg" aria-hidden="true"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/>'+
+    '<path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/>'+
+    '<path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg>';
 };
 /* Aviso no meio da tela (usado ao ganhar figurinha, no verso da figurinha e na galeria do adulto). */
 FC.overlay=function(html,opts){
@@ -281,6 +279,47 @@ FC.trailHtml=function(p,o){
 FC.animateTrail=function(){
   var f=FC.$("#trailFill");if(!f)return;
   setTimeout(function(){f.style.width=f.getAttribute("data-now")+"%"},350);
+};
+
+/* ---------- ícones, abas (topo) e menu inferior (celular) ---------- */
+FC.icon=function(name,cls){return '<svg class="i'+(cls?" "+cls:"")+'" aria-hidden="true"><use href="#i-'+name+'"/></svg>'};
+FC.tabState={};
+function tabKey(scope){return "fc_tab_"+scope}
+/* Monta o cabeçalho, as abas e os painéis. Todos os painéis ficam na página; trocar de aba só mostra um e esconde os outros.
+   o: {scope, head, tabs:[{id,label,icon,html}], active} */
+FC.tabsShell=function(o){
+  var saved=FC.tabState[o.scope];
+  if(!saved){try{saved=sessionStorage.getItem(tabKey(o.scope))}catch(e){}}
+  var ids=o.tabs.map(function(t){return t.id});
+  var active=ids.indexOf(saved)>=0?saved:(o.active||ids[0]);
+  FC.tabState[o.scope]=active;
+  var top=o.tabs.map(function(t){
+    return '<button type="button" class="ntab'+(t.id===active?" on":"")+'" role="tab" aria-selected="'+(t.id===active)+'" data-tab="'+t.id+'">'+FC.icon(t.icon)+'<span>'+t.label+'</span></button>';
+  }).join("");
+  var bottom=o.tabs.map(function(t){
+    return '<button type="button" class="nbtn'+(t.id===active?" on":"")+'" data-tab="'+t.id+'" aria-label="'+t.label+'"'+(t.id===active?' aria-current="page"':'')+'><span class="pill">'+FC.icon(t.icon)+'</span><span>'+(t.short||t.label)+'</span></button>';
+  }).join("");
+  var panes=o.tabs.map(function(t){
+    return '<section class="pane" role="tabpanel" data-pane="'+t.id+'"'+(t.id===active?"":" hidden")+'>'+t.html+'</section>';
+  }).join("");
+  return '<div class="shell" data-scope="'+o.scope+'">'+o.head+'<nav class="navtop" role="tablist" aria-label="Seções">'+top+'</nav><div class="panes">'+panes+'</div><nav class="navbottom" aria-label="Menu">'+bottom+'</nav></div>';
+};
+/* Liga os botões das abas. Chame depois de FC.render. onChange(id) é opcional. */
+FC.bindTabs=function(scope,onChange){
+  var root=FC.$('.shell[data-scope="'+scope+'"]');if(!root)return;
+  document.body.classList.add("has-nav");
+  function go(id,noScroll){
+    FC.tabState[scope]=id;try{sessionStorage.setItem(tabKey(scope),id)}catch(e){}
+    FC.$$("[data-tab]",root).forEach(function(b){
+      var on=b.getAttribute("data-tab")===id;b.classList.toggle("on",on);
+      if(b.classList.contains("ntab"))b.setAttribute("aria-selected",on);else{if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")}
+    });
+    FC.$$(".pane",root).forEach(function(p){p.hidden=p.getAttribute("data-pane")!==id});
+    if(!noScroll)window.scrollTo(0,0);
+    if(onChange)onChange(id);
+  }
+  FC.$$("[data-tab]",root).forEach(function(b){b.onclick=function(){go(b.getAttribute("data-tab"))}});
+  FC.gotoTab=go;
 };
 
 /* ---------- instalação como app (PWA) ---------- */

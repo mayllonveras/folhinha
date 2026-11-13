@@ -42,7 +42,7 @@ function pinScreen(mode,first,msg){
   var sub=create?(first!=null?"Os mesmos 4 números, para confirmar.":"Escolha 4 números que só você sabe. Você vai usar para entrar."):"Olá, "+esc(S.info.name)+"!";
   var pad="";for(var n=1;n<=9;n++)pad+='<button type="button" class="key" data-k="'+n+'">'+n+'</button>';
   pad+='<span></span><button type="button" class="key" data-k="0">0</button><button type="button" class="key" data-k="back" aria-label="Apagar">⌫</button>';
-  FC.render('<div class="pinbox panel"><div class="brand center">Folhinha de Cálculo</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
+  FC.render('<div class="pinbox panel"><img class="pin-logo" src="icons/icon-192.png" alt=""><div class="brand center">Folhinha de Cálculo</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
     '<div class="dots4" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>'+
     '<p class="msg bad" id="pinMsg" role="alert">'+esc(msg||"")+'</p><div class="keypad">'+pad+'</div></div>');
   var buf="";
@@ -104,30 +104,33 @@ function home(){
   var per=m.period,prev="";
   if(m.prev_period){var pw=m.prev_period;
     prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou um pacotinho.':'A meta não foi batida.')+'</p>'}
-  var extra=packPanel(m)+albumsPanel(m);
+  var hero;
+  if(canStart)hero='<section class="hero"><span class="eyebrow">Hoje · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
+  else hero='<section class="hero"><span class="eyebrow">Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
-  FC.render(
-   '<header class="top"><div class="brand">Folhinha de Cálculo<small>Oi, '+esc(m.name)+'</small></div><div class="actions"><button class="btn ghost small" id="sndBtn"></button><button class="btn ghost small" id="logout">Sair</button></div></header>'+
-   '<div class="grid"><div class="col">'+
-   '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
-   '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
-   '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(m.stamps,need)+' de '+need+'</span></div>'+
-   '<p class="muted small-t">Cada dia em que você acerta <b>80% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p>'+
-   '<p class="today">'+status+'</p>'+
-   (canStart?'<div class="actions"><button class="btn" id="start">Começar folha '+(m.done_today+1)+' de '+m.quota+'</button></div>':'')+
-   '</div>'+
-   (rows?'<div class="panel"><div class="eyebrow gap">Suas últimas folhas</div><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'')+
-   '</div><div class="col"><div class="panel">'+FC.trailHtml(per)+prev+
-   '<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></div>'+extra+'</div></div>'+FC.installBox());
-  FC.refreshInstall();
+  var inicio=hero+packPanel(m)+
+    '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
+    '<p class="muted small-t gap">Um carimbo por dia, com 80% ou mais de acertos de primeira. Com '+need+' carimbos você sobe de nível.</p></section>'+
+    '<section class="panel">'+FC.trailHtml(per)+prev+'<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></section>'+FC.installBox();
+  var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
+    '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
+    '<div class="stamps">'+stamps+'<span>'+Math.min(m.stamps,need)+' de '+need+'</span></div></section>'+
+    '<section class="panel rule"><b>Como ganhar o carimbo</b><p class="small-t">Cada dia em que você acerta <b>80% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p></section>'+
+    '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
+  var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Oi,</small><b>'+esc(m.name)+'</b></div>'+
+    '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
+  FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
+    {id:"inicio",label:"Início",icon:"home",html:inicio},
+    {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
+    {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
+  FC.bindTabs("aluno");FC.refreshInstall();
   $("#logout").onclick=logout;
-  function sndLabel(){$("#sndBtn").textContent=FC.sfx.enabled()?"Som ligado":"Som desligado"}
+  function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
-  $$("[data-album]").forEach(function(b){b.onclick=function(){albumScreen(b.getAttribute("data-album"))}});
-  if($("#packBtn"))$("#packBtn").onclick=openPackFlow;
+  bindPack();bindAlbum();
   if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
 }
 /* ---------- álbuns e pacotinhos ---------- */
@@ -135,25 +138,25 @@ function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticke
 function gotOf(m,id){return (m.stickers||[]).filter(function(g){return (g.theme||m.sticker_theme)===id})}
 function packPanel(m){
   var n=m.pending_packs||0;if(n<1)return "";
-  return '<div class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+  return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
     '<div class="muted small-t">'+(themesOf(m).length>1?'Escolha de qual álbum você quer a figurinha.':'Toque para descobrir a figurinha.')+'</div></div>'+
-    '<button class="btn" id="packBtn">Abrir pacotinho</button></div>';
+    '<button class="btn reward" data-pack>Abrir pacotinho</button></section>';
 }
-function albumsPanel(m){
-  var ids=themesOf(m);
-  if(ids.length===1){
-    var th=FC.theme(ids[0]),got=gotOf(m,th.id);
-    return '<div class="panel"><div class="eyebrow">Meu álbum · '+esc(th.name)+'</div><div class="big-pts">'+got.length+'<span> de '+FC.ALBUM_SIZE+' figurinhas</span></div>'+
-      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-      (got.length?'<div class="recent-stk">'+got.slice(-3).reverse().map(function(g){return FC.stickerHtml(th.id,g.slot)}).join("")+'</div>':'<p class="muted small-t">Bata a meta da semana para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!</p>')+
-      '<p class="actions"><button class="btn" data-album="'+th.id+'">Abrir o álbum</button></p></div>';
-  }
-  return '<div class="panel"><div class="eyebrow">Meus álbuns</div><div class="albums-list">'+ids.map(function(id){
-    var th=FC.theme(id),got=gotOf(m,id);
-    return '<button class="album-row" data-album="'+id+'"><span class="al-art">'+FC.themeCover(id)+'</span><span class="grow"><b>'+esc(th.name)+'</b>'+
-      '<span class="small-t muted"> '+got.length+' de '+FC.ALBUM_SIZE+'</span><span class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></span></span></button>';
-  }).join("")+'</div></div>';
+/* Aba Álbum: com mais de um álbum, a criança escolhe qual ver pelas etiquetas. */
+function albumPane(m){
+  var ids=themesOf(m),id=ids.indexOf(S.albumTheme)>=0?S.albumTheme:ids[0];S.albumTheme=id;
+  var th=FC.theme(id),got=gotOf(m,id);
+  var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===id?" on":"")+'" data-album="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
+  return packPanel(m)+'<section class="panel" id="albumBox">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
+    '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+    '<p class="muted small-t gap">'+(got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Bata a meta da semana para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
+    '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
+function bindPack(){$$("[data-pack]").forEach(function(b){b.onclick=openPackFlow})}
+function bindAlbum(){$$("[data-album]").forEach(function(b){b.onclick=function(){
+  S.albumTheme=b.getAttribute("data-album");
+  var pane=$('.pane[data-pane="album"]');pane.innerHTML=albumPane(S.me);bindPack();bindAlbum();
+}})}
 /* Ganhou pacotinho: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
@@ -176,17 +179,6 @@ async function openPack(theme){
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
   showAward(res);
 }
-function albumScreen(id){
-  FC.setKeys(null);
-  var m=S.me,ids=themesOf(m);id=ids.indexOf(id)>=0?id:ids[0];
-  var th=FC.theme(id),got=gotOf(m,id);
-  var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button class="chip-btn'+(x===id?" on":"")+'" data-t="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
-  FC.render('<header class="top"><div class="brand">Meu álbum<small>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</small></div><div class="actions">'+((m.pending_packs>0)?'<button class="btn small" id="albumPack">Abrir pacotinho ('+m.pending_packs+')</button>':'')+'<button class="btn ghost small" id="albumBack">Voltar</button></div></header>'+
-    '<div class="panel">'+tabs+'<p class="muted small-t">Toque em uma figurinha para virar e ver os detalhes.</p>'+FC.albumHtml(th.id,got)+'</div>');
-  $("#albumBack").onclick=home;
-  if($("#albumPack"))$("#albumPack").onclick=openPackFlow;
-  $$(".album-tabs [data-t]").forEach(function(b){b.onclick=function(){albumScreen(b.getAttribute("data-t"))}});
-}
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
 function showAward(aw){
   var m=S.me;
@@ -194,7 +186,7 @@ function showAward(aw){
   var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:m.pending_packs>0?"Abrir o próximo":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(m.pending_packs>0)openPackFlow();else if(!cur&&S.me===m&&document.querySelector(".panel.now"))home()}});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:m.pending_packs>0?"Abrir o próximo":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(m.pending_packs>0)openPackFlow();else if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   setTimeout(function(){
     FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
     if(tier==="comum"){FC.confetti();return}
@@ -340,6 +332,7 @@ async function send(payload,score){
     FC.render('<div class="panel center"><h1>Não consegui enviar</h1><p class="muted">'+esc(FC.err(e))+' Seu resultado está guardado nesta tela.</p><p><button class="btn" id="again">Enviar de novo</button></p></div>');
     $("#again").onclick=function(){send(payload,score)};return;
   }
+  FC.tabState.aluno="inicio";try{sessionStorage.setItem("fc_tab_aluno","inicio")}catch(e){}
   var L=FC.LEVELS[cur.level],secs=payload.p_secs,fixes=payload.p_corrections;
   var fac=Math.round(FC.timeFactor(secs,L.target)*100);
   var rules="80% ou mais de acertos de primeira no dia e tempo médio de até "+FC.fmtTime(L.target)+" por folha";

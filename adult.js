@@ -23,8 +23,8 @@ FC.adultApp=async function(){
 
 function topbar(extra){
   var name=U.profile?esc(U.profile.name||"")+(U.profile.role==="professor"?" · professor(a)":" · responsável"):"";
-  return '<header class="top"><div class="brand">Folhinha de Cálculo<small>'+(extra||"Painel para pais e professores")+'</small></div>'+
-    (U.user?'<div class="who">'+name+' <button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
+  return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha de Cálculo</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
+    (U.user?'<div class="who"><span class="who-name">'+name+'</span><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
 }
 function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()}}
 function errScreen(e,retry){
@@ -124,7 +124,7 @@ async function dash(){
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
   bindTop();FC.refreshInstall();
   $("#newStudent").onclick=function(){showForm(null)};
-  $$(".card").forEach(function(c){c.onclick=function(){detail(c.getAttribute("data-id"))}});
+  $$(".card").forEach(function(c){c.onclick=function(){openStudent(c.getAttribute("data-id"))}});
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
@@ -217,6 +217,7 @@ function showForm(){
     created(r.v.name,res.data.link_code,res.data.id);
   };
 }
+function openStudent(id){FC.tabState.pai="resumo";try{sessionStorage.setItem("fc_tab_pai","resumo")}catch(e){}detail(id)}
 function linkFor(code){return location.origin+location.pathname+"?aluno="+code}
 function created(name,code,id){
   var link=linkFor(code);
@@ -226,7 +227,7 @@ function created(name,code,id){
     '<p class="muted small-t">Guarde o link: é a porta de entrada do aluno. Se o link vazar, gere outro na página do aluno.</p>'+
     '<div class="actions"><button class="btn" id="go">Abrir página do aluno</button><button class="btn ghost" id="all">Ver todos os alunos</button></div></div>');
   bindTop();$("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
-  $("#go").onclick=function(){detail(id)};$("#all").onclick=dash;
+  $("#go").onclick=function(){openStudent(id)};$("#all").onclick=dash;
 }
 
 /* ---------- página do aluno ---------- */
@@ -298,26 +299,38 @@ async function detail(id){
     '<p class="muted">Nenhuma conta em reforço agora.</p>')+
     '<p class="muted small-t gap">'+"Estas contas voltam nas próximas folhas, inclusive no nível seguinte, até ele acertar 2 vezes seguidas."+'</p></div>';
 
-  FC.render(topbar("Aluno")+
-    '<div class="section-head"><div><button class="link" id="back">← Todos os alunos</button><h1>'+esc(s.name)+'</h1></div></div>'+
-    '<div class="grid"><div class="col">'+
-    '<div class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div><div class="nm">'+esc(L.name)+'</div>'+
-    '<div class="stamps"><span>Carimbos</span><span class="row-gap">'+stamps+'</span><span>'+Math.min(s.stamps,need)+' de '+need+'</span></div>'+
-    '<p class="muted small-t">Cada dia com 80% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo. Com '+need+' carimbos o aluno sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use o programa abaixo.</p></div>'+
-    '<div class="panel">'+trailHtml+'</div>'+rewardPanel+
-    '<div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
+  var isStudyToday=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date;
+  var todaySheets=sheets.filter(function(x){return x.study_day===today}),tdOk=0,tdTot=0;
+  todaySheets.forEach(function(x){tdOk+=x.first_ok;tdTot+=x.total});
+  var tdPct=tdTot?Math.round(100*tdOk/tdTot):null,wkPct=goal>0?Math.round(100*curPts/goal):0;
+  var stats='<div class="stats">'+
+    '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div></div>'+
+    '<div class="panel stat"><div class="eyebrow">Pontos na semana</div><div class="v num">'+curPts+'</div><small>meta '+goal+' · '+wkPct+'%</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
+      (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?'ainda sem folhas hoje':'hoje é descanso')+'</small>')+'</div></div>';
+  var resumo=stats+'<div class="grid"><div class="col"><div class="panel">'+trailHtml+'</div></div>'+
+    '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com 80% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
+  var historico='<div class="grid"><div class="col">'+weeksHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
+    '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
+    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+  var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
+    '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>';
+  var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
     '<div class="actions gap"><button class="btn ghost small" id="rstPin">Redefinir PIN</button><button class="btn ghost small" id="newLink">Gerar novo link</button></div>'+
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
     '<div class="panel"><div class="eyebrow gap">Adultos com acesso</div><ul class="plain">'+names+'</ul>'+
-    (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div>'+
-    '</div><div class="col">'+
-    '<div class="panel"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
-    '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>'+
-    '<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div>'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div>'+
-    '</div></div>'+
-    weeksHtml+
-    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>'+
-    (iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><button class="btn ghost small" id="del">Apagar aluno e todo o histórico</button></div>':''));
+    (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
+    '<div class="col">'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
+  var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
+    '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
+  FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
+    {id:"resumo",label:"Resumo",icon:"resumo",html:resumo},
+    {id:"album",label:"Álbum",icon:"album",html:rewardPanel},
+    {id:"historico",label:"Histórico",icon:"history",html:historico},
+    {id:"programa",label:"Programa",icon:"program",html:programa},
+    {id:"acesso",label:"Acesso",icon:"key",html:acesso}]}));
+  FC.bindTabs("pai");
   bindTop();bindProgram();
   $("#back").onclick=dash;
   loadSlow(id);
