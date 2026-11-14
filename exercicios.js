@@ -54,9 +54,11 @@ var DRAW={
   /* grupos de objetos (emoji), em linhas de 'per' */
   emoji:function(f){
     var per=f.per||5;
-    return '<div class="fig-emoji'+(f.side?" side":"")+'">'+f.groups.map(function(g){
-      var rows=[],i=0;while(i<g.n){rows.push(new Array(Math.min(per,g.n-i)+1).join(g.e));i+=per}
-      return '<div class="eg" aria-hidden="true">'+rows.map(function(r){return '<div>'+r+'</div>'}).join("")+'</div>'}).join("")+'</div>';
+    function linha(g,i,n){var h="",j;for(j=0;j<n;j++){var k=i+j,r=g.x&&k>=g.n-g.x;h+=r?'<span class="x"><i>'+g.e+'</i></span>':g.e}return h}
+    var gs=f.groups.map(function(g){
+      var rows=[],i=0;while(i<g.n){var m=Math.min(per,g.n-i);rows.push(g.x?linha(g,i,m):new Array(m+1).join(g.e));i+=per}
+      return '<div class="eg" aria-hidden="true">'+rows.map(function(r){return '<div>'+r+'</div>'}).join("")+'</div>'});
+    return '<div class="fig-emoji'+(f.side?" side":"")+'">'+(f.sep?gs.join('<div class="sep" aria-hidden="true">'+f.sep+'</div>'):gs.join(""))+'</div>';
   },
   /* objetos espalhados numa caixa (pts em pontos de uma caixa de 300 x 200; o tamanho se ajusta à largura) */
   scatter:function(f){

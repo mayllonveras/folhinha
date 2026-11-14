@@ -264,13 +264,16 @@ FC.makeItems=function(levelIdx,keep,opts){
     if(seen[kq])continue;seen[kq]=1;q._rev=true;items.push(q);added++;
   }
   var cnt={},capTries=0;
-  items.forEach(function(x){if(x.grp)cnt[x.grp]=(cnt[x.grp]||0)+1});
+  /* p.limits = [[grupo, máximo], ...]: no máximo "máximo" contas do mesmo grupo na folha (por exemplo, o mesmo número,
+     ou 5 somas). Serve também p.grp/p.cap, para um grupo só. */
+  function lims(p){return p.limits||(p.grp?[[p.grp,p.cap]]:[])}
+  function conta(p){lims(p).forEach(function(l){cnt[l[0]]=(cnt[l[0]]||0)+1})}
+  items.forEach(conta);
   while(items.length<10&&tries++<400){
     var p=FC.LEVELS[levelIdx].gen(),k=itemKey(p);
     if(seen[k])continue;
-    /* p.grp/p.cap: no máximo p.cap contas do mesmo grupo na folha (por exemplo, o mesmo número) */
-    if(p.grp&&(cnt[p.grp]||0)>=p.cap&&capTries++<200)continue;
-    seen[k]=1;if(p.grp)cnt[p.grp]=(cnt[p.grp]||0)+1;items.push(p);
+    if(lims(p).some(function(l){return (cnt[l[0]]||0)>=l[1]})&&capTries++<200)continue;
+    seen[k]=1;conta(p);items.push(p);
   }
   while(items.length<10)items.push(FC.LEVELS[levelIdx].gen());
   return items;
