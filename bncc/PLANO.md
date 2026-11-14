@@ -105,6 +105,12 @@ Conta de ritmo, com os valores atuais (estudo de segunda a sexta, 5 carimbos por
   - **4b. Grade:** os 30 níveis do 1º ano a partir do inventário, ligando cada nível a códigos EF01MA e aos geradores; o professor revisa antes de entrar no app. Depois, 2º ao 5º. A classificação A/B/C do 1º ano é proposta junto com a grade.
 - **Lembretes levantados na conversa:** revisão dos níveis saltados (ficaram sem carimbos); meta de tempo inicial estimada para os 150 níveis, ajustada com dados reais; banco de questões escrito à mão para conteúdos que não têm gerador (problemas de texto); aviso de "retomada" depois de um mês parado; teste de nivelamento para aluno novo.
 
+## Decisão: grade refeita do zero (14/11/2026)
+
+Os 45 níveis antigos são descartados, para não herdar vícios do planejamento anterior. Cada nível da grade nova nasce de uma **ficha**
+(habilidade, parâmetros de dificuldade, tipos de conta, distratores, meta de tempo, testes) revisada pelo professor antes de virar código.
+Vale para o 1º ano (`GRADE-1ANO.md`) e para os seguintes, incluindo tabuada, divisão e equações.
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
