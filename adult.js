@@ -434,9 +434,9 @@ async function loadTrades(id){
   if(r.error){box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Não deu para carregar.</p>';return}
   var nm=function(t,sl){return esc(FC.stickerInfo(t,sl).name)+' <span class="muted small-t">('+esc(FC.theme(t).name)+')</span>'};
   var rows=r.data.map(function(x){
-    var gave=x.sent?[x.give_theme,x.give_slot]:[x.want_theme,x.want_slot],got=x.sent?[x.want_theme,x.want_slot]:[x.give_theme,x.give_slot];
+    var nms=function(l){return (l||[]).map(function(y){return nm(y.theme,y.slot)}).join(", ")};
     var st=x.status==="aceita"?"trocou":x.status==="recusada"?(x.sent?"pedido recusado por":"recusou o pedido de"):(x.sent?"pedido esperando resposta de":"pedido recebido de");
-    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">deu '+nm(gave[0],gave[1])+' e '+(x.status==="aceita"?"recebeu ":"queria ")+nm(got[0],got[1])+'</span></span></li>'}).join("");
+    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">deu '+nms(x.gave)+' e '+(x.status==="aceita"?"recebeu ":"queria ")+nms(x.got)+'</span></span></li>'}).join("");
   box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem trocas.</p>')+'<p class="muted small-t gap">Últimas 50. Só para consulta.</p>';
 }
 async function loadSlow(id){
