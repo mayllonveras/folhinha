@@ -78,9 +78,7 @@ Os blocos de contas e os de figuras se alternam ao longo do ano para variar o ti
 - **Peças novas:** placas de 100, régua, relógio digital, tabela de dupla entrada, quadriculado de localização, grupos para multiplicar e dividir em partes iguais.
 - **Coisas que vieram do 1º ano:** o "quantos a mais?" (nível 16) e o número escondido (`3 + ? = 8`, nível 15).
 
-## Para o professor decidir
+## Decisões do professor (14/11/2026)
 
-1. **A ordem e o total (41 níveis)** estão bons? Há algum degrau que falte, como houve no 1º ano com a subtração?
-2. A **multiplicação** vem depois dos problemas de soma e subtração (níveis 19 a 26). Prefere antecipar parte dela?
-3. **Dobro e metade:** o dobro entra junto com a multiplicação por 2 e a metade num nível próprio (25). De acordo?
-4. **Estimativa (nível 7):** por escolha entre faixas ("mais ou menos quantos?"), com o aluno vendo uma coleção agrupada. De acordo?
+Ordem e total (41 níveis) aprovados; a multiplicação fica depois dos problemas de soma e subtração (níveis 19 a 26); o dobro entra junto com o ×2 e a metade tem nível próprio (25);
+a estimativa (nível 7) é por escolha entre faixas, com a coleção agrupada.
