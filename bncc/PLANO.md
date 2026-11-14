@@ -128,6 +128,11 @@ o lembrete das mãos). A migração `migracoes/2026-11-14-grade-1ano.sql` troca 
 que as metas da migração são as do app. **Faltam** a grade do 2º ao 5º ano (mesmo processo de fichas) e os anos finais; enquanto isso, quem termina o nível 35 fica
 nele (como já acontece no último nível).
 
+## 2º ano (em andamento)
+
+Proposta de grade com 41 níveis em `GRADE-2ANO.md`, no mesmo processo do 1º ano: o professor aprova a ordem, as fichas são escritas e revisadas bloco por bloco, depois vêm os geradores
+e os testes, e por fim a grade é ligada ao app (migração da tabela `levels`).
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
