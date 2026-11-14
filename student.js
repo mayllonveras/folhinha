@@ -42,7 +42,7 @@ function pinScreen(mode,first,msg){
   var sub=create?(first!=null?"Os mesmos 4 números, para confirmar.":"Escolha 4 números que só você sabe. Você vai usar para entrar."):"Olá, "+esc(S.info.name)+"!";
   var pad="";for(var n=1;n<=9;n++)pad+='<button type="button" class="key" data-k="'+n+'">'+n+'</button>';
   pad+='<span></span><button type="button" class="key" data-k="0">0</button><button type="button" class="key" data-k="back" aria-label="Apagar">⌫</button>';
-  FC.render('<div class="pinbox panel"><img class="pin-logo" src="icons/icon-192.png" alt=""><div class="brand center">Folhinha de Cálculo</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
+  FC.render('<div class="pinbox panel"><img class="pin-logo" src="icons/icon-192.png" alt=""><div class="brand center">Folhinha VIP</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
     '<div class="dots4" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>'+
     '<p class="msg bad" id="pinMsg" role="alert">'+esc(msg||"")+'</p><div class="keypad">'+pad+'</div></div>');
   var buf="";
@@ -101,28 +101,30 @@ function home(){
     canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas."+(m.today_total>0?" Acertos de primeira hoje: <b>"+m.today_ok+" de "+m.today_total+"</b> ("+Math.round(100*m.today_ok/m.today_total)+"%).":"");
   }
   var need=m.stamps_needed||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
-  var per=m.period,prev="";
-  if(m.prev_period){var pw=m.prev_period;
-    prev='<p class="muted small-t">Semana passada: <b>'+pw.points+' de '+pw.goal+'</b> pontos. '+(pw.reached?'Você ganhou um pacotinho.':'A meta não foi batida.')+'</p>'}
   var hero;
   if(canStart)hero='<section class="hero"><span class="eyebrow">Hoje · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
   else hero='<section class="hero"><span class="eyebrow">Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
-    return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+r.points+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
+    return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
   var inicio=hero+packPanel(m)+
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
-    '<p class="muted small-t gap">Um carimbo por dia, com 80% ou mais de acertos de primeira. Com '+need+' carimbos você sobe de nível.</p></section>'+
-    '<section class="panel">'+FC.trailHtml(per)+prev+'<p class="muted small-t">Total de pontos: <b>'+m.total_points+'</b></p></section>'+FC.installBox();
+    '<p class="muted small-t gap">Um carimbo por dia, com 80% ou mais de acertos de primeira. Cada carimbo vale um pacotinho de figurinhas. Com '+need+' carimbos você sobe de nível.</p></section>'+
+    '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
   var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
     '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
     '<div class="stamps">'+stamps+'<span>'+Math.min(m.stamps,need)+' de '+need+'</span></div></section>'+
     '<section class="panel rule"><b>Como ganhar o carimbo</b><p class="small-t">Cada dia em que você acerta <b>80% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p></section>'+
-    '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Pontos</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
+    '<section class="panel rule"><b>Como ganhar pacotinhos de figurinhas</b><ul class="plain small-t">'+
+      '<li><b>Carimbo do dia:</b> 1 pacotinho.</li>'+
+      '<li><b>Perseverança:</b> fechou todas as folhas do dia, mesmo sem carimbo? 1 pacotinho.</li>'+
+      '<li><b>Dias seguidos de estudo:</b> pacotinhos extras com 3, 7 e 14 dias, e depois a cada 30 dias. Faltar a um dia de estudo zera a sequência.</li></ul></section>'+
+    '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
   var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Oi,</small><b>'+esc(m.name)+'</b></div>'+
     '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
   FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
     {id:"inicio",label:"Início",icon:"home",html:inicio},
     {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
+    {id:"amigos",label:"Amigos",icon:"friends",html:'<div id="frBox"><p class="loading">Carregando…</p></div>'},
     {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
   FC.bindTabs("aluno");FC.refreshInstall();
   $("#logout").onclick=logout;
@@ -130,8 +132,67 @@ function home(){
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
-  bindPack();bindAlbum();
+  bindPack();bindAlbum();friendsLoad();
   if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
+}
+/* ---------- amigos: cada criança vê só o nível, os carimbos e as figurinhas do outro ---------- */
+async function friendsLoad(){
+  var box=$("#frBox");if(!box)return;
+  try{S.fr=await rpc("student_friends",{p_token:S.token})}
+  catch(e){box.innerHTML='<div class="panel"><p class="muted">Não deu para carregar os amigos.</p><button class="btn ghost small" id="frRetry">Tentar de novo</button></div>';$("#frRetry").onclick=friendsLoad;return}
+  friendsList();
+}
+async function friendsAct(name,args,ok){
+  try{var r=await rpc(name,args);if(ok)FC.toast(typeof ok==="function"?ok(r):ok)}catch(e){FC.toast(FC.err(e),true)}
+  friendsLoad();
+}
+function friendsList(){
+  var box=$("#frBox"),f=S.fr;if(!box||!f)return;
+  var inc=f.incoming.map(function(x){
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">convidou você para ser amigo</div></div>'+
+      '<button class="btn small" data-ans="'+x.id+'" data-ok="1">Aceitar</button><button class="btn ghost small" data-ans="'+x.id+'">Recusar</button></div>'}).join("");
+  var out=f.outgoing.map(function(x){
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">esperando a resposta</div></div><button class="btn ghost small" data-rm="'+x.id+'">Cancelar</button></div>'}).join("");
+  var fr=f.friends.map(function(x){
+    var L=FC.LEVELS[x.level_idx];
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+' · '+x.stamps+' de 5 carimbos</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+  box.innerHTML=
+    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
+      '<p class="muted small-t">Passe este código para quem você quer como amigo.</p><button class="btn ghost small" id="frCopy">Copiar código</button></section>'+
+    '<section class="panel"><b>Convidar um amigo</b><p class="muted small-t">Digite o código que ele passou para você.</p>'+
+      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>'+
+    (inc?'<section class="panel"><b>Convites para você</b>'+inc+'</section>':'')+
+    '<section class="panel"><b>Seus amigos</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
+      '<p class="muted small-t gap">Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.</p></section>'+
+    (out?'<section class="panel"><b>Convites enviados</b>'+out+'</section>':'');
+  $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
+  $("#frForm").onsubmit=function(e){
+    e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
+    friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
+  };
+  $$("[data-ans]",box).forEach(function(b){b.onclick=function(){
+    var ok=!!b.getAttribute("data-ok");
+    friendsAct("student_friend_answer",{p_token:S.token,p_id:b.getAttribute("data-ans"),p_accept:ok},ok?"Amizade feita!":"Convite recusado.")}});
+  $$("[data-rm]",box).forEach(function(b){b.onclick=function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:b.getAttribute("data-rm")},"Convite cancelado.")}});
+  $$("[data-see]",box).forEach(function(b){b.onclick=function(){friendView(b.getAttribute("data-see"))}});
+}
+async function friendView(id){
+  var box=$("#frBox"),v;if(!box)return;
+  try{v=await rpc("student_friend_view",{p_token:S.token,p_id:id})}catch(e){FC.toast(FC.err(e),true);return friendsLoad()}
+  var L=FC.LEVELS[v.level_idx],stamps="";for(var i=0;i<5;i++)stamps+='<span class="stamp'+(i<v.stamps?" on":"")+'">✓</span>';
+  var ids=themesOf(v),tid=ids.indexOf(S.frTheme)>=0?S.frTheme:ids[0];S.frTheme=tid;
+  var got=gotOf(v,tid),th=FC.theme(tid);
+  var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
+  box.innerHTML='<div class="pagehead"><button type="button" class="link crumb" id="frBack">'+FC.icon("back")+'Amigos</button></div>'+
+    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
+      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>'+
+    '<section class="panel">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
+      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+      '<div class="gap">'+FC.albumHtml(tid,got)+'</div>'+
+      '<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p></section>';
+  $("#frBack").onclick=friendsLoad;
+  $$("[data-ft]",box).forEach(function(b){b.onclick=function(){S.frTheme=b.getAttribute("data-ft");friendView(id)}});
+  FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
 }
 /* ---------- álbuns e pacotinhos ---------- */
 function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}
@@ -149,7 +210,7 @@ function albumPane(m){
   var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===id?" on":"")+'" data-album="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
   return packPanel(m)+'<section class="panel" id="albumBox">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
     '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-    '<p class="muted small-t gap">'+(got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Bata a meta da semana para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
+    '<p class="muted small-t gap">'+(got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
     '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
 function bindPack(){$$("[data-pack]").forEach(function(b){b.onclick=openPackFlow})}
@@ -326,7 +387,7 @@ async function send(payload,score){
   catch(e){
     if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
     if(String(e.message||"").indexOf("folha_invalida")>=0){
-      FC.render('<div class="panel center"><h1>Esta folha já foi entregue</h1><p class="muted">Ela foi entregue em outro aparelho, então esta cópia não vale pontos. Volte ao início para ver a sua folha de hoje.</p><p><button class="btn" id="goHome">Ir ao início</button></p></div>');
+      FC.render('<div class="panel center"><h1>Esta folha já foi entregue</h1><p class="muted">Ela foi entregue em outro aparelho, então esta cópia não vale nada. Volte ao início para ver a sua folha de hoje.</p><p><button class="btn" id="goHome">Ir ao início</button></p></div>');
       $("#goHome").onclick=async function(){try{await loadHome()}catch(x){fail(x)}};return;
     }
     FC.render('<div class="panel center"><h1>Não consegui enviar</h1><p class="muted">'+esc(FC.err(e))+' Seu resultado está guardado nesta tela.</p><p><button class="btn" id="again">Enviar de novo</button></p></div>');
@@ -334,18 +395,17 @@ async function send(payload,score){
   }
   FC.tabState.aluno="inicio";try{sessionStorage.setItem("fc_tab_aluno","inicio")}catch(e){}
   var L=FC.LEVELS[cur.level],secs=payload.p_secs,fixes=payload.p_corrections;
-  var fac=Math.round(FC.timeFactor(secs,L.target)*100);
   var rules="80% ou mais de acertos de primeira no dia e tempo médio de até "+FC.fmtTime(L.target)+" por folha";
   var note;
-  if(res.day_closed&&res.stamp)note="Dia fechado com carimbo! Você acertou "+res.day_ok+" de "+res.day_total+" contas de primeira ("+res.day_pct+"%), com tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha.";
+  if(res.day_closed&&res.stamp)note="Dia fechado com carimbo e perseverança! Você acertou "+res.day_ok+" de "+res.day_total+" contas de primeira ("+res.day_pct+"%), com tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha.";
   else if(res.day_closed){
     var acertos="Hoje você acertou "+res.day_pct+"% de primeira (o carimbo pede 80% ou mais)",tempo="o tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha passou da meta de "+FC.fmtTime(L.target);
-    note=(res.why==="tempo"?"Você acertou "+res.day_pct+"% de primeira, mas "+tempo+".":res.why==="acertos_tempo"?acertos+", e "+tempo+".":acertos+".")+" Sem carimbo hoje. Amanhã tem outra chance. As contas que você errou voltam nas próximas folhas.";
-  }else note="Acertos de primeira hoje: "+res.day_ok+" de "+res.day_total+" ("+res.day_pct+"%). O carimbo do dia sai ao fechar a última folha, com "+rules+"."+(fixes>0?" As contas que você errou voltam nas próximas folhas.":"");
+    note=(res.why==="tempo"?"Você acertou "+res.day_pct+"% de primeira, mas "+tempo+".":res.why==="acertos_tempo"?acertos+", e "+tempo+".":acertos+".")+" Sem carimbo hoje, mas você fechou o dia e ganhou o pacotinho da perseverança. Amanhã tem outra chance. As contas que você errou voltam nas próximas folhas.";
+  }else note="Acertos de primeira hoje: "+res.day_ok+" de "+res.day_total+" ("+res.day_pct+"%). O carimbo e os pacotinhos do dia saem ao fechar a última folha. O carimbo pede "+rules+"."+(fixes>0?" As contas que você errou voltam nas próximas folhas.":"");
   var newL=FC.LEVELS[res.level_idx];
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;S.me.today_ok=res.day_ok;S.me.today_total=res.day_total;
-  var before=S.me.period?S.me.period.points:0,np=res.period;
-  S.me.period=np;S.me.week_points=np.points;S.me.total_points=(S.me.total_points||0)+res.points;
+  S.me.streak=res.streak;S.me.best_streak=res.best_streak;S.me.next_marco=res.next_marco;S.me.pending_packs=res.pending_packs;
+  var pk=res.packs||{},got=(pk.carimbo||0)+(pk.perseveranca||0)+(pk.marco||0);
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
   for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&i===shown-1)?" pop":"")+'">✓</span>';
   var seal=res.day_closed?(res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
@@ -353,20 +413,22 @@ async function send(payload,score){
     '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.day_closed&&res.stamp?"":" no")+'">'+seal+'</div>'+
     '<div class="grow"><h2>'+(res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
-    '<div><b>+'+res.points+'</b><span>pontos ('+score+' acertos × 10 × '+fac+'% do tempo)</span></div>'+
-    '<div><b>'+np.points+'</b><span>pontos na semana (meta '+np.goal+')</span></div></div>'+
+    '<div><b>'+(res.day_closed?"+"+got:"–")+'</b><span>'+(res.day_closed?"pacotinho"+(got===1?"":"s")+" ganho"+(got===1?"":"s")+" hoje":"pacotinhos saem ao fechar o dia")+'</span></div>'+
+    '<div><b>'+res.streak+'</b><span>dia'+(res.streak===1?"":"s")+' seguido'+(res.streak===1?"":"s")+' de estudo</span></div></div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">Você subiu de nível!</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'. As contas que você ainda errou vêm junto para as próximas folhas.</div></div></div>':'')+
-    '<div class="trailbox">'+FC.trailHtml(np,{fromPoints:before})+'</div>'+
+    '<div class="trailbox">'+FC.streakHtml(res)+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para fechar o dia.":"Dia fechado. Até o próximo dia de estudo!")+'</p>'+
     '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
-  FC.animateTrail();
-  if(res.award&&res.award.kind==="pacote"){
-    S.me.pending_packs=(S.me.pending_packs||0)+1;
+  if(got>0){
+    var why=[];
+    if(pk.carimbo)why.push("1 pelo carimbo do dia");
+    if(pk.perseveranca)why.push("1 pela perseverança (dia fechado)");
+    if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
-      FC.sfx.pack();FC.confetti();
-      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>Meta batida!</h2><p class="muted">Você ganhou um pacotinho de figurinhas'+(themesOf(S.me).length>1?'. Você escolhe de qual álbum quer a figurinha.':'.')+'</p>',
-        {button:"Abrir o pacotinho",onClose:openPackFlow});
+      FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.'+(themesOf(S.me).length>1?' Você escolhe de qual álbum quer cada figurinha.':'')+'</p>',
+        {button:got>1?"Abrir os pacotinhos":"Abrir o pacotinho",onClose:openPackFlow});
     },res.advanced?3600:2300);
   }
   if(res.stamp)FC.sfx.stamp();

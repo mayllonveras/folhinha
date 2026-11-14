@@ -1,4 +1,4 @@
-/* Folhinha de Cálculo · identidade "Blocos". Tokens de design, componentes e layout.
+/* Folhinha VIP · identidade "Blocos". Tokens de design, componentes e layout.
    Celular: menu inferior. Tablet e computador: abas no topo. Aluno: cantos mais redondos (.tone-aluno). */
 :root{
   /* marca */
@@ -447,3 +447,22 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .form-narrow{margin:0 auto}
 .pin-logo{width:72px;height:72px;border-radius:18px;box-shadow:var(--shadow-2)}
 .authbox>.logo-row{display:flex;justify-content:center;margin-bottom:10px}
+
+/* ---------- amigos ---------- */
+.fr-code{font-family:var(--font-num);font-size:2rem;letter-spacing:.18em;font-weight:700;text-align:center;margin:8px 0}
+.fr-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.fr-add input{flex:1 1 140px;font-family:var(--font-num);font-size:1.2rem;letter-spacing:.18em;text-transform:uppercase;text-align:center}
+.fr-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.fr-row:first-of-type{border-top:0}
+.fr-row .grow{flex:1 1 140px}
+
+/* Administração (/adm) */
+.adm-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.adm-stat{background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.adm-stat b{font-family:var(--font-num);font-size:1.7rem;line-height:1.1}
+.adm-stat span{color:var(--muted);font-size:.85rem}
+.adm-wrap{overflow-x:auto;margin-top:14px}
+.adm-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.adm-table th,.adm-table td{text-align:left;padding:8px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
+.adm-table th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.adm-table td{overflow-wrap:anywhere}
