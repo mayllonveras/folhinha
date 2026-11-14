@@ -498,8 +498,19 @@ function showAward(aw){
   var rep_=!!aw.repeated;
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
-  FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
+  var ov=FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
     '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
+  /* O botão (Colar no álbum / Guardar nas repetidas) só aparece quando a figurinha termina de aparecer.
+     Até lá, nem o clique fora da janela nem o Esc fecham a janela. */
+  var acts=ov.el.querySelector(".ov-actions"),ready=false;
+  if(acts)acts.style.visibility="hidden";
+  function lock(e){if(ready)return;if(e.type==="keydown"&&e.key!=="Escape")return;if(e.type==="click"&&e.target!==ov.el)return;e.stopPropagation();e.preventDefault()}
+  ov.el.addEventListener("click",lock,true);document.addEventListener("keydown",lock,true);
+  setTimeout(function(){
+    ready=true;document.removeEventListener("keydown",lock,true);
+    if(acts)acts.style.visibility="";
+    var b=ov.el.querySelector("#ovClose");if(b&&ov.el.isConnected)b.focus();
+  },1700);   // 800 ms do pacote chacoalhando + 700 ms da figurinha aparecendo + folga
   setTimeout(function(){
     FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
     if(tier==="comum"){FC.confetti();return}
