@@ -50,6 +50,18 @@ A cada N níveis, uma folha de revisão traz contas dos níveis anteriores. Quem
 
 O banco guarda o `ano_escolar` informado e o **ano civil de referência** (`ano_ref`). O ano escolar atual é calculado na hora: `ano_escolar + (ano civil atual − ano_ref)`, limitado ao máximo da grade disponível. Assim não existe rotina de virada para dar errado. Os pais podem corrigir o valor a qualquer momento. A data da virada (1º de janeiro) é parâmetro do `/adm`.
 
+### Princípio: a virada não interfere no andamento do aluno
+
+O ano escolar é só um **rótulo e um limite**. Ele nunca move o aluno na trilha.
+
+- **A virada não grava nada.** Como o ano atual é calculado na hora, nada é atualizado no dia 1º de janeiro: nível, carimbos, sequência de dias, pacotes de figurinhas, contas a reforçar e folhas em andamento ficam exatamente como estavam.
+- **O teto só sobe.** O teto é relativo ao ano (por exemplo, ano escolar + 1). Na virada ele sobe um ano e nunca desce, então a virada não bloqueia nem atrasa nenhum aluno. Quem estava parado no teto passa a poder avançar.
+- **Sem efeito automático.** A virada não rebaixa, não zera, não promove e não mostra nada novo à criança. Quem estava "1 ano à frente" passa a "no ano" na etiqueta dos pais, e o aluno segue do ponto em que parou.
+- **Folha aberta na virada.** Uma folha começada antes da meia-noite do dia 31 termina normalmente. O ano é lido do dia de estudo da própria folha, e o teto só é conferido quando o dia fecha.
+- **Sem sequência quebrada.** A sequência de dias de estudo não depende do ano escolar.
+- **Aviso só para os pais.** No painel dos pais aparece uma observação discreta ("em janeiro o ano escolar passou para o 4º ano; confira se está certo"), com um clique para corrigir. Nunca bloqueia nada.
+- **Fim da grade.** Se o ano escolar passar do último ano que a grade já tem (por exemplo, 6º ano em 2027, antes de os anos finais existirem), o teto é limitado ao que existe, e o aluno continua nos níveis disponíveis.
+
 Consequência: em janeiro de 2027, os alunos que cursam o 5º ano passam ao 6º, e a grade precisa ter o 6º ano. Isso torna a fase 2 necessária ainda no primeiro ano de uso.
 
 ## Teste de nivelamento (na entrada)
