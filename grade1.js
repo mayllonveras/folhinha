@@ -4,7 +4,7 @@
    - key: identidade da conta (quando o desenho muda mas a conta é a mesma);
    - _calc/_why: a resposta, para os testes (nunca vão para o banco).
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 24 (contagem, comparação, soma e subtração até 10, problemas, formas, sólidos, posição, atributos, dezena mais um). */
+   Níveis feitos: 1 a 29 (contagem, comparação, soma e subtração até 10, problemas, formas, sólidos, posição, atributos, dezena mais um). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,OBJ=X.OBJ,NAMES=X.NAMES;
@@ -402,6 +402,101 @@ function gMisto20(){
   return it;
 }
 
+
+/* ===================== Níveis 25 a 29: dezenas e números até 100 ===================== */
+function numTexto(n){return String(n)}
+/* Nível 25 — Dezenas e unidades com barras e quadradinhos (EF01MA07, EF01MA04). 3 tipos: valor da figura, dezenas, unidades. */
+function gBarras(){
+  var r=Math.random(),t=rnd(1,9),o,it;
+  if(r<.625){
+    o=(t>=2&&Math.random()<.15)?0:rnd(1,9);
+    it=typed("Cada barra vale 10 e cada quadradinho vale 1. Quanto vale tudo junto?",t*10+o,{t:"base10",tens:t,ones:o});
+    it.limits=[["n25:t1",7]];
+  }else if(r<.875){
+    o=rnd(1,9);
+    it=typed("O número "+(t*10+o)+" é formado por quantas barras de 10?",t,{t:"base10",tens:t,ones:o});
+    it.limits=[["n25:t2",3]];
+  }else{
+    o=rnd(1,9);
+    it=typed("O número "+(t*10+o)+" tem quantos quadradinhos soltos?",o,{t:"base10",tens:t,ones:o});
+    it.limits=[["n25:t3",2]];
+  }
+  return it;
+}
+
+/* Nível 26 — Contar até 100, em pacotes de 10 e soltos (EF01MA04). 21 a 100; 20% só de pacotes. */
+function gPacotes(){
+  var o=pick(OBJ),k,r,n;
+  if(Math.random()<.2){k=rnd(3,10);r=0}else{k=rnd(2,9);r=rnd(1,9)}
+  n=k*10+r;
+  var it=typed(quantos(o)+o.pl+" têm aqui?",n,{t:"pacotes",e:o.e,packs:k,loose:r});
+  it.key="pac|"+o.e+"|"+n;
+  return limite(it,26,n);
+}
+
+/* Nível 27 — Maior e menor até 99, com 3 opções (EF01MA05). 50% com dezenas diferentes e bem separadas, 40% com dois números
+   da mesma dezena, 10% com um par de algarismos trocados (34 e 43), no máximo 1 por folha. */
+function trio27(){
+  var r=Math.random(),v,t=0;
+  if(r<.5){
+    do{var a=rnd(1,9),b=rnd(1,9),c=rnd(1,9),d=[a,b,c].sort(function(x,y){return x-y});v=d[1]-d[0]>=2&&d[2]-d[1]>=2?[a*10+rnd(0,9),b*10+rnd(0,9),c*10+rnd(0,9)]:null}while(!v&&t++<500);
+    return {v:v||[23,61,87],modo:"sep"};
+  }
+  if(r<.9){
+    do{var t1=rnd(1,9),u1=rnd(0,9),u2=rnd(0,9),t3=rnd(1,9)}while((u1===u2||t3===t1)&&t++<500);
+    return {v:[t1*10+u1,t1*10+u2,t3*10+rnd(0,9)],modo:"mesma"};
+  }
+  var x=rnd(1,9),y=rnd(1,9),z;while(y===x)y=rnd(1,9);
+  do{z=rnd(10,99)}while(z===x*10+y||z===y*10+x);
+  return {v:[x*10+y,y*10+x,z],modo:"troca"};
+}
+function gMaiorMenor99(){
+  var tr,ok,tt=0;
+  do{tr=trio27();ok=new Set(tr.v).size===3}while(!ok&&tt++<500);
+  var v=tr.v,maior=Math.random()<.5,mx=Math.max.apply(null,v),mn=Math.min.apply(null,v),certa=maior?mx:mn;
+  var it=choice("Qual é o "+(maior?"maior":"menor")+" número?",String(certa),v.filter(function(n){return n!==certa}).map(String),null);
+  it._info={v:v,maior:maior,modo:tr.modo};
+  if(tr.modo==="troca")it.limits=[["n27:troca",1]];
+  return it;
+}
+
+/* Nível 28 — Dezenas inteiras e unidades, sem passar da dezena (EF01MA07). Seis famílias. */
+function gDezUni(){
+  var r=Math.random(),it,t,u,b;
+  if(r<.125){                                     /* dezena + dezena (resultado até 100) */
+    var x=rnd(1,9),y=rnd(1,10-x);
+    it=typed((x*10)+" + "+(y*10)+" =",(x+y)*10);it.limits=[["n28:f1",2],["p28:"+Math.min(x,y)+","+Math.max(x,y),1]];
+  }else if(r<.25){                                /* dezena − dezena */
+    var x2=rnd(2,10),y2=rnd(1,x2-1);
+    it=typed((x2*10)+" "+MENOS+" "+(y2*10)+" =",(x2-y2)*10);it.limits=[["n28:f2",2]];
+  }else if(r<.5){                                 /* número + unidade, sem passar da dezena */
+    t=rnd(1,9);u=rnd(1,8);b=rnd(1,9-u);
+    it=typed((t*10+u)+" + "+b+" =",t*10+u+b);it.limits=[["n28:f3",4]];
+  }else if(r<.75){                                /* número − unidade, sem passar da dezena */
+    t=rnd(1,9);u=rnd(2,9);b=rnd(1,u-1);
+    it=typed((t*10+u)+" "+MENOS+" "+b+" =",t*10+u-b);it.limits=[["n28:f4",4]];
+  }else if(r<.875){                               /* dezena + unidade: compor */
+    t=rnd(1,9);u=rnd(1,9);
+    it=typed((t*10)+" + "+u+" =",t*10+u);it.limits=[["n28:f5",2]];
+  }else{                                          /* tirar para achar a dezena ou a unidade */
+    t=rnd(1,9);u=rnd(1,9);
+    it=Math.random()<.5?typed((t*10+u)+" "+MENOS+" "+u+" =",t*10):typed((t*10+u)+" "+MENOS+" "+(t*10)+" =",u);
+    it.limits=[["n28:f6",2]];
+  }
+  return it;
+}
+
+/* Nível 29 — Decompor números, sem desenho (EF01MA07). Unidade de 1 a 9; a resposta nunca é zero. */
+function gDecompor(){
+  var r=Math.random(),t=rnd(1,9),u=rnd(1,9),n=t*10+u,it;
+  if(r<.25){it=typed(n+" = "+(t*10)+" +",u);it.limits=[["n29:t1",4]]}
+  else if(r<.5){it=typed(n+" =",t*10,null,"+ "+u);it.limits=[["n29:t2",4]]}
+  else if(r<.75){it=typed("Qual número tem "+t+" dezenas e "+u+" unidades?",n);it.limits=[["n29:t3",4]]}
+  else if(Math.random()<.5){it=typed("O número "+n+" tem quantas dezenas?",t);it.limits=[["n29:t4",4]]}
+  else{it=typed("O número "+n+" tem quantas unidades?",u);it.limits=[["n29:t4",4]]}
+  return it;
+}
+
 FC.G1=[
   {nivel:1,id:"g1n01",nome:"Nível 1 — Contar objetos até 10",hab:["EF01MA02"],meta:90,gen:gContar10},
   {nivel:2,id:"g1n02",nome:"Nível 2 — Mais, menos ou igual",hab:["EF01MA03"],meta:100,gen:gComparar},
@@ -426,7 +521,12 @@ FC.G1=[
   {nivel:21,id:"g1n21",nome:"Nível 21 — Subtrações até 20, sem passar da dezena",hab:["EF01MA06","EF01MA07"],meta:90,gen:gSubSem21},
   {nivel:22,id:"g1n22",nome:"Nível 22 — Subtrações que passam da dezena",hab:["EF01MA06","EF01MA07"],meta:110,gen:gSubPass22},
   {nivel:23,id:"g1n23",nome:"Nível 23 — Somas e subtrações até 20",hab:["EF01MA06","EF01MA08"],meta:110,gen:gMisto20},
-  {nivel:24,id:"g1n24",nome:"Nível 24 — Problemas de juntar e tirar, até 20",hab:["EF01MA08"],meta:140,gen:gProblema(11,20,.55)}
+  {nivel:24,id:"g1n24",nome:"Nível 24 — Problemas de juntar e tirar, até 20",hab:["EF01MA08"],meta:140,gen:gProblema(11,20,.55)},
+  {nivel:25,id:"g1n25",nome:"Nível 25 — Dezenas e unidades (barras e quadradinhos)",hab:["EF01MA07","EF01MA04"],meta:100,gen:gBarras},
+  {nivel:26,id:"g1n26",nome:"Nível 26 — Contar até 100, de 10 em 10",hab:["EF01MA04"],meta:120,gen:gPacotes},
+  {nivel:27,id:"g1n27",nome:"Nível 27 — Maior e menor até 99",hab:["EF01MA05"],meta:90,gen:gMaiorMenor99},
+  {nivel:28,id:"g1n28",nome:"Nível 28 — Dezenas inteiras e unidades",hab:["EF01MA07"],meta:100,gen:gDezUni},
+  {nivel:29,id:"g1n29",nome:"Nível 29 — Decompor números",hab:["EF01MA07"],meta:100,gen:gDecompor}
 ];
 FC.G1BY={};FC.G1.forEach(function(e){FC.G1BY[e.id]=e});
 })();

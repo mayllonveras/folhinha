@@ -534,6 +534,9 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-caixa span{position:absolute;font-size:16cqw;line-height:1;transform:translate(-50%,-50%)}
 .fig-caixa .p-esq{left:14%;top:50%}.fig-caixa .p-dir{left:86%;top:50%}.fig-caixa .p-meio{left:50%;top:50%}.fig-caixa .p-cima{left:50%;top:22%}
 .opt .fig-fila .fi{font-size:1.4rem}
+.fig-pacotes{display:flex;flex-direction:column;gap:6px}
+.fig-pacotes .pk{font-size:1.05rem;line-height:1.25;letter-spacing:.02em;white-space:nowrap}
+.fig-pacotes .pk.box{border:2px solid var(--line);border-radius:10px;padding:1px 8px;width:max-content}
 .fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
 .fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}
