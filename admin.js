@@ -52,6 +52,23 @@ async function load(user){
   show(user);
 }
 
+/* ---------- pré-visualização dos exercícios novos (para revisão pedagógica) ---------- */
+function exCard(e){
+  return '<div class="eyebrow">'+esc(e.nome)+'</div><div class="small-t muted">'+esc(e.hab.join(" · "))+'</div>'+FC.itemStatic(e.gen())+FC.itemStatic(e.gen())+
+    '<button class="btn ghost small" data-again="'+esc(e.id)+'">Outros exemplos</button>';
+}
+function exHtml(){
+  if(!FC.EX)return '<p class="msg bad">A biblioteca de exercícios não carregou.</p>';
+  return '<p class="muted small-t">Cada cartão mostra 2 exemplos sorteados do gerador, com a resposta certa. Toque em “Outros exemplos” para sortear de novo. As habilidades são as da BNCC que o exercício treina.</p>'+
+    '<div class="adm-ex">'+FC.EX.map(function(e){return '<section class="panel adm-excard" data-ex="'+esc(e.id)+'">'+exCard(e)+'</section>'}).join("")+'</div>';
+}
+function bindEx(){
+  $$("[data-again]").forEach(function(b){b.onclick=function(){
+    var e=FC.EXBY[b.getAttribute("data-again")];if(!e)return;
+    b.closest(".adm-excard").innerHTML=exCard(e);bindEx();
+  }});
+}
+
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
   salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1};
@@ -139,14 +156,15 @@ function show(user){
       stat(t.active_7d,"alunos ativos em 7 dias")+stat(t.friendships,"amizades")+'</div>'+
     '<div class="panel"><div class="tabs"><button class="tab'+(TAB==="alunos"?" on":"")+'" data-t="alunos">Alunos ('+DATA.students.length+')</button>'+
       '<button class="tab'+(TAB==="contas"?" on":"")+'" data-t="contas">Contas ('+DATA.accounts.length+')</button>'+
-      '<button class="tab'+(TAB==="parametros"?" on":"")+'" data-t="parametros">Parâmetros</button></div>'+
-    (TAB==="parametros"?paramsHtml():
+      '<button class="tab'+(TAB==="parametros"?" on":"")+'" data-t="parametros">Parâmetros</button>'+
+      '<button class="tab'+(TAB==="exercicios"?" on":"")+'" data-t="exercicios">Exercícios</button></div>'+
+    (TAB==="parametros"?paramsHtml():TAB==="exercicios"?exHtml():
     '<label class="field">Buscar<input id="aFind" type="search" autocomplete="off" value="'+esc(FILTER)+'" placeholder="nome ou e-mail"></label>'+
     '<div id="admBody">'+(TAB==="alunos"?studentsTable():accountsTable())+'</div>')+'</div>');
   bindBar();
   $("#reload").onclick=function(){load(user)};
   $$(".tab").forEach(function(b){b.onclick=function(){TAB=b.getAttribute("data-t");show(user)}});
-  bindParams(user);
+  bindParams(user);bindEx();
   if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable()};
 }
 })();

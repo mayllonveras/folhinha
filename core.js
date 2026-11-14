@@ -216,11 +216,14 @@ FC.anoAluno=function(s,today,pub){
 };
 FC.shuffle=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a};
 /* 'keep' = contas que já devem estar na folha (reforço); o resto é sorteado sem repetir. */
+/* Item como vai para o banco: só pre, post, a e (se houver) extra (figura e opções). */
+FC.plainItem=function(p){var o={pre:p.pre,post:p.post||"",a:p.a};if(p.extra)o.extra=p.extra;return o};
+function itemKey(p){return p.pre+"|"+(p.post||"")+"|"+(p.extra?JSON.stringify(p.extra):"")}
 FC.makeItems=function(levelIdx,keep){
-  var items=(keep||[]).map(function(p){return{pre:p.pre,post:p.post||"",a:p.a}}),seen={},g=0;
-  items.forEach(function(p){seen[p.pre+"|"+p.post]=1});
+  var items=(keep||[]).map(FC.plainItem),seen={},g=0;
+  items.forEach(function(p){seen[itemKey(p)]=1});
   while(items.length<10&&g++<400){
-    var p=FC.LEVELS[levelIdx].gen(),k=p.pre+"|"+p.post;
+    var p=FC.LEVELS[levelIdx].gen(),k=itemKey(p);
     if(seen[k])continue;seen[k]=1;items.push(p);
   }
   while(items.length<10)items.push(FC.LEVELS[levelIdx].gen());

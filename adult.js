@@ -251,7 +251,7 @@ async function detail(id){
       q(sb.from("students").select("*").eq("id",id).single()),
       q(sb.from("sheets").select("id,study_day,level_idx,first_ok,total,secs,corrections,stamp,advanced,finished_at").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(300)),
       q(sb.from("guardians").select("user_id,role").eq("student_id",id)),
-      q(sb.from("weak_items").select("pre,post,ans,misses,level_idx").eq("student_id",id).order("misses",{ascending:false}).limit(12)),
+      q(sb.from("weak_items").select("pre,post,ans,misses,level_idx,extra").eq("student_id",id).order("misses",{ascending:false}).limit(12)),
       q(sb.from("awards").select("kind,theme,slot,source,period_end").eq("student_id",id).order("period_end"))]);
     s=res[0];sheets=res[1];guards=res[2];weak=res[3];awards=res[4];
     await ensurePub();
@@ -311,7 +311,7 @@ async function detail(id){
     return '<li><b>'+FC.dayLabel(m.day)+'</b> '+(m.kind==="salto"?"pulou do nível "+a.id+" para o "+b.id:m.kind==="voltou"?"voltou do nível "+a.id+" para o "+b.id:"subiu do nível "+a.id+" para o "+b.id)+'</li>'}).join("")+'</ul>':'<p class="muted">Nenhuma mudança de nível registrada ainda.</p>')+'</div>';
   var weakHtml='<div class="panel"><div class="eyebrow gap">Contas em reforço</div>'+(weak.length?
     '<ul class="plain miss">'+weak.map(function(w){
-      return '<li><span class="q">'+esc(w.pre)+' <b>'+esc(w.ans)+'</b>'+esc(w.post)+'</span> <span class="muted small-t">nível '+esc(FC.lv(w.level_idx))+' · errou '+w.misses+' vez'+(w.misses>1?'es':'')+'</span></li>'}).join("")+'</ul>':
+      return '<li><span class="q">'+esc(w.pre)+(w.extra&&w.extra.fig?' <span class="muted small-t">(com figura)</span>':'')+' <b>'+esc(FC.answerText({extra:w.extra},w.ans))+'</b>'+esc(w.post)+'</span> <span class="muted small-t">nível '+esc(FC.lv(w.level_idx))+' · errou '+w.misses+' vez'+(w.misses>1?'es':'')+'</span></li>'}).join("")+'</ul>':
     '<p class="muted">Nenhuma conta em reforço agora.</p>')+
     '<p class="muted small-t gap">'+"Estas contas voltam nas próximas folhas, inclusive no nível seguinte, até ele acertar 2 vezes seguidas."+'</p></div>';
 
@@ -424,7 +424,7 @@ async function loadSlow(id){
     var exp=FC.LEVELS[sh.level_idx].target/10*1000;
     (sh.answers||[]).forEach(function(a,i){
       var p=sh.problems[i];if(!p||!a||!(a.ms>0))return;
-      var k=sh.level_idx+"|"+p.pre+"|"+(p.post||""),x=g[k]||(g[k]={p:p,exp:exp,sum:0,n:0,lv:sh.level_idx});
+      var k=sh.level_idx+"|"+p.pre+"|"+(p.post||"")+"|"+(p.extra?JSON.stringify(p.extra):""),x=g[k]||(g[k]={p:p,exp:exp,sum:0,n:0,lv:sh.level_idx});
       x.sum+=a.ms;x.n++;
     });
   });
@@ -433,7 +433,7 @@ async function loadSlow(id){
   var any=Object.keys(g).length;
   box.innerHTML='<div class="eyebrow gap">Contas mais demoradas</div>'+(rows.length?
     '<ul class="plain miss">'+rows.map(function(x){
-      return '<li><span class="q">'+esc(x.p.pre)+' <b>'+esc(x.p.a)+'</b>'+esc(x.p.post||"")+'</span> <span class="muted small-t">nível '+esc(FC.lv(x.lv))+' · média '+FC.fmtSec(x.avg)+' (esperado '+FC.fmtSec(x.exp)+')'+(x.n>1?' · '+x.n+' vezes':'')+'</span></li>'}).join("")+'</ul>':
+      return '<li><span class="q">'+esc(x.p.pre)+(x.p.extra&&x.p.extra.fig?' <span class="muted small-t">(com figura)</span>':'')+' <b>'+esc(FC.answerText(x.p,x.p.a))+'</b>'+esc(x.p.post||"")+'</span> <span class="muted small-t">nível '+esc(FC.lv(x.lv))+' · média '+FC.fmtSec(x.avg)+' (esperado '+FC.fmtSec(x.exp)+')'+(x.n>1?' · '+x.n+' vezes':'')+'</span></li>'}).join("")+'</ul>':
     '<p class="muted">'+(any?'Nenhuma conta ficou acima do tempo esperado nas últimas folhas.':'Ainda não há tempos por conta. Eles aparecem nas próximas folhas.')+'</p>')+
     '<p class="muted small-t gap">O tempo de cada conta conta enquanto a caixa de resposta dela está selecionada, só na primeira tentativa.</p>';
 }
@@ -447,8 +447,9 @@ async function openSheet(sid,btn){
   var avg=msAll.length?msAll.reduce(function(a,b){return a+b},0)/msAll.length:0;
   var li=sh.problems.map(function(p,i){
     var a=ans[i]||{},ok=a.ok,ms=a.ms||0;
-    return '<li class="'+(ok?"ok":"bad")+'"><span class="q">'+esc(p.pre)+' '+esc(a.v===""||a.v==null?"–":a.v)+(p.post?" "+esc(p.post):"")+'</span> '+
-      (ok?'<span class="tag ok">certa de primeira</span>':'<span class="tag bad">errou · resposta certa: '+esc(p.a)+'</span>')+
+    var rich=!!p.extra;
+    return '<li class="'+(ok?"ok":"bad")+'">'+(rich?FC.itemStatic(p,a.v):'<span class="q">'+esc(p.pre)+' '+esc(a.v===""||a.v==null?"–":a.v)+(p.post?" "+esc(p.post):"")+'</span>')+' '+
+      (ok?'<span class="tag ok">certa de primeira</span>':'<span class="tag bad">errou · resposta certa: '+esc(FC.answerText(p,p.a))+(rich&&a.v!==""&&a.v!=null?' · marcou: '+esc(FC.answerText(p,a.v)):'')+'</span>')+
       (ms>0?' <span class="muted small-t">'+FC.fmtSec(ms)+'</span>':'')+(ms>exp*1.5?' <span class="tag warn">lenta</span>':'')+
       (a.tries>1?' <span class="muted small-t">('+a.tries+' tentativas)</span>':'')+'</li>';
   }).join("");
