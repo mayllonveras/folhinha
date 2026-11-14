@@ -4,7 +4,7 @@
    - key: identidade da conta (quando o desenho muda mas a conta é a mesma);
    - _calc/_why: a resposta, para os testes (nunca vão para o banco).
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 18 (contagem, comparação, soma e subtração até 10, problemas, formas, sólidos, posição, atributos, dezena mais um). */
+   Níveis feitos: 1 a 24 (contagem, comparação, soma e subtração até 10, problemas, formas, sólidos, posição, atributos, dezena mais um). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,OBJ=X.OBJ,NAMES=X.NAMES;
@@ -187,11 +187,31 @@ function sq(n,e){var o=PROB[e];return n+" "+(n===1?o[0]:o[1])}
 function pl(e){return PROB[e][1]}
 function qs(e){return PROB[e][2]?"Quantas ":"Quantos "}
 function ele(n){return n[1]==="f"?"Ela":"Ele"}
-function gProblema(maxTotal){
+function uni(n){return n%10}
+/* Pares (a, b) de um problema de soma ou de subtração dentro dos limites do nível. pCruza (níveis acima de 10): fração de problemas
+   em que a conta passa da dezena (soma de dois números de um algarismo; subtração em que b é maior que a unidade de a). */
+function parSoma(lo,hi,pCruza){
+  var s,a,b;
+  if(pCruza===undefined){s=rnd(lo,hi);a=rnd(1,s-1);return [a,s-a]}
+  if(Math.random()<pCruza){a=rnd(2,9);b=rnd(Math.max(2,11-a),9);return [a,b]}
+  var x=rnd(10,18),u=uni(x);b=rnd(1,9-u);return Math.random()<.5?[x,b]:[b,x];
+}
+function parSub(lo,hi,pCruza){
+  var s,b,u;
+  if(pCruza===undefined){s=rnd(lo,hi);b=rnd(1,s-1);return [s,b]}
+  var t=0;
+  do{
+    s=rnd(lo,hi);u=uni(s);
+    if(Math.random()<pCruza){if(u>=9)continue;b=rnd(u+1,9);return [s,b]}
+    if(u>=1){b=rnd(1,u);return [s,b]}
+  }while(t++<200);
+  return [15,7];
+}
+function gProblema(lo,hi,pCruza){
   return function(){
-    var tipo=pick(["juntar","acrescentar","separar","retirar"]),s=rnd(3,maxTotal),a,b,e,it,n1=pick(NAMES),n2,fig,pre,l=[];
+    var tipo=pick(["juntar","acrescentar","separar","retirar"]),a,b,e,it,n1=pick(NAMES),n2,fig,pre,l=[],s;
     if(tipo==="juntar"||tipo==="acrescentar"){
-      a=rnd(1,s-1);b=s-a;e=pick(Object.keys(PROB));
+      var pr=parSoma(lo,hi,pCruza);a=pr[0];b=pr[1];s=a+b;e=pick(Object.keys(PROB));
       if(tipo==="juntar"){
         do{n2=pick(NAMES)}while(n2[0]===n1[0]);
         var elas=n1[1]==="f"&&n2[1]==="f";
@@ -203,7 +223,7 @@ function gProblema(maxTotal){
       fig={t:"emoji",groups:[{e:e,n:a},{e:e,n:b}],per:5,side:true,sep:"+"};
       it=typed(pre,s,fig);it._info={tipo:tipo,a:a,b:b};
     }else{
-      b=rnd(1,s-1);a=s;
+      var ps=parSub(lo,hi,pCruza);a=ps[0];b=ps[1];
       if(tipo==="separar"){
         e=pick(DAR);
         pre=n1[0]+" tinha "+sq(a,e)+". "+ele(n1)+" deu "+b+" para um amigo. "+qs(e)+pl(e)+" sobraram?";
@@ -220,7 +240,6 @@ function gProblema(maxTotal){
     return it;
   };
 }
-
 
 /* ===================== Níveis 14 a 18: formas, sólidos, posição, atributos e padrões, dezena mais um ===================== */
 var FORMAS4=["círculo","quadrado","retângulo","triângulo"];
@@ -351,6 +370,38 @@ function gDezenaMais(){
   return lims(it2,[["n18:op-",5]]);
 }
 
+
+/* ===================== Níveis 19 a 24: somas e subtrações até 20, problemas até 20 ===================== */
+/* Famílias de contas (fichas 19 a 22). vinte = a conta chega a 20 (soma) ou tira de 20 (subtração): no máximo 1 por folha. */
+function ordem(a,b){return Math.random()<.5?[a,b]:[b,a]}
+function famSomaSemPassar(){var a=rnd(11,18),b=rnd(1,9-uni(a)),o=ordem(a,b);return {op:"+",x:o[0],y:o[1],vinte:false}}
+function famSomaPassando(){
+  if(Math.random()<.15){var a=rnd(11,19),o=ordem(a,20-a);return {op:"+",x:o[0],y:o[1],vinte:true}}
+  var a2=rnd(2,9),b2=rnd(Math.max(2,11-a2),9);return {op:"+",x:a2,y:b2,vinte:false};
+}
+function famSubSemPassar(){var a=rnd(12,19);return {op:"-",x:a,y:rnd(1,uni(a)-1),vinte:false}}
+function famSubPassando(){
+  if(Math.random()<.15)return {op:"-",x:20,y:rnd(1,9),vinte:true};
+  var a=rnd(11,18);return {op:"-",x:a,y:rnd(uni(a)+1,9),vinte:false};
+}
+function daFamilia(f,nivel,limitesBase){
+  var it=f.op==="+"?soma(f.x,f.y,nivel):sub(f.x,f.y,nivel),l=limitesBase.slice();
+  if(f.op==="+")l.push([parc(nivel,f.x,f.y),1]);
+  it.limits=l;return it;
+}
+function gSomaSem19(){var f=famSomaSemPassar();return daFamilia(f,19,[])}
+function gSomaPass20(){var f=famSomaPassando();return daFamilia(f,20,f.vinte?[["n20:vinte",1]]:[])}
+function gSubSem21(){var f=famSubSemPassar();return daFamilia(f,21,[])}
+function gSubPass22(){var f=famSubPassando();return daFamilia(f,22,f.vinte?[["n22:vinte",1]]:[])}
+/* Nível 23 — as quatro famílias misturadas: 2 de cada por folha (das 8 contas do nível), 1 "vinte" no máximo. */
+function gMisto20(){
+  var k=rnd(1,4),f=k===1?famSomaSemPassar():k===2?famSomaPassando():k===3?famSubSemPassar():famSubPassando();
+  var it=daFamilia(f,23,[["n23:f"+k,2]]);
+  if(f.vinte)it.limits.push(["n23:vinte",1]);
+  it._info={fam:k,vinte:f.vinte,op:f.op,a:f.x,b:f.y};
+  return it;
+}
+
 FC.G1=[
   {nivel:1,id:"g1n01",nome:"Nível 1 — Contar objetos até 10",hab:["EF01MA02"],meta:90,gen:gContar10},
   {nivel:2,id:"g1n02",nome:"Nível 2 — Mais, menos ou igual",hab:["EF01MA03"],meta:100,gen:gComparar},
@@ -364,12 +415,18 @@ FC.G1=[
   {nivel:10,id:"g1n10",nome:"Nível 10 — Somas até 10",hab:["EF01MA06"],meta:90,gen:gSomaAte10},
   {nivel:11,id:"g1n11",nome:"Nível 11 — Subtrações até 10",hab:["EF01MA06"],meta:100,gen:gSubAte10},
   {nivel:12,id:"g1n12",nome:"Nível 12 — Somas e subtrações até 10",hab:["EF01MA06","EF01MA08"],meta:100,gen:gMistoAte10},
-  {nivel:13,id:"g1n13",nome:"Nível 13 — Problemas de juntar e tirar, até 10",hab:["EF01MA08"],meta:120,gen:gProblema(10)},
+  {nivel:13,id:"g1n13",nome:"Nível 13 — Problemas de juntar e tirar, até 10",hab:["EF01MA08"],meta:120,gen:gProblema(3,10)},
   {nivel:14,id:"g1n14",nome:"Nível 14 — Figuras planas",hab:["EF01MA14"],meta:100,gen:gFormas},
   {nivel:15,id:"g1n15",nome:"Nível 15 — Sólidos e objetos do dia a dia",hab:["EF01MA13","EF01MA14"],meta:100,gen:gSolidos},
   {nivel:16,id:"g1n16",nome:"Nível 16 — Esquerda, direita, em cima e embaixo",hab:["EF01MA11","EF01MA12"],meta:100,gen:gPosicao},
   {nivel:17,id:"g1n17",nome:"Nível 17 — Atributos e padrões de figuras",hab:["EF01MA09","EF01MA10"],meta:120,gen:gAtributos},
-  {nivel:18,id:"g1n18",nome:"Nível 18 — Dezena mais um número",hab:["EF01MA06","EF01MA07"],meta:80,gen:gDezenaMais}
+  {nivel:18,id:"g1n18",nome:"Nível 18 — Dezena mais um número",hab:["EF01MA06","EF01MA07"],meta:80,gen:gDezenaMais},
+  {nivel:19,id:"g1n19",nome:"Nível 19 — Somas até 20, sem passar da dezena",hab:["EF01MA06","EF01MA07"],meta:90,gen:gSomaSem19},
+  {nivel:20,id:"g1n20",nome:"Nível 20 — Somas que passam da dezena",hab:["EF01MA06","EF01MA07"],meta:100,gen:gSomaPass20},
+  {nivel:21,id:"g1n21",nome:"Nível 21 — Subtrações até 20, sem passar da dezena",hab:["EF01MA06","EF01MA07"],meta:90,gen:gSubSem21},
+  {nivel:22,id:"g1n22",nome:"Nível 22 — Subtrações que passam da dezena",hab:["EF01MA06","EF01MA07"],meta:110,gen:gSubPass22},
+  {nivel:23,id:"g1n23",nome:"Nível 23 — Somas e subtrações até 20",hab:["EF01MA06","EF01MA08"],meta:110,gen:gMisto20},
+  {nivel:24,id:"g1n24",nome:"Nível 24 — Problemas de juntar e tirar, até 20",hab:["EF01MA08"],meta:140,gen:gProblema(11,20,.55)}
 ];
 FC.G1BY={};FC.G1.forEach(function(e){FC.G1BY[e.id]=e});
 })();

@@ -158,39 +158,44 @@ function limitesOk(nivel,it){const c={};for(const p of it)for(const [g,m] of (p.
  console.log("nível 12: contas diferentes",d.size,"; somas",(100*s/N).toFixed(0)+"%");if(d.size!==90)falha(12,"esperadas 90 contas, vieram "+d.size);}
 
 /* ---- Nível 13: problemas, a resposta é recalculada a partir do texto ---- */
-{const g=G.g1n13,its=draw(g),tipos={juntar:0,acrescentar:0,separar:0,retirar:0};const SING={},PLUR={};
+function problemas(g,nivel,lo,hi,maxPal,minCruza){let cruzam=0;const its=draw(g),tipos={juntar:0,acrescentar:0,separar:0,retirar:0};const SING={},PLUR={};
  const lex={"maçã":"maçãs","peixe":"peixes","estrela":"estrelas","balão":"balões","cachorro":"cachorros","flor":"flores","bola":"bolas","biscoito":"biscoitos","carro":"carros","pintinho":"pintinhos"};
  const fem=new Set(["maçãs","estrelas","flores","bolas"]);
- for(const p of its){const t=p.pre,pal=t.split(/\s+/).length;let m,res=null,tipo=null;
-  if(pal>14)falha(13,"enunciado com "+pal+" palavras: "+t);
-  if((m=t.match(/^(\S+) tem (\d+) (\S+) e (\S+) tem (\d+) (\S+)\. (Quantas|Quantos) (\S+) (elas|eles) têm (juntas|juntos)\?$/))){tipo="juntar";res=+m[2]+ +m[5];
+ for(const p of its){const t=p.pre,pal=t.split(/\s+/).length;let m,res=null,tipo=null,A=0,B=0;
+  if(pal>maxPal)falha(nivel,"enunciado com "+pal+" palavras: "+t);
+  if((m=t.match(/^(\S+) tem (\d+) (\S+) e (\S+) tem (\d+) (\S+)\. (Quantas|Quantos) (\S+) (elas|eles) têm (juntas|juntos)\?$/))){tipo="juntar";A=+m[2];B=+m[5];res=A+B;
     const n1=NAMES.find(x=>x[0]===m[1]),n2=NAMES.find(x=>x[0]===m[4]);
-    if(m[1]===m[4])falha(13,"mesmo nome duas vezes");
-    const elas=n1[1]==="f"&&n2[1]==="f";if(m[9]!==(elas?"elas":"eles")||m[10]!==(elas?"juntas":"juntos"))falha(13,"concordância das crianças: "+t);
-    if(m[3]!==m[6]&&!(+m[2]===1||+m[5]===1))falha(13,"objetos diferentes: "+t);}
-  else if((m=t.match(/^Havia (\d+) (\S+)\. (Chegou|Chegaram) (\d+)\. (Quantas|Quantos) (\S+) há agora\?$/))){tipo="acrescentar";res=+m[1]+ +m[4];
-    if((m[3]==="Chegou")!==(+m[4]===1))falha(13,"verbo chegar: "+t);}
-  else if((m=t.match(/^(\S+) tinha (\d+) (\S+)\. (Ela|Ele) deu (\d+) para um amigo\. (Quantas|Quantos) (\S+) sobraram\?$/))){tipo="separar";res=+m[2]-+m[5];
-    const nm=NAMES.find(x=>x[0]===m[1]);if(m[4]!==(nm[1]==="f"?"Ela":"Ele"))falha(13,"ele/ela: "+t);}
-  else if((m=t.match(/^Havia (\d+) (\S+)\. (Foi|Foram) embora (\d+)\. (Quantas|Quantos) (\S+) ficaram\?$/))){tipo="retirar";res=+m[1]-+m[4];
-    if((m[3]==="Foi")!==(+m[4]===1))falha(13,"verbo ir embora: "+t);}
-  else{falha(13,"enunciado desconhecido: "+t);continue}
+    if(m[1]===m[4])falha(nivel,"mesmo nome duas vezes");
+    const elas=n1[1]==="f"&&n2[1]==="f";if(m[9]!==(elas?"elas":"eles")||m[10]!==(elas?"juntas":"juntos"))falha(nivel,"concordância das crianças: "+t);
+    if(m[3]!==m[6]&&!(+m[2]===1||+m[5]===1))falha(nivel,"objetos diferentes: "+t);}
+  else if((m=t.match(/^Havia (\d+) (\S+)\. (Chegou|Chegaram) (\d+)\. (Quantas|Quantos) (\S+) há agora\?$/))){tipo="acrescentar";A=+m[1];B=+m[4];res=A+B;
+    if((m[3]==="Chegou")!==(+m[4]===1))falha(nivel,"verbo chegar: "+t);}
+  else if((m=t.match(/^(\S+) tinha (\d+) (\S+)\. (Ela|Ele) deu (\d+) para um amigo\. (Quantas|Quantos) (\S+) sobraram\?$/))){tipo="separar";A=+m[2];B=+m[5];res=A-B;
+    const nm=NAMES.find(x=>x[0]===m[1]);if(m[4]!==(nm[1]==="f"?"Ela":"Ele"))falha(nivel,"ele/ela: "+t);}
+  else if((m=t.match(/^Havia (\d+) (\S+)\. (Foi|Foram) embora (\d+)\. (Quantas|Quantos) (\S+) ficaram\?$/))){tipo="retirar";A=+m[1];B=+m[4];res=A-B;
+    if((m[3]==="Foi")!==(+m[4]===1))falha(nivel,"verbo ir embora: "+t);}
+  else{falha(nivel,"enunciado desconhecido: "+t);continue}
   tipos[tipo]++;
-  if(res!==p.a)falha(13,"resposta diferente do texto: "+t+" => "+p.a+" (texto dá "+res+")");
-  if(res<1)falha(13,"resultado zero ou negativo: "+t);
+  {const tot=(tipo==='juntar'||tipo==='acrescentar')?A+B:A;if(tot<lo||tot>hi)falha(nivel,'total fora de '+lo+' a '+hi+': '+t);
+   const cruza=(tipo==='juntar'||tipo==='acrescentar')?(A<=9&&B<=9):(B>A%10);if(cruza)cruzam++;}
+  if(res!==p.a)falha(nivel,"resposta diferente do texto: "+t+" => "+p.a+" (texto dá "+res+")");
+  if(res<1)falha(nivel,"resultado zero ou negativo: "+t);
   const f=p.extra.fig;
   const qm=t.match(/(Quantas|Quantos) (\S+) /),noun=qm[2];
-  if(!Object.values(lex).includes(noun))falha(13,"a pergunta deveria estar no plural: "+t);
-  if((qm[1]==="Quantas")!==fem.has(noun))falha(13,"Quantas/Quantos: "+t);
-  if(tipo!=="separar"&&tipo!=="retirar"||true){const e0=f.groups[0].e;const [sg,pl]=[...Object.entries(lex)].find(([s,pp])=>pp===noun);if(!t.includes(" "+pl)&&!t.includes(" "+sg))falha(13,"objeto da pergunta não aparece no enunciado")}
+  if(!Object.values(lex).includes(noun))falha(nivel,"a pergunta deveria estar no plural: "+t);
+  if((qm[1]==="Quantas")!==fem.has(noun))falha(nivel,"Quantas/Quantos: "+t);
+  if(tipo!=="separar"&&tipo!=="retirar"||true){const e0=f.groups[0].e;const [sg,pl]=[...Object.entries(lex)].find(([s,pp])=>pp===noun);if(!t.includes(" "+pl)&&!t.includes(" "+sg))falha(nivel,"objeto da pergunta não aparece no enunciado")}
   // singular e plural dos números
   for(const x of t.matchAll(/(\d+) (maçãs?|peixes?|estrelas?|balões?|balão|cachorros?|flores?|flor|bolas?|biscoitos?|carros?|pintinhos?)/g)){
-    const n=+x[1],pal=x[2],plural=Object.values(lex).includes(pal);if((n===1)===plural)falha(13,"singular/plural de '"+x[0]+"' em: "+t)}
+    const n=+x[1],pal=x[2],plural=Object.values(lex).includes(pal);if((n===1)===plural)falha(nivel,"singular/plural de '"+x[0]+"' em: "+t)}
   const somaFig=f.groups.map(g=>g.n);
-  if(tipo==="juntar"||tipo==="acrescentar"){if(somaFig[0]+somaFig[1]!==p.a)falha(13,"figura de soma não bate com a resposta");}
-  else if(somaFig[0]-p.a<1||somaFig[0]>10)falha(13,"figura inicial fora de 3 a 10")}
- console.log("nível 13: tipos",JSON.stringify(Object.fromEntries(Object.entries(tipos).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
- for(const k in tipos)if(Math.abs(tipos[k]/N-.25)>.04)falha(13,"proporção de "+k);}
+  if(tipo==="juntar"||tipo==="acrescentar"){if(somaFig[0]+somaFig[1]!==p.a)falha(nivel,"figura de soma não bate com a resposta");}
+  else if(somaFig[0]-p.a<1||somaFig[0]>hi||somaFig[0]<lo)falha(nivel,"figura inicial fora de "+lo+" a "+hi)}
+ console.log("nível "+nivel+": passam da dezena "+(100*cruzam/N).toFixed(0)+"%; tipos",JSON.stringify(Object.fromEntries(Object.entries(tipos).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
+ for(const k in tipos)if(Math.abs(tipos[k]/N-.25)>.04)falha(nivel,"proporção de "+k);
+ if(cruzam/N<minCruza)falha(nivel,"poucos problemas passam da dezena: "+cruzam/N)}
+problemas(G.g1n13,13,3,10,14,0);
+problemas(G.g1n24,24,11,20,16,.5);
 
 /* ---- Níveis 14 a 18 ---- */
 const GEO=FC.exh.formaGeom;
@@ -292,8 +297,47 @@ function nomeDaForma(f){
   else{const n=c.a-10;if(!(n>=1&&n<=9&&(c.b===n||c.b===10)))falha(18,"subtração: "+p.pre);if(p.a!==c.a-c.b||p.a<1)falha(18,"subtração errada")}}
  console.log("nível 18: contas diferentes",d.size);if(d.size!==36)falha(18,"esperadas 36 contas, vieram "+d.size);}
 
+/* ---- Níveis 19 a 23 ---- */
+const un=n=>n%10;
+function fam(c){ // a que família da ficha a conta pertence, só pelos números
+  if(c.op==="+"){const maiorPar=Math.max(c.a,c.b),menor=Math.min(c.a,c.b);
+    if(c.a+c.b===20&&maiorPar>=11&&menor>=1)return "somaVinte";
+    if(maiorPar>=11&&un(maiorPar)+menor<=9&&maiorPar!==10)return "somaSem";
+    if(c.a>=2&&c.a<=9&&c.b>=2&&c.b<=9&&c.a+c.b>=11)return "somaPassa";return "?"}
+  if(c.a===20&&c.b>=1&&c.b<=9)return "subVinte";
+  if(c.a>=12&&c.a<=19&&c.b>=1&&c.b<un(c.a))return "subSem";
+  if(c.a>=11&&c.a<=18&&c.b>=2&&c.b<=9&&c.b>un(c.a))return "subPassa";return "?"}
+for(const [nivel,permitidas,total] of [[19,["somaSem"],72],[20,["somaPassa","somaVinte"],54],[21,["subSem"],36],[22,["subPassa","subVinte"],45],[23,["somaSem","somaPassa","somaVinte","subSem","subPassa","subVinte"],207]]){
+ const g=G["g1n"+nivel],its=draw(g),d=new Set();let vinte=0;
+ for(const p of its){const c=conta(p);if(!c){falha(nivel,"formato: "+p.pre);continue}d.add(p.pre);
+  const f=fam(c);if(!permitidas.includes(f))falha(nivel,"conta fora da família: "+p.pre+" ("+f+")");
+  const esperado=c.op==="+"?c.a+c.b:c.a-c.b;if(p.a!==esperado||p.a<1||p.a>20)falha(nivel,"resposta: "+p.pre+" "+p.a);
+  if(f==="somaSem"&&(p.a<12||p.a>19))falha(nivel,"soma sem passar fora de 12 a 19");
+  if(f==="subSem"&&(p.a<11||p.a>18))falha(nivel,"subtração sem passar fora de 11 a 18");
+  if(f==="subPassa"&&(p.a<2||p.a>9))falha(nivel,"subtração que passa fora de 2 a 9");
+  if(f==="subVinte"&&(p.a<11||p.a>19))falha(nivel,"tirar de 20 fora de 11 a 19");
+  if(f.endsWith("Vinte"))vinte++;
+  if(p.extra)falha(nivel,"sem figura")}
+ console.log("nível "+nivel+": contas diferentes",d.size,"; 'vinte'",(100*vinte/N).toFixed(0)+"%");
+ if(d.size!==total)falha(nivel,"esperadas "+total+" contas, vieram "+d.size);
+ if(nivel===19||nivel===21){/* nenhuma repete as do nível 18 (10 + n, n + 10, 10+n−n, 10+n−10) */}
+}
+{ // sem as contas do nível 18 nos níveis 19 e 21
+ for(const nivel of [19,21]){const its=draw(G["g1n"+nivel]);for(const p of its){const c=conta(p);
+  if(c.op==="+"&&(c.a===10||c.b===10))falha(nivel,"conta do nível 18: "+p.pre);
+  if(c.op==="-"&&(c.a-c.b===10||c.b===10))falha(nivel,"conta do nível 18: "+p.pre)}}}
+{ // nível 23 numa folha real: 2 contas de revisão e 8 do nível: 2 de cada família, no máximo 1 "vinte"
+ const g=G.g1n23;FC.LEVELS=[{gen:()=>({pre:"R"+Math.floor(Math.random()*1e5),post:"",a:1})},{gen:g.gen}];let ruim=0,vinteRuim=0,troc=0;
+ for(let i=0;i<1500;i++){const it=FC.makeItems(1).filter(p=>!p._rev),cont={1:0,2:0,3:0,4:0};let v=0;
+  for(const p of it){cont[p._info.fam]++;if(p._info.vinte)v++}
+  if(!(cont[1]===2&&cont[2]===2&&cont[3]===2&&cont[4]===2))ruim++;if(v>1)vinteRuim++;
+  const ks=it.filter(p=>p._info.op==="+").map(p=>Math.min(p._info.a,p._info.b)+","+Math.max(p._info.a,p._info.b));if(new Set(ks).size<ks.length)troc++}
+ console.log("nível 23: folhas sem 2 de cada família",ruim,"; com mais de 1 'vinte'",vinteRuim,"; com parcelas trocadas",troc);
+ if(troc)falha(23,troc+" folhas com parcelas trocadas");
+ if(ruim)falha(23,ruim+" folhas sem 2 de cada família");if(vinteRuim)falha(23,vinteRuim+" folhas com mais de 1 'vinte'")}
+
 /* ---- Limites de cada folha dos níveis 8 a 13 ---- */
-for(const nivel of [8,9,10,11,12,13,14,15,16,17,18]){
+for(const nivel of [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24]){
   const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let viol=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0);const v=limitesOk(nivel,it);if(v){viol++;if(viol<3)console.log("   limite estourado:",v)}}
   console.log("nível "+nivel+": folhas que estouram um limite do grupo",viol,"de 1500");
@@ -304,7 +348,7 @@ for(const nivel of [8,9,10,11,12,13,14,15,16,17,18]){
   for(let i=0;i<1500;i++){const it=FC.makeItems(0),s=it.filter(p=>conta(p).op==="+").length;if(s!==5)ruim++}
   console.log("nível "+nivel+": folhas sem exatamente 5 somas e 5 subtrações",ruim);if(ruim)falha(nivel,ruim+" folhas sem 5 e 5")}
  // parcelas trocadas nunca na mesma folha (níveis 8, 9, 10, 12)
- for(const nivel of [8,9,10,12,18]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
+ for(const nivel of [8,9,10,12,18,19,20,21,22]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0).filter(p=>conta(p).op==="+"),k=it.map(p=>{const c=conta(p);return Math.min(c.a,c.b)+","+Math.max(c.a,c.b)});if(new Set(k).size<k.length)ruim++}
   console.log("nível "+nivel+": folhas com parcelas trocadas",ruim);if(ruim)falha(nivel,ruim+" folhas com parcelas trocadas")}}
 
