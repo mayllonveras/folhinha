@@ -145,10 +145,6 @@ Nos níveis de divisão **o resto só aparece no nível 27** (e nos problemas qu
 
 Tempo por dia (3 folhas): de 5 a 7,5 minutos.
 
-## Perguntas para o professor (com a minha sugestão)
+## Decisões do professor (14/11/2026)
 
-1. **O sinal `÷` (nível 26):** é o sinal que o aluno vai ver nos livros e nas provas. **Sugiro** usá-lo, lendo "dividido por" na dica do nível.
-2. **Divisão com resto em duas perguntas (nível 27):** "quantos pacotes?" e "quantas sobram?" em contas separadas, cada uma com uma só resposta. **Sugiro** manter, porque cada resposta é um número só e a criança vê o quociente e o resto como duas coisas.
-3. **Planificações desenhadas (nível 31):** cinco sólidos (cubo em duas versões, bloco, pirâmide, cilindro e cone). **Sugiro** manter; os prismas de base triangular e os outros ficam para o 4º ano.
-4. **Congruência sem espelho (nível 33):** só rotação e deslocamento. **Sugiro** manter: a figura virada como no espelho é congruente, mas exige "virar a folha", e a BNCC pede a sobreposição simples.
-5. **Frações no nível 28:** só o nome da parte (metade, terça, quarta, quinta, décima) pelo quociente exato, sem escrever `1/4`. **Sugiro** manter; a notação fica para o 4º ano.
+Sinal `÷` com "dividido por" na dica (nível 26); divisão com resto em duas perguntas, cada uma com uma só resposta (nível 27); cinco sólidos nas planificações (nível 31); congruência só com rotação e deslocamento, sem espelho (nível 33); partes de um número sem escrever `1/4` (nível 28).
