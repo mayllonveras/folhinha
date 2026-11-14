@@ -137,6 +137,17 @@ async function dash(){
 }
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
+/* Tempo aproximado de estudo por dia: de (folhas × tempo do dia de ouro) a (folhas × meta do nível), em minutos. */
+function studyTimeText(levelIdx,perDay){
+  var L=FC.LEVELS[levelIdx]||FC.LEVELS[0],fast=((PUB&&PUB.ouro_tempo)||80)/100;
+  var lo=Math.max(1,Math.round(perDay*L.target*fast/60)),hi=Math.max(lo,Math.round(perDay*L.target/60));
+  return 'Tempo aproximado: '+(lo===hi?'<b>cerca de '+lo+' minuto'+(lo===1?'':'s')+'</b>':'de <b>'+lo+' a '+hi+' minutos</b>')+' de estudo por dia, no nível '+L.id+' (meta de '+FC.fmtTime(L.target)+' por folha). Muda conforme o nível dele.';
+}
+document.addEventListener("change",function(e){
+  var t=e.target;if(!t||(t.id!=="pPer"&&t.id!=="pLevel"))return;
+  var h=FC.$("#pTime"),per=FC.$("#pPer"),lv=FC.$("#pLevel");
+  if(h&&per&&lv)h.innerHTML=studyTimeText(Number(lv.value),Number(per.value));
+});
 function programFields(s){
   var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["dinossauros"]};
   var lv="",lastG=null;
@@ -159,7 +170,7 @@ function programFields(s){
     '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label></div>'+
     '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>Escolha o nível em que ele resolve as folhas com facilidade, sem ajuda.</small></label>'+
     '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small></label></div>'+
+    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small><small id="pTime">'+studyTimeText(v.level_idx,v.sheets_per_day)+'</small></label></div>'+
     '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
     '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCover(t.id)+'</label>'+
@@ -268,7 +279,7 @@ async function detail(id){
     (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
     '<p class="muted small-t">As figurinhas apagadas ainda não foram ganhas: a criança só vê as que conquistou. Toque em uma figurinha para ver o verso.</p>'+
     themeIds.map(function(id,i){
-      var th=FC.theme(id),got=awards.filter(function(a){return a.kind==="figurinha"&&a.theme===id}).map(function(a){return{slot:a.slot,end:a.period_end}});
+      var th=FC.theme(id),seen={},got=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}});
       return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</summary>'+FC.rarityLegend(id)+FC.albumHtml(id,got,{adult:true})+'</details>';
     }).join("")+'</div>';
   var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
@@ -337,7 +348,7 @@ async function detail(id){
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
     '<div class="panel"><div class="eyebrow gap">Adultos com acesso</div><ul class="plain">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
-    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
+    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
   var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
@@ -363,7 +374,7 @@ async function detail(id){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadFriends(id);
+  loadSlow(id);loadFriends(id);loadTrades(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
@@ -414,6 +425,18 @@ async function loadFriends(id){
     if(x.error)return FC.toast(FC.err(x.error),true);
     FC.toast("Pronto.");loadFriends(id);
   })});
+}
+/* Trocas do aluno: só leitura. Mostra as feitas, as recusadas e as que estão esperando resposta. */
+async function loadTrades(id){
+  var box=$("#trAdBox");if(!box)return;
+  var r=await sb.rpc("adult_trades",{p_student:id});
+  if(r.error){box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Não deu para carregar.</p>';return}
+  var nm=function(t,sl){return esc(FC.stickerInfo(t,sl).name)+' <span class="muted small-t">('+esc(FC.theme(t).name)+')</span>'};
+  var rows=r.data.map(function(x){
+    var gave=x.sent?[x.give_theme,x.give_slot]:[x.want_theme,x.want_slot],got=x.sent?[x.want_theme,x.want_slot]:[x.give_theme,x.give_slot];
+    var st=x.status==="aceita"?"trocou":x.status==="recusada"?(x.sent?"pedido recusado por":"recusou o pedido de"):(x.sent?"pedido esperando resposta de":"pedido recebido de");
+    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">deu '+nm(gave[0],gave[1])+' e '+(x.status==="aceita"?"recebeu ":"queria ")+nm(got[0],got[1])+'</span></span></li>'}).join("");
+  box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem trocas.</p>')+'<p class="muted small-t gap">Últimas 50. Só para consulta.</p>';
 }
 async function loadSlow(id){
   var box=$("#slowBox");if(!box)return;
