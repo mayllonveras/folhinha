@@ -139,6 +139,11 @@ e as habilidades da BNCC (`hab`), que aparecem na tela dos pais junto do ano do 
 (idx 35 a 75, ano 2), sem tocar em alunos nem em níveis existentes; as funções de avanço já leem a tabela, então o último nível passa a ser o 76. Testada numa transação desfeita
 (76 níveis, meta do nível 76 = 130 s, 5 carimbos pelo padrão). `testes/grade.test.js` confere as metas contra as duas migrações.
 
+## 3º ano (em andamento)
+
+Proposta de grade com 42 níveis em `GRADE-3ANO.md`, no mesmo processo dos anos anteriores: o professor aprova a ordem, as fichas são escritas e revisadas bloco por bloco, depois vêm os geradores
+e os testes, e por fim a grade é ligada ao app (níveis 77 em diante, migração que só acrescenta linhas em `levels`).
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
