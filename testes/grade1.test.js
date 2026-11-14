@@ -144,7 +144,7 @@ function limitesOk(nivel,it){const c={};for(const p of it)for(const [g,m] of (p.
  for(const p of its){const c=conta(p);if(!c||c.op!=="+"){falha(10,"formato");continue}d.add(p.pre);
   if(c.a<1||c.b<1||c.a+c.b>10||p.a!==c.a+c.b)falha(10,"soma: "+p.pre);if(c.a+c.b===10)dez++;if(p.extra)falha(10,"sem figura")}
  console.log("nível 10: contas diferentes",d.size,"; soma 10 em",(100*dez/N).toFixed(0)+"%");if(d.size!==45)falha(10,"esperadas 45 contas, vieram "+d.size);
- if(dez/N<.16||dez/N>.26)falha(10,"proporção de somas 10: "+dez/N);}
+ if(dez/N<.17||dez/N>.30)falha(10,"proporção de somas 10: "+dez/N);}
 { // nível 11
  const its=draw(G.g1n11);let a6=0,dez=0;const d=new Set();
  for(const p of its){const c=conta(p);if(!c||c.op!=="-"){falha(11,"formato");continue}d.add(p.pre);
@@ -192,19 +192,119 @@ function limitesOk(nivel,it){const c={};for(const p of it)for(const [g,m] of (p.
  console.log("nível 13: tipos",JSON.stringify(Object.fromEntries(Object.entries(tipos).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
  for(const k in tipos)if(Math.abs(tipos[k]/N-.25)>.04)falha(13,"proporção de "+k);}
 
+/* ---- Níveis 14 a 18 ---- */
+const GEO=FC.exh.formaGeom;
+const bbox=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return {x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)}};
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+/* Reconhece a figura só pelo que foi desenhado (pontos): devolve o nome */
+function nomeDaForma(f){
+  const g=GEO(f);if(g.circle)return "círculo";
+  const p=g.pts,b=bbox(p);
+  if(b.x0<1||b.y0<1||b.x1>99||b.y1>99)falha(14,"figura sai da caixa: "+JSON.stringify(f));
+  if(p.length===3){const a=Math.abs((p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[2][0]-p[0][0])*(p[1][1]-p[0][1]))/2;
+    if(a<300)falha(14,"triângulo pequeno ou achatado demais (área "+a+")");
+    for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)if(dist(p[i],p[j])<30)falha(14,"triângulo com dois vértices muito próximos");
+    return "triângulo"}
+  if(p.length!==4){falha(14,"polígono inesperado");return "?"}
+  const w=dist(p[0],p[1]),h=dist(p[1],p[2]);
+  if(p[0][1]!==p[1][1]||p[1][0]!==p[2][0])falha(14,"quadrilátero girado");
+  const r=Math.max(w,h)/Math.min(w,h);
+  if(Math.abs(w-h)<.01)return "quadrado";
+  if(r<1.39||r>2.51)falha(14,"retângulo com proporção "+r.toFixed(2));
+  return "retângulo";
+}
+{ // nível 14
+ const its=draw(G.g1n14),NN=["círculo","quadrado","retângulo","triângulo"];let t1=0,t2=0;
+ for(const p of its){
+  if(/^Como se chama esta figura\?$/.test(p.pre)){t1++;const n=nomeDaForma(p.extra.fig),opts=p.extra.opts;
+    if(opts[p.a-1]!==n)falha(14,"nome errado para "+JSON.stringify(p.extra.fig));
+    if(n==="quadrado"&&opts.includes("retângulo"))falha(14,"retângulo como opção para um quadrado");
+    if(new Set(opts).size!==opts.length||opts.length<3||opts.length>4||opts.some(o=>!NN.includes(o)))falha(14,"opções: "+opts)}
+  else{const m=p.pre.match(/^Qual destas figuras é um (\S+)\?$/);if(!m){falha(14,"pergunta desconhecida: "+p.pre);continue}t2++;
+    const opts=p.extra.opts,nomes=opts.map(o=>nomeDaForma(o.fig));
+    if(nomes[p.a-1]!==m[1])falha(14,"figura certa não é um "+m[1]);
+    if(nomes.filter(n=>n===m[1]).length!==1)falha(14,"duas figuras do mesmo nome");
+    if(m[1]==="retângulo"&&nomes.includes("quadrado"))falha(14,"quadrado entre as opções de 'qual é um retângulo?'");
+    if(new Set(nomes).size!==nomes.length||nomes.length<3||nomes.length>4)falha(14,"opções: "+nomes);
+    if(new Set(opts.map(o=>o.fig.color)).size!==1)falha(14,"as figuras deviam ter a mesma cor")}}
+ console.log("nível 14: nome da figura",(100*t1/N).toFixed(0)+"%, qual é?",(100*t2/N).toFixed(0)+"%");}
+{ // nível 15
+ const its=draw(G.g1n15);const proib=["🎲","🧊","🍦","🛢️","🔺"];const por={t1:0,t2:0,t3:0,t4:0};
+ const SOLOB={"⚽":"esfera","🏀":"esfera","🌍":"esfera","🥫":"cilindro","📦":"bloco retangular","🧱":"bloco retangular"};
+ const OBJK={lata:"cilindro",tubo:"cilindro",vela:"cilindro",caixa:"bloco retangular"};
+ const solidoDe=o=>typeof o==="string"?SOLOB[o]:(o.fig.t==="hat"?"cone":OBJK[o.fig.k]);
+ const SOLT={"uma bola de futebol":"esfera","uma bola de basquete":"esfera","o globo terrestre":"esfera","uma lata de leite":"cilindro","uma vela":"cilindro","um tubo de cola":"cilindro","uma caixa de sapato":"bloco retangular","um tijolo":"bloco retangular","um chapéu de festa":"cone","uma casquinha de sorvete":"cone"};
+ const FACE={"A tampa de uma lata":"círculo","A tampa de um tubo":"círculo","A face de uma caixa de sapato":"retângulo","A face maior de um tijolo":"retângulo"};
+ for(const p of its){let m;const o=p.extra.opts;
+  if((m=p.pre.match(/^Qual objeto tem a forma de (?:uma?) (.+)\?$/))){por.t1++;
+    const sol=o.map(solidoDe);if(sol.some(x=>!x))falha(15,"objeto desconhecido nas opções: "+JSON.stringify(o));
+    if(sol[p.a-1]!==m[1])falha(15,"objeto certo não é "+m[1]);if(new Set(sol).size!==o.length)falha(15,"dois objetos do mesmo sólido");
+    if(o.some(x=>typeof x==="string"&&proib.includes(x)))falha(15,"objeto proibido")}
+  else if(p.pre==="Como se chama este sólido?"){por.t2++;
+    if(o[p.a-1]!==p.extra.fig.n)falha(15,"nome do sólido errado");if(o.some(x=>x==="cubo"||x==="pirâmide"))falha(15,"cubo ou pirâmide no 1º ano");if(new Set(o).size!==4)falha(15,"opções")}
+  else if((m=p.pre.match(/^(.+) tem a forma de qual sólido\?$/))){por.t3++;
+    const tx=m[1].charAt(0).toLowerCase()+m[1].slice(1);if(SOLT[tx]===undefined)falha(15,"objeto por escrito desconhecido: "+tx);
+    if(o[p.a-1]!==SOLT[tx])falha(15,"sólido errado para "+tx)}
+  else if((m=p.pre.match(/^(.+) tem a forma de qual figura\?$/))){por.t4++;
+    if(FACE[m[1]]===undefined)falha(15,"face desconhecida: "+m[1]);if(o[p.a-1]!==FACE[m[1]])falha(15,"figura errada para "+m[1]);
+    if(FACE[m[1]]==="retângulo"&&o.includes("quadrado"))falha(15,"quadrado como opção para um retângulo")}
+  else falha(15,"pergunta desconhecida: "+p.pre)}
+ console.log("nível 15: tipos",JSON.stringify(Object.fromEntries(Object.entries(por).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));}
+{ // nível 16
+ const its=draw(G.g1n16),PERM=["🍎","⚽","⭐","🌼","🎈","🍪","🐶","🐱"],tipos={h:0,v:0,caixa:0};
+ const TX={esq:"à esquerda",dir:"à direita",meio:"no meio",cima:"em cima"};
+ for(const p of its){const i=p._info,f=p.extra.fig,o=p.extra.opts;tipos[i.tipo]++;
+  if(i.tipo==="caixa"){if(o[p.a-1]!==TX[f.pos])falha(16,"posição da caixa errada");if(new Set(o).size!==4)falha(16,"opções")}
+  else{
+   if(f.items.some(e=>!PERM.includes(e)))falha(16,"emoji fora da lista frontal: "+f.items);
+   if(new Set(f.items).size!==f.items.length)falha(16,"emoji repetido na fila");
+   const pos=f.items.indexOf(i.ref);if(pos<1||pos>f.items.length-2)falha(16,"referência na ponta da fila");
+   let viz;if(i.tipo==="h")viz=f.items[i.dir==="direita"?pos+1:pos-1];else{if(f.items.length!==3||pos!==1)falha(16,"coluna precisa ter 3 e a referência no meio");viz=f.items[i.dir==="cima"?pos-1:pos+1]}
+   if(o[p.a-1]!==viz)falha(16,"vizinho errado: "+p.pre+" "+f.items+" => "+o[p.a-1]+" (esperado "+viz+")");
+   if(new Set(o).size!==o.length||o.length<3)falha(16,"opções");
+   if(!/(direita|esquerda|em cima|embaixo)/.test(p.pre))falha(16,"pergunta sem direção")}}
+ console.log("nível 16: tipos",JSON.stringify(Object.fromEntries(Object.entries(tipos).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));}
+{ // nível 17
+ const its=draw(G.g1n17),tp={nc:0,tam:0,pad:0};
+ for(const p of its){const o=p.extra.opts;
+  if(p.pre==="Qual figura não combina com as outras?"){tp.nc++;
+   const fs=o.map(x=>x.fig),at=f=>[f.n,f.color,f.s];if(fs.length!==4)falha(17,"4 figuras");
+   let variam=0,onde=null;for(let k=0;k<3;k++){const vals=fs.map(f=>JSON.stringify(at(f)[k]));if(new Set(vals).size>1){variam++;onde=k}}
+   if(variam!==1)falha(17,"mais de um atributo varia: "+JSON.stringify(fs.map(at)));
+   const vals=fs.map(f=>JSON.stringify(at(f)[onde])),cont={};vals.forEach(v=>cont[v]=(cont[v]||0)+1);
+   const unico=vals.findIndex(v=>cont[v]===1);if(!Object.values(cont).includes(3)||unico!==p.a-1)falha(17,"a figura que não combina não é a resposta")}
+  else if(/^Qual é a figura mais (grande|pequena)\?$/.test(p.pre)){tp.tam++;const fs=o.map(x=>x.fig),ss=fs.map(f=>f.s).sort((a,b)=>a-b),grande=/grande/.test(p.pre);
+   if(fs.some(f=>f.n!==fs[0].n||f.color!==fs[0].color))falha(17,"só o tamanho pode variar");
+   if(ss[1]/ss[0]<1.4||ss[2]/ss[1]<1.4)falha(17,"tamanhos próximos demais: "+ss);
+   if(fs[p.a-1].s!==(grande?ss[2]:ss[0]))falha(17,"maior ou menor errado")}
+  else if(p.pre==="Qual figura vem depois?"){tp.pad++;const seq=p.extra.fig.items.map(x=>x.fig.n+"|"+x.fig.color),L=seq.length,ok=per=>seq.every((v,i)=>i<per||v===seq[i-per]);
+   let per=[2,3].filter(ok);if(per.length!==1)falha(17,"o período da fila não é único: "+seq);
+   const pp=per[0],prox=seq[L-pp],ops=o.map(x=>x.fig.n+"|"+x.fig.color);
+   if(L<2*pp+1)falha(17,"fila curta demais para o padrão");
+   if(ops[p.a-1]!==prox)falha(17,"próxima figura errada: esperado "+prox+" veio "+ops[p.a-1]);
+   if(new Set(ops).size!==3)falha(17,"opções repetidas");if(!p.extra.fig.q)falha(17,"sem a casa do ponto de interrogação")}
+  else falha(17,"pergunta desconhecida: "+p.pre)}
+ console.log("nível 17: tipos",JSON.stringify(Object.fromEntries(Object.entries(tp).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));}
+{ // nível 18
+ const its=draw(G.g1n18);const d=new Set();
+ for(const p of its){const c=conta(p);if(!c){falha(18,"formato");continue}d.add(p.pre);
+  if(c.op==="+"){if(!((c.a===10&&c.b>=1&&c.b<=9)||(c.b===10&&c.a>=1&&c.a<=9)))falha(18,"soma: "+p.pre);if(p.a!==c.a+c.b)falha(18,"soma errada")}
+  else{const n=c.a-10;if(!(n>=1&&n<=9&&(c.b===n||c.b===10)))falha(18,"subtração: "+p.pre);if(p.a!==c.a-c.b||p.a<1)falha(18,"subtração errada")}}
+ console.log("nível 18: contas diferentes",d.size);if(d.size!==36)falha(18,"esperadas 36 contas, vieram "+d.size);}
+
 /* ---- Limites de cada folha dos níveis 8 a 13 ---- */
-for(const nivel of [8,9,10,11,12,13]){
+for(const nivel of [8,9,10,11,12,13,14,15,16,17,18]){
   const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let viol=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0);const v=limitesOk(nivel,it);if(v){viol++;if(viol<3)console.log("   limite estourado:",v)}}
   console.log("nível "+nivel+": folhas que estouram um limite do grupo",viol,"de 1500");
   if(viol)falha(nivel,viol+" folhas estouraram um limite");
 }
 { // 5 somas e 5 subtrações por folha nos níveis 8, 9 e 12
- for(const nivel of [8,9,12]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
+ for(const nivel of [8,9,12,18]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0),s=it.filter(p=>conta(p).op==="+").length;if(s!==5)ruim++}
   console.log("nível "+nivel+": folhas sem exatamente 5 somas e 5 subtrações",ruim);if(ruim)falha(nivel,ruim+" folhas sem 5 e 5")}
  // parcelas trocadas nunca na mesma folha (níveis 8, 9, 10, 12)
- for(const nivel of [8,9,10,12]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
+ for(const nivel of [8,9,10,12,18]){const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let ruim=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0).filter(p=>conta(p).op==="+"),k=it.map(p=>{const c=conta(p);return Math.min(c.a,c.b)+","+Math.max(c.a,c.b)});if(new Set(k).size<k.length)ruim++}
   console.log("nível "+nivel+": folhas com parcelas trocadas",ruim);if(ruim)falha(nivel,ruim+" folhas com parcelas trocadas")}}
 

@@ -47,6 +47,20 @@ var SHAPES={
   "pentágono":{sides:5,svg:function(f){return '<polygon points="50,8 92,38 76,88 24,88 8,38" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
   "hexágono":{sides:6,svg:function(f){return '<polygon points="28,12 72,12 94,50 72,88 28,88 6,50" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}}
 };
+
+/* Geometria da figura plana (para desenhar e para os testes). Devolve {circle:true} ou {pts:[[x,y],...]} numa caixa de 100 x 100. */
+var TRI=[[[50,14],[86,76],[14,76]],[[50,8],[78,86],[22,86]],[[50,32],[90,78],[10,78]],[[20,82],[88,70],[62,16]],[[16,16],[16,84],[84,84]]];
+function formaGeom(f){
+  var n=f.n,w,h,pts;
+  if(n==="círculo")return {circle:true};
+  if(n==="quadrado")return {pts:[[14,14],[86,14],[86,86],[14,86]]};
+  if(n==="retângulo"){
+    var r=f.r||1.8;if(f.o==="v"){h=84;w=84/r}else{w=84;h=84/r}
+    return {pts:[[50-w/2,50-h/2],[50+w/2,50-h/2],[50+w/2,50+h/2],[50-w/2,50+h/2]].map(function(q){return[+q[0].toFixed(2),+q[1].toFixed(2)]})};
+  }
+  var a=(f.rot||0)*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
+  return {pts:TRI[f.v||0].map(function(q){var x=q[0]-50,y=q[1]-50;return[+(50+x*co-y*si).toFixed(2),+(50+x*si+y*co).toFixed(2)]})};
+}
 var SHAPE_COLORS=[C.sky,C.sun,"#7EE0BE","#FFA99E","#C6B4FF"];
 function shapeFig(n,color){var s=SHAPES[n];return svg(100,100,s.svg(color||C.sky),"fig-shape")}
 
@@ -64,6 +78,31 @@ var DRAW={
   scatter:function(f){
     return '<div class="fig-scatter" aria-hidden="true">'+f.pts.map(function(q){
       return '<span style="left:'+(q[0]/3).toFixed(2)+'%;top:'+(q[1]/2).toFixed(2)+'%">'+f.e+'</span>'}).join("")+'</div>';
+  },
+  /* figura plana da grade do 1º ano (níveis 14 e 17): forma, cor, tamanho (f.s) e variações:
+     retângulo deitado ou em pé (f.o, proporção f.r), triângulo de vários formatos (f.v) e posições (f.rot) */
+  forma:function(f){
+    var g=formaGeom(f),col=f.color||C.sky,sc=f.s||1,body=g.circle?
+      '<circle cx="50" cy="50" r="38" fill="'+col+'" stroke="'+INK+'" stroke-width="3" vector-effect="non-scaling-stroke"/>':
+      '<polygon points="'+g.pts.map(function(q){return q[0]+","+q[1]}).join(" ")+'" fill="'+col+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+    return svg(100,100,'<g transform="translate(50 50) scale('+sc+') translate(-50 -50)">'+body+'</g>',"fig-shape");
+  },
+  /* fila de coisas (emojis ou figuras), na horizontal ou na vertical; f.q acrescenta uma casa com "?" */
+  fila:function(f){
+    return '<div class="fig-fila '+(f.dir==="v"?"v":"h")+'" aria-hidden="true">'+f.items.map(function(it){
+      return '<span class="fi">'+(typeof it==="string"?it:FC.fig(it.fig||it))+'</span>'}).join("")+(f.q?'<span class="fi q">?</span>':"")+'</div>';
+  },
+  /* uma caixa com um objeto de um lado (esquerda, direita, meio ou em cima) */
+  caixa:function(f){return '<div class="fig-caixa" aria-hidden="true"><span class="p-'+f.pos+'">'+f.e+'</span></div>'},
+  /* objetos desenhados do dia a dia: lata, tubo, vela e caixa de sapato */
+  obj:function(f){
+    var id="g"+(++uid),s=INK,sw=' stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"',inner;
+    var gr='<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#CFD8E8"/><stop offset="1" stop-color="#8FA0BC"/></linearGradient></defs>';
+    if(f.k==="lata")inner=gr+'<path d="M22,26 L22,76 A28,9 0 0 0 78,76 L78,26" fill="url(#'+id+')"'+sw+'/><rect x="22" y="40" width="56" height="26" fill="#F2503F"/><ellipse cx="50" cy="26" rx="28" ry="9" fill="#E6EDF9"'+sw+'/>';
+    else if(f.k==="tubo")inner=gr+'<path d="M12,34 L12,66 A9,16 0 0 0 12,34" fill="#CFD8E8"'+sw+'/><path d="M12,34 L82,34 L82,66 L12,66 A9,16 0 0 1 12,34" fill="url(#'+id+')"'+sw+'/><ellipse cx="82" cy="50" rx="9" ry="16" fill="#E6EDF9"'+sw+'/>';
+    else if(f.k==="vela")inner='<path d="M34,36 L34,86 L66,86 L66,36" fill="#FFD36B"'+sw+'/><ellipse cx="50" cy="36" rx="16" ry="6" fill="#FFE9A8"'+sw+'/><line x1="50" y1="36" x2="50" y2="26" stroke="'+s+'" stroke-width="2.5" stroke-linecap="round"/><path d="M50,8 C58,16 56,24 50,26 C44,24 42,16 50,8 Z" fill="#F2503F"/>';
+    else inner='<polygon points="10,40 70,40 70,80 10,80" fill="#E8B56B"'+sw+'/><polygon points="10,40 30,24 90,24 70,40" fill="#F3CD94"'+sw+'/><polygon points="70,40 90,24 90,64 70,80" fill="#C98F42"'+sw+'/><line x1="10" y1="48" x2="70" y2="48" stroke="'+s+'" stroke-width="1.6"/>';
+    return svg(100,100,inner,"fig-solid");
   },
   /* dezenas (barras de 10) e unidades (cubinhos) */
   base10:function(f){
@@ -279,6 +318,6 @@ FC.EX=[
 ];
 FC.EXBY={};FC.EX.forEach(function(e){FC.EXBY[e.id]=e});
 /* Auxiliares para os geradores da grade nova (grade1.js). */
-FC.exh={rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES};
+FC.exh={rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
 FC.SHAPE_NAMES=Object.keys(SHAPES);
 })();
