@@ -61,7 +61,7 @@ A escada deste bloco: **fluência** nas tabuadas do 2 ao 5 e a multiplicação p
 - **Resposta:** digitada.
 - **Contas diferentes:** 9 fatores × 2 ordens × 4 tipos = 72 em cada nível.
 - **Meta de tempo:** 100 s.
-- **Testes específicos:** como no nível 16, com a tabuada do nível; um fator é sempre o do nível; a resposta é recalculada; fatores trocados nunca na mesma folha; no nível 22 o resultado de 2 a 9 fatores tem os algarismos somando 9 (de 18 a 81, fora o 90).
+- **Testes específicos:** como no nível 16, com a tabuada do nível; um fator é sempre o do nível; a resposta é recalculada; fatores trocados nunca na mesma folha; no nível 22 os algarismos do resultado somam 9 (de 18 a 90).
 
 ## Nível 23 — Todas as tabuadas, misturadas
 

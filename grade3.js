@@ -1,7 +1,7 @@
 /* Grade do 3º ano — geradores escritos do zero a partir das fichas em bncc/fichas/3ano-*.md.
    Mesma forma dos geradores do 1º e do 2º ano: {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 7 (números até 9999). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
+   Níveis feitos: 1 a 15 (números até 9999, adição e subtração, igualdades). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,fmt=X.milh;
@@ -255,6 +255,182 @@ function gSeq4(){
   return it;
 }
 
+/* ===================== Níveis 8 a 15: adição e subtração ===================== */
+var MENOS="−",NAMES=X.NAMES;
+function conta3(a,op,b){return fmt(a)+" "+op+" "+fmt(b)+" ="}
+function pj(nivel,a,b){return "p"+nivel+":"+Math.min(a,b)+","+Math.max(a,b)}   /* parcelas trocadas = mesma conta na folha */
+function vaiUm(a,b){var x=digs(a),y=digs(b),car=0,f=[0,0,0,0],i;for(i=3;i>=0;i--){var s=x[i]+y[i]+car;if(s>=10){f[i]=1;car=1}else car=0}return {f:f,over:car}}
+function empresta(a,b){var x=digs(a),y=digs(b),bor=0,f=[0,0,0,0],i;for(i=3;i>=0;i--){var v=x[i]-bor-y[i];if(v<0){f[i]=1;bor=1}else bor=0}return f}
+function temZero(n){var d=digs(n);return (n>=1000&&(d[1]===0||d[2]===0||d[3]===0))||(n<1000&&(d[2]===0||d[3]===0))}
+function ate(fn,max){for(var t=0;t<(max||6000);t++){var r=fn();if(r)return r}return null}
+function somaIt(a,b,l,info){var it=typed(conta3(a,"+",b),a+b);it.limits=l;it._info=info||{};it._info.op="+";it._info.a=a;it._info.b=b;return it}
+function subIt(a,b,l,info){var it=typed(conta3(a,MENOS,b),a-b);it.limits=l;it._info=info||{};it._info.op="-";it._info.a=a;it._info.b=b;return it}
+
+/* Nível 8 — Complementos: quanto falta para 100 e para 1000 (EF03MA03, EF03MA05). Quatro formas, a resposta é sempre o x de x + y = T. */
+function gComplemento(){
+  var T=Math.random()<.5?100:1000,y;
+  if(T===100)y=Math.random()<.3?10*rnd(1,9):rnd(1,99);else y=Math.random()<.3?100*rnd(1,9):10*rnd(1,99);
+  var x=T-y,f=rnd(1,4),it,t=fmt(T),Y=fmt(y);
+  if(f===1)it=typed(Y+" +",x,null,"= "+t);
+  else if(f===2)it=typed("",x,null,"+ "+Y+" = "+t);
+  else if(f===3)it=typed(t+" "+MENOS+" "+Y+" =",x);
+  else it=typed(t+" "+MENOS,x,null,"= "+Y);
+  it.limits=[["n8:f"+f,2]];if(f<=2)it.limits.push([pj(8,y,T),1]);it._info={f:f,T:T,y:y,x:x};
+  return it;
+}
+
+/* Níveis 9 a 11 — somas e subtrações de três algarismos. */
+function parSomaCom3(){                             /* famílias: 1 só unidades, 2 só dezenas, 3 em cadeia; zero em 20% */
+  var r=Math.random(),fam=r<.35?1:r<.65?2:3,zero=Math.random()<.2;
+  return ate(function(){
+    var a=rnd(100,899),b=rnd(100,899),v=vaiUm(a,b);
+    if(a+b>999||v.over||v.f[1])return null;
+    var ok=fam===1?(v.f[3]&&!v.f[2]):fam===2?(!v.f[3]&&v.f[2]):(v.f[3]&&v.f[2]);
+    if(!ok)return null;var temZ=digs(a)[2]===0||digs(a)[3]===0||digs(b)[2]===0||digs(b)[3]===0;
+    if(zero!==temZ)return null;                      /* o zero aparece em ~20% das contas, de propósito (e só nelas) */
+    return {a:a,b:b,fam:fam};
+  });
+}
+function parSomaSem3(){
+  return ate(function(){var a=rnd(100,899),b=rnd(100,899),v=vaiUm(a,b);if(a+b>999||v.over||v.f.some(Boolean))return null;return {a:a,b:b}});
+}
+function parSubCom3(){                              /* 1 só unidades, 2 só dezenas, 3 as duas, 4 com zero no número maior */
+  var r=Math.random(),fam=r<.3?1:r<.55?2:r<.75?3:4;
+  return ate(function(){
+    var a=rnd(100,999),b=rnd(100,a-1),f=empresta(a,b);if(f[1]||f[0])return null;
+    var bu=f[3],bt=f[2];
+    var zA=digs(a)[2]===0||digs(a)[3]===0,zB=digs(b)[2]===0||digs(b)[3]===0;
+    if(fam<4&&(zA||zB))return null;                  /* só a família 4 tem zero no número maior */
+    var ok=fam===1?(bu&&!bt):fam===2?(!bu&&bt):fam===3?(bu&&bt):((bu||bt)&&zA);
+    return ok?{a:a,b:b,fam:fam}:null;
+  });
+}
+function parSubSem3(){
+  return ate(function(){var a=rnd(101,999),b=rnd(100,a-1),f=empresta(a,b);return f.some(Boolean)?null:{a:a,b:b}});
+}
+function gSoma3(){var p=parSomaCom3();return somaIt(p.a,p.b,[[pj(9,p.a,p.b),1]],{fam:p.fam})}
+function gSub3(){var p=parSubCom3();return subIt(p.a,p.b,[],{fam:p.fam})}
+function gMisto3(){
+  var k=rnd(1,4),p,it;
+  if(k===1){p=parSomaSem3();it=somaIt(p.a,p.b,[["n11:f1",2],[pj(11,p.a,p.b),1]],{fam:1})}
+  else if(k===2){p=parSomaCom3();it=somaIt(p.a,p.b,[["n11:f2",2],[pj(11,p.a,p.b),1]],{fam:2})}
+  else if(k===3){p=parSubSem3();it=subIt(p.a,p.b,[["n11:f3",2]],{fam:3})}
+  else{p=parSubCom3();it=subIt(p.a,p.b,[["n11:f4",2]],{fam:4})}
+  return it;
+}
+
+/* Nível 12 — Somas e subtrações com quatro algarismos (EF03MA05): 2 de cada família por folha. */
+function gQuatro(){
+  var k=rnd(1,4),p,it;
+  if(k===1){                                         /* milhares e centenas inteiras, sem reagrupar */
+    p=ate(function(){var a=100*rnd(10,89),b=100*rnd(1,89),v=vaiUm(a,b);return(a+b<=9900&&!v.over&&!v.f.some(Boolean))?{a:a,b:b}:null});
+    it=somaIt(p.a,p.b,[["n12:f1",2],[pj(12,p.a,p.b),1]],{fam:1});
+  }else if(k===2){                                   /* quatro algarismos, com "vai um" */
+    p=ate(function(){var a=rnd(1000,8999),b=rnd(Math.random()<.5?100:1000,8999),v=vaiUm(a,b);
+      return(a+b<=9999&&!v.over&&v.f.some(Boolean)&&!(a%100===0&&b%100===0))?{a:a,b:b}:null});
+    it=somaIt(p.a,p.b,[["n12:f2",2],[pj(12,p.a,p.b),1]],{fam:2});
+  }else if(k===3){                                   /* centenas inteiras, com empréstimo na centena */
+    p=ate(function(){var a=100*rnd(10,99),b=100*rnd(1,98);return(a>b&&empresta(a,b)[1]&&!empresta(a,b)[0])?{a:a,b:b}:null});
+    it=subIt(p.a,p.b,[["n12:f3",2]],{fam:3});
+  }else{                                             /* quatro algarismos, com empréstimo; em 30% o número maior tem zeros */
+    var zero=Math.random()<.3;
+    p=ate(function(){
+      var a=rnd(1000,9999);if(zero){var d=[rnd(1,9),0,0,0],i=pick([1,2,3]);d[i]=rnd(0,9)<4?0:rnd(1,9);a=junta(d);if(a<1000)return null}
+      var b=rnd(100,a-1),f=empresta(a,b);
+      if(!f.some(Boolean)||f[0])return null;if(zero&&(digs(a).filter(function(x,i){return i>0&&x===0}).length<2))return null;
+      return {a:a,b:b};
+    });
+    it=subIt(p.a,p.b,[["n12:f4",2]],{fam:4,zero:zero});
+  }
+  return it;
+}
+
+/* Níveis 13 e 14 — Problemas de adição e subtração (EF03MA06): os seis significados, no máximo 2 de cada por folha. */
+var OJ3=[["figurinha","figurinhas",1],["livro","livros",0],["bola","bolas",1],["adesivo","adesivos",0],["carrinho","carrinhos",0],["bala","balas",1],["flor","flores",1],["lápis","lápis",0]];
+var OJ4=[["ingresso","ingressos",0],["página","páginas",1],["tijolo","tijolos",0],["moeda","moedas",1],["figurinha","figurinhas",1],["adesivo","adesivos",0]];
+var OD3=[["figurinha","figurinhas",1],["bala","balas",1],["livro","livros",0],["adesivo","adesivos",0],["bola","bolas",1]];
+var OD4=[["ingresso","ingressos",0],["moeda","moedas",1],["figurinha","figurinhas",1],["adesivo","adesivos",0]];
+var OS3=[["carro","carros",0],["pássaro","pássaros",0],["balão","balões",0],["aluno","alunos",0],["peixe","peixes",0],["pintinho","pintinhos",0]];
+var OS4=[["carro","carros",0],["balão","balões",0],["aluno","alunos",0],["passageiro","passageiros",0]];
+function qs3(f){return f?"Quantas ":"Quantos "}
+function ele3(n){return n[1]==="f"?"Ela":"Ele"}
+function parProb(modo,soma,reg,zero){
+  var lo=modo===13?100:1000,hi=modo===13?999:9999;
+  return ate(function(){
+    var a=rnd(lo,hi),b=rnd(lo,hi),f;
+    if(soma){if(a+b>hi)return null;var v=vaiUm(a,b);if(v.over)return null;f=v.f.some(Boolean)}
+    else{if(a<=b)return null;f=empresta(a,b).some(Boolean)}
+    if(f!==reg)return null;if(modo===14&&zero!==(temZero(a)||temZero(b)))return null;
+    return [a,b];
+  })||(soma?[lo+247,lo+138]:[hi-111,lo+155]);
+}
+function gProb3(modo){
+  return function(){
+    var tipo=pick(["juntar","acrescentar","separar","retirar","comparar","completar"]),soma=tipo==="juntar"||tipo==="acrescentar",
+      reg=Math.random()<(modo===13?.6:.5),zero=modo===14&&Math.random()<.25,pr=parProb(modo,soma,reg,zero),a=pr[0],b=pr[1],n1=pick(NAMES),n2,pre,o,resp,l=[["n"+modo+":"+tipo,2]];
+    var OJ=modo===13?OJ3:OJ4,OD=modo===13?OD3:OD4,OS=modo===13?OS3:OS4;
+    if(tipo==="juntar"){
+      o=pick(OJ);do{n2=pick(NAMES)}while(n2[0]===n1[0]);var elas=n1[1]==="f"&&n2[1]==="f";
+      pre=n1[0]+" tem "+fmt(a)+" "+o[1]+" e "+n2[0]+" tem "+fmt(b)+" "+o[1]+". "+qs3(o[2])+o[1]+" "+(elas?"elas":"eles")+" têm "+(elas?"juntas":"juntos")+"?";
+      resp=a+b;l.push(["nome:"+n1[0],1],["nome:"+n2[0],1]);
+    }else if(tipo==="acrescentar"){
+      o=pick(OJ);pre="Havia "+fmt(a)+" "+o[1]+". Chegaram "+fmt(b)+". "+qs3(o[2])+o[1]+" há agora?";resp=a+b;
+    }else if(tipo==="separar"){
+      o=pick(OD);pre=n1[0]+" tinha "+fmt(a)+" "+o[1]+". "+ele3(n1)+" deu "+fmt(b)+" para um amigo. "+qs3(o[2])+o[1]+" sobraram?";resp=a-b;l.push(["nome:"+n1[0],1]);
+    }else if(tipo==="retirar"){
+      o=pick(OS);pre="Havia "+fmt(a)+" "+o[1]+". Foram embora "+fmt(b)+". "+qs3(o[2])+o[1]+" ficaram?";resp=a-b;
+    }else if(tipo==="comparar"){
+      o=pick(OJ);do{n2=pick(NAMES)}while(n2[0]===n1[0]);var mais=Math.random()<.5,quem=mais?n1:n2,outra=mais?n2:n1;
+      pre=quem[0]+" tem "+fmt(a)+" "+o[1]+" e "+outra[0]+" tem "+fmt(b)+". "+qs3(o[2])+o[1]+" "+quem[0]+" tem a "+(mais?"mais":"menos")+" do que "+outra[0]+"?";
+      if(!mais){pre=outra[0]+" tem "+fmt(a)+" "+o[1]+" e "+quem[0]+" tem "+fmt(b)+". "+qs3(o[2])+o[1]+" "+quem[0]+" tem a menos do que "+outra[0]+"?"}
+      resp=a-b;l.push(["nome:"+n1[0],1],["nome:"+n2[0],1]);
+    }else{
+      o=pick(OJ);pre=n1[0]+" quer juntar "+fmt(a)+" "+o[1]+". "+ele3(n1)+" já tem "+fmt(b)+". "+qs3(o[2])+o[1]+" faltam?";resp=a-b;l.push(["nome:"+n1[0],1]);
+    }
+    var it=typed(pre,resp);it.key=tipo+"|"+a+"|"+b+"|"+o[0]+"|"+pre;it.limits=l;it._info={tipo:tipo,a:a,b:b,reg:reg,modo:modo};
+    return it;
+  };
+}
+
+/* Nível 15 — Igualdades e sentenças equivalentes (EF03MA11). */
+function exprVal(a,op,b){return op==="+"?a+b:a-b}
+function gIgual(){
+  var r=Math.random(),it,op=Math.random()<.5?"+":MENOS,grande=Math.random()<.25,K=grande?100:1,a,b,c,d,s,t=0;
+  var gera=function(){
+    if(op==="+"){a=rnd(2,grande?8:50)*K;b=rnd(2,grande?8:50)*K;s=a+b;c=rnd(1,Math.floor(s/K)-1)*K;d=s-c}
+    else{a=rnd(3,grande?9:60)*K;b=rnd(1,Math.floor(a/K)-1)*K;s=a-b;d=rnd(1,grande?8:40)*K;c=s+d}
+  };
+  do{gera()}while(((c===a&&d===b)||(c===b&&d===a)||c<=0||d<=0||s<=0||c>1000&&false)&&t++<500);
+  var F=function(x,o,y){return fmt(x)+" "+o+" "+fmt(y)};
+  if(r<.5){
+    var pos=rnd(1,4),v=[a,b,c,d][pos-1],ans=v;
+    if(pos===1)it=typed("",ans,null,op+" "+fmt(b)+" = "+F(c,op,d));
+    else if(pos===2)it=typed(fmt(a)+" "+op,ans,null,"= "+F(c,op,d));
+    else if(pos===3)it=typed(F(a,op,b)+" =",ans,null,op+" "+fmt(d));
+    else it=typed(F(a,op,b)+" = "+fmt(c)+" "+op,ans);
+    it.limits=[["n15:t1",4]];it._info={tipo:1,pos:pos};
+  }else if(r<.75){                                  /* qual conta tem o mesmo resultado */
+    var certa,ws=[],opts;
+    certa=F(c,op,d);
+    var tr=0;
+    while(ws.length<2&&tr++<300){
+      var e=rnd(1,2)*K*(Math.random()<.5?1:-1),tot=s+e,w;if(tot<=0)continue;
+      if(op==="+"){var cc=rnd(1,Math.max(1,Math.floor(tot/K)-1))*K;if(tot-cc<=0)continue;w=F(cc,"+",tot-cc)}
+      else{var dd=rnd(1,grande?8:40)*K;w=F(tot+dd,MENOS,dd)}
+      if(w!==certa&&ws.indexOf(w)<0)ws.push(w);
+    }
+    it=choice("Qual conta tem o mesmo resultado que "+F(a,op,b)+"?",certa,ws,null);it.limits=[["n15:t2",2]];it._info={tipo:2,a:a,b:b,op:op};
+  }else{                                            /* verdadeira ou falsa */
+    var verd=Math.random()<.5,rhs=c,rd=d;
+    if(!verd){                                      /* a falsa erra por 1 ou 2 (ou 100 e 200) no primeiro número do lado direito */
+      var delta=rnd(1,2)*K,cand=[c+delta,c-delta].filter(function(x){return x>0&&(op==="+"||x>d)});rhs=pick(cand);
+    }
+    it=choice("A igualdade "+F(a,op,b)+" = "+F(rhs,op,rd)+" é…",verd?"verdadeira":"falsa",[verd?"falsa":"verdadeira"],null);
+    it.limits=[["n15:t3",2]];it._info={tipo:3,verd:verd};
+  }
+  return it;
+}
+
 FC.G3=[
   {nivel:1,id:"g3n01",nome:"Nível 1 — Ler e escrever números até 9999",hab:["EF03MA01"],meta:130,gen:gLer,ano:3},
   {nivel:2,id:"g3n02",nome:"Nível 2 — Milhares, centenas, dezenas e unidades (material dourado)",hab:["EF03MA02"],meta:120,gen:gMaterial3,ano:3},
@@ -262,7 +438,15 @@ FC.G3=[
   {nivel:4,id:"g3n04",nome:"Nível 4 — Decompor números até 9999",hab:["EF03MA02"],meta:120,gen:gDecompor4,ano:3},
   {nivel:5,id:"g3n05",nome:"Nível 5 — Comparar e ordenar números até 9999",hab:["EF03MA01"],meta:110,gen:gOrdem4,ano:3},
   {nivel:6,id:"g3n06",nome:"Nível 6 — A reta numérica",hab:["EF03MA04"],meta:120,gen:gReta,ano:3},
-  {nivel:7,id:"g3n07",nome:"Nível 7 — Sequências e regularidades",hab:["EF03MA10"],meta:120,gen:gSeq4,ano:3}
+  {nivel:7,id:"g3n07",nome:"Nível 7 — Sequências e regularidades",hab:["EF03MA10"],meta:120,gen:gSeq4,ano:3},
+  {nivel:8,id:"g3n08",nome:"Nível 8 — Complementos: quanto falta para 100 e para 1000",hab:["EF03MA03","EF03MA05"],meta:100,gen:gComplemento,ano:3},
+  {nivel:9,id:"g3n09",nome:"Nível 9 — Somas de três algarismos com reagrupamento",hab:["EF03MA05"],meta:120,gen:gSoma3,ano:3},
+  {nivel:10,id:"g3n10",nome:"Nível 10 — Subtrações de três algarismos com reagrupamento",hab:["EF03MA05"],meta:130,gen:gSub3,ano:3},
+  {nivel:11,id:"g3n11",nome:"Nível 11 — Somas e subtrações até 999, misturadas",hab:["EF03MA05"],meta:120,gen:gMisto3,ano:3},
+  {nivel:12,id:"g3n12",nome:"Nível 12 — Somas e subtrações com quatro algarismos",hab:["EF03MA05"],meta:140,gen:gQuatro,ano:3},
+  {nivel:13,id:"g3n13",nome:"Nível 13 — Problemas de adição e subtração até 999",hab:["EF03MA06"],meta:160,gen:gProb3(13),ano:3},
+  {nivel:14,id:"g3n14",nome:"Nível 14 — Problemas de adição e subtração até 9999",hab:["EF03MA06"],meta:170,gen:gProb3(14),ano:3},
+  {nivel:15,id:"g3n15",nome:"Nível 15 — Igualdades e sentenças equivalentes",hab:["EF03MA11"],meta:120,gen:gIgual,ano:3}
 ];
 FC.G3BY={};FC.G3.forEach(function(e){FC.G3BY[e.id]=e});
 FC.extenso=extenso;
