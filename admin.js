@@ -8,13 +8,13 @@ var DATA=null,TAB="alunos",FILTER="";
 function dt(s){if(!s)return "—";var d=new Date(s);return FC.pad(d.getDate())+"/"+FC.pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+FC.pad(d.getHours())+":"+FC.pad(d.getMinutes())}
 function dtDay(s){return s?dt(s).slice(0,10):"—"}
 function bar(email){
-  return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha de Cálculo</b><small>Administração</small></div>'+
+  return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha VIP</b><small>Administração</small></div>'+
     (email?'<div class="who"><span class="who-name">'+esc(email)+'</span><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
 }
 function bindBar(){var b=$("#logout");if(b)b.onclick=async function(){await sb.auth.signOut();login()}}
 
 FC.adminApp=async function(){
-  document.title="Administração · Folhinha";
+  document.title="Administração · Folhinha VIP";
   var m=document.createElement("meta");m.name="robots";m.content="noindex,nofollow";document.head.appendChild(m);
   var r=await sb.auth.getSession();
   if(!r.data.session)return login();

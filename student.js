@@ -42,7 +42,7 @@ function pinScreen(mode,first,msg){
   var sub=create?(first!=null?"Os mesmos 4 números, para confirmar.":"Escolha 4 números que só você sabe. Você vai usar para entrar."):"Olá, "+esc(S.info.name)+"!";
   var pad="";for(var n=1;n<=9;n++)pad+='<button type="button" class="key" data-k="'+n+'">'+n+'</button>';
   pad+='<span></span><button type="button" class="key" data-k="0">0</button><button type="button" class="key" data-k="back" aria-label="Apagar">⌫</button>';
-  FC.render('<div class="pinbox panel"><img class="pin-logo" src="icons/icon-192.png" alt=""><div class="brand center">Folhinha de Cálculo</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
+  FC.render('<div class="pinbox panel"><img class="pin-logo" src="icons/icon-192.png" alt=""><div class="brand center">Folhinha VIP</div><h1>'+title+'</h1><p class="muted">'+sub+'</p>'+
     '<div class="dots4" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>'+
     '<p class="msg bad" id="pinMsg" role="alert">'+esc(msg||"")+'</p><div class="keypad">'+pad+'</div></div>');
   var buf="";

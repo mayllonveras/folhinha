@@ -21,7 +21,7 @@ FC.adultApp=async function(){
 
 function topbar(extra){
   var name=U.profile?esc(U.profile.name||"")+(U.profile.role==="professor"?" · professor(a)":" · responsável"):"";
-  return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha de Cálculo</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
+  return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha VIP</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
     (U.user?'<div class="who"><span class="who-name">'+name+'</span><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
 }
 function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()}}

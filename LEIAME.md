@@ -1,4 +1,4 @@
-# Folhinha de Cálculo — como publicar no Netlify
+# Folhinha VIP — como publicar no Netlify
 
 1. Acesse https://app.netlify.com/drop e arraste a pasta `folhinha-site` (ou o .zip descompactado).
 2. O Netlify devolve um endereço como `https://nome-aleatorio.netlify.app`. Anote.
