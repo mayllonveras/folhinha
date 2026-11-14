@@ -79,8 +79,7 @@ respostas recalculadas nos testes, emojis sem ambiguidade, posição da certa un
 - **Três tipos de conta** (3 + 3 + 2):
   1. **Quanto vale?:** várias moedas desenhadas; "Quanto vale tudo junto?" → o total em centavos (até 100, de moedas de 5, 10, 25 e 50).
   2. **Equivalência:** "Quantas moedas de **10 centavos** valem uma moeda de **50 centavos**?" → 5. "Quantas de 25 centavos valem 1 real?" → 4.
-  3. **Troca:** "Com **1 real**, quais moedas pagam um doce de 75 centavos e dão o troco?" não (fica para o 3º ano).
-- **Retirado:** o tipo 3 acima. No lugar entra **"Qual conjunto vale o mesmo que 50 centavos?"**, com três conjuntos de moedas desenhadas; só um soma 50.
+  3. **Qual vale o mesmo?:** "Qual conjunto vale o mesmo que **50 centavos**?" com três conjuntos de moedas desenhadas; só um soma 50.
 - **Resposta:** digitada e escolha.
 - **Contas diferentes:** centenas.
 - **Meta de tempo:** 120 s.
