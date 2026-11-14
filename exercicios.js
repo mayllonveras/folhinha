@@ -115,13 +115,18 @@ var DRAW={
   },
   shape:function(f){return shapeFig(f.n,f.color)},
   /* sólidos geométricos */
+  /* objeto em forma de cone: chapéu de festa (não existe emoji de cone inteiro) */
+  hat:function(){
+    var id="g"+(++uid),s=INK;
+    return svg(100,100,'<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#FFD36B"/><stop offset=".45" stop-color="#F2A33A"/><stop offset="1" stop-color="#C46A12"/></linearGradient></defs><path d="M16,80 L50,12 L84,80 A34,10 0 0 1 16,80 Z" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><circle cx="44" cy="52" r="4" fill="#fff"/><circle cx="58" cy="64" r="4" fill="#E8456B"/><circle cx="36" cy="70" r="3.5" fill="#2457D6"/><circle cx="50" cy="12" r="6" fill="#E8456B" stroke="'+s+'" stroke-width="2"/>',"fig-solid");
+  },
   solid:function(f){
     var id="g"+(++uid),s=INK,inner="";
     if(f.n==="cubo")inner='<polygon points="50,8 88,26 50,44 12,26" fill="'+C.sky+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><polygon points="12,26 50,44 50,92 12,72" fill="'+C.blue+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><polygon points="88,26 50,44 50,92 88,72" fill="#173F9F" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/>';
     else if(f.n==="bloco retangular")inner='<polygon points="30,16 94,16 70,34 6,34" fill="'+C.sky+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><polygon points="6,34 70,34 70,84 6,84" fill="'+C.blue+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><polygon points="94,16 70,34 70,84 94,66" fill="#173F9F" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/>';
     else if(f.n==="esfera")inner='<defs><radialGradient id="'+id+'" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="'+C.blue+'"/></radialGradient></defs><circle cx="50" cy="50" r="40" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5"/>';
-    else if(f.n==="cilindro")inner='<path d="M20,24 L20,76 A30,10 0 0 0 80,76 L80,24" fill="'+C.blue+'" stroke="'+s+'" stroke-width="2.5"/><ellipse cx="50" cy="24" rx="30" ry="10" fill="'+C.sky+'" stroke="'+s+'" stroke-width="2.5"/>';
-    else if(f.n==="cone")inner='<path d="M18,74 L50,10 L82,74 A32,11 0 0 1 18,74 Z" fill="'+C.blue+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/>';
+    else if(f.n==="cilindro")inner='<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#7FA2FF"/><stop offset=".35" stop-color="'+C.blue+'"/><stop offset="1" stop-color="#173F9F"/></linearGradient></defs><path d="M20,24 L20,76 A30,10 0 0 0 80,76 L80,24" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5"/><ellipse cx="50" cy="24" rx="30" ry="10" fill="'+C.sky+'" stroke="'+s+'" stroke-width="2.5"/>';
+    else if(f.n==="cone")inner='<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#7FA2FF"/><stop offset=".4" stop-color="'+C.blue+'"/><stop offset="1" stop-color="#173F9F"/></linearGradient></defs><path d="M18,74 L50,10 L82,74 A32,11 0 0 1 18,74 Z" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/>';
     else if(f.n==="pirâmide")inner='<polygon points="50,8 8,72 50,90" fill="'+C.sky+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><polygon points="50,8 50,90 92,72" fill="'+C.blue+'" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/>';
     return svg(100,100,inner,"fig-solid");
   }
@@ -198,7 +203,7 @@ function gWhichShape(list){return function(){var n=pick(list),others=seededShuff
 function gSides(){return function(){var list=FIG2D_MAIS.filter(function(n){return SHAPES[n].sides>0}),n=pick(list);
   /* lados e vértices (cantos) são sempre em mesmo número nos polígonos */
   return typed(Math.random()<.5?"Quantos lados tem esta figura?":"Quantos vértices (cantos) tem esta figura?",SHAPES[n].sides,{t:"shape",n:n,color:pick(SHAPE_COLORS)})}}
-var SOLIDOBJ={"esfera":["⚽","🏀","🌍"],"cubo":["🎲","🧊"],"cilindro":["🥫","🛢️"],"cone":["🍦"],"bloco retangular":["📦","🧱"]};
+var SOLIDOBJ={"esfera":["⚽","🏀","🌍"],"cubo":["🎲","🧊"],"cilindro":["🥫","🛢️"],"cone":[{fig:{t:"hat"}}],"bloco retangular":["📦","🧱"]};
 function gSolidObject(){var names=Object.keys(SOLIDOBJ),n=pick(names),good=pick(SOLIDOBJ[n]),wr=[];
   /* cubo e bloco retangular não aparecem juntos: o dado também é um bloco retangular, e a caixa pode parecer um cubo */
   seededShuffle(names.filter(function(x){return x!==n&&!tambemE(x,n)&&!tambemE(n,x)&&!(n==="esfera"&&x==="cone")}),"s"+n+rnd(0,999999)).slice(0,3).forEach(function(x){wr.push(SOLIDOBJ[x][0])});
