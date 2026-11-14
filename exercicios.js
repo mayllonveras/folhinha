@@ -181,6 +181,35 @@ var DRAW={
     var w=Math.max(x+(f.ones>0?(Math.min(f.ones,5)*16+6):6),60);
     return svg(w,122,inner,"fig-b10");
   },
+  /* placas de 100, barras de 10 e quadradinhos de 1 (material dourado, 2º ano): f.h placas, f.d barras, f.o quadradinhos */
+  placas:function(f){
+    var inner="",pw=44,gap=4,per=6,y=4,i,j,x,py,d;
+    for(i=0;i<f.h;i++){
+      x=4+(i%per)*(pw+gap);py=y+Math.floor(i/per)*(pw+gap);
+      inner+='<rect class="pl" x="'+x+'" y="'+py+'" width="'+pw+'" height="'+pw+'" fill="#7EE0BE" stroke="'+INK+'" stroke-width="1.6"/>';
+      for(j=1;j<10;j++){d=+(j*pw/10).toFixed(1);
+        inner+='<line x1="'+(x+d)+'" x2="'+(x+d)+'" y1="'+py+'" y2="'+(py+pw)+'" stroke="'+INK+'" stroke-width=".5" opacity=".6"/>'+
+          '<line x1="'+x+'" x2="'+(x+pw)+'" y1="'+(py+d)+'" y2="'+(py+d)+'" stroke="'+INK+'" stroke-width=".5" opacity=".6"/>'}
+    }
+    if(f.h>0)y+=Math.ceil(f.h/per)*(pw+gap)+4;
+    for(i=0;i<f.d;i++){
+      x=4+i*15;
+      inner+='<rect class="br" x="'+x+'" y="'+y+'" width="10" height="'+pw+'" fill="'+C.sky+'" stroke="'+INK+'" stroke-width="1.4"/>';
+      for(j=1;j<10;j++)inner+='<line x1="'+x+'" x2="'+(x+10)+'" y1="'+(y+j*pw/10)+'" y2="'+(y+j*pw/10)+'" stroke="'+INK+'" stroke-width=".7"/>';
+    }
+    if(f.d>0)y+=pw+10;
+    for(i=0;i<f.o;i++)inner+='<rect class="un" x="'+(4+i*16)+'" y="'+y+'" width="12" height="12" fill="'+C.sun+'" stroke="'+INK+'" stroke-width="1.4"/>';
+    if(f.o>0)y+=16;
+    return svg(300,Math.max(y,24),inner,"fig-b100");
+  },
+  /* mancha de pontos em linhas e colunas (estimativa, 2º ano): f.n pontos em f.c colunas, com um quadro marcado "100" (10 x 10 pontos) no canto */
+  mancha:function(f){
+    var sp=6,pad=6,top=16,rows=Math.ceil(f.n/f.c),W=f.c*sp+pad*2,H=rows*sp+top+pad,inner="",k;
+    for(k=0;k<f.n;k++)inner+='<circle class="pt" cx="'+(pad+(k%f.c)*sp+sp/2)+'" cy="'+(top+Math.floor(k/f.c)*sp+sp/2)+'" r="1.7" fill="'+INK+'"/>';
+    inner+='<rect class="q100" x="'+pad+'" y="'+top+'" width="'+(10*sp)+'" height="'+(10*sp)+'" fill="none" stroke="'+C.coral+'" stroke-width="2.2"/>'+
+      '<text x="'+(pad+5*sp)+'" y="'+(top-4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+C.coral+'">100</text>';
+    return '<svg class="figsvg fig-mancha" viewBox="0 0 '+W+' '+H+'" role="img" aria-hidden="true" focusable="false" style="width:'+Math.round(W*1.4)+'px">'+inner+'</svg>';
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;
