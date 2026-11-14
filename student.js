@@ -233,7 +233,8 @@ function nameOf(t,sl){return FC.stickerInfo(t,sl).name}
 async function trLoad(){
   if(!S.token)return;
   try{
-    TR.data=await rpc("student_trades",{p_token:S.token});
+    var got=await Promise.all([rpc("student_trades",{p_token:S.token}),rpc("student_trade_history",{p_token:S.token}).catch(function(e){if(FC.isSessionErr(e))throw e;return TR.hist||[]})]);
+    TR.data=got[0];TR.hist=got[1];
     if(!S.fr)S.fr=await rpc("student_friends",{p_token:S.token});
   }catch(e){
     if(FC.isSessionErr(e))return;
@@ -265,7 +266,7 @@ function trStart(){
 }
 function trStop(){
   try{if(TR.ch)sb.removeChannel(TR.ch)}catch(e){}
-  TR.ch=null;if(TR.poll)clearInterval(TR.poll);TR.poll=null;TR.data=null;TR.announced={};TR.step="home";
+  TR.ch=null;if(TR.poll)clearInterval(TR.poll);TR.poll=null;TR.data=null;TR.hist=null;TR.announced={};TR.step="home";
 }
 function goTrocas(){
   FC.tabState.aluno="trocas";try{sessionStorage.setItem("fc_tab_aluno","trocas")}catch(e){}
@@ -324,6 +325,7 @@ function trRender(){
     '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
     (out?'<section class="panel"><b>Pedidos que você fez</b>'+out+'</section>':'')+
+    histHtml()+
     '<section class="panel"><div class="split"><b>Minhas repetidas</b><span class="muted small-t num">'+total+'</span></div>'+rep+'</section>';
   var nb=$("#trNew");if(nb)nb.onclick=function(){TR.step="friend";TR.give=TR.want=TR.opts=null;trFlow()};
   $$("[data-tans]",box).forEach(function(b){b.onclick=function(){trAnswer(b.getAttribute("data-tans"),!!b.getAttribute("data-ok"),b)}});
@@ -331,6 +333,14 @@ function trRender(){
     b.disabled=true;
     try{await rpc("student_trade_cancel",{p_token:S.token,p_id:b.getAttribute("data-tcancel")});FC.toast("Pedido cancelado.")}catch(e){FC.toast(FC.err(e),true)}
     trLoad()}});
+}
+/* Trocas já feitas: com quem, o que a criança deu e o que recebeu. */
+function histHtml(){
+  var h=TR.hist||[];if(!h.length)return "";
+  return '<section class="panel"><div class="split"><b>Trocas que você já fez</b><span class="muted small-t num">'+h.length+'</span></div>'+h.map(function(x){
+    return '<div class="tr-req"><div class="muted small-t">'+FC.dm(String(x.at).slice(0,10))+' · com <b>'+esc(x.friend)+'</b></div>'+
+      pairHtml([x.got_theme,x.got_slot],[x.gave_theme,x.gave_slot])+
+      '<div class="muted small-t center">Você deu '+esc(nameOf(x.gave_theme,x.gave_slot))+' e recebeu '+esc(nameOf(x.got_theme,x.got_slot))+'.</div></div>'}).join("")+'</section>';
 }
 async function trAnswer(id,ok,btn){
   $$("#trBox button").forEach(function(b){b.disabled=true});
