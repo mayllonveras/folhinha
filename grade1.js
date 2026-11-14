@@ -710,4 +710,24 @@ FC.G1=[
   {nivel:35,id:"g1n35",nome:"Nível 35 — Ler gráficos e tabelas",hab:["EF01MA21"],meta:120,gen:gGrafico}
 ];
 FC.G1BY={};FC.G1.forEach(function(e){FC.G1BY[e.id]=e});
+
+/* ===================== A grade do app: FC.LEVELS ===================== */
+var BLOCOS=[[7,"Contagem e comparação"],[13,"Soma e subtração até 10"],[17,"Formas, posição e padrões"],[24,"Contas até 20"],[29,"Dezenas e números até 100"],[35,"Medidas, tempo, dinheiro e dados"]];
+var DICAS={1:"Conte os objetos e digite quantos são.",2:"Olhe os dois grupos: onde tem mais, onde tem menos, ou é igual?",3:"Complete o número que falta na fila.",4:"Conte os objetos, de 5 em 5, até 20.",
+  5:"Conte os objetos espalhados. Dá para agrupar de 2 em 2 ou de 5 em 5.",6:"Que número vem antes, depois ou entre? E em que posição está na fila?",7:"Escolha o maior ou o menor número.",
+  8:"Somas e subtrações pequenas, com desenhos para ajudar.",9:"Somar e tirar 1, 2 ou 3, até 10.",10:"Somas com resultado até 10.",11:"Subtrações até 10.",12:"Somas e subtrações até 10, misturadas.",
+  13:"Problemas curtos de juntar, acrescentar, separar e retirar.",14:"Descubra o nome das figuras planas.",15:"Sólidos e objetos do dia a dia.",16:"Esquerda, direita, em cima e embaixo.",
+  17:"Qual não combina? Qual é maior? E o que vem depois no padrão?",18:"Como 10 + 4 e 14 − 4.",19:"Como 12 + 5, sem passar da dezena.",20:"Como 8 + 7, que passam da dezena.",
+  21:"Como 17 − 5, sem passar da dezena.",22:"Como 15 − 8, que passam da dezena.",23:"Somas e subtrações até 20, misturadas.",24:"Problemas de juntar e tirar com números até 20.",
+  25:"Cada barra vale 10 e cada quadradinho vale 1.",26:"Conte até 100, de 10 em 10.",27:"Escolha o maior ou o menor número de dois algarismos.",28:"Como 30 + 20, 34 + 5 e 38 − 5.",
+  29:"Como 34 = 30 + ?",30:"Compare comprimentos, capacidades e pesos.",31:"Manhã, tarde e noite; dias da semana; meses.",32:"Leia o calendário e escreva datas.",
+  33:"Moedas e cédulas do dinheiro brasileiro.",34:"Com certeza, talvez ou impossível?",35:"Leia gráficos e tabelas."};
+/* Texto de abertura de um nível (aparece no começo da folha). */
+var INTROS={16:"Lembrete: a esquerda é o lado da sua mão esquerda, e a direita é o lado da sua mão direita."};
+FC.LEVELS=FC.G1.map(function(e){
+  var grupo=BLOCOS.filter(function(b){return e.nivel<=b[0]})[0][1];
+  var l={group:grupo,id:String(e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS[e.nivel],target:e.meta,gen:e.gen,ano:1};
+  if(INTROS[e.nivel])l.intro=INTROS[e.nivel];
+  return l;
+});
 })();

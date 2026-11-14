@@ -121,6 +121,13 @@ Escrita em 14/11/2026, **migração ainda não aplicada** (`migracoes/2026-11-14
   fica para depois: ela depende de os geradores da grade nova terem versões mais difíceis.
 - **Sugestão de liberar mais um ano:** na tela do responsável, quando faltam até 3 níveis para o limite; ele decide (botão "Liberar mais 1 ano").
 
+## Grade do 1º ano ligada ao app (14/11/2026)
+
+Os 45 níveis antigos saíram de `core.js`. `FC.LEVELS` agora é montado em `grade1.js` com os 35 níveis do 1º ano (grupo, nome, dica, meta de tempo e, no nível 16,
+o lembrete das mãos). A migração `migracoes/2026-11-14-grade-1ano.sql` troca a tabela `levels` e apaga os alunos de teste. `testes/grade.test.js` confere
+que as metas da migração são as do app. **Faltam** a grade do 2º ao 5º ano (mesmo processo de fichas) e os anos finais; enquanto isso, quem termina o nível 35 fica
+nele (como já acontece no último nível).
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.

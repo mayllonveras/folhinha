@@ -567,6 +567,7 @@ async function buildSheet(){
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
   }else{items=FC.shuffle(FC.makeItems(m.level_idx,null,{teto:teto}))}
+  var Lv=FC.LEVELS[m.level_idx];if(Lv&&Lv.intro)intro=Lv.intro+" "+intro;
   if(teto)intro="Você já concluiu tudo o que dá para avançar por enquanto. Hoje é folha de revisão: contas dos níveis que você já fez. "+intro;
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
   var o=await rpc("student_open_sheet",{p_token:S.token,p_day:day,
