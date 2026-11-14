@@ -471,6 +471,134 @@ const POSN={"maçã":"🍎","bola":"⚽","estrela":"⭐","flor":"🌼","balão":
  }
  console.log("nível 32:",JSON.stringify(tp),"quadrados de ponta",ponta);if(Math.abs(tp.cont/N-.375)>.04||Math.abs(tp.nome/N-.375)>.04||Math.abs(tp.qual/N-.25)>.04)falha(32,"proporções");if(!ponta)falha(32,"nenhum quadrado de ponta")}
 
+/* ---- Níveis 33 a 41: medidas, tempo, dinheiro, acaso e dados ---- */
+const ART={"o lápis":"lapis","a borracha":"borracha","a fita":"fita","o clipe":"clipe"};
+const artKey=t=>{const m=Object.keys(ART).find(k=>t.includes(k));return m?ART[m]:null};
+{const its=draw(G.g2n33),tp={medir:0,comparar:0,unidade:0};
+ for(const p of its){
+  const t=p._info.tipo;tp[t]++;
+  if(t==="unidade"){const op=p.extra.opts;if(op.length!==2||!op.includes("metro")||!op.includes("centímetro")||op[p.a-1]!==(p._info.metro?"metro":"centímetro"))falha(33,"unidade: "+p.pre+" → "+op[p.a-1]);continue}
+  const f=p.extra.fig,html=FC.fig(f),objs=[...html.matchAll(/class="obj" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g)];
+  if(f.t!=="regua"||objs.length!==f.objs.length||p.post!=="cm")falha(33,"figura/post");
+  f.objs.forEach((o,i)=>{if(+objs[i][1]!==10||+objs[i][2]!==o.len*18)falha(33,"objeto fora do zero ou do tamanho: "+JSON.stringify(o)+" "+objs[i].slice(1));if(!Number.isInteger(o.len)||o.len<2||o.len>15)falha(33,"medida fora de 2 a 15")});
+  if(f.max!==15||(10+15*18+10)>340)falha(33,"régua");
+  if(t==="medir"){if(p.a!==f.objs[0].len)falha(33,"medida: "+p.a+" vs "+f.objs[0].len);const k=artKey(p.pre);if(k!==f.objs[0].k)falha(33,"objeto da pergunta não é o da figura: "+p.pre)}
+  else{const [A,B]=f.objs,m=p.pre.match(/^Quantos centímetros (.+) é (maior|menor) que (.+)\?$/);if(!m){falha(33,"pergunta: "+p.pre);continue}
+   const k1=artKey(m[1]),k2=artKey(m[3]),la=[A,B].find(o=>o.k===k1),lb=[A,B].find(o=>o.k===k2);if(!la||!lb||k1===k2)falha(33,"objetos: "+p.pre);
+   if((m[2]==="maior")!==(la.len>lb.len)||p.a!==Math.abs(la.len-lb.len)||p.a<1||p.a>12)falha(33,"comparação: "+p.pre+" → "+p.a+" "+la.len+" "+lb.len)}
+ }
+ console.log("nível 33:",JSON.stringify(tp));if(Math.abs(tp.medir/N-.5)>.04||Math.abs(tp.comparar/N-.25)>.04)falha(33,"proporções")}
+{const its=draw(G.g2n34),tp={somar:0,falta:0};
+ for(const p of its){
+  const f=p.extra.fig,t=p._info.tipo;tp[t]++;const html=FC.fig(f),labs=[...html.matchAll(/class="lab"[^>]*>([^<]+)</g)].map(m=>m[1]);
+  const N_={"triângulo":3,"quadrado":4,"retângulo":4,"pentágono":5}[f.n];
+  if(f.lados.length!==N_||labs.length!==N_||p.post!=="cm")falha(34,"lados/rótulos: "+f.n+" "+f.lados+" "+labs);
+  f.lados.forEach((l,i)=>{if(l<1||l>10)falha(34,"lado fora de 1 a 10");const esp=i===f.falta?"?":l+" cm";if(labs[i]!==esp)falha(34,"rótulo "+labs[i]+" ≠ "+esp)});
+  const tot=f.lados.reduce((a,b)=>a+b,0);if(tot>40)falha(34,"contorno acima de 40");
+  if(f.n==="quadrado"&&new Set(f.lados).size!==1)falha(34,"quadrado com lados diferentes");if(f.n==="retângulo"&&(f.lados[0]!==f.lados[2]||f.lados[1]!==f.lados[3]||f.lados[0]===f.lados[1]))falha(34,"retângulo");
+  if(f.n==="triângulo"){const [a,b,c]=f.lados;if(a+b<=c||a+c<=b||b+c<=a)falha(34,"triângulo impossível: "+f.lados)}
+  if(t==="somar"){if(p.pre!=="Qual é a medida do contorno?"||p.a!==tot||f.falta!==undefined)falha(34,"soma: "+p.a+" vs "+tot)}
+  else{const m=p.pre.match(/^O contorno mede (\d+) cm\. Quanto mede o lado que falta\?$/);if(!m||+m[1]!==tot||p.a!==f.lados[f.falta]||f.n==="pentágono")falha(34,"lado que falta: "+p.pre+" → "+p.a)}
+ }
+ console.log("nível 34:",JSON.stringify(tp));if(Math.abs(tp.somar/N-.625)>.04)falha(34,"proporções")}
+{const its=draw(G.g2n35),tp={unidade:0,comparar:0,balanca:0};
+ const PESO=[["🐘","🐜"],["🚗","🍎"],["🍉","🍒"],["🐘","🐭"],["🏠","🎈"],["🚗","🎈"]];
+ for(const p of its){const t=p._info.tipo;tp[t]++;const op=p.extra.opts;
+  if(t==="unidade"){const m=p.pre.match(/^Qual unidade é melhor para medir a (massa|capacidade) de (.+)\?$/);if(!m){falha(35,"pergunta: "+p.pre);continue}
+   const U={massa:["quilograma","grama"],capacidade:["litro","mililitro"]}[m[1]];if(op.length!==2||!U.every(u=>op.includes(u)))falha(35,"opções de outra grandeza: "+op);
+   const grande=["uma pessoa","um saco de arroz","uma melancia","um cachorro grande","uma piscina","uma caixa-d'água","um balde","o tanque de um carro"].includes(m[2]);
+   if(op[p.a-1]!==(grande?U[0]:U[1]))falha(35,"unidade errada: "+p.pre+" → "+op[p.a-1])}
+  else if(t==="comparar"){const m=p.pre.match(/^(Qual tem mais água|Qual tem menos água|Qual é mais pesado|Qual é mais leve): (\d+) (\S+) ou (\d+) \3\?$/);if(!m){falha(35,"pergunta: "+p.pre);continue}
+   const a=+m[2],b=+m[4],mais=/tem mais|mais pesado/.test(m[1]),r=(mais?Math.max(a,b):Math.min(a,b))+" "+m[3];if(op[p.a-1]!==r||op.length!==2||a===b)falha(35,"comparação: "+p.pre+" → "+op[p.a-1]);
+   const gr=m[3];if(!(["litros","quilogramas"].includes(gr)&&a<=9&&b<=9||["mililitros","gramas"].includes(gr)&&a%100===0&&b%100===0&&a>=100&&b<=900))falha(35,"números fora do esperado: "+p.pre);
+   if(/água/.test(m[1])!==["litros","mililitros"].includes(gr))falha(35,"unidade não combina com a pergunta: "+p.pre)}
+  else{const f=p.extra.fig,par=PESO.find(q=>q.includes(f.l)&&q.includes(f.r));if(!par||f.l===f.r){falha(35,"par da balança");continue}
+   const heavy=f.a>0?f.r:f.l,esp=/mais pesado/.test(p.pre)?heavy:(heavy===f.l?f.r:f.l);if(heavy!==par[0])falha(35,"o prato que desce deve ter o mais pesado: "+JSON.stringify(f));
+   if(op[p.a-1]!==esp||op.length!==2)falha(35,"balança: "+p.pre+" → "+op[p.a-1]+" esperado "+esp)}
+ }
+ console.log("nível 35:",JSON.stringify(tp));if(Math.abs(tp.unidade/N-.375)>.04||Math.abs(tp.comparar/N-.375)>.04)falha(35,"proporções")}
+{const its=draw(G.g2n36),tp={semana:0,datas:0,mes:0,meses:0,fato:0};
+ const D=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"],M=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+ for(const p of its){const t=p._info.tipo;tp[t]++;
+  if(t==="semana"){const m=p.pre.match(/^Hoje é (\S+)\. Que dia da semana será daqui a (\d) (dia|dias)\?$/);const w=D.indexOf(m[1]),k=+m[2],op=p.extra.opts;
+   if(w<0||k<1||k>6||(k===1)!==(m[3]==="dia")||op[p.a-1]!==D[(w+k)%7]||op.length!==4||new Set(op).size!==4)falha(36,"semana: "+p.pre+" → "+op[p.a-1])}
+  else if(t==="datas"){const f=p.extra.fig,m=p.pre.match(/^Quantos dias se passam do dia (\d+) até o dia (\d+)\?$/),ult=new Date(f.y,f.m+1,0).getDate();
+   if(f.t!=="calendario"||!m||+m[2]>ult||+m[1]<1||p.a!==+m[2]-+m[1]||p.a<2||p.a>15)falha(36,"datas: "+p.pre+" → "+p.a)}
+  else if(t==="mes"){const m=p.pre.match(/^Qual mês vem (depois|antes) de (\S+)\?$/),i=M.indexOf(m[2]),op=p.extra.opts;if(i<0||op[p.a-1]!==M[m[1]==="depois"?i+1:i-1]||new Set(op).size!==4||op.includes(m[2]))falha(36,"mês: "+p.pre+" → "+op[p.a-1])}
+  else if(t==="meses"){const m=p.pre.match(/^Quantos meses se passam de (\S+) até (\S+)\?$/),a=M.indexOf(m[1]),b=M.indexOf(m[2]);if(a<0||b<=a||p.a!==b-a||p.a<2||p.a>6)falha(36,"meses: "+p.pre+" → "+p.a)}
+  else{const F={"Quantos dias tem uma semana?":7,"Quantos meses tem um ano?":12,'Quantos dias da semana têm "feira" no nome?':5,"Quantos meses do ano começam com a letra J?":3};if(F[p.pre]!==p.a)falha(36,"fato: "+p.pre+" → "+p.a)}
+ }
+ console.log("nível 36:",JSON.stringify(tp));for(const k of["semana","datas"])if(Math.abs(tp[k]/N-.25)>.04)falha(36,"proporção "+k)}
+{const its=draw(G.g2n37),tp={ler:0,duracao:0,fim:0,meia:0};
+ const mm=t=>{const x=t.split(":");return +x[0]*60+ +x[1]};const fmt=m=>Math.floor(m/60)+":"+String(m%60).padStart(2,"0");
+ const pal=(h,m)=>m===0?h+" horas":h+" e meia";
+ for(const p of its){const t=p._info.tipo;tp[t]++;
+  if(t==="ler"){const f=p.extra.fig,op=p.extra.opts;if(f.t!=="digital"||![0,30].includes(f.m)||f.h<6||f.h>22)falha(37,"relógio");
+   if(op[p.a-1]!==pal(f.h,f.m)||new Set(op).size!==3||op.length!==3)falha(37,"leitura: "+JSON.stringify(f)+" → "+op[p.a-1]);const html=FC.fig(f);if(!html.includes(f.h+":"+String(f.m).padStart(2,"0")))falha(37,"html")}
+  else if(t==="duracao"){const m=p.pre.match(/^.+ começou às (\d+:\d\d) e terminou às (\d+:\d\d)\. Quantas horas durou\?$/);if(!m){falha(37,"pergunta: "+p.pre);continue}
+   const a=mm(m[1]),b=mm(m[2]);if(b<=a||(b-a)%60!==0||p.a!==(b-a)/60||p.a<1||p.a>4||a<360||b>22*60+30)falha(37,"duração: "+p.pre+" → "+p.a)}
+  else if(t==="fim"){const m=p.pre.match(/^.+ começou às (\d+:\d\d) e durou (\d) (hora|horas)\. A que horas terminou\?$/);if(!m){falha(37,"pergunta: "+p.pre);continue}
+   const a=mm(m[1]),d=+m[2],op=p.extra.opts;if(d<1||d>3||(d===1)!==(m[3]==="hora")||op[p.a-1]!==fmt(a+d*60)||new Set(op).size!==3||op.length!==3)falha(37,"hora final: "+p.pre+" → "+op[p.a-1])}
+  else{const m=p.pre.match(/^.+ começou às (\d+:\d\d) e terminou às (\d+:\d\d)\. Quantos minutos durou\?$/);if(!m){falha(37,"pergunta: "+p.pre);continue}
+   const a=mm(m[1]),b=mm(m[2]);if(b-a!==30||p.a!==30||a<360||b>22*60)falha(37,"meia hora: "+p.pre+" → "+p.a)}
+  if(!/^(A aula|O recreio|O filme|O jogo|A festa|O lanche|A visita) /.test(p.pre)&&t!=="ler")falha(37,"evento: "+p.pre);
+ }
+ console.log("nível 37:",JSON.stringify(tp));for(const k of Object.keys(tp))if(Math.abs(tp[k]/N-.25)>.04)falha(37,"tipo "+k)}
+const valorCent=x=>x.k==="moeda"?x.v:x.v*100;
+{const its=draw(G.g2n38),tp={total:0,equiv:0,conjunto:0};
+ for(const p of its){const t=p._info.tipo;tp[t]++;
+  if(t==="total"){const it=p.extra.fig.items,tot=it.reduce((a,x)=>a+x.v,0);if(it.length<2||it.length>5||it.some(x=>x.k!=="moeda"||![5,10,25,50].includes(x.v))||tot>100||tot<15||p.a!==tot||p.post!=="centavos")falha(38,"total: "+JSON.stringify(it)+" → "+p.a)}
+  else if(t==="equiv"){const m=p.pre.match(/^Quantas moedas de (\d+) centavos valem uma moeda de (\d+ centavos|1 real)\?$/);if(!m){falha(38,"pergunta: "+p.pre);continue}const a=+m[1],b=m[2]==="1 real"?100:parseInt(m[2]);if(b%a||p.a!==b/a||![5,10,25,50].includes(a)||b<=a)falha(38,"equivalência: "+p.pre+" → "+p.a)}
+  else{const op=p.extra.opts,sums=op.map(o=>o.fig.items.reduce((a,x)=>a+x.v,0));if(sums[p.a-1]!==50||sums.filter(x=>x===50).length!==1||op.length!==3||op.some(o=>o.fig.items.length<2||o.fig.items.length>5||o.fig.items.some(x=>x.k!=="moeda"||x.v===100))||sums.some(x=>x>100))falha(38,"conjunto: "+sums+" → "+p.a)}
+ }
+ console.log("nível 38:",JSON.stringify(tp));for(const k of["total","equiv"])if(Math.abs(tp[k]/N-.375)>.04)falha(38,"proporção "+k)}
+{const its=draw(G.g2n39),tp={total:0,equiv:0,conjunto:0};const reais=x=>x.k==="moeda"?1:x.v;
+ for(const p of its){const t=p._info.tipo;tp[t]++;
+  if(t==="total"){const it=p.extra.fig.items,tot=it.reduce((a,x)=>a+reais(x),0);if(it.length<2||it.length>4||it.some(x=>!(x.k==="moeda"&&x.v===100)&&!(x.k==="cedula"&&[2,5,10,20,50].includes(x.v)))||tot>100||tot<3||p.a!==tot||p.post!=="reais")falha(39,"total: "+JSON.stringify(it)+" → "+p.a)}
+  else if(t==="equiv"){const m=p.pre.match(/^Quantas cédulas de (\d+) reais valem uma de (\d+) reais\?$/);if(!m){falha(39,"pergunta: "+p.pre);continue}const a=+m[1],b=+m[2];if(b%a||p.a!==b/a||b<=a)falha(39,"equivalência: "+p.pre+" → "+p.a)}
+  else{const T=p._info.T,m=p.pre.match(/^Qual conjunto vale o mesmo que uma cédula de (\d+) reais\?$/);if(!m||+m[1]!==T){falha(39,"pergunta: "+p.pre);continue}const op=p.extra.opts,sums=op.map(o=>o.fig.items.reduce((a,x)=>a+reais(x),0));
+   if(sums[p.a-1]!==T||sums.filter(x=>x===T).length!==1||op.length!==3||op.some(o=>o.fig.items.length<2||o.fig.items.length>5))falha(39,"conjunto: "+sums+" → "+p.a+" T="+T)}
+ }
+ console.log("nível 39:",JSON.stringify(tp));for(const k of["total","equiv"])if(Math.abs(tp[k]/N-.375)>.04)falha(39,"proporção "+k)}
+{const FR={"certo":["O Sol vai nascer amanhã.","Depois da terça-feira vem a quarta-feira.","Uma semana tem sete dias.","Se hoje é segunda-feira, amanhã é terça-feira.","A água do mar é salgada.","Um ano tem doze meses."],
+  "muito provável":["A professora vai chegar à escola amanhã.","Vai fazer calor no verão.","Você vai dormir esta noite.","O ônibus escolar vai passar hoje.","Uma criança sentir fome antes do jantar.","Alguém usar guarda-chuva num dia de chuva forte."],
+  "pouco provável":["Amanhã vai chover no deserto do Saara.","Você encontrar um tesouro no quintal.","Ganhar o prêmio de uma rifa com mil bilhetes.","Nevar hoje na cidade de Recife.","Um passarinho pousar na sua mão agora.","Encontrar um trevo de quatro folhas por acaso."],
+  "impossível":["Um cachorro falar português.","Uma pessoa viver 300 anos.","Depois da segunda-feira vir a quinta-feira.","Um dado comum mostrar o número 9.","Uma semana ter dez dias.","Uma pedra solta no ar subir sozinha."]};
+ const its=draw(G.g2n40),tp={saco:0,frase:0},cl={},CLS=["impossível","pouco provável","muito provável","certo"];
+ for(const p of its){const op=p.extra.opts,t=p._info.tipo;tp[t]++;
+  if(op.length!==4||CLS.some(c=>!op.includes(c)))falha(40,"as quatro classes devem ser as opções: "+op);
+  const dada=op[p.a-1];cl[dada]=(cl[dada]||0)+1;
+  if(t==="saco"){const f=p.extra.fig,m=p.pre.match(/^Vou tirar uma bola (vermelha|azul) sem olhar\. Isso é…$/);if(!m||f.t!=="bolas"){falha(40,"pergunta: "+p.pre);continue}
+   const cor=m[1]==="vermelha"?"r":"a",n=f.balls.length,k=f.balls.filter(b=>b===cor).length;
+   if(n<4||n>10)falha(40,"bolas fora de 4 a 10");
+   const esp=k===0?"impossível":k===n?"certo":k/n<=.25?"pouco provável":k/n>=.75?"muito provável":"?";
+   if(esp==="?"||dada!==esp)falha(40,"classe: "+k+"/"+n+" → "+dada+" (esperado "+esp+")");
+   const html=FC.fig(f);if((html.match(/<circle/g)||[]).length!==n)falha(40,"bolas desenhadas")}
+  else{const fr=p.pre.replace(/ Isso é…$/,""),c=Object.keys(FR).filter(k=>FR[k].includes(fr));if(c.length!==1||c[0]!==dada)falha(40,"frase: "+fr+" → "+dada+" (banco "+c+")")}
+ }
+ console.log("nível 40: saco",(100*tp.saco/N).toFixed(0)+"%, frase",(100*tp.frase/N).toFixed(0)+"%, classes",JSON.stringify(cl));
+ for(const c of CLS)if(Math.abs((cl[c]||0)/N-.25)>.04)falha(40,"classe "+c+" fora de 25%");if(Math.abs(tp.saco/N-.625)>.04)falha(40,"proporção saco")}
+{const its=draw(G.g2n41),tp={1:0,2:0,3:0};let tab=0;
+ for(const p of its){const f=p.extra.fig,t=p._info.tipo;tp[t]++;
+  if(f.t==="tabela2"){tab++;
+   if(f.rows.length!==2||f.cols.length!==3||f.v.length!==2||f.v.some(r=>r.length!==3||r.some(x=>x<1||x>15)))falha(41,"tabela fora do formato");
+   const html=FC.fig(f);if(((html.match(/<td>/g)||[]).length)!==6)falha(41,"células da tabela");
+   let m;
+   if(t===1){m=p.pre.match(/^Quantas crianças da (Turma [AB]) escolheram (\S+)\?$/);if(!m||p.a!==f.v[f.rows.indexOf(m[1])][f.cols.indexOf(m[2])])falha(41,"célula: "+p.pre+" → "+p.a)}
+   else if(t===2){m=p.pre.match(/^Qual opção a (Turma [AB]) mais escolheu\?$/);const row=f.v[f.rows.indexOf(m[1])],mx=Math.max(...row);if(row.filter(x=>x===mx).length!==1||p.extra.opts[p.a-1]!==f.cols[row.indexOf(mx)]||p.extra.opts.length!==3)falha(41,"maior: "+p.pre)}
+   else if((m=p.pre.match(/^Quantas crianças a mais da (Turma [AB]) do que da (Turma [AB]) escolheram (\S+)\?$/))){const c=f.cols.indexOf(m[3]),a=f.v[f.rows.indexOf(m[1])][c],b=f.v[f.rows.indexOf(m[2])][c];if(a<=b||p.a!==a-b)falha(41,"diferença: "+p.pre+" → "+p.a+" "+a+" "+b)}
+   else if((m=p.pre.match(/^Quantas crianças das duas turmas juntas escolheram (\S+)\?$/))){const c=f.cols.indexOf(m[1]);if(p.a!==f.v[0][c]+f.v[1][c]||p.a>30)falha(41,"soma: "+p.pre)}
+   else falha(41,"pergunta: "+p.pre)}
+  else{if(f.t!=="bars"||f.labels.length<3||f.labels.length>5||f.values.some(x=>x<1||x>10))falha(41,"gráfico fora do formato");let m;
+   if(t===1){m=p.pre.match(/^Quantas crianças escolheram (\S+)\?$/);if(!m||p.a!==f.values[f.labels.indexOf(m[1])])falha(41,"barra: "+p.pre+" → "+p.a)}
+   else if(t===2){const mx=Math.max(...f.values),op=p.extra.opts;if(f.values.filter(x=>x===mx).length!==1||op[p.a-1]!==f.labels[f.values.indexOf(mx)]||op.length<3||op.length>4||new Set(op).size!==op.length)falha(41,"maior barra: "+op)}
+   else if((m=p.pre.match(/^Quantas crianças a mais escolheram (\S+) do que (\S+)\?$/))){const a=f.values[f.labels.indexOf(m[1])],b=f.values[f.labels.indexOf(m[2])];if(a<=b||p.a!==a-b)falha(41,"diferença: "+p.pre+" → "+p.a)}
+   else if((m=p.pre.match(/^Quantas crianças escolheram (\S+) ou (\S+)\?$/))){const a=f.values[f.labels.indexOf(m[1])],b=f.values[f.labels.indexOf(m[2])];if(m[1]===m[2]||p.a!==a+b)falha(41,"soma: "+p.pre)}
+   else falha(41,"pergunta: "+p.pre)}
+ }
+ console.log("nível 41: tipos",JSON.stringify(tp),"tabela",(100*tab/N).toFixed(0)+"%");if(Math.abs(tab/N-2/3)>.04)falha(41,"tabela x gráfico");
+ if(Math.abs(tp[1]/N-.375)>.04||Math.abs(tp[2]/N-.375)>.04)falha(41,"proporções")}
+
 /* ---- Folhas: 10 contas, sem repetição, com os limites de cada nível ---- */
 for(const g of FC.G2){
   let rep=0,estouro=0,tam=0;

@@ -1,7 +1,7 @@
 /* Grade do 2º ano — geradores escritos do zero a partir das fichas em bncc/fichas/2ano-*.md.
    Mesma forma dos geradores do 1º ano (grade1.js): {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 32 (números até 1000, adição e subtração, multiplicação, dobro, triplo, metade, padrões e geometria). */
+   Níveis feitos: 1 a 41, a grade inteira do 2º ano (números até 1000, adição e subtração, multiplicação, dobro, triplo, metade, padrões, geometria, medidas, tempo, dinheiro, acaso e dados). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed;
@@ -573,6 +573,240 @@ function gPlanas(){
   return it;
 }
 
+/* ===================== Níveis 33 a 41: medidas, tempo, dinheiro, acaso e dados ===================== */
+var OBREG={lapis:["lápis","o"],fita:["fita","a"],clipe:["clipe","o"],borracha:["borracha","a"]};
+var KREG=Object.keys(OBREG);
+/* Nível 33 — Medir com a régua e comparar comprimentos (EF02MA16): as peças ficam encostadas no zero, sempre de medida inteira. */
+var METRO=["uma sala de aula","o pátio da escola","uma quadra de esportes","um corredor da escola","uma rua"],CENTIM=["um clipe","um lápis","uma borracha","uma formiga","uma moeda","um dedo da mão"];
+function gRegua(){
+  var r=Math.random(),it;
+  if(r<.5){
+    var k=pick(KREG),len=rnd(2,15);
+    it=typed("Quanto mede "+OBREG[k][1]+" "+OBREG[k][0]+"?",len,{t:"regua",max:15,objs:[{k:k,len:len}]},"cm");
+    it.limits=[["n33:t1",4]];it._info={tipo:"medir",k:k,len:len};
+  }else if(r<.75){
+    var k1=pick(KREG),k2;do{k2=pick(KREG)}while(k2===k1);
+    var a,b;do{a=rnd(2,15);b=rnd(2,15)}while(a===b||Math.abs(a-b)>12);
+    var big=a>b?k1:k2,small=a>b?k2:k1,maior=Math.random()<.5;
+    var pre=maior?"Quantos centímetros "+OBREG[big][1]+" "+OBREG[big][0]+" é maior que "+OBREG[small][1]+" "+OBREG[small][0]+"?":"Quantos centímetros "+OBREG[small][1]+" "+OBREG[small][0]+" é menor que "+OBREG[big][1]+" "+OBREG[big][0]+"?";
+    it=typed(pre,Math.abs(a-b),{t:"regua",max:15,objs:[{k:k1,len:a},{k:k2,len:b}]},"cm");it.limits=[["n33:t2",2]];it._info={tipo:"comparar",k1:k1,a:a,k2:k2,b:b,maior:maior};
+  }else{
+    var metro=Math.random()<.5,obj=pick(metro?METRO:CENTIM);
+    var de=/^o /.test(obj)?"do "+obj.slice(2):/^a /.test(obj)?"da "+obj.slice(2):"de "+obj;
+    it=choice("Qual unidade é melhor para medir o comprimento "+de+"?",metro?"metro":"centímetro",[metro?"centímetro":"metro"],null);
+    it.key="uni33|"+obj;it.limits=[["n33:t3",2]];it._info={tipo:"unidade",obj:obj,metro:metro};
+  }
+  return it;
+}
+
+/* Nível 34 — O contorno (perímetro) de polígonos (EF02MA16). Lados inteiros de 1 a 10, contorno de até 40 cm; todos os lados escritos (menos o que falta). */
+function ladosPoli(n){
+  var a,b,c,t=0,i,l;
+  if(n==="quadrado"){a=rnd(1,10);return [a,a,a,a]}
+  if(n==="retângulo"){do{a=rnd(1,10);b=rnd(1,10)}while(a===b);return [a,b,a,b]}
+  if(n==="triângulo"){do{a=rnd(1,10);b=rnd(1,10);c=rnd(1,10)}while((a+b<=c||a+c<=b||b+c<=a)&&t++<500);return [a,b,c]}
+  l=[];for(i=0;i<5;i++)l.push(rnd(1,8));return l;
+}
+function gContorno(){
+  var it,n,l,tot;
+  if(Math.random()<.625){
+    n=pick(["triângulo","quadrado","retângulo","pentágono"]);l=ladosPoli(n);tot=l.reduce(function(x,y){return x+y},0);
+    it=typed("Qual é a medida do contorno?",tot,{t:"poligono",n:n,lados:l},"cm");it.limits=[["n34:t1",5]];it._info={tipo:"somar",n:n,lados:l};
+  }else{
+    n=pick(["triângulo","retângulo","quadrado"]);l=ladosPoli(n);tot=l.reduce(function(x,y){return x+y},0);var falta=rnd(0,l.length-1);
+    it=typed("O contorno mede "+tot+" cm. Quanto mede o lado que falta?",l[falta],{t:"poligono",n:n,lados:l,falta:falta},"cm");
+    it.limits=[["n34:t2",3]];it._info={tipo:"falta",n:n,lados:l,falta:falta,tot:tot};
+  }
+  return it;
+}
+
+/* Nível 35 — Capacidade e massa (EF02MA17): qual unidade, comparar na mesma unidade e a balança de pratos. Sem conversão entre unidades. */
+var UNI35=[["massa","quilograma","grama",["uma pessoa","um saco de arroz","uma melancia","um cachorro grande"],["uma moeda","um clipe","uma folha de papel","um anel"]],
+  ["capacidade","litro","mililitro",["uma piscina","uma caixa-d'água","um balde","o tanque de um carro"],["uma colher de remédio","uma colher de chá","um frasco de colírio","uma xícara de café"]]];
+var BAL=[["🐘","🐜"],["🚗","🍎"],["🍉","🍒"],["🐘","🐭"],["🏠","🎈"],["🚗","🎈"]];
+function gGrandezas2(){
+  var r=Math.random(),it;
+  if(r<.375){
+    var g=pick(UNI35),grande=Math.random()<.5,obj=pick(grande?g[3]:g[4]),certa=grande?g[1]:g[2],outra=grande?g[2]:g[1];
+    it=choice("Qual unidade é melhor para medir a "+g[0]+" de "+obj+"?",certa,[outra],null);it.key="uni35|"+g[0]+"|"+obj;it.limits=[["n35:t1",3]];it._info={tipo:"unidade",g:g[0],obj:obj,certa:certa};
+  }else if(r<.75){
+    var cap=Math.random()<.5,peq=Math.random()<.5,mais=Math.random()<.5,a,b;
+    do{a=peq?rnd(1,9)*100:rnd(1,9);b=peq?rnd(1,9)*100:rnd(1,9)}while(a===b);
+    var un=cap?(peq?"mililitros":"litros"):(peq?"gramas":"quilogramas"),ua=a+" "+un,ub=b+" "+un,maior=a>b?ua:ub,menor=a>b?ub:ua;
+    var q=cap?(mais?"Qual tem mais água":"Qual tem menos água"):(mais?"Qual é mais pesado":"Qual é mais leve");
+    it=choice(q+": "+ua+" ou "+ub+"?",mais?maior:menor,[mais?menor:maior],null);it.limits=[["n35:t2",3]];it._info={tipo:"comparar",cap:cap,mais:mais,a:a,b:b,un:un};
+  }else{
+    var par=pick(BAL),pesadoDir=Math.random()<.5,maisp=Math.random()<.5;   /* par[0] é o mais pesado; ângulo positivo: o prato da direita desce */
+    var esq=pesadoDir?par[1]:par[0],dir=pesadoDir?par[0]:par[1],ang=pesadoDir?12:-12;
+    it=choice("Qual é o mais "+(maisp?"pesado":"leve")+"?",maisp?par[0]:par[1],[maisp?par[1]:par[0]],{t:"balanca",l:esq,r:dir,a:ang});
+    it.limits=[["n35:t3",2]];it._info={tipo:"balanca",maisp:maisp};
+  }
+  return it;
+}
+
+/* Nível 36 — Calendário: a duração entre duas datas (EF02MA18). */
+var DIAS2=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+var MESES2=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+var FATOS36=[["Quantos dias tem uma semana?",7],["Quantos meses tem um ano?",12],["Quantos dias da semana têm \"feira\" no nome?",5],["Quantos meses do ano começam com a letra J?",3]];
+function gCalendario(){
+  var r=Math.random(),it;
+  if(r<.25){
+    var w=rnd(0,6),k=rnd(1,6),certa=DIAS2[(w+k)%7];
+    it=choice("Hoje é "+DIAS2[w]+". Que dia da semana será daqui a "+k+(k===1?" dia":" dias")+"?",certa,embaralhar(DIAS2.filter(function(x){return x!==certa})).slice(0,3),null);
+    it.limits=[["n36:t1",3]];it._info={tipo:"semana",w:w,k:k};
+  }else if(r<.5){
+    var y=rnd(2026,2028),m=rnd(0,11),ult=new Date(y,m+1,0).getDate(),d1=rnd(1,ult-2),d2=rnd(d1+2,Math.min(ult,d1+15));
+    it=typed("Quantos dias se passam do dia "+d1+" até o dia "+d2+"?",d2-d1,{t:"calendario",y:y,m:m});it.limits=[["n36:t2",3]];it._info={tipo:"datas",y:y,m:m,d1:d1,d2:d2};
+  }else if(r<.75){
+    var q=Math.random();
+    if(q<.5){
+      var depois=Math.random()<.5,i=depois?rnd(0,10):rnd(1,11),cert=MESES2[depois?i+1:i-1];
+      it=choice("Qual mês vem "+(depois?"depois":"antes")+" de "+MESES2[i]+"?",cert,embaralhar(MESES2.filter(function(x){return x!==cert&&x!==MESES2[i]})).slice(0,3),null);it._info={tipo:"mes",i:i,depois:depois};
+    }else{
+      var dif=rnd(2,6),i0=rnd(0,11-dif);it=typed("Quantos meses se passam de "+MESES2[i0]+" até "+MESES2[i0+dif]+"?",dif);it._info={tipo:"meses",i0:i0,dif:dif};
+    }
+    it.limits=[["n36:t3",3]];
+  }else{
+    var f=pick(FATOS36);it=typed(f[0],f[1]);it.limits=[["n36:t4",2]];it._info={tipo:"fato"};
+  }
+  return it;
+}
+
+/* Nível 37 — Relógio digital: início, fim e duração (EF02MA19). Só horas cheias e meias horas, das 6:00 às 22:00 (24 horas). */
+var EVENTOS37=["A aula","O recreio","O filme","O jogo","A festa","O lanche","A visita"];
+function hm(h,m){return h+":"+(m<10?"0":"")+m}
+function palavras(h,m){return m===0?h+" horas":h+" e meia"}
+function gDigital(){
+  var r=Math.random(),it,ev=pick(EVENTOS37),h,m,d;
+  if(r<.25){
+    h=rnd(6,22);m=pick([0,30]);var certa=palavras(h,m),h2=pick([h-1,h+1].filter(function(x){return x>=6&&x<=22}));
+    var wr=[palavras(h,m===0?30:0),palavras(h2,m)];
+    it=choice("Que horas são?",certa,wr,{t:"digital",h:h,m:m});it.limits=[["n37:t1",2]];it._info={tipo:"ler",h:h,m:m};
+  }else if(r<.5){
+    m=pick([0,30]);d=rnd(1,4);h=rnd(6,22-d);
+    it=typed(ev+" começou às "+hm(h,m)+" e terminou às "+hm(h+d,m)+". Quantas horas durou?",d);it.limits=[["n37:t2",2]];it._info={tipo:"duracao",h:h,m:m,d:d};
+  }else if(r<.75){
+    m=pick([0,30]);d=rnd(1,3);h=rnd(6,20-d);var fim=hm(h+d,m),alt=[hm(h+d-1,m),hm(h+d+1,m),hm(h+d,m===0?30:0)].filter(function(x){return x!==fim});
+    it=choice(ev+" começou às "+hm(h,m)+" e durou "+d+(d===1?" hora":" horas")+". A que horas terminou?",fim,embaralhar(alt).slice(0,2),null);it.limits=[["n37:t3",2]];it._info={tipo:"fim",h:h,m:m,d:d};
+  }else{
+    var s0=pick([0,30]);h=rnd(6,21);var ini=hm(h,s0),fimm=s0===0?hm(h,30):hm(h+1,0);
+    it=typed(ev+" começou às "+ini+" e terminou às "+fimm+". Quantos minutos durou?",30);it.limits=[["n37:t4",2]];it._info={tipo:"meia",h:h,s0:s0};
+  }
+  return it;
+}
+
+/* Níveis 38 e 39 — Moedas e cédulas (EF02MA20): total, equivalência e conjunto com o mesmo valor. */
+function ordPecas(a){return a.slice().sort(function(x,y){return y.v-x.v})}
+function somaPecas(a,real){return a.reduce(function(t,x){return t+x.v},0)}
+/* sorteia peças (de 2 a max) cuja soma é exatamente alvo */
+function conjunto(vals,alvo,min,max,mk){
+  var t=0;
+  while(t++<2000){
+    var rest=alvo,pc=[];
+    while(rest>0&&pc.length<max){var fit=vals.filter(function(v){return v<=rest});if(!fit.length)break;var v=pick(fit);pc.push(v);rest-=v}
+    if(rest===0&&pc.length>=min)return pc.map(mk).sort(function(x,y){return y.v-x.v});
+  }
+  return null;
+}
+var MOEDAS38=[5,10,25,50],EQ38=[[5,10,2],[5,25,5],[5,50,10],[10,50,5],[25,50,2],[10,100,10],[25,100,4],[50,100,2],[5,100,20]];
+function txtC(v){return v===100?"1 real":v+" centavos"}
+function gCentavos(){
+  var r=Math.random(),it;
+  var mk=function(v){return {k:"moeda",v:v}};
+  if(r<.375){
+    var pc,t=0,tot;
+    do{pc=[];for(var i=rnd(2,5);i>0;i--)pc.push(mk(pick(MOEDAS38)));tot=somaPecas(pc)}while((tot>100||tot<15)&&t++<500);
+    pc=ordPecas(pc);it=typed("Quanto vale tudo junto?",tot,{t:"dinheiro",items:pc},"centavos");it.key="c38|"+pc.map(function(x){return x.v}).join(",");
+    it.limits=[["n38:t1",3]];it._info={tipo:"total"};
+  }else if(r<.75){
+    var q=pick(EQ38);it=typed("Quantas moedas de "+q[0]+" centavos valem uma moeda de "+txtC(q[1])+"?",q[2]);it.limits=[["n38:t2",3]];it._info={tipo:"equiv",a:q[0],b:q[1]};
+  }else{
+    var certa=conjunto(MOEDAS38,50,2,5,mk),sums=embaralhar([35,40,45,55,60,65]).slice(0,2),opts=[];
+    sums.forEach(function(sv){var c=conjunto(MOEDAS38,sv,2,5,mk);if(c)opts.push({fig:{t:"dinheiro",items:c}})});
+    it=choice("Qual conjunto vale o mesmo que 50 centavos?",{fig:{t:"dinheiro",items:certa}},opts,null);it.key="c38s|"+JSON.stringify(it.extra.opts);it.limits=[["n38:t3",2]];it._info={tipo:"conjunto"};
+  }
+  return it;
+}
+var PECAS39=[{k:"moeda",v:1},{k:"cedula",v:2},{k:"cedula",v:5},{k:"cedula",v:10},{k:"cedula",v:20},{k:"cedula",v:50}],EQ39=[[2,10,5],[5,10,2],[5,20,4],[10,20,2],[10,50,5],[5,50,10],[2,20,10],[20,50,0]];
+function txtR(v){return v===1?"1 real":v+" reais"}
+function gReais(){
+  var r=Math.random(),it;
+  var mk=function(v){return v===1?{k:"moeda",v:100}:{k:"cedula",v:v}};
+  var val=function(x){return x.k==="moeda"?1:x.v};
+  if(r<.375){
+    var pc,t=0,tot;
+    do{pc=[];for(var i=rnd(2,4);i>0;i--)pc.push(pick(PECAS39));tot=pc.reduce(function(a,x){return a+(x.k==="moeda"?1:x.v)},0)}while((tot>100||tot<3)&&t++<500);
+    pc=pc.map(function(x){return x.k==="moeda"?{k:"moeda",v:100}:x}).sort(function(x,y){return val(y)-val(x)});
+    it=typed("Quanto dinheiro há aqui?",tot,{t:"dinheiro",items:pc},"reais");it.key="r39|"+pc.map(val).join(",");it.limits=[["n39:t1",3]];it._info={tipo:"total"};
+  }else if(r<.75){
+    var q=pick(EQ39.slice(0,7));it=typed("Quantas cédulas de "+q[0]+" reais valem uma de "+q[1]+" reais?",q[2]);it.limits=[["n39:t2",3]];it._info={tipo:"equiv",a:q[0],b:q[1]};
+  }else{
+    var T=pick([5,10,20]),vals=[1,2,5,10,20,50].filter(function(v){return v<=T}),certa=conjunto(vals,T,2,5,mk).sort(function(x,y){return val(y)-val(x)});
+    var alts=embaralhar([T-2,T-1,T+1,T+2,T+5].filter(function(x){return x>=3})),opts=[];
+    for(var j=0;j<alts.length&&opts.length<2;j++){var c=conjunto([1,2,5,10,20,50].filter(function(v){return v<=alts[j]}),alts[j],2,5,mk);if(c)opts.push({fig:{t:"dinheiro",items:c.sort(function(x,y){return val(y)-val(x)})}})}
+    it=choice("Qual conjunto vale o mesmo que uma cédula de "+T+" reais?",{fig:{t:"dinheiro",items:certa}},opts,null);it.key="r39s|"+JSON.stringify(it.extra.opts);it.limits=[["n39:t3",2]];it._info={tipo:"conjunto",T:T};
+  }
+  return it;
+}
+
+/* Nível 40 — Provável, improvável e impossível (EF02MA21): saco de bolas e frases do dia a dia. Quatro classes. */
+var CLASSES=["impossível","pouco provável","muito provável","certo"];
+var FRASES40={
+  "certo":["O Sol vai nascer amanhã.","Depois da terça-feira vem a quarta-feira.","Uma semana tem sete dias.","Se hoje é segunda-feira, amanhã é terça-feira.","A água do mar é salgada.","Um ano tem doze meses."],
+  "muito provável":["A professora vai chegar à escola amanhã.","Vai fazer calor no verão.","Você vai dormir esta noite.","O ônibus escolar vai passar hoje.","Uma criança sentir fome antes do jantar.","Alguém usar guarda-chuva num dia de chuva forte."],
+  "pouco provável":["Amanhã vai chover no deserto do Saara.","Você encontrar um tesouro no quintal.","Ganhar o prêmio de uma rifa com mil bilhetes.","Nevar hoje na cidade de Recife.","Um passarinho pousar na sua mão agora.","Encontrar um trevo de quatro folhas por acaso."],
+  "impossível":["Um cachorro falar português.","Uma pessoa viver 300 anos.","Depois da segunda-feira vir a quinta-feira.","Um dado comum mostrar o número 9.","Uma semana ter dez dias.","Uma pedra solta no ar subir sozinha."]
+};
+function gAcaso2(){
+  var cl=pick(CLASSES),it;
+  if(Math.random()<.625){
+    var cor=pick(["r","a"]),outra=cor==="r"?"a":"r",n=rnd(4,10),k,balls=[],i;
+    if(cl==="certo")k=n;else if(cl==="impossível")k=0;
+    else if(cl==="pouco provável")k=rnd(1,Math.floor(n*.25));else k=rnd(Math.ceil(n*.75),n-1);
+    for(i=0;i<n;i++)balls.push(i<k?cor:outra);balls=embaralhar(balls);
+    it=choice("Vou tirar uma bola "+(cor==="r"?"vermelha":"azul")+" sem olhar. Isso é…",cl,CLASSES.filter(function(x){return x!==cl}),{t:"bolas",balls:balls});
+    it.key="sc40|"+cor+"|"+balls.join("");it.limits=[["n40:t1",5]];it._info={tipo:"saco",cor:cor,n:n,k:k};
+  }else{
+    var fr=pick(FRASES40[cl]);
+    it=choice(fr+" Isso é…",cl,CLASSES.filter(function(x){return x!==cl}),null);it.key="fr40|"+fr;it.limits=[["n40:t2",3]];it._info={tipo:"frase",fr:fr};
+  }
+  return it;
+}
+
+/* Nível 41 — Tabelas de dupla entrada e gráficos de barras (EF02MA22). */
+var TEMAS41=[{t:"Frutas preferidas das turmas",l:["maçã","banana","uva","pera","laranja"]},{t:"Esportes preferidos das turmas",l:["futebol","vôlei","natação","judô","corrida"]},
+  {t:"Bichinhos preferidos das turmas",l:["gato","cachorro","peixe","pássaro","coelho"]},{t:"Cores preferidas das turmas",l:["azul","verde","rosa","amarelo","roxo"]}];
+function maxUnico(v){var m=Math.max.apply(null,v);return v.filter(function(x){return x===m}).length===1}
+function gTabelas(){
+  var r=Math.random(),tm=pick(TEMAS41),it,tipo=r<.375?1:r<.75?2:3;
+  if(Math.random()<2/3){                           /* tabela de dupla entrada */
+    var cols=embaralhar(tm.l).slice(0,3),rows=["Turma A","Turma B"],v,t=0,ri=rnd(0,1),ci=rnd(0,2);
+    do{v=[[rnd(1,15),rnd(1,15),rnd(1,15)],[rnd(1,15),rnd(1,15),rnd(1,15)]]}while(tipo===2&&!maxUnico(v[ri])&&t++<500);
+    var fig={t:"tabela2",title:tm.t,rows:rows,cols:cols,v:v};
+    if(tipo===1)it=typed("Quantas crianças da "+rows[ri]+" escolheram "+cols[ci]+"?",v[ri][ci],fig);
+    else if(tipo===2){var mx=Math.max.apply(null,v[ri]),certa=cols[v[ri].indexOf(mx)];it=choice("Qual opção a "+rows[ri]+" mais escolheu?",certa,cols.filter(function(x){return x!==certa}),fig)}
+    else if(Math.random()<.5){
+      var c2=rnd(0,2),A=v[0][c2],B=v[1][c2];
+      if(A===B){v[1][c2]=B>1?B-1:B+1;B=v[1][c2]}
+      var mai=A>B?0:1;it=typed("Quantas crianças a mais da "+rows[mai]+" do que da "+rows[1-mai]+" escolheram "+cols[c2]+"?",Math.abs(A-B),fig);
+    }else{var c3=rnd(0,2);it=typed("Quantas crianças das duas turmas juntas escolheram "+cols[c3]+"?",v[0][c3]+v[1][c3],fig)}
+    it.limits=[["n41:t"+tipo,3]];it._info={tipo:tipo,tab:true,fig:fig};
+  }else{                                           /* gráfico de barras */
+    var n=rnd(3,5),lab=embaralhar(tm.l).slice(0,n),vals,t2=0;
+    do{vals=lab.map(function(){return rnd(1,10)})}while(tipo===2&&!maxUnico(vals)&&t2++<500);
+    var f={t:"bars",title:tm.t,labels:lab,values:vals};
+    if(tipo===1){var i=rnd(0,n-1);it=typed("Quantas crianças escolheram "+lab[i]+"?",vals[i],f)}
+    else if(tipo===2){var mx2=Math.max.apply(null,vals),cer=lab[vals.indexOf(mx2)];it=choice("Qual opção teve mais votos?",cer,embaralhar(lab.filter(function(x){return x!==cer})).slice(0,3),f)}
+    else if(Math.random()<.5){
+      var a=rnd(0,n-1),b;do{b=rnd(0,n-1)}while(b===a);
+      if(vals[a]===vals[b]){vals[b]=vals[a]>1?vals[a]-1:vals[a]+1;f.values=vals}
+      var big=vals[a]>vals[b]?a:b,sm=big===a?b:a;it=typed("Quantas crianças a mais escolheram "+lab[big]+" do que "+lab[sm]+"?",vals[big]-vals[sm],f);
+    }else{var a2=rnd(0,n-1),b2;do{b2=rnd(0,n-1)}while(b2===a2);it=typed("Quantas crianças escolheram "+lab[a2]+" ou "+lab[b2]+"?",vals[a2]+vals[b2],f)}
+    it.limits=[["n41:t"+tipo,3]];it._info={tipo:tipo,tab:false,fig:f};
+  }
+  return it;
+}
+
 FC.G2=[
   {nivel:1,id:"g2n01",nome:"Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10",hab:["EF02MA09","EF02MA11"],meta:90,gen:gContarDe,ano:2},
   {nivel:2,id:"g2n02",nome:"Nível 2 — Centenas, dezenas e unidades (material dourado)",hab:["EF02MA04"],meta:100,gen:gMaterial,ano:2},
@@ -605,7 +839,16 @@ FC.G2=[
   {nivel:29,id:"g2n29",nome:"Nível 29 — Localização com mais de um ponto de referência",hab:["EF02MA12"],meta:110,gen:gLocal,ano:2},
   {nivel:30,id:"g2n30",nome:"Nível 30 — Deslocamentos em quadriculado",hab:["EF02MA12"],meta:120,gen:gQuadro,ano:2},
   {nivel:31,id:"g2n31",nome:"Nível 31 — Sólidos geométricos",hab:["EF02MA14"],meta:110,gen:gSolidos2,ano:2},
-  {nivel:32,id:"g2n32",nome:"Nível 32 — Figuras planas: lados, vértices e características",hab:["EF02MA15"],meta:110,gen:gPlanas,ano:2}
+  {nivel:32,id:"g2n32",nome:"Nível 32 — Figuras planas: lados, vértices e características",hab:["EF02MA15"],meta:110,gen:gPlanas,ano:2},
+  {nivel:33,id:"g2n33",nome:"Nível 33 — Medir com a régua e comparar comprimentos",hab:["EF02MA16"],meta:110,gen:gRegua,ano:2},
+  {nivel:34,id:"g2n34",nome:"Nível 34 — O contorno (perímetro) de polígonos",hab:["EF02MA16"],meta:120,gen:gContorno,ano:2},
+  {nivel:35,id:"g2n35",nome:"Nível 35 — Capacidade e massa",hab:["EF02MA17"],meta:100,gen:gGrandezas2,ano:2},
+  {nivel:36,id:"g2n36",nome:"Nível 36 — Calendário: a duração entre duas datas",hab:["EF02MA18"],meta:120,gen:gCalendario,ano:2},
+  {nivel:37,id:"g2n37",nome:"Nível 37 — Relógio digital: início, fim e duração",hab:["EF02MA19"],meta:120,gen:gDigital,ano:2},
+  {nivel:38,id:"g2n38",nome:"Nível 38 — Moedas e cédulas: centavos",hab:["EF02MA20"],meta:120,gen:gCentavos,ano:2},
+  {nivel:39,id:"g2n39",nome:"Nível 39 — Moedas e cédulas: reais",hab:["EF02MA20"],meta:120,gen:gReais,ano:2},
+  {nivel:40,id:"g2n40",nome:"Nível 40 — Provável, improvável e impossível",hab:["EF02MA21"],meta:100,gen:gAcaso2,ano:2},
+  {nivel:41,id:"g2n41",nome:"Nível 41 — Tabelas de dupla entrada e gráficos",hab:["EF02MA22"],meta:130,gen:gTabelas,ano:2}
 ];
 FC.G2BY={};FC.G2.forEach(function(e){FC.G2BY[e.id]=e});
 })();
