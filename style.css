@@ -475,3 +475,41 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .offer{border-left:5px solid var(--reward)}
 .offer .actions{margin-top:10px}
 .ano-line{display:block;margin-top:2px}
+
+/* Exercícios com figura e escolha */
+.row.rich-row{align-items:flex-start}
+.rich{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 220px}
+.rq{font-weight:600;font-size:1.05rem;line-height:1.35}
+.fig{display:flex;justify-content:flex-start;max-width:100%}
+.figsvg{display:block;width:100%;max-width:300px;height:auto}
+.figsvg.fig-shape,.figsvg.fig-solid{max-width:130px}
+.figsvg.fig-clock{max-width:190px}
+.figsvg.fig-b10{max-width:220px}
+.figsvg.fig-line{max-width:420px}
+.figsvg.fig-grid{max-width:240px}
+.fig-emoji{display:flex;flex-direction:column;gap:6px}
+.fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}
+.rans{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opts{display:flex;flex-wrap:wrap;gap:10px}
+.opt{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:64px;min-height:52px;padding:8px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;font-size:1.1rem;font-weight:600;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--primary)}
+.opt:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,transparent);outline-offset:2px}
+.opt.sel{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 14%,var(--surface))}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.opt:disabled{cursor:default}
+.opt .figsvg{width:64px;max-width:64px}
+.opt .fig{display:block}
+.opt .figsvg.fig-hat{width:30px;max-width:30px}
+.figsvg.fig-hat{max-width:130px}
+.opt .otx{font-family:var(--font-num)}
+.row.bad .opt.sel{border-color:var(--mark)}
+.sitem{display:flex;flex-direction:column;gap:8px;padding:8px 0}
+.opts.static .opt{cursor:default;position:relative;flex-direction:column;gap:2px}
+.opts.static .opt i{font-style:normal;font-size:.72rem;font-weight:600;color:var(--muted)}
+.opts.static .opt.wrong{border-color:var(--mark)}
+@media (max-width:640px){.items{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none}}
+.adm-ex{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.adm-excard{display:flex;flex-direction:column;gap:6px}
+.figsvg{color:var(--ink)}
+.adm-extools{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:10px 0 4px}
+.adm-dump{width:100%;font-family:var(--font-num);font-size:.8rem;margin-top:8px}

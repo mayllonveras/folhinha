@@ -2,6 +2,8 @@
 
 Estado: **etapa 2 (fundação) implementada neste PR, ainda não aplicada no banco**. As demais etapas seguem em planejamento. O app não está em produção e os alunos atuais são de teste, então o banco pode ser refeito do zero.
 
+Etapa 3 (motor de exercícios) implementada em PR separado: exercícios com **figura** (objetos, dezenas, gráfico de colunas, relógio, reta numérica, malha, formas e sólidos) e de **escolha entre opções**, com 23 geradores ligados às habilidades da BNCC (`exercicios.js`) e prévia na aba **Exercícios** do `/adm`. As contas erradas em reforço passam a guardar a figura e as opções (`weak_items.extra` e `sig`). Migração: `migracoes/2026-11-14-exercicios-figura.sql`. Os geradores ainda não estão em nenhum nível: entram na grade nova (etapa 4).
+
 Etapa 2 entregue: parâmetros editáveis no `/adm`, ano escolar e teto por aluno (ano calculado, sem gravar na virada), regras de dia normal, ouro e salto, oferta de voltar, histórico de mudanças de nível e telas do aluno e dos pais. Migração: `migracoes/2026-11-14-fundacao-avanco.sql`. O ano de cada nível (`levels.ano`) é **provisório** (1 a 4) até a grade nova.
 
 ## Decisões já tomadas

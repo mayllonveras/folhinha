@@ -292,7 +292,7 @@ async function buildSheet(){
   var plan=null;
   try{plan=await rpc("student_sheet_plan",{p_token:S.token})}catch(e){if(FC.isSessionErr(e))throw e}
   if(plan&&plan.mode==="mesma"&&plan.repeat&&plan.repeat.length===10){
-    items=plan.repeat.map(function(p){return{pre:p.pre,post:p.post||"",a:p.a}});
+    items=plan.repeat.map(FC.plainItem);
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
   }else if(plan&&plan.mode==="reforco"&&plan.weak&&plan.weak.length){
     items=FC.shuffle(FC.makeItems(m.level_idx,plan.weak));
@@ -301,9 +301,9 @@ async function buildSheet(){
   }else{items=FC.makeItems(m.level_idx)}
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
   var o=await rpc("student_open_sheet",{p_token:S.token,p_day:day,
-    p_problems:items.map(function(i){return{pre:i.pre,post:i.post,a:i.a}})});
+    p_problems:items.map(FC.plainItem)});
   if(o.reused){
-    items=o.problems.map(function(p){return{pre:p.pre,post:p.post||"",a:p.a}});
+    items=o.problems.map(FC.plainItem);
     intro="Esta é a folha que você deixou aberta. "+base;
   }
   return{id:o.id,items:items,intro:intro,level:m.level_idx,day:day};
@@ -346,17 +346,32 @@ function renderSheet(){
     '<div><span class="k">Data</span><span class="v">'+FC.pad(d.getDate())+'/'+FC.pad(d.getMonth()+1)+'</span></div>'+
     '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span></div></div>'+
     '<ol class="items" id="items">'+cur.items.map(function(it){
-      return '<li class="row" id="r'+it.i+'"><span class="n">'+(it.i+1)+')</span><span class="q">'+esc(it.pre)+'</span><span class="ans"><input id="in'+it.i+'" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Resposta da conta '+(it.i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'')+'</li>'}).join("")+'</ol>'+
+      return '<li class="row'+(FC.isRich(it)?' rich-row':'')+'" id="r'+it.i+'">'+FC.itemInner(it,it.i)+'</li>'}).join("")+'</ol>'+
     '<div class="sh-foot"><div class="msg" id="shMsg">'+esc(cur.intro)+'</div>'+
     '<div class="actions"><button class="btn ghost small" id="btnExit">Sair da folha</button><button class="btn" id="btnSubmit">Entregar folha</button></div></div></div>');
   cur.items.forEach(function(it){
     var inp=$("#in"+it.i);
+    if(it.extra&&it.extra.opts){
+      /* exercício de escolha: os botões gravam o número da opção no campo escondido */
+      $$("#r"+it.i+" .opt").forEach(function(btn){
+        btn.addEventListener("click",function(){
+          if(it.ok)return;
+          inp.value=btn.getAttribute("data-k");
+          $$("#r"+it.i+" .opt").forEach(function(o){o.classList.toggle("sel",o===btn)});
+          $("#r"+it.i).classList.remove("bad");
+          for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
+        });
+        btn.addEventListener("focus",function(){startDwell(it.i)});
+        btn.addEventListener("blur",stopDwell);
+      });
+      return;
+    }
     inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad")});
     inp.addEventListener("focus",function(){startDwell(it.i)});
     inp.addEventListener("blur",stopDwell);
     inp.addEventListener("keydown",function(e){
       if(e.key!=="Enter")return;e.preventDefault();
-      for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){$("#in"+k).focus();return}
+      for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
       submit();
     });
   });
@@ -368,7 +383,13 @@ function renderSheet(){
     var s=(Date.now()-cur.t0)/1000;$("#timer").textContent=FC.fmtTime(s);
     $("#timerBox").classList.toggle("over",s>FC.LEVELS[cur.level].target);
   },250);
-  $("#in0").focus();
+  focusItem(0);
+}
+/* Leva o foco para a conta: a caixa de resposta, ou a primeira opção nos exercícios de escolha. */
+function focusItem(i){
+  var it=cur&&cur.items[i];if(!it)return;
+  var el=(it.extra&&it.extra.opts)?$("#r"+i+" .opt"):$("#in"+i);
+  if(el&&el.focus)el.focus();
 }
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
@@ -378,20 +399,23 @@ function submit(){
   var wrong=0,focus=null;
   cur.items.forEach(function(it){
     if(it.ok)return;
-    var inp=$("#in"+it.i),row=$("#r"+it.i),v=inp.value.trim(),good=v!==""&&Number(v)===it.a;
+    var inp=$("#in"+it.i),row=$("#r"+it.i),v=inp.value.trim(),good=v!==""&&Number(v)===it.a,isChoice=!!(it.extra&&it.extra.opts);
     it.tries++;
     if(it.tries===1){it.first=good;it.firstVal=v}
-    if(good){it.ok=true;inp.readOnly=true;row.classList.remove("bad");row.classList.add("ok");var tp=row.querySelector(".tip");if(tp)tp.remove()}
-    else{
+    if(good){
+      it.ok=true;inp.readOnly=true;row.classList.remove("bad");row.classList.add("ok");var tp=row.querySelector(".tip");if(tp)tp.remove();
+      if(isChoice)$$("#r"+it.i+" .opt").forEach(function(o){o.disabled=true;o.classList.toggle("right",o.classList.contains("sel"))});
+    }else{
       wrong++;row.classList.add("bad");inp.value="";if(focus==null)focus=it.i;
+      if(isChoice)$$("#r"+it.i+" .opt").forEach(function(o){o.classList.remove("sel")});
       if(it.tries>=3&&!row.querySelector(".tip")){var tip=document.createElement("div");tip.className="tip";
-        tip.textContent="Dica: a resposta é "+it.a+". Escreva e tente entender o caminho.";row.appendChild(tip)}
+        tip.textContent=isChoice?"Dica: a resposta certa é a opção "+it.a+". Olhe com calma e tente entender o porquê.":"Dica: a resposta é "+it.a+". Escreva e tente entender o caminho.";row.appendChild(tip)}
     }
   });
   if(wrong===0)return finish();
   setMsg("Faltam "+wrong+" para corrigir. Refaça só as contas em vermelho; as certas já foram marcadas.",true);
   $("#btnSubmit").textContent="Conferir correções";
-  $("#in"+focus).focus();
+  focusItem(focus);
 }
 
 async function finish(){
