@@ -7,6 +7,8 @@ global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_UR
 require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');
 const FC=global.FC,G=FC.G2BY;
 let falhas=0;const falha=(n,m)=>{falhas++;if(falhas<40)console.log("  FALHA",n,m)};
+/* Uma folha real: nível 1 do array (levelIdx 1) tem 8 contas do nível e 2 de revisão do nível anterior. */
+const niv=g=>{FC.LEVELS=[{gen:G.g2n08.gen},{gen:g.gen}];return FC.makeItems(1).filter(p=>!p._rev)};
 const N=6000,draw=g=>{const a=[];for(let i=0;i<N;i++)a.push(g.gen());return a};
 const nums=s=>(s.match(/\d+/g)||[]).map(Number);
 const cnt=(html,cls)=>(html.match(new RegExp('class="'+cls+'"','g'))||[]).length;
@@ -148,22 +150,148 @@ filaTest(6,[1,10,100],100,999,{1:.25,10:.4,100:.35},true);
  console.log("nível 7: arredonda para baixo/cima",JSON.stringify(restos),"posição da certa",pos.slice(1).map(x=>(100*x/N).toFixed(0)+"%").join(" "));
  for(let k=1;k<=4;k++)if(Math.abs(pos[k]/N-.25)>.04)falha(7,"posição da certa não é uniforme");}
 
+/* ---- Níveis 8 a 14: contas de dois e de três algarismos ---- */
+const parseConta=p=>{const m=p.pre.match(/^(\d+) ([+−]) (\d+) =$/);return m?{a:+m[1],op:m[2]==="+"?"+":"-",b:+m[3]}:null};
+const d=(n,i)=>Math.floor(n/10**i)%10;
+const classe=c=>c.op==="+"?((d(c.a,0)+d(c.b,0)>=10)?"soma com":"soma sem"):((d(c.a,0)<d(c.b,0))?"sub com":"sub sem");
+function contas2(nivel,confere,extra){
+  const its=draw(G["g2n"+String(nivel).padStart(2,"0")]),cl={};
+  for(const p of its){const c=parseConta(p);if(!c){falha(nivel,"conta fora do formato: "+p.pre);continue}
+   const r=c.op==="+"?c.a+c.b:c.a-c.b;if(p.a!==r)falha(nivel,"resposta errada: "+p.pre+" "+p.a);
+   if(c.op==="-"&&r<=0)falha(nivel,"subtração zero ou negativa: "+p.pre);
+   if(p.a<=0)falha(nivel,"resposta zero");
+   const k=confere(c,r,p);cl[k||"?"]=(cl[k||"?"]||0)+1;}
+  console.log("nível "+nivel+":",JSON.stringify(cl));return {its,cl};
+}
+contas2(8,(c,r)=>{if(c.a<10||c.a>99||c.b<10||c.b>99)falha(8,"parcela sem dois algarismos");
+ for(const x of [c.a,c.b])for(const i of[0])if(d(x,i)<1||d(x,i)>8)falha(8,"unidade fora de 1 a 8");
+ if(d(c.a,0)+d(c.b,0)>9||d(c.a,1)+d(c.b,1)>9)falha(8,"há reagrupamento: "+c.a+"+"+c.b);if(c.op!=="+")falha(8,"não é soma");return "ok"});
+contas2(9,(c,r)=>{const us=d(c.a,0)+d(c.b,0);if(us<10||us>18)falha(9,"soma das unidades fora de 10 a 18: "+c.a+"+"+c.b);
+ if(r<21||r>99)falha(9,"resultado fora de 21 a 99");if(d(c.a,1)+d(c.b,1)>8)falha(9,"dezenas somam mais de 8");return "ok"});
+contas2(10,(c,r)=>{if(d(c.a,1)<=d(c.b,1))falha(10,"dezena de a não é maior");if(d(c.a,0)<d(c.b,0))falha(10,"precisa emprestar: "+c.a+"-"+c.b);
+ if(d(c.b,0)<1)falha(10,"unidade zero na parcela");if(r<10||r>89)falha(10,"resultado fora de 10 a 89");return "ok"});
+contas2(11,(c,r)=>{if(d(c.a,1)<=d(c.b,1))falha(11,"dezena de a não é maior");if(d(c.a,0)>=d(c.b,0))falha(11,"não precisa emprestar: "+c.a+"-"+c.b);
+ if(r<1||r>79)falha(11,"resultado fora de 1 a 79");return "ok"});
+{const {cl}=contas2(12,(c)=>classe(c));for(const k of["soma sem","soma com","sub sem","sub com"])if(Math.abs((cl[k]||0)/N-.25)>.04)falha(12,"família "+k+" fora de 25%");
+ if(Object.keys(cl).length!==4)falha(12,"classes inesperadas")}
+{ // nível 13: cinco famílias
+ const fam=c=>{const m=x=>x%10===0;if(!m(c.a)||!m(c.b))return "?";
+  if(c.op==="+"){if(c.a%100===0&&c.b%100===0)return 1;if(c.a%100===0&&c.b<100)return 3;return 4}
+  if(c.a%100===0&&c.b%100===0)return 2;return 5};
+ const {its,cl}=contas2(13,(c,r)=>{const f=fam(c);if(f==="?")falha(13,"parcela que não é múltiplo de 10");
+  if(r>1000||r<=0)falha(13,"resultado fora de 1 a 1000");
+  if(f===4&&(d(c.a,1)+d(c.b,1)>9))falha(13,"família 4 passa da centena: "+c.a+"+"+c.b);
+  if(f===5&&(d(c.a,1)<d(c.b,1)||d(c.a,2)<d(c.b,2)))falha(13,"família 5 precisa emprestar: "+c.a+"-"+c.b);
+  if(f===3&&(c.b>90))falha(13,"família 3");return String(f)});
+ for(const k of[1,2,3,4,5])if(Math.abs((cl[k]||0)/N-.2)>.04)falha(13,"família "+k+" fora de 20% nas contas sorteadas");
+ let ruim=0;
+ for(let i=0;i<1500;i++){const it=niv(G.g2n13),c={};it.forEach(p=>{const f=fam(parseConta(p));c[f]=(c[f]||0)+1});
+  if(it.length!==8||c[1]!==1||c[2]!==1||c[3]!==2||c[4]!==2||c[5]!==2)ruim++}
+ console.log("nível 13: folhas sem 1+1+2+2+2",ruim);if(ruim)falha(13,ruim+" folhas fora de 1+1+2+2+2")}
+{const {its}=contas2(14,(c,r)=>{if(c.a<100||c.a>999||c.b<100||c.b>999)falha(14,"parcela sem três algarismos");
+  for(let i=0;i<3;i++){if(c.op==="+"&&d(c.a,i)+d(c.b,i)>9)falha(14,"reagrupa: "+c.a+"+"+c.b);if(c.op==="-"&&d(c.a,i)<d(c.b,i))falha(14,"empresta: "+c.a+"-"+c.b)}
+  if(c.op==="+"&&(r<100||r>999))falha(14,"soma fora de 100 a 999");if(c.op==="-"&&(r<1||r>899))falha(14,"subtração fora de 1 a 899");
+  return c.op==="+"?"soma":"sub"});
+ let z=0;for(const p of its){const c=parseConta(p);if(/0/.test(String(c.a).slice(1)+String(c.b).slice(1)))z++}
+ console.log("nível 14: contas com zero nas dezenas ou unidades",(100*z/N).toFixed(0)+"%");if(z/N<.12||z/N>.35)falha(14,"zeros fora de 12% a 35%");
+ let ruim=0;
+ for(let i=0;i<1500;i++){const it=niv(G.g2n14),s=it.filter(p=>parseConta(p).op==="+").length;if(it.length!==8||s!==4)ruim++}
+ console.log("nível 14: folhas sem 4 somas e 4 subtrações",ruim);if(ruim)falha(14,ruim+" folhas sem 4 e 4")}
+{ // parcelas trocadas nunca na mesma folha (somas dos níveis 8, 9, 12, 13, 14)
+ for(const nivel of [8,9,12,13,14]){const gg=G["g2n"+String(nivel).padStart(2,"0")];let ruim=0;
+  for(let i=0;i<1500;i++){const it=niv(gg).filter(p=>parseConta(p)&&parseConta(p).op==="+"),k=it.map(p=>{const c=parseConta(p);return Math.min(c.a,c.b)+","+Math.max(c.a,c.b)});if(new Set(k).size<k.length)ruim++}
+  console.log("nível "+nivel+": folhas com parcelas trocadas",ruim);if(ruim)falha(nivel,ruim+" folhas com parcelas trocadas")}}
+
+/* ---- Nível 15: o número escondido ---- */
+{const its=draw(G.g2n15),fs={1:0,2:0,3:0,4:0},tot={100:0,red:0,out:0};
+ for(const p of its){
+  const L=(p.pre+" "+p.a+" "+p.post).replace(/−/g,"-").trim(),m=L.split("=");if(m.length!==2){falha(15,"formato: "+L);continue}
+  if(!/^[\d\s+\-]+$/.test(L.replace("=",""))){falha(15,"formato: "+L);continue}
+  if(Function("return ("+m[0]+")===("+m[1]+")")()!==true)falha(15,"a conta não fecha com a resposta: "+L);
+  if(!(p.a>0))falha(15,"resposta zero");
+  const f=p._info.f;fs[f]++;
+  const nums2=nums(L),c=f===1||f===2?nums2[2]:f===3?nums2[0]:p.a;       /* o total: soma ou primeiro número da subtração */
+  if(f===1&&!/^\d+ \+$/.test(p.pre)||f===2&&p.pre!==""||f===3&&!/^\d+ −$/.test(p.pre)||f===4&&p.pre!=="")falha(15,"posição do espaço: "+JSON.stringify(p.pre));
+  if(c>100||c<2)falha(15,"total fora de 2 a 100: "+L);
+  if(f===1&&nums2.some(x=>x>100)||[nums2[0],nums2[1],nums2[2]].some(x=>x>100))falha(15,"número maior que 100");
+  if(c===100)tot[100]++;else if(c%10===0)tot.red++;else tot.out++;
+ }
+ console.log("nível 15: formas",JSON.stringify(fs),"totais 100/redondo/outro",(100*tot[100]/N).toFixed(0)+"%",(100*tot.red/N).toFixed(0)+"%",(100*tot.out/N).toFixed(0)+"%");
+ for(const k in fs)if(Math.abs(fs[k]/N-.25)>.04)falha(15,"forma "+k+" fora de 25%");
+ for(const k of[100,"red","out"])if(Math.abs(tot[k]/N-1/3)>.04)falha(15,"total "+k+" fora de 1/3");
+ let ruim=0;
+ for(let i=0;i<1500;i++){const it=niv(G.g2n15),c={};it.forEach(p=>{c[p._info.f]=(c[p._info.f]||0)+1});if(it.length!==8||[1,2,3,4].some(k=>c[k]!==2))ruim++}
+ console.log("nível 15: folhas sem 2 de cada forma",ruim);if(ruim)falha(15,ruim+" folhas sem 2 de cada forma")}
+
+/* ---- Nível 16: quantos a mais, quantos a menos ---- */
+{const its=draw(G.g2n16);let fig=0,num=0,mais=0;
+ for(const p of its){
+  if(p.extra&&p.extra.fig){fig++;const f=p.extra.fig,[A,B]=f.groups,m=p.pre.match(/^(Quantas|Quantos) (\S+) a (mais|menos) do que (\S+) há aqui\?$/);
+   if(!m){falha(16,"pergunta fora do formato: "+p.pre);continue}
+   const oa=FC.exh.OBJ.find(o=>o.pl===m[2]),ob=FC.exh.OBJ.find(o=>o.pl===m[4]);
+   if(!oa||!ob||oa.e===ob.e){falha(16,"objetos da pergunta: "+p.pre);continue}
+   const na=[A,B].find(g=>g.e===oa.e).n,nb=[A,B].find(g=>g.e===ob.e).n;
+   if(m[1]!==(oa.f?"Quantas":"Quantos"))falha(16,"concordância: "+p.pre);
+   if(A.e===B.e||A.n<6||A.n>20||B.n<6||B.n>20||A.n===B.n)falha(16,"grupos fora do formato");
+   const ok=m[3]==="mais"?na>nb:na<nb;if(!ok)falha(16,"o grupo perguntado não é o "+m[3]+": "+p.pre+" "+na+" "+nb);
+   if(p.a!==Math.abs(na-nb)||p.a<1||p.a>9)falha(16,"diferença errada: "+p.pre+" → "+p.a);if(m[3]==="mais")mais++;
+  }else{num++;const m=p.pre.match(/^(\S+) tem (\d+) (\S+) e (\S+) tem (\d+)\. (Quantas|Quantos) (\S+) (\S+) tem a (mais|menos) do que (\S+)\?$/);
+   if(!m){falha(16,"pergunta fora do formato: "+p.pre);continue}
+   const [,n1,a,ob,n2,b,q,ob2,quem,mm,outra]=m;if(ob!==ob2)falha(16,"objeto diferente na pergunta");
+   if(n1===n2||quem===outra||![n1,n2].includes(quem)||![n1,n2].includes(outra))falha(16,"nomes: "+p.pre);
+   const va=+a,vb=+b,vq=quem===n1?va:vb,vo=quem===n1?vb:va;
+   if((mm==="mais"?vq>vo:vq<vo)!==true)falha(16,"a pessoa perguntada não tem "+mm+": "+p.pre);
+   if(p.a!==Math.abs(va-vb)||p.a<1||p.a>40||va>99||vb>99||va<10||vb<10)falha(16,"números: "+p.pre+" → "+p.a);
+   if(mm==="mais")mais++;}
+ }
+ console.log("nível 16: figura",(100*fig/N).toFixed(0)+"%, números",(100*num/N).toFixed(0)+"%, \"a mais\"",(100*mais/N).toFixed(0)+"%");
+ if(Math.abs(fig/N-.625)>.04)falha(16,"proporção figura");if(Math.abs(mais/N-.5)>.04)falha(16,"a mais / a menos");}
+
+/* ---- Níveis 17 e 18: problemas ---- */
+function problemas(nivel,modo){
+ const its=draw(G["g2n"+nivel]),tp={},rg={sim:0,nao:0};
+ for(const p of its){
+  const w=p.pre.trim().split(/\s+/).length;if(w>18)falha(nivel,"enunciado com "+w+" palavras: "+p.pre);
+  const ns=nums(p.pre),[a,b]=ns,soma=/ têm (juntos|juntas)\?$|há agora\?$/.test(p.pre);
+  if(ns.length!==2)falha(nivel,"número de valores no texto: "+p.pre);
+  const tipo=/ tem \d+ .* e \S+ tem \d+\./.test(p.pre)?"juntar":/^Havia \d+ .*Chegaram/.test(p.pre)?"acrescentar":/ deu \d+ para um amigo/.test(p.pre)?"separar":/Foram embora/.test(p.pre)?"retirar":"?";
+  if(tipo==="?"){falha(nivel,"tipo desconhecido: "+p.pre);continue}
+  tp[tipo]=(tp[tipo]||0)+1;
+  const sm=tipo==="juntar"||tipo==="acrescentar",r=sm?a+b:a-b;
+  if(p.a!==r)falha(nivel,"resposta errada: "+p.pre+" → "+p.a);
+  if(p.a<=0)falha(nivel,"resultado zero ou negativo");
+  if(modo===17){if(a<10||a>99||b<10||b>99)falha(nivel,"números fora de dois algarismos");if(sm&&r>100)falha(nivel,"soma passa de 100")}
+  else{if(a%10||b%10||a<100||b<100||a>990||b>990)falha(nivel,"quantidade que não é múltiplo de 10 de 100 a 990: "+p.pre);if(r>999)falha(nivel,"total passa de 999")}
+  const ua=modo===17?a%10:d(a,1),ub=modo===17?b%10:d(b,1),rg0=sm?(ua+ub>=10):(ua<ub);rg[rg0?"sim":"nao"]++;
+  const mf=p.pre.match(/(Quantas|Quantos) (\S+)/),objs=[["figurinhas",1],["livros",0],["bolas",1],["adesivos",0],["carrinhos",0],["balas",1],["flores",1],["lápis",0],["carros",0],["pássaros",0],["balões",0],["alunos",0],["peixes",0],["pintinhos",0]].find(o=>o[0]===mf[2]);
+  if(!objs||mf[1]!==(objs[1]?"Quantas":"Quantos"))falha(nivel,"concordância: "+p.pre);
+  if(tipo==="juntar"){const mm=p.pre.match(/^(\S+) tem \d+ \S+ e (\S+) tem/);if(mm[1]===mm[2])falha(nivel,"mesmo nome duas vezes");
+   const elas=FC.exh.NAMES.find(n=>n[0]===mm[1])[1]==="f"&&FC.exh.NAMES.find(n=>n[0]===mm[2])[1]==="f";
+   if(!p.pre.includes(" "+(elas?"elas têm juntas":"eles têm juntos")+"?"))falha(nivel,"concordância elas/eles: "+p.pre)}
+ }
+ console.log("nível "+nivel+": tipos",JSON.stringify(tp),"com reagrupamento",(100*rg.sim/N).toFixed(0)+"%");
+ for(const k of["juntar","acrescentar","separar","retirar"])if(Math.abs((tp[k]||0)/N-.25)>.04)falha(nivel,"tipo "+k+" fora de 25%");
+ if(Math.abs(rg.sim/N-.5)>.05)falha(nivel,"reagrupamento fora de 50%");
+}
+problemas("17",17);problemas("18",18);
+
 /* ---- Folhas: 10 contas, sem repetição, com os limites de cada nível ---- */
 for(const g of FC.G2){
-  FC.LEVELS=[{gen:g.gen}];let rep=0,estouro=0;
+  let rep=0,estouro=0,tam=0;
   for(let i=0;i<1500;i++){
-    const it=FC.makeItems(0);
-    if(it.length!==10)falha(g.nivel,"folha sem 10 contas");
-    if(new Set(it.map(FC.itemKey)).size<10)rep++;
+    FC.LEVELS=[{gen:G.g2n08.gen},{gen:g.gen}];const todas=FC.makeItems(1),it=todas.filter(p=>!p._rev);
+    if(todas.length!==10||it.length!==8)tam++;
+    if(new Set(todas.map(FC.itemKey)).size<10)rep++;
     const c={};for(const p of it)for(const l of (p.limits||(p.grp?[[p.grp,p.cap]]:[]))){c[l[0]]=(c[l[0]]||0)+1;if(c[l[0]]>l[1])estouro++}
   }
-  console.log("nível "+g.nivel+": folhas com conta repetida "+rep+" de 1500; folhas acima de um limite "+estouro);
+  console.log("nível "+g.nivel+": folhas sem 8+2 contas "+tam+"; com conta repetida "+rep+"; acima de um limite "+estouro+" (de 1500)");
+  if(tam)falha(g.nivel,tam+" folhas sem 8 contas do nível e 2 de revisão");
   if(rep)falha(g.nivel,rep+" folhas com conta repetida");
   if(estouro)falha(g.nivel,estouro+" estouros de limite");
 }
 { // nível 5: no máximo 1 par de algarismos trocados por folha
- FC.LEVELS=[{gen:G.g2n05.gen}];let ruim=0;
- for(let i=0;i<1500;i++){const it=FC.makeItems(0).filter(p=>p._info&&p._info.modo==="troca");if(it.length>1)ruim++}
+ let ruim=0;
+ for(let i=0;i<1500;i++){const it=niv(G.g2n05).filter(p=>p._info&&p._info.modo==="troca");if(it.length>1)ruim++}
  console.log("nível 5: folhas com mais de 1 par de algarismos trocados",ruim);if(ruim)falha(5,ruim+" folhas com 2 ou mais pares trocados")}
 for(const g of FC.G2)if(!(g.meta>=60&&g.meta<=180))falha(g.nivel,"meta de tempo fora do esperado");
 
