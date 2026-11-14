@@ -337,7 +337,7 @@ async function detail(id){
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
     '<div class="panel"><div class="eyebrow gap">Adultos com acesso</div><ul class="plain">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
-    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
+    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
   var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
@@ -363,7 +363,7 @@ async function detail(id){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadFriends(id);
+  loadSlow(id);loadFriends(id);loadTrades(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
@@ -414,6 +414,18 @@ async function loadFriends(id){
     if(x.error)return FC.toast(FC.err(x.error),true);
     FC.toast("Pronto.");loadFriends(id);
   })});
+}
+/* Trocas do aluno: só leitura. Mostra as feitas, as recusadas e as que estão esperando resposta. */
+async function loadTrades(id){
+  var box=$("#trAdBox");if(!box)return;
+  var r=await sb.rpc("adult_trades",{p_student:id});
+  if(r.error){box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Não deu para carregar.</p>';return}
+  var nm=function(t,sl){return esc(FC.stickerInfo(t,sl).name)+' <span class="muted small-t">('+esc(FC.theme(t).name)+')</span>'};
+  var rows=r.data.map(function(x){
+    var gave=x.sent?[x.give_theme,x.give_slot]:[x.want_theme,x.want_slot],got=x.sent?[x.want_theme,x.want_slot]:[x.give_theme,x.give_slot];
+    var st=x.status==="aceita"?"trocou":x.status==="recusada"?(x.sent?"pedido recusado por":"recusou o pedido de"):(x.sent?"pedido esperando resposta de":"pedido recebido de");
+    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">deu '+nm(gave[0],gave[1])+' e '+(x.status==="aceita"?"recebeu ":"queria ")+nm(got[0],got[1])+'</span></span></li>'}).join("");
+  box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem trocas.</p>')+'<p class="muted small-t gap">Últimas 50. Só para consulta.</p>';
 }
 async function loadSlow(id){
   var box=$("#slowBox");if(!box)return;

@@ -6,6 +6,7 @@
 --    'prob_rara' e 'prob_ultra'), depois uma figurinha daquela raridade. Álbum completo continua rendendo repetidas.
 --  * Troca: só entre amigos. Quem pede escolhe uma repetida sua que o amigo AINDA NÃO TEM (e cujo álbum o amigo tem)
 --    e uma repetida do amigo que falta para si (e cujo álbum a pessoa tem). O amigo aceita ou recusa; vale 7 dias.
+--  * Reserva: uma cópia repetida prometida em um pedido pendente (por quem pediu ou por quem recebeu) não entra em outro.
 --  * Ao aceitar, o servidor confere tudo de novo e troca as duas cópias. Nada passa pelo navegador.
 --  * O aviso em tempo real é só um "toque" (broadcast sem dados) no canal do destinatário; os dados vêm de student_trades.
 --  * Seguro para aplicar com dados em produção: só acrescenta coisas e relaxa a regra de unicidade das figurinhas.
@@ -57,11 +58,17 @@ create or replace function public._are_friends(p_a uuid, p_b uuid) returns boole
 as $$ select exists(select 1 from friendships where status = 'aceita'
         and least(requester, addressee) = least(p_a, p_b) and greatest(requester, addressee) = greatest(p_a, p_b)) $$;
 
+-- Cópias de uma figurinha já prometidas em pedidos pendentes (como oferta de quem pediu ou como pedido ao destinatário).
+-- Reservada = não pode ser prometida de novo em outro pedido.
+create or replace function public._reserved(p_sid uuid, p_theme text, p_slot int, p_ignore uuid) returns int
+ language sql stable security definer set search_path to 'public'
+as $$ select (select count(*) from trades where status = 'pendente' and requester = p_sid and give_theme = p_theme and give_slot = p_slot and id is distinct from p_ignore)::int
+          + (select count(*) from trades where status = 'pendente' and addressee = p_sid and want_theme = p_theme and want_slot = p_slot and id is distinct from p_ignore)::int $$;
+
 -- Confere uma troca. Devolve null se está tudo certo, ou o motivo.
 create or replace function public._trade_problem(p_req uuid, p_adr uuid, gt text, gs int, wt text, ws int, p_ignore uuid) returns text
  language plpgsql stable security definer set search_path to 'public'
 as $$
-declare reservadas int;
 begin
   if not public._are_friends(p_req, p_adr) then return 'nao_sao_amigos'; end if;
   -- o que eu ofereço: repetida minha, álbum do amigo, e o amigo ainda não tem
@@ -71,9 +78,9 @@ begin
   if public._copies(p_adr, gt, gs) > 0 then return 'amigo_ja_tem'; end if;
   if public._copies(p_adr, wt, ws) < 2 then return 'amigo_sem_repetida'; end if;
   if public._copies(p_req, wt, ws) > 0 then return 'voce_ja_tem'; end if;
-  -- não prometer a mesma repetida duas vezes
-  select count(*) into reservadas from trades where requester = p_req and status = 'pendente' and give_theme = gt and give_slot = gs and id is distinct from p_ignore;
-  if public._copies(p_req, gt, gs) - 1 <= reservadas then return 'sem_repetida'; end if;
+  -- reserva: nenhuma cópia repetida pode ser prometida duas vezes (nos dois lados)
+  if public._copies(p_req, gt, gs) - 1 <= public._reserved(p_req, gt, gs, p_ignore) then return 'sem_repetida'; end if;
+  if public._copies(p_adr, wt, ws) - 1 <= public._reserved(p_adr, wt, ws, p_ignore) then return 'amigo_sem_repetida'; end if;
   return null;
 end $$;
 
@@ -133,14 +140,14 @@ begin
   select * into me from students where id = sid;
   select * into o from students where id = oid;
   return jsonb_build_object('name', o.name,
-    'give', coalesce((select jsonb_agg(jsonb_build_object('theme', t.theme, 'slot', t.slot, 'spare', t.n - 1 - coalesce(rs.n, 0)) order by t.theme, t.slot)
+    'give', coalesce((select jsonb_agg(jsonb_build_object('theme', t.theme, 'slot', t.slot, 'spare', t.n - 1 - public._reserved(sid, t.theme, t.slot, null)) order by t.theme, t.slot)
         from (select theme, slot, count(*) n from awards where student_id = sid and kind = 'figurinha' and theme = any(me.sticker_themes) and theme = any(o.sticker_themes) group by theme, slot having count(*) > 1) t
-        left join (select give_theme, give_slot, count(*) n from trades where requester = sid and status = 'pendente' group by 1, 2) rs on rs.give_theme = t.theme and rs.give_slot = t.slot
-       where t.n - 1 - coalesce(rs.n, 0) > 0
+       where t.n - 1 - public._reserved(sid, t.theme, t.slot, null) > 0
          and not exists(select 1 from awards a where a.student_id = oid and a.kind = 'figurinha' and a.theme = t.theme and a.slot = t.slot)), '[]'::jsonb),
-    'get', coalesce((select jsonb_agg(jsonb_build_object('theme', t.theme, 'slot', t.slot, 'spare', t.n - 1) order by t.theme, t.slot)
+    'get', coalesce((select jsonb_agg(jsonb_build_object('theme', t.theme, 'slot', t.slot, 'spare', t.n - 1 - public._reserved(oid, t.theme, t.slot, null)) order by t.theme, t.slot)
         from (select theme, slot, count(*) n from awards where student_id = oid and kind = 'figurinha' and theme = any(me.sticker_themes) and theme = any(o.sticker_themes) group by theme, slot having count(*) > 1) t
-       where not exists(select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = t.theme and a.slot = t.slot)), '[]'::jsonb));
+       where t.n - 1 - public._reserved(oid, t.theme, t.slot, null) > 0
+         and not exists(select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = t.theme and a.slot = t.slot)), '[]'::jsonb));
 end $$;
 
 -- 7. Pedir a troca.
@@ -247,14 +254,31 @@ begin
   perform public._ping(adr);
 end $$;
 
--- 11. Permissões.
+-- 11. Adulto: histórico de trocas do aluno (feitas e em andamento). Só leitura.
+create or replace function public.adult_trades(p_student uuid) returns jsonb
+ language plpgsql security definer set search_path to 'public'
+as $$
+begin
+  if not exists(select 1 from guardians where student_id = p_student and user_id = auth.uid()) then raise exception 'sem_permissao'; end if;
+  return coalesce((select jsonb_agg(x order by (x->>'at') desc) from (
+    select jsonb_build_object('id', t.id, 'status', t.status, 'sent', t.requester = p_student, 'friend', o.name,
+        'give_theme', t.give_theme, 'give_slot', t.give_slot, 'want_theme', t.want_theme, 'want_slot', t.want_slot,
+        'at', coalesce(t.answered_at, t.created_at)) x
+      from trades t join students o on o.id = case when t.requester = p_student then t.addressee else t.requester end
+     where p_student in (t.requester, t.addressee) and t.status in ('pendente','aceita','recusada')
+     order by coalesce(t.answered_at, t.created_at) desc limit 50) q), '[]'::jsonb);
+end $$;
+
+-- 12. Permissões.
 revoke all on function public._copies(uuid, text, int), public._has_album(uuid, text), public._are_friends(uuid, uuid),
-  public._trade_problem(uuid, uuid, text, int, text, int, uuid), public._ping(uuid) from public, anon, authenticated;
+  public._trade_problem(uuid, uuid, text, int, text, int, uuid), public._reserved(uuid, text, int, uuid), public._ping(uuid) from public, anon, authenticated;
 revoke all on function public.student_trade_options(text, uuid), public.student_trade_propose(text, uuid, text, int, text, int),
   public.student_trades(text), public.student_trades_seen(text), public.student_trade_answer(text, uuid, boolean),
   public.student_trade_cancel(text, uuid) from public;
 grant execute on function public.student_trade_options(text, uuid), public.student_trade_propose(text, uuid, text, int, text, int),
   public.student_trades(text), public.student_trades_seen(text), public.student_trade_answer(text, uuid, boolean),
   public.student_trade_cancel(text, uuid) to anon, authenticated;
+revoke all on function public.adult_trades(uuid) from public;
+grant execute on function public.adult_trades(uuid) to authenticated;
 
 commit;
