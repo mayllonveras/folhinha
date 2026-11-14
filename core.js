@@ -58,6 +58,11 @@ FC.err=function(e){
     ["album_invalido","Este álbum não está disponível para você."],
     ["meta_cumprida","A meta de folhas de hoje já foi cumprida."],
     ["convite_invalido","Convite inválido, vencido ou já usado."],
+    ["codigo_invalido","Não existe criança com esse código. Confira se digitou certinho."],
+    ["proprio_codigo","Esse é o seu código. Peça o código ao seu amigo."],
+    ["ja_sao_amigos","Vocês já são amigos."],
+    ["convite_pendente","Você já enviou um convite para essa criança. Agora é só esperar."],
+    ["muitos_convites","Você já tem 10 convites esperando resposta. Cancele algum para enviar outro."],
     ["sem_permissao","Você não tem permissão para isso."],
     ["Password should be","A senha precisa ter pelo menos 8 caracteres."],
     ["rate limit","Muitas tentativas. Aguarde alguns minutos."],
@@ -70,9 +75,10 @@ FC.err=function(e){
 };
 FC.isSessionErr=function(e){return !!(e&&String(e.message||"").indexOf("sessao_invalida")>=0)};
 
-FC.copy=function(text,input){
-  function fallback(){if(input){input.focus();input.select()}FC.toast("Selecione e copie o link manualmente.",true)}
-  try{navigator.clipboard.writeText(text).then(function(){FC.toast("Link copiado.")},fallback)}catch(e){fallback()}
+FC.copy=function(text,input,what){
+  what=what||"link";
+  function fallback(){if(input){input.focus();input.select()}FC.toast("Selecione e copie o "+what+" manualmente.",true)}
+  try{navigator.clipboard.writeText(text).then(function(){FC.toast(what==="código"?"Código copiado.":"Link copiado.")},fallback)}catch(e){fallback()}
 };
 /* Botão que pede um segundo toque para confirmar uma ação destrutiva. */
 FC.confirmClick=function(btn,label,action){
