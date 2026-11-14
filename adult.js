@@ -202,7 +202,7 @@ function showForm(){
   };
 }
 function openStudent(id){FC.tabState.pai="resumo";try{sessionStorage.setItem("fc_tab_pai","resumo")}catch(e){}detail(id)}
-function linkFor(code){return location.origin+location.pathname+"?aluno="+code}
+function linkFor(code){return location.origin+location.pathname+"?aluno="+FC.fmtCode(code)}
 function created(name,code,id){
   var link=linkFor(code);
   FC.render(topbar("Aluno cadastrado")+'<div class="panel"><h1>'+esc(name)+' foi cadastrado</h1>'+
@@ -353,7 +353,7 @@ async function loadFriends(id){
     var st=x.status==="aceita"?"amigo":(x.sent?"convite enviado, esperando resposta":"convidou o aluno, esperando resposta");
     return '<li class="fr-row"><span class="grow"><b>'+esc(x.name)+'</b> <span class="muted small-t">· '+st+'</span></span><button class="btn ghost small" data-unf="'+x.id+'">'+(x.status==="aceita"?"Desfazer":"Remover")+'</button></li>'}).join("");
   box.innerHTML='<div class="eyebrow gap">Amigos do aluno</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem amigos.</p>')+
-    '<p class="muted small-t gap">Código de amigo do aluno: <b class="code">'+esc(d.code)+'</b>. Os amigos veem só o nível, os carimbos e as figurinhas dele.</p>';
+    '<p class="muted small-t gap">Código de amigo do aluno: <b class="code">'+esc(FC.fmtCode(d.code))+'</b>. Os amigos veem só o nível, os carimbos e as figurinhas dele.</p>';
   $$("[data-unf]",box).forEach(function(b){FC.confirmClick(b,"Toque de novo para confirmar",async function(){
     var x=await sb.rpc("adult_friend_remove",{p_student:id,p_id:b.getAttribute("data-unf")});
     if(x.error)return FC.toast(FC.err(x.error),true);
