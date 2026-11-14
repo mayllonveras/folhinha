@@ -133,9 +133,6 @@ Esta é a parte do 3º ano que ensina de vez o **reagrupamento** ("vai um" e "em
 
 Tempo por dia (3 folhas): de 5 a 8,5 minutos.
 
-## Perguntas para o professor (com a minha sugestão)
+## Decisões do professor (14/11/2026)
 
-1. **Nível 8, total 1000 só com múltiplos de 10:** **sugiro** manter, porque é cálculo mental (`450 + ? = 1000`), e deixar o complemento com unidades (`427 + ?`) para o nível 10, que ensina o "empresta".
-2. **Nível 12, `6 000 − 2 348`:** a subtração com zeros em quatro algarismos é a mais difícil do bloco. **Sugiro** incluir (30% dos números maiores com zero), porque é o caso que mais erra e o aluno chega a ele com o nível 10 já treinado.
-3. **Níveis 13 e 14, "comparar" e "completar":** são os dois significados novos do 3º ano. **Sugiro** manter os seis tipos, no máximo 2 de cada por folha, para o aluno ver sempre mais de um significado.
-4. **Nível 15, verdadeira ou falsa:** **sugiro** manter, porque mostra a igualdade como uma balança (os dois lados valem o mesmo), que é o que a habilidade pede.
+Nível 8: total 1000 só com múltiplos de 10; nível 12: a subtração com zeros (`6 000 − 2 348`) entra, em 30% dos números maiores; níveis 13 e 14: os seis significados, no máximo 2 de cada por folha; nível 15: "verdadeira ou falsa" entra.
