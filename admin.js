@@ -54,7 +54,9 @@ async function load(user){
 
 /* ---------- pré-visualização dos exercícios novos (para revisão pedagógica) ---------- */
 function exCard(e){
-  return '<div class="eyebrow">'+esc(e.nome)+'</div><div class="small-t muted">'+esc(e.hab.join(" · "))+'</div>'+FC.itemStatic(e.gen())+FC.itemStatic(e.gen())+
+  var a=e.gen(),b=e.gen(),t=0;
+  while(FC.itemKey(b)===FC.itemKey(a)&&t++<40)b=e.gen();   /* dois exemplos diferentes (quando o gerador tem variedade) */
+  return '<div class="eyebrow">'+esc(e.nome)+'</div><div class="small-t muted">'+esc(e.hab.join(" · "))+'</div>'+FC.itemStatic(a)+FC.itemStatic(b)+
     '<button class="btn ghost small" data-again="'+esc(e.id)+'">Outros exemplos</button>';
 }
 function exHtml(){

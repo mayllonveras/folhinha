@@ -192,7 +192,8 @@ function gWhichShape(list){return function(){var n=pick(list),others=seededShuff
   var mk=function(s){return{fig:{t:"shape",n:s,color:col}}};
   return choice("Qual destas figuras é um "+n+"?",mk(n),others.map(mk),null)}}
 function gSides(){return function(){var list=FIG2D_MAIS.filter(function(n){return SHAPES[n].sides>0}),n=pick(list);
-  return typed("Quantos lados tem esta figura?",SHAPES[n].sides,{t:"shape",n:n,color:pick(SHAPE_COLORS)})}}
+  /* lados e vértices (cantos) são sempre em mesmo número nos polígonos */
+  return typed(Math.random()<.5?"Quantos lados tem esta figura?":"Quantos vértices (cantos) tem esta figura?",SHAPES[n].sides,{t:"shape",n:n,color:pick(SHAPE_COLORS)})}}
 var SOLIDOBJ={"esfera":["⚽","🏀","🌍"],"cubo":["🎲","🧊"],"cilindro":["🥫","🛢️"],"cone":["🍦"],"bloco retangular":["📦","🧱"]};
 function gSolidObject(){var names=Object.keys(SOLIDOBJ),n=pick(names),good=pick(SOLIDOBJ[n]),wr=[];
   /* cubo e bloco retangular não aparecem juntos: o dado também é um bloco retangular, e a caixa pode parecer um cubo */
@@ -245,7 +246,7 @@ FC.EX=[
   {id:"formaPlana",nome:"Nome da figura plana",hab:["EF01MA14","EF02MA15"],gen:gShapeName(FIG2D)},
   {id:"formaPlana2",nome:"Nome da figura plana (mais figuras)",hab:["EF03MA15"],gen:gShapeName(FIG2D_MAIS)},
   {id:"qualFigura",nome:"Qual destas figuras é…",hab:["EF01MA14","EF02MA15"],gen:gWhichShape(FIG2D)},
-  {id:"lados",nome:"Quantos lados tem a figura",hab:["EF03MA15"],gen:gSides()},
+  {id:"lados",nome:"Quantos lados e vértices tem a figura",hab:["EF03MA15"],gen:gSides()},
   {id:"sólidoObjeto",nome:"Objeto com a forma do sólido",hab:["EF01MA13","EF02MA14","EF03MA13"],gen:gSolidObject},
   {id:"sólidoNome",nome:"Nome do sólido geométrico",hab:["EF02MA14","EF03MA13"],gen:gSolidName},
   {id:"relogio",nome:"Ler o relógio (horas e meias horas)",hab:["EF03MA22","EF03MA23"],gen:gClock([0,30])},

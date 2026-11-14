@@ -36,7 +36,7 @@ for(const e of FC.EX){
       if(f.t==="line"&&f.mark!==it.a)falha(e.id,"reta",it);
       if(f.t==="grid"&&f.cells.length!==it.a)falha(e.id,"malha cells",it);
       if(f.t==="grid"&&new Set(f.cells.map(c=>c.join(","))).size!==f.cells.length)falha(e.id,"malha com célula repetida",it);
-      if(f.t==="shape"&&it.pre.startsWith("Quantos lados")){const lados={"quadrado":4,"retângulo":4,"triângulo":3,"trapézio":4,"paralelogramo":4,"losango":4,"pentágono":5,"hexágono":6};if(lados[f.n]!==it.a)falha(e.id,"lados",it)}
+      if(f.t==="shape"&&it.pre.startsWith("Quantos l")||it.pre.startsWith("Quantos v")){const lados={"quadrado":4,"retângulo":4,"triângulo":3,"trapézio":4,"paralelogramo":4,"losango":4,"pentágono":5,"hexágono":6};if(lados[f.n]!==it.a)falha(e.id,"lados",it)}
     }
     if(f&&ex.opts&&f.t==="clock"){const h=f.h,m=f.m,txt=h+":"+(m<10?"0":"")+m;if(ex.opts[it.a-1]!==txt)falha(e.id,"relógio",it)}
     if(f&&ex.opts&&f.t==="shape"&&it.pre.startsWith("Como se chama")&&ex.opts[it.a-1]!==f.n)falha(e.id,"nome da figura",it)

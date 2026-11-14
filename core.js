@@ -218,7 +218,16 @@ FC.shuffle=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.rando
 /* 'keep' = contas que já devem estar na folha (reforço); o resto é sorteado sem repetir. */
 /* Item como vai para o banco: só pre, post, a e (se houver) extra (figura e opções). */
 FC.plainItem=function(p){var o={pre:p.pre,post:p.post||"",a:p.a};if(p.extra)o.extra=p.extra;return o};
-function itemKey(p){return p.pre+"|"+(p.post||"")+"|"+(p.extra?JSON.stringify(p.extra):"")}
+/* Identidade de uma conta, para não repetir na mesma folha: a mesma pergunta com a mesma figura e a mesma resposta certa é a mesma conta,
+   mesmo que as opções erradas, a ordem das opções ou a cor do desenho sejam outras. */
+function figKey(f){return f?JSON.stringify(f,function(k,v){return k==="color"?undefined:v}):""}
+function itemKey(p){
+  var ex=p.extra;
+  if(!ex)return p.pre+"|"+(p.post||"");
+  if(ex.opts)return p.pre+"|"+figKey(ex.fig)+"|"+figKey(ex.opts[p.a-1]||null);
+  return p.pre+"|"+(p.post||"")+"|"+figKey(ex.fig);
+}
+FC.itemKey=itemKey;
 FC.makeItems=function(levelIdx,keep){
   var items=(keep||[]).map(FC.plainItem),seen={},g=0;
   items.forEach(function(p){seen[itemKey(p)]=1});
