@@ -136,7 +136,6 @@ function home(){
   if(canStart){$("#start").onclick=startSheet;prepare()}
   bindOffer(m);
   bindPack();bindAlbum();friendsLoad();TR.step="home";trLoad();
-  if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
 }
 /* ---------- oferta de voltar: depois de um salto sem carimbo, a criança escolhe (nunca é automático) ---------- */
 function offerHtml(m,L){
@@ -491,7 +490,7 @@ function showAward(aw){
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:m.pending_packs>0?"Abrir o próximo":(rep_?"Guardar nas repetidas":"Colar no álbum"),cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(m.pending_packs>0)openPackFlow();else if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   setTimeout(function(){
     FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
     if(tier==="comum"){FC.confetti();return}
@@ -700,8 +699,8 @@ async function send(payload,score){
     if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
       FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);
-      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.'+(themesOf(S.me).length>1?' Você escolhe de qual álbum quer cada figurinha.':'')+'</p>',
-        {button:got>1?"Abrir os pacotinhos":"Abrir o pacotinho",onClose:openPackFlow});
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Seus pacotinhos estão esperando na tela inicial. Toque em <b>Abrir pacotinho</b> quando quiser'+(themesOf(S.me).length>1?' e escolha de qual álbum quer a figurinha':'')+'.</p>',
+        {button:"Entendi"});
     },res.advanced?3600:2300);
   }
   if(res.stamp)FC.sfx.stamp();
