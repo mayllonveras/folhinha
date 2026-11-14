@@ -32,8 +32,8 @@ Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o c
 | 4 | Contar objetos até 20 | EF01MA02, EF01MA04 | existe (`contar20`) | |
 | 5 | Antes, depois e posição na fila | EF01MA01, EF01MA05 | existe (`vizinho` + `fila`) | dois geradores no mesmo nível |
 | 6 | Maior e menor até 20 | EF01MA05 | existe (`maior20`) | |
-| 7 | Somar de 1 a 3 | EF01MA06 | existe (nível atual 2) | |
-| 8 | **Tirar de 1 a 3** | EF01MA06 | ajustar (subtração até 10, tirando só 1, 2 ou 3) | degrau que faltava: a soma tinha etapa de 1 a 3 e a subtração ia direto para "até 10" |
+| 7 | **Somas e subtrações até 5** | EF01MA06 | ajustar (soma e subtração com números até 5, misturadas) | primeiro degrau da soma e da subtração, com números bem pequenos; candidato a 3 carimbos em vez de 5 |
+| 8 | **Somar e tirar de 1 a 3, com números até 10** | EF01MA06 | existe (nível atual 2) + ajustar | soma e subtração misturadas; o gerador atual de "somar 1 a 3" passava de 10 (9 + 3 = 12): corrigir para o resultado nunca passar de 10 |
 | 9 | Somas até 10 | EF01MA06 | existe (nível atual 3) | |
 | 10 | Subtrações até 10 | EF01MA06 | existe (nível atual 4) | |
 | 11 | Somas e subtrações até 10 | EF01MA06, EF01MA08 | existe (nível atual 5) | |
@@ -62,7 +62,7 @@ Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o c
 
 ## O que mudou em relação à primeira versão (30 níveis)
 
-- **Nível 8 (tirar de 1 a 3):** novo, pela observação do professor sobre a assimetria entre soma e subtração.
+- **Níveis 7 e 8:** a escada de soma e subtração agora cresce pelo tamanho do resultado (até 5, depois contas de 1 a 3 com números até 10, depois até 10), com soma e subtração misturadas nesses dois degraus. Nasceu da observação do professor sobre a assimetria entre soma e subtração. Ficam 33 níveis: o degrau "até 5" entrou, e "somar 1 a 3" e "tirar 1 a 3" viraram um nível só.
 - **Nível 22 (problemas até 20):** o problema de juntar e tirar passa a acompanhar o intervalo das contas.
 - **Níveis 29 e 30:** "dias e meses" e "datas" deixam de ser um nível só, porque escrever uma data é mais difícil do que reconhecer os dias e os meses.
 
@@ -70,7 +70,7 @@ Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o c
 
 - **Habilidades treináveis do 1º ano:** 20 de 20. Todas entram em pelo menos um nível.
 - **Fora, por serem atividade de casa:** EF01MA16 (relatar sequência de acontecimentos) e EF01MA22 (pesquisa de campo).
-- **Níveis com gerador pronto:** 18 dos 33. **Com ajuste pequeno:** 6 (níveis 2, 8, 14, 24, 32 e 33).
+- **Níveis com gerador pronto:** 17 dos 33. **Com ajuste pequeno:** 7 (níveis 2, 7, 8, 14, 24, 32 e 33).
   **Com gerador novo:** 9 níveis, que usam 7 geradores (problemas de juntar e tirar, esquerda e direita, atributos, decompor, medidas, calendário, moedas e cédulas).
 
 ## Ordem
