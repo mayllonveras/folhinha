@@ -116,3 +116,7 @@ Tempo por dia (3 folhas): de 5 a 7 minutos.
 1. **Convenção:** `3 × 4` significa "3 grupos de 4", e a figura mostra 3 grupos. De acordo?
 2. **Poucas contas diferentes:** cada tabuada tem só cerca de 9 contas. Com 15 folhas por nível (5 carimbos × 3 folhas), as contas vão se repetir entre as folhas (nunca dentro da mesma). Recomendo aceitar, variando emojis e disposição das figuras. De acordo?
 3. **Resultados até 50** (×5 e ×4 com fator até 10). Fica sem ×10 e sem tabuada do 6 em diante, que são do 3º ano. De acordo?
+
+## Decisões do professor (14/11/2026)
+
+`3 × 4` lê-se "3 grupos de 4"; as contas se repetem entre as folhas (nunca dentro da mesma); tabuadas só até ×5, com resultados até 50.
