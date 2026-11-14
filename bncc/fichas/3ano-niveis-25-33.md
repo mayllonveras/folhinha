@@ -106,7 +106,7 @@ Nos níveis de divisão **o resto só aparece no nível 27** (e nos problemas qu
 
 - **Habilidade:** EF03MA15 (classificar e comparar triângulo, quadrado, retângulo, trapézio e paralelogramo quanto a lados e vértices).
 - **Três tipos de conta**, entre as 8 do nível (3 + 3 + 2):
-  1. **O nome:** "Como se chama esta figura?" → 4 opções entre triângulo, quadrado, retângulo, trapézio e paralelogramo. Todo quadrado é retângulo: com um quadrado na figura, "retângulo" sai das opções; com um retângulo, "quadrado" e "paralelogramo" saem.
+  1. **O nome:** "Como se chama esta figura?" → 3 ou 4 opções entre triângulo, quadrado, retângulo, trapézio e paralelogramo. Todo quadrado é retângulo e paralelogramo: com um quadrado, "retângulo" e "paralelogramo" saem das opções (ficam 3); com um retângulo, "quadrado" e "paralelogramo" saem (3); com um paralelogramo, "quadrado" e "retângulo" saem (3); com um triângulo ou um trapézio ficam 4 opções.
   2. **Qual figura tem…?:** "Qual figura tem **só um par de lados paralelos**?" → trapézio; "...**quatro lados iguais e quatro ângulos retos**" → quadrado; "...**dois pares de lados paralelos e nenhum ângulo reto**" → paralelogramo; "...**3 vértices**" → triângulo. Escolha entre 3 ou 4 figuras desenhadas.
   3. **Pares de lados paralelos:** "Quantos pares de lados paralelos tem esta figura?" → 0 (triângulo), 1 (trapézio) ou 2 (quadrado, retângulo, paralelogramo). A resposta zero é permitida aqui, porque a pergunta é sobre os lados paralelos.
 - **Resposta:** escolha (tipos 1 e 2) e digitada (tipo 3).

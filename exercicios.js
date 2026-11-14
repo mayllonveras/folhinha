@@ -287,6 +287,41 @@ var DRAW={
     for(i=0;i<f.r;i++){h+='<span class="arr-r">';for(j=0;j<f.c;j++)h+='<i>'+f.e+'</i>';h+='</span>'}
     return '<div class="fig-arr" aria-hidden="true">'+h+'</div>';
   },
+  /* figuras de quadradinhos numa malha (3º ano): f.shapes = [{cells:[[x,y],...], color}] em caixas de 5 x 5; f.labels escreve A, B... embaixo */
+  malha2:function(f){
+    var cs=20,box=5*cs,gap=10,k=f.shapes.length,W=k*box+(k-1)*gap+4,H=box+4+(f.labels?18:0),inner="",i,j,s;
+    f.shapes.forEach(function(sh,n){
+      var ox=2+n*(box+gap);
+      for(i=0;i<=5;i++)inner+='<line x1="'+(ox+i*cs)+'" x2="'+(ox+i*cs)+'" y1="2" y2="'+(2+box)+'" stroke="'+C.line+'" stroke-width="1"/><line x1="'+ox+'" x2="'+(ox+box)+'" y1="'+(2+i*cs)+'" y2="'+(2+i*cs)+'" stroke="'+C.line+'" stroke-width="1"/>';
+      sh.cells.forEach(function(c){inner+='<rect class="cel" x="'+(ox+c[0]*cs)+'" y="'+(2+c[1]*cs)+'" width="'+cs+'" height="'+cs+'" fill="'+(sh.color||C.sky)+'" stroke="'+INK+'" stroke-width="1.6"/>'});
+      if(f.labels)inner+='<text x="'+(ox+box/2)+'" y="'+(box+17)+'" text-anchor="middle" font-size="14" font-weight="800" fill="'+INK+'">'+"ABCD".charAt(n)+'</text>';
+    });
+    return svg(W,H,inner,"fig-malha2").replace("<svg ",'<svg style="max-width:'+(k===1?150:270)+'px" ');
+  },
+  /* planificações (3º ano): f.n = cubo-a | cubo-b | bloco | piramide | cilindro | cone; cada face tem class="fc" e data-k (sq, rc, tr, ci, se) */
+  planif:function(f){
+    var inner="",F=function(k,d){return '<'+d+' class="fc" data-k="'+k+'" '},st=' fill="#DCE7FF" stroke="'+INK+'" stroke-width="2" stroke-linejoin="round"/>',rect=function(x,y,w,h,k){return '<rect class="fc" data-k="'+k+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'"'+st};
+    var i,s=34;
+    if(f.n==="cubo-a"||f.n==="cubo-b"){
+      var pos=f.n==="cubo-a"?[[1,0],[0,1],[1,1],[2,1],[3,1],[1,2]]:[[0,0],[0,1],[1,1],[2,1],[3,1],[2,2]];
+      pos.forEach(function(q){inner+=rect(42+q[0]*s,28+q[1]*s,s,s,"sq")});
+    }else if(f.n==="bloco"){
+      var L=52,Wd=34,Hh=30,x0=24,y0=26+Wd;
+      inner+=rect(x0,y0-Wd,L,Wd,"rc")+rect(x0,y0,L,Hh,"rc")+rect(x0+L,y0,Wd,Hh,"rc")+rect(x0+L+Wd,y0,L,Hh,"rc")+rect(x0+2*L+Wd,y0,Wd,Hh,"rc")+rect(x0,y0+Hh,L,Wd,"rc");
+    }else if(f.n==="piramide"){
+      var b=36,cx=110,cy=80;
+      inner+=rect(cx-b/2,cy-b/2,b,b,"sq");
+      [[cx-b/2,cy-b/2,cx+b/2,cy-b/2,cx,cy-b/2-38],[cx-b/2,cy+b/2,cx+b/2,cy+b/2,cx,cy+b/2+38],[cx-b/2,cy-b/2,cx-b/2,cy+b/2,cx-b/2-38,cy],[cx+b/2,cy-b/2,cx+b/2,cy+b/2,cx+b/2+38,cy]].forEach(function(t){
+        inner+='<polygon class="fc" data-k="tr" points="'+t[0]+','+t[1]+' '+t[2]+','+t[3]+' '+t[4]+','+t[5]+'"'+st});
+    }else if(f.n==="cilindro"){
+      var rw=104,rh=44,x1=58,y1=58;
+      inner+=rect(x1,y1,rw,rh,"rc")+'<circle class="fc" data-k="ci" cx="'+(x1+26)+'" cy="'+(y1-16)+'" r="16"'+st+'<circle class="fc" data-k="ci" cx="'+(x1+rw-26)+'" cy="'+(y1+rh+16)+'" r="16"'+st;
+    }else{
+      var R=62,a=Math.PI*2/3,cx2=70,cy2=40,x2=cx2+R*Math.cos(Math.PI/2-a/2),y2=cy2+R*Math.sin(Math.PI/2-a/2),x3=cx2+R*Math.cos(Math.PI/2+a/2),y3=cy2+R*Math.sin(Math.PI/2+a/2);
+      inner+='<path class="fc" data-k="se" d="M'+cx2+','+cy2+' L'+x2.toFixed(1)+','+y2.toFixed(1)+' A'+R+','+R+' 0 0 1 '+x3.toFixed(1)+','+y3.toFixed(1)+' Z"'+st+'<circle class="fc" data-k="ci" cx="'+cx2+'" cy="'+(cy2+R+21)+'" r="21"'+st;
+    }
+    return svg(240,170,inner,"fig-planif");
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;

@@ -1,7 +1,7 @@
 /* Grade do 3º ano — geradores escritos do zero a partir das fichas em bncc/fichas/3ano-*.md.
    Mesma forma dos geradores do 1º e do 2º ano: {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 24 (números até 9999, adição e subtração, igualdades, multiplicação). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
+   Níveis feitos: 1 a 33 (números até 9999, adição e subtração, igualdades, multiplicação, divisão, sólidos, figuras planas e congruência). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,fmt=X.milh;
@@ -512,17 +512,229 @@ function gProbMult(){
   var r=Math.random(),it,k=rnd(2,10),n=rnd(2,10),rc,o;
   if(r<.375){
     rc=pick(RECIP3);o=pick(OIT3);
-    it=typed("Cada "+rc[0]+" tem "+k+" "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",k*n);it.limits=[["n24:t1",3],["o24:"+o[0],1]];it._info={tipo:"parcelas",k:k,n:n};
+    it=typed("Cada "+rc[0]+" tem "+k+" "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",k*n);it.limits=[["n24:t1",3],["o24a:"+o[0],1]];it._info={tipo:"parcelas",k:k,n:n};
   }else if(r<.625){
     var sc=pick(FIL);
-    it=typed(sc[0]+" "+n+" fileiras com "+k+" "+sc[1]+" em cada uma. "+qs3(sc[2])+sc[1]+" há?",k*n);it.limits=[["n24:t2",2],["o24:"+sc[1],1]];it._info={tipo:"fileiras",k:k,n:n};
+    it=typed(sc[0]+" "+n+" fileiras com "+k+" "+sc[1]+" em cada uma. "+qs3(sc[2])+sc[1]+" há?",k*n);it.limits=[["n24:t2",2],["o24b:"+sc[1],1]];it._info={tipo:"fileiras",k:k,n:n};
   }else if(r<.875){
     var c=pick(COMPRA);
-    it=typed(c[2]+" "+c[0]+" custa "+k+" reais. Quanto custam "+n+" "+c[1]+"?",k*n,null,"reais");it.limits=[["n24:t3",2],["o24:"+c[1],1]];it._info={tipo:"compra",k:k,n:n};
+    it=typed(c[2]+" "+c[0]+" custa "+k+" reais. Quanto custam "+n+" "+c[1]+"?",k*n,null,"reais");it.limits=[["n24:t3",2],["o24c:"+c[1],1]];it._info={tipo:"compra",k:k,n:n};
   }else{
     rc=pick(RECIP3);o=pick(OIT3);n=rnd(11,99);
-    it=typed("Cada "+rc[0]+" tem 10 "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",10*n);it.limits=[["n24:t4",1],["o24:"+o[0],1]];it._info={tipo:"por10",k:10,n:n};
+    it=typed("Cada "+rc[0]+" tem 10 "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",10*n);it.limits=[["n24:t4",1],["o24a:"+o[0],1]];it._info={tipo:"por10",k:10,n:n};
   }
+  return it;
+}
+
+/* ===================== Níveis 25 a 33: divisão e geometria ===================== */
+var DIV="÷";
+var OIT2=[["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["bolas",1],["lápis",0]];
+function cap(t){return t.charAt(0).toUpperCase()+t.slice(1)}
+
+/* Nível 25 — Repartir em partes iguais (EF03MA08): repartição com figura (4), medida com figura (2) e por texto (2). */
+function gRepartir(){
+  var r=Math.random(),it,o,d,q,n;
+  if(r<.5){
+    do{d=rnd(2,5);q=rnd(2,10);n=d*q}while(n>50);o=pick(X.OBJ);
+    it=typed("Divida igualmente "+(o.f?"as ":"os ")+n+" "+o.pl+" em "+d+" pratos. "+qs3(o.f)+o.pl+" ficam em cada prato?",q,{t:"reparte",e:o.e,n:n,g:d});
+    it.key="rep25|"+o.e+"|"+d+"|"+q;it.limits=[["n25:t1",4]];it._info={tipo:"reparte",n:n,d:d,q:q};
+  }else if(r<.75){
+    var k,m;do{k=rnd(2,5);m=rnd(2,10);n=k*m}while(n>50);o=pick(X.OBJ);
+    it=typed("Há "+n+" "+o.pl+". Cada prato recebe "+k+". Quantos pratos são necessários?",m,{t:"reparte",e:o.e,n:n,g:0});
+    it.key="med25|"+o.e+"|"+k+"|"+m;it.limits=[["n25:t2",2]];it._info={tipo:"medida",n:n,k:k,m:m};
+  }else{
+    do{d=rnd(2,5);q=rnd(2,10);n=d*q}while(n>50);var ob=pick(OIT2);
+    it=typed("Reparta "+n+" "+ob[0]+" igualmente entre "+d+" amigos. "+qs3(ob[1])+ob[0]+" cada um recebe?",q);
+    it.limits=[["n25:t3",2],["o25:"+ob[0],1]];it._info={tipo:"texto",n:n,d:d,q:q};
+  }
+  return it;
+}
+
+/* Nível 26 — A divisão como inverso da multiplicação (EF03MA08): direta (4), dividendo escondido (2) e pela multiplicação (2). */
+function gDivInv(){
+  var d=rnd(2,10),q=rnd(2,10),n=d*q,r=Math.random(),it,fk=["pf26:"+Math.min(d,q)+","+Math.max(d,q),1];
+  if(r<.5){it=typed(n+" "+DIV+" "+d+" =",q);it.limits=[["n26:dir",4],fk];it._info={tipo:"direta",n:n,d:d,q:q}}
+  else if(r<.75){it=typed("",n,null,DIV+" "+d+" = "+q);it.limits=[["n26:esc",2],fk];it._info={tipo:"escondido",n:n,d:d,q:q}}
+  else{var w=Math.random()<.5;it=typed(d+" × "+q+" = "+n+", então "+n+" "+DIV+" "+(w?d:q)+" =",w?q:d);it.limits=[["n26:inv",2],fk];it._info={tipo:"inverso",n:n,d:d,q:q}}
+  return it;
+}
+
+/* Nível 27 — Divisão com resto (EF03MA08): o quociente (3), o resto (3) e a verificação (2). */
+var RECIP27=[["pacotes","pacote",0],["caixas","caixa",1],["sacos","saco",0]];
+function gResto(){
+  var d,q,rr,n,t=0;
+  do{d=rnd(2,9);q=rnd(2,9);rr=rnd(1,d-1);n=d*q+rr}while((n>80||n<7)&&t++<200);
+  var r=Math.random(),o=pick(X.OBJ),rc=pick(RECIP27),it;
+  if(r<.375){
+    it=typed("Com "+n+" "+o.pl+", "+(rc[2]?"quantas ":"quantos ")+rc[0]+" de "+d+" "+o.pl+" dá para encher?",q,{t:"reparte",e:o.e,n:n,g:0});it.limits=[["n27:t1",3]];it._info={tipo:"quociente",n:n,d:d,q:q,r:rr};
+  }else if(r<.75){
+    it=typed("Com "+n+" "+o.pl+", enchendo "+rc[0]+" de "+d+", "+qs3(o.f).toLowerCase()+o.pl+" sobram?",rr);it.limits=[["n27:t2",3]];it._info={tipo:"resto",n:n,d:d,q:q,r:rr};
+  }else{
+    it=typed(n+" "+DIV+" "+d+" dá "+q+" e sobram "+rr+". Quanto vale "+d+" × "+q+" + "+rr+"?",n);it.limits=[["n27:t3",2]];it._info={tipo:"verificacao",n:n,d:d,q:q,r:rr};
+  }
+  it.key=it._info.tipo+"|"+n+"|"+d+"|"+(o.e);
+  return it;
+}
+
+/* Nível 28 — Metade, terça, quarta, quinta e décima partes (EF03MA09). */
+var PARTES=[[2,"a metade"],[3,"a terça parte"],[4,"a quarta parte"],[5,"a quinta parte"],[10,"a décima parte"]];
+function gPartes(){
+  var pt=pick(PARTES),d=pt[0],q=d===10?rnd(1,10):rnd(2,10),todo=d*q,r=Math.random(),it;
+  if(r<.5){it=typed("Qual é "+pt[1]+" de "+todo+"?",q);it.limits=[["n28:t1",4]];it._info={tipo:"parte",d:d,q:q,todo:todo}}
+  else if(r<.75){it=typed(cap(pt[1])+" de um número é "+q+". Que número é esse?",todo);it.limits=[["n28:t2",2]];it._info={tipo:"todo",d:d,q:q,todo:todo}}
+  else{
+    var n1=pick(NAMES),o=pick(OIT2);
+    it=typed(n1[0]+" tem "+todo+" "+o[0]+" e deu "+pt[1]+" para o irmão. "+qs3(o[1])+o[0]+" "+(n1[1]==="f"?"ela":"ele")+" deu?",q);
+    it.limits=[["n28:t3",2],["nome:"+n1[0],1]];it._info={tipo:"situacao",d:d,q:q,todo:todo};
+  }
+  return it;
+}
+
+/* Nível 29 — Problemas de divisão (EF03MA08): repartição (3), medida (3) e com resto (2). */
+var REC29=[["pacote","pacotes",0],["caixa","caixas",1],["saco","sacos",0],["cesta","cestas",1]];
+function gProbDiv(){
+  var r=Math.random(),it,o=pick(OIT2),d=rnd(2,10),q=rnd(2,10),n1=pick(NAMES);
+  if(r<.375){
+    it=typed(n1[0]+" tem "+d*q+" "+o[0]+" e quer repartir igualmente entre "+d+" amigos. "+qs3(o[1])+o[0]+" cada um recebe?",q);
+    it.limits=[["n29:t1",3],["o29:"+o[0],2],["nome:"+n1[0],1]];it._info={tipo:"reparticao",d:d,q:q};
+  }else if(r<.75){
+    var rc=pick(REC29);
+    it=typed((rc[2]?"Quantas ":"Quantos ")+rc[1]+" de "+d+" "+o[0]+" se formam com "+d*q+" "+o[0]+"?",q);
+    it.limits=[["n29:t2",3],["o29:"+o[0],2]];it._info={tipo:"medida",d:d,q:q};
+  }else{
+    d=rnd(2,9);q=rnd(2,9);var rr=rnd(1,d-1),n=d*q+rr,rc2=pick(REC29);
+    if(Math.random()<.5)it=typed("Com "+n+" "+o[0]+", "+(rc2[2]?"quantas ":"quantos ")+rc2[1]+" de "+d+" "+o[0]+" dá para encher?",q);
+    else it=typed("Com "+n+" "+o[0]+", enchendo "+rc2[1]+" de "+d+", "+qs3(o[1]).toLowerCase()+o[0]+" sobram?",rr);
+    it.limits=[["n29:t3",2],["o29:"+o[0],2]];it._info={tipo:"resto",d:d,q:q,r:rr,n:n};
+  }
+  return it;
+}
+
+/* Nível 30 — Problemas com as quatro operações (EF03MA06, EF03MA07, EF03MA08): 2 problemas de cada operação. */
+var OJ30=[["figurinhas",1],["livros",0],["bolas",1],["adesivos",0],["balas",1],["flores",1]];
+var OS30=[["carros",0],["pássaros",0],["balões",0],["alunos",0],["peixes",0]];
+var REC30=[["caixa","caixas"],["pacote","pacotes"],["saco","sacos"],["cesta","cestas"]];
+function gQuatroOp(){
+  var op=rnd(1,4),it,n1=pick(NAMES),a,b,o;
+  if(op===1){
+    do{a=rnd(100,899);b=rnd(100,899)}while(a+b>999);o=pick(OJ30);
+    it=typed(n1[0]+" tem "+a+" "+o[0]+" e ganhou mais "+b+". "+qs3(o[1])+o[0]+" "+(n1[1]==="f"?"ela":"ele")+" tem agora?",a+b);it.limits=[["n30:soma",2],["nome:"+n1[0],1]];it._info={op:"soma",a:a,b:b};
+  }else if(op===2){
+    do{a=rnd(100,999);b=rnd(100,999)}while(a<=b);o=pick(OS30);
+    it=typed("Havia "+a+" "+o[0]+" e foram embora "+b+". "+qs3(o[1])+o[0]+" ficaram?",a-b);it.limits=[["n30:subtracao",2]];it._info={op:"subtracao",a:a,b:b};
+  }else if(op===3){
+    a=rnd(2,10);b=rnd(2,10);var rc=pick(REC30);o=pick(OJ30);
+    it=typed("Cada "+rc[0]+" tem "+a+" "+o[0]+". "+qs3(o[1])+o[0]+" há em "+b+" "+rc[1]+"?",a*b);it.limits=[["n30:multiplicacao",2],["o30:"+o[0],1]];it._info={op:"multiplicacao",a:a,b:b};
+  }else{
+    a=rnd(2,10);b=rnd(2,10);o=pick(OJ30);
+    it=typed("Reparta "+a*b+" "+o[0]+" igualmente entre "+a+" amigos. "+qs3(o[1])+o[0]+" cada um recebe?",b);it.limits=[["n30:divisao",2],["o30:"+o[0],1]];it._info={op:"divisao",a:a,b:b};
+  }
+  return it;
+}
+
+/* Nível 31 — Sólidos e planificações (EF03MA13, EF03MA14). */
+var SOL31=[["cubo-a","cubo"],["cubo-b","cubo"],["bloco","bloco retangular"],["piramide","pirâmide"],["cilindro","cilindro"],["cone","cone"]];
+function opcoes31(certa){
+  var todos=["cubo","bloco retangular","pirâmide","cilindro","cone"],out=[certa];
+  embaralhar(todos.filter(function(x){return x!==certa})).forEach(function(x){
+    var par=x==="cubo"?"bloco retangular":x==="bloco retangular"?"cubo":null;
+    if(out.length<4&&!(par&&out.indexOf(par)>=0))out.push(x);
+  });
+  return out.slice(1);
+}
+var FACES31=[["um cubo",6,"cubo"],["um bloco retangular",6,"bloco retangular"],["uma pirâmide de base quadrada",5,"pirâmide"]];
+var APAR=[["o cubo","seis quadrados","cubo"],["o bloco retangular","seis retângulos","bloco retangular"],["a pirâmide de base quadrada","um quadrado e quatro triângulos","pirâmide"],["o cilindro","dois círculos e um retângulo","cilindro"]];
+function gPlanif(){
+  var r=Math.random(),it;
+  if(r<.5){
+    var s=pick(SOL31);it=choice("Qual sólido tem esta planificação?",s[1],opcoes31(s[1]),{t:"planif",n:s[0]});it.key="pl31|"+s[0];it.limits=[["n31:t1",4]];it._info={tipo:"nome",n:s[0],certa:s[1]};
+  }else if(r<.75){
+    var f=pick(FACES31);it=typed("Quantas faces tem "+f[0]+"?",f[1]);it.limits=[["n31:t2",2]];it._info={tipo:"faces",n:f[2]};
+  }else{
+    var a=pick(APAR),erradas=APAR.filter(function(x){return x!==a&&!(a[2]==="cubo"&&x[2]==="bloco retangular")&&!(a[2]==="bloco retangular"&&x[2]==="cubo")});
+    var ws=embaralhar(erradas).slice(0,2).map(function(x){return x[1]});
+    it=choice("Na planificação d"+(a[0].charAt(0)==="o"?"o ":"a ")+a[0].replace(/^(o|a) /,"")+" aparecem…",a[1],ws,null);it.key="ap31|"+a[2];it.limits=[["n31:t3",2]];it._info={tipo:"aparecem",n:a[2]};
+  }
+  return it;
+}
+
+/* Nível 32 — Figuras planas: trapézio e paralelogramo (EF03MA15). */
+var PL32=["triângulo","quadrado","retângulo","trapézio","paralelogramo"];
+var CONFL32={"quadrado":["retângulo","paralelogramo"],"retângulo":["quadrado","paralelogramo"],"paralelogramo":["quadrado","retângulo"],"triângulo":[],"trapézio":[]};
+function figPlana(n,cor){
+  if(n==="trapézio"||n==="paralelogramo")return {t:"shape",n:n,color:cor};
+  var f={t:"forma",n:n,color:cor};
+  if(n==="retângulo"){f.o=pick(["h","v"]);f.r=+(1.4+Math.random()*1.1).toFixed(2)}
+  if(n==="triângulo"){f.v=rnd(0,4);f.rot=pick([0,90,180,270])}
+  return f;
+}
+var PARES={"triângulo":0,"trapézio":1,"quadrado":2,"retângulo":2,"paralelogramo":2};
+function gPlanas3(){
+  var r=Math.random(),cor=pick(["#2457D6","#FFB92B","#F27AB0","#1CA97B"]),it,n;
+  if(r<.375){
+    n=pick(PL32);var wr=embaralhar(PL32.filter(function(x){return x!==n&&CONFL32[n].indexOf(x)<0})).slice(0,3),f=figPlana(n,cor);
+    it=choice("Como se chama esta figura?",n,wr,f);it.key="n32|"+n+"|"+JSON.stringify(f);it.limits=[["n32:t1",3]];it._info={tipo:"nome",n:n};
+  }else if(r<.75){
+    var q=pick([["Qual figura tem só um par de lados paralelos?","trapézio"],["Qual figura tem quatro lados iguais e quatro ângulos retos?","quadrado"],["Qual figura tem dois pares de lados paralelos e nenhum ângulo reto?","paralelogramo"],["Qual figura tem 3 vértices?","triângulo"]]);
+    var outros=embaralhar(PL32.filter(function(x){return x!==q[1]&&CONFL32[q[1]].indexOf(x)<0})).slice(0,rnd(2,3));
+    it=choice(q[0],{fig:figPlana(q[1],cor)},outros.map(function(x){return {fig:figPlana(x,cor)}}),null);it.key="q32|"+q[0]+"|"+outros.join(",");it.limits=[["n32:t2",3]];it._info={tipo:"qual",n:q[1]};
+  }else{
+    n=pick(PL32);it=typed("Quantos pares de lados paralelos tem esta figura?",PARES[n],figPlana(n,cor));it.key="p32|"+n+"|"+JSON.stringify(it.extra.fig);it.limits=[["n32:t3",2]];it._info={tipo:"pares",n:n};
+  }
+  return it;
+}
+
+/* Nível 33 — Figuras congruentes na malha (EF03MA16): só rotação e deslocamento, nunca espelho. */
+function normCells(c){var mx=Math.min.apply(null,c.map(function(x){return x[0]})),my=Math.min.apply(null,c.map(function(x){return x[1]}));return c.map(function(x){return [x[0]-mx,x[1]-my]}).sort(function(a,b){return a[0]-b[0]||a[1]-b[1]})}
+function chaveCells(c){return normCells(c).map(function(x){return x.join(",")}).join(";")}
+function giraCells(c){return c.map(function(x){return [-x[1],x[0]]})}
+function espelhaCells(c){return c.map(function(x){return [-x[0],x[1]]})}
+function orientacoes(c,espelho){var out=[],cur=c,i;for(i=0;i<4;i++){out.push(chaveCells(cur));cur=giraCells(cur)}if(espelho){cur=espelhaCells(c);for(i=0;i<4;i++){out.push(chaveCells(cur));cur=giraCells(cur)}}return out}
+function caixa(c){var n=normCells(c);return [Math.max.apply(null,n.map(function(x){return x[0]}))+1,Math.max.apply(null,n.map(function(x){return x[1]}))+1]}
+function conexa(c){
+  var set={},i;c.forEach(function(x){set[x.join(",")]=1});var vis={},pilha=[c[0]];vis[c[0].join(",")]=1;
+  while(pilha.length){var p=pilha.pop();[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){var k=(p[0]+d[0])+","+(p[1]+d[1]);if(set[k]&&!vis[k]){vis[k]=1;pilha.push([p[0]+d[0],p[1]+d[1]])}})}
+  return Object.keys(vis).length===c.length;
+}
+function poliomino(n){
+  var t=0;
+  while(t++<500){
+    var c=[[rnd(0,3),rnd(0,3)]],g=0;
+    while(c.length<n&&g++<200){var b=pick(c),d=pick([[1,0],[-1,0],[0,1],[0,-1]]),x=b[0]+d[0],y=b[1]+d[1];
+      if(x>=0&&x<=3&&y>=0&&y<=3&&!c.some(function(q){return q[0]===x&&q[1]===y}))c.push([x,y])}
+    if(c.length===n){var bx=caixa(c);if(bx[0]<=4&&bx[1]<=4)return normCells(c)}
+  }
+  return [[0,0],[1,0],[1,1],[2,1]];
+}
+function trocaUma(c){                                  /* tira um quadradinho e põe outro em outro lugar: mesma área, forma diferente */
+  var t=0,base=orientacoes(c,true);
+  while(t++<400){
+    var i=rnd(0,c.length-1),resto=c.filter(function(x,k){return k!==i}),b=pick(resto),d=pick([[1,0],[-1,0],[0,1],[0,-1]]),x=b[0]+d[0],y=b[1]+d[1];
+    if(x<0||y<0||x>5||y>5||resto.some(function(q){return q[0]===x&&q[1]===y})||(x===c[i][0]&&y===c[i][1]))continue;
+    var novo=resto.concat([[x,y]]);if(!conexa(novo))continue;var bx=caixa(novo);if(bx[0]>4||bx[1]>4)continue;
+    if(base.indexOf(chaveCells(novo))>=0)continue;
+    return normCells(novo);
+  }
+  return null;
+}
+function centraCells(c){var b=caixa(c),ox=Math.floor((5-b[0])/2),oy=Math.floor((5-b[1])/2);return normCells(c).map(function(x){return [x[0]+ox,x[1]+oy]})}
+function gonga(c){var k=rnd(0,3),cur=c,i;for(i=0;i<k;i++)cur=giraCells(cur);return cur}
+function gCongruente(){
+  var n=rnd(4,6),base=poliomino(n),cor=pick(["#2457D6","#FFB92B","#F27AB0","#1CA97B"]),it;
+  var fig=function(c){return {t:"malha2",shapes:[{cells:centraCells(c),color:cor}]}};
+  if(Math.random()<.625){
+    var igual=gonga(base),erradas=[],t=0;
+    while(erradas.length<2&&t++<100){var e=trocaUma(base);if(e&&erradas.every(function(x){return chaveCells(x)!==chaveCells(e)&&orientacoes(x,true).indexOf(chaveCells(e))<0}))erradas.push(e)}
+    if(erradas.length<2)return gCongruente();
+    var A={t:"malha2",labels:true,shapes:[{cells:centraCells(base),color:cor}]};
+    it=choice("Qual figura é congruente à figura A?",{fig:fig(igual)},erradas.map(function(e){return {fig:fig(e)}}),A);
+    it.limits=[["n33:t1",5]];it._info={tipo:"qual",base:base,n:n};
+  }else{
+    var sim=Math.random()<.5,B=sim?gonga(base):trocaUma(base);if(!B)return gCongruente();
+    var F={t:"malha2",labels:true,shapes:[{cells:centraCells(base),color:cor},{cells:centraCells(B),color:"#8FB0FF"}]};
+    it=choice("Estas figuras são congruentes?",sim?"sim":"não",[sim?"não":"sim"],F);it.limits=[["n33:t2",3]];it._info={tipo:"sim",sim:sim,base:base,B:B,n:n};
+  }
+  it.key="cg33|"+chaveCells(base)+"|"+it._info.tipo+"|"+JSON.stringify(it.extra.opts);
   return it;
 }
 
@@ -550,7 +762,16 @@ FC.G3=[
   {nivel:21,id:"g3n21",nome:"Nível 21 — Tabuada do 8",hab:["EF03MA03"],meta:100,gen:gTabK(8,21),ano:3},
   {nivel:22,id:"g3n22",nome:"Nível 22 — Tabuada do 9",hab:["EF03MA03"],meta:100,gen:gTabK(9,22),ano:3},
   {nivel:23,id:"g3n23",nome:"Nível 23 — Todas as tabuadas, misturadas",hab:["EF03MA03"],meta:110,gen:gTodas,ano:3},
-  {nivel:24,id:"g3n24",nome:"Nível 24 — Problemas de multiplicação",hab:["EF03MA07"],meta:140,gen:gProbMult,ano:3}
+  {nivel:24,id:"g3n24",nome:"Nível 24 — Problemas de multiplicação",hab:["EF03MA07"],meta:140,gen:gProbMult,ano:3},
+  {nivel:25,id:"g3n25",nome:"Nível 25 — Repartir em partes iguais",hab:["EF03MA08"],meta:110,gen:gRepartir,ano:3},
+  {nivel:26,id:"g3n26",nome:"Nível 26 — A divisão como inverso da multiplicação",hab:["EF03MA08"],meta:100,gen:gDivInv,ano:3},
+  {nivel:27,id:"g3n27",nome:"Nível 27 — Divisão com resto",hab:["EF03MA08"],meta:120,gen:gResto,ano:3},
+  {nivel:28,id:"g3n28",nome:"Nível 28 — Metade, terça, quarta, quinta e décima partes",hab:["EF03MA09"],meta:110,gen:gPartes,ano:3},
+  {nivel:29,id:"g3n29",nome:"Nível 29 — Problemas de divisão",hab:["EF03MA08"],meta:150,gen:gProbDiv,ano:3},
+  {nivel:30,id:"g3n30",nome:"Nível 30 — Problemas com as quatro operações",hab:["EF03MA06","EF03MA07","EF03MA08"],meta:150,gen:gQuatroOp,ano:3},
+  {nivel:31,id:"g3n31",nome:"Nível 31 — Sólidos e planificações",hab:["EF03MA13","EF03MA14"],meta:120,gen:gPlanif,ano:3},
+  {nivel:32,id:"g3n32",nome:"Nível 32 — Figuras planas: trapézio e paralelogramo",hab:["EF03MA15"],meta:120,gen:gPlanas3,ano:3},
+  {nivel:33,id:"g3n33",nome:"Nível 33 — Figuras congruentes (malha)",hab:["EF03MA16"],meta:120,gen:gCongruente,ano:3}
 ];
 FC.G3BY={};FC.G3.forEach(function(e){FC.G3BY[e.id]=e});
 FC.extenso=extenso;

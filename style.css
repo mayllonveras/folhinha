@@ -518,6 +518,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-b100{max-width:300px}
 .figsvg.fig-mancha{max-width:100%}
 .figsvg.fig-quad{max-width:290px}
+.figsvg.fig-malha2{max-width:340px}
+.figsvg.fig-planif{max-width:260px}
 .fig-arr{display:flex;flex-direction:column;gap:2px;font-size:1.25rem;line-height:1.15;max-width:300px}
 .fig-arr .arr-r{display:flex;gap:2px}
 .fig-arr i{font-style:normal}
