@@ -176,18 +176,25 @@ function gNeighbor(lo,hi){return function(){var n=rnd(lo,hi),after=Math.random()
   return typed("Que número vem "+(after?"depois":"antes")+" do "+n+"?",after?n+1:n-1)}}
 function gOrdinal(){var n=pick(NAMES),p=rnd(2,9),f=n[1]==="f";
   return typed(n[0]+" é "+(f?"a "+p+"ª":"o "+p+"º")+" da fila. Quantas crianças estão na frente "+(f?"dela":"dele")+"?",p-1)}
-function gShapeName(list){return function(){var n=pick(list),wr=seededShuffle(list.filter(function(x){return x!==n}),"w"+n+rnd(0,999999)).slice(0,3);
+/* Em geometria, alguns nomes valem também para os casos particulares: todo quadrado é retângulo, losango e paralelogramo;
+   todo cubo é um bloco retangular. Uma opção errada nunca pode ser também verdadeira, senão a criança certa leva um erro. */
+var TAMBEM={"retângulo":["quadrado"],"losango":["quadrado"],"paralelogramo":["retângulo","losango","quadrado"],
+  "trapézio":["paralelogramo","retângulo","losango","quadrado"],"bloco retangular":["cubo"]};
+function tambemE(especial,geral){return (TAMBEM[geral]||[]).indexOf(especial)>=0}   /* 'especial' também é 'geral'? */
+FC.TAMBEM=TAMBEM;FC.tambemE=tambemE;
+function gShapeName(list){return function(){var n=pick(list),wr=seededShuffle(list.filter(function(x){return x!==n&&!tambemE(n,x)}),"w"+n+rnd(0,999999)).slice(0,3);
   return choice("Como se chama esta figura?",n,wr,{t:"shape",n:n,color:pick(SHAPE_COLORS)})}}
-function gWhichShape(list){return function(){var n=pick(list),others=seededShuffle(list.filter(function(x){return x!==n}),"o"+n+rnd(0,999999)).slice(0,3),col=pick(SHAPE_COLORS);
+function gWhichShape(list){return function(){var n=pick(list),others=seededShuffle(list.filter(function(x){return x!==n&&!tambemE(x,n)}),"o"+n+rnd(0,999999)).slice(0,3),col=pick(SHAPE_COLORS);
   var mk=function(s){return{fig:{t:"shape",n:s,color:col}}};
   return choice("Qual destas figuras é um "+n+"?",mk(n),others.map(mk),null)}}
 function gSides(){return function(){var list=FIG2D_MAIS.filter(function(n){return SHAPES[n].sides>0}),n=pick(list);
   return typed("Quantos lados tem esta figura?",SHAPES[n].sides,{t:"shape",n:n,color:pick(SHAPE_COLORS)})}}
 var SOLIDOBJ={"esfera":["⚽","🏀","🌍"],"cubo":["🎲","🧊"],"cilindro":["🥫","🛢️"],"cone":["🍦"],"bloco retangular":["📦","🧱"]};
 function gSolidObject(){var names=Object.keys(SOLIDOBJ),n=pick(names),good=pick(SOLIDOBJ[n]),wr=[];
-  seededShuffle(names.filter(function(x){return x!==n}),"s"+n+rnd(0,999999)).slice(0,3).forEach(function(x){wr.push(SOLIDOBJ[x][0])});
+  /* cubo e bloco retangular não aparecem juntos: o dado também é um bloco retangular, e a caixa pode parecer um cubo */
+  seededShuffle(names.filter(function(x){return x!==n&&!tambemE(x,n)&&!tambemE(n,x)}),"s"+n+rnd(0,999999)).slice(0,3).forEach(function(x){wr.push(SOLIDOBJ[x][0])});
   return choice("Qual objeto tem a forma de "+(n==="esfera"||n==="pirâmide"?"uma ":"um ")+n+"?",good,wr,null)}
-function gSolidName(){var list=["cubo","bloco retangular","esfera","cilindro","cone","pirâmide"],n=pick(list),wr=seededShuffle(list.filter(function(x){return x!==n}),"n"+n+rnd(0,999999)).slice(0,3);
+function gSolidName(){var list=["cubo","bloco retangular","esfera","cilindro","cone","pirâmide"],n=pick(list),wr=seededShuffle(list.filter(function(x){return x!==n&&!tambemE(n,x)}),"n"+n+rnd(0,999999)).slice(0,3);
   return choice("Como se chama este sólido?",n,wr,{t:"solid",n:n})}
 function pad2(n){return(n<10?"0":"")+n}
 function gClock(mins){return function(){var h=rnd(1,12),m=pick(mins),good=h+":"+pad2(m),wr=[];
