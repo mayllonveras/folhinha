@@ -442,11 +442,13 @@ function bindAlbum(){$$("[data-album]").forEach(function(b){b.onclick=function()
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
   var ids=themesOf(m);
-  if(ids.length===1)return openPack(ids[0]);
+  var open=ids.filter(function(id){return !isFull(m,id)});
+  if(!open.length){FC.toast("Seus álbuns já estão completos!");return}
+  if(open.length===1)return openPack(open[0]);
   var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum você quer?</p>'+
     '<div class="pack-choices">'+ids.map(function(id){
       var th=FC.theme(id),n=gotOf(m,id).length,full=n>=FC.ALBUM_SIZE;
-      return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themeCover(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Completo! Só repetidas":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
+      return '<button class="pack-choice" data-t="'+id+'"'+(full?" disabled":"")+'><span class="pc-art">'+FC.themeCover(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Álbum completo!":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
     }).join("")+'</div>',{button:"Agora não"});
   $$(".pack-choice",ov.el).forEach(function(b){b.onclick=function(){ov.close();openPack(b.getAttribute("data-t"))}});
 }
