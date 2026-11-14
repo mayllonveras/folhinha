@@ -3,6 +3,13 @@
 Base: inventário `inventario-anos-iniciais.csv` (22 habilidades do 1º ano: 20 treináveis, grupos A e B; fora ficam
 **EF01MA16** e **EF01MA22**, grupo C, que são atividades de casa) e as decisões da etapa 4.
 
+> **Decisão do professor (14/11/2026): a grade é refeita do zero.** Nenhum nível da grade antiga é reaproveitado como está, para não
+> carregar vícios do planejamento anterior, que ficou defasado. A coluna "Gerador" abaixo diz apenas **que peças o app já tem**
+> (desenhos, tipos de resposta, geradores da etapa 3) e que podem servir de material; cada nível será reescrito a partir de uma
+> **ficha** própria (habilidade, parâmetros de dificuldade, tipos de conta, distratores, meta de tempo e testes), e a grade antiga
+> (45 níveis) é descartada. Um exemplo do tipo de vício que isso corrige: o antigo "somar de 1 a 3" sorteava contas com resultado
+> acima de 10 (9 + 3 = 12) antes de o aluno chegar às "somas até 10".
+
 **Critério:** a dificuldade entra aos poucos. Cada degrau novo (uma operação nova, um intervalo maior, um tipo novo de
 exercício) tem o seu nível. Os "30 níveis por ano" são uma **referência de ritmo**, não um limite.
 
@@ -21,8 +28,8 @@ Por isso o teto prático da grade fica em **cerca de 40 níveis por ano**, o que
 Os dias ouro (2 carimbos) aceleram o aluno, e as pausas só atrasam: nada disso estraga a trajetória da criança.
 Quando o aluno chegar perto do final dos níveis do ano, a sugestão de liberar o teto +2 aparece para os pais.
 
-Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o catálogo de exercícios da etapa 3);
-**ajustar** = existe, mas precisa de uma mudança pequena; **novo** = precisa ser escrito.
+Legenda de "Gerador" (só indica o ponto de partida técnico): **existe** = há uma peça pronta no app (um gerador da etapa 3 ou um nível da grade antiga) que pode servir de material;
+**ajustar** = existe, mas muda bastante; **novo** = precisa ser escrito. Em todos os casos o nível é refeito pela ficha.
 
 | Nº | Nível | Habilidades | Gerador | Nota |
 |---|---|---|---|---|
@@ -72,7 +79,7 @@ Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o c
 
 - **Habilidades treináveis do 1º ano:** 20 de 20. Todas entram em pelo menos um nível.
 - **Fora, por serem atividade de casa:** EF01MA16 (relatar sequência de acontecimentos) e EF01MA22 (pesquisa de campo).
-- **Níveis com gerador pronto:** 17 dos 34. **Com ajuste pequeno:** 8 (níveis 2, 7, 8, 14, 17, 25, 33 e 34).
+- **Peças já existentes no app (só como material de partida):** níveis com gerador pronto: 17 dos 34. **Com ajuste pequeno:** 8 (níveis 2, 7, 8, 14, 17, 25, 33 e 34).
   **Com gerador novo:** 9 níveis, que usam 7 geradores (problemas de juntar e tirar, esquerda e direita, atributos, decompor, medidas, calendário, moedas e cédulas).
 
 ## Ordem
@@ -83,15 +90,12 @@ Os níveis de geometria ficam no meio para variar o tipo de exercício entre os 
 
 ## O que acontece com os 45 níveis atuais
 
-Os níveis 1 a 16 da grade atual (sequências, somas e subtrações até 20, dezenas e contas de dois algarismos) são reaproveitados aqui
-(níveis 3, 8, 9–11, 18–22 e 27) e nos próximos anos (contas de dois algarismos no 2º ano). A tabuada, a divisão e as equações
-(níveis 17 a 45) vão para o 3º, 4º e 5º anos, na grade desses anos. Como o app ainda não está em produção, a grade nova substitui a antiga
-quando a migração for aplicada.
+São **descartados**. A tabuada, a divisão e as equações também serão refeitas do zero, quando chegarmos ao 3º, 4º e 5º anos, pelo mesmo
+processo (ficha por nível). Como o app ainda não está em produção, a grade nova substitui a antiga quando a migração for aplicada.
 
 ## Metas de tempo
 
-Os níveis que já existem mantêm a meta de tempo atual (de 90 a 130 segundos por folha). Os novos começam com 120 segundos,
-estimados, e são ajustados depois com dados reais de alunos.
+Todos os níveis começam com meta de tempo estimada na ficha (em torno de 90 a 120 segundos por folha no 1º ano) e são ajustados depois com dados reais de alunos.
 
 ## Para o professor decidir
 
