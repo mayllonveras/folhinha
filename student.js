@@ -124,6 +124,7 @@ function home(){
   FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
     {id:"inicio",label:"Início",icon:"home",html:inicio},
     {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
+    {id:"amigos",label:"Amigos",icon:"friends",html:'<div id="frBox"><p class="loading">Carregando…</p></div>'},
     {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
   FC.bindTabs("aluno");FC.refreshInstall();
   $("#logout").onclick=logout;
@@ -131,8 +132,67 @@ function home(){
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
-  bindPack();bindAlbum();
+  bindPack();bindAlbum();friendsLoad();
   if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
+}
+/* ---------- amigos: cada criança vê só o nível, os carimbos e as figurinhas do outro ---------- */
+async function friendsLoad(){
+  var box=$("#frBox");if(!box)return;
+  try{S.fr=await rpc("student_friends",{p_token:S.token})}
+  catch(e){box.innerHTML='<div class="panel"><p class="muted">Não deu para carregar os amigos.</p><button class="btn ghost small" id="frRetry">Tentar de novo</button></div>';$("#frRetry").onclick=friendsLoad;return}
+  friendsList();
+}
+async function friendsAct(name,args,ok){
+  try{var r=await rpc(name,args);if(ok)FC.toast(typeof ok==="function"?ok(r):ok)}catch(e){FC.toast(FC.err(e),true)}
+  friendsLoad();
+}
+function friendsList(){
+  var box=$("#frBox"),f=S.fr;if(!box||!f)return;
+  var inc=f.incoming.map(function(x){
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">convidou você para ser amigo</div></div>'+
+      '<button class="btn small" data-ans="'+x.id+'" data-ok="1">Aceitar</button><button class="btn ghost small" data-ans="'+x.id+'">Recusar</button></div>'}).join("");
+  var out=f.outgoing.map(function(x){
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">esperando a resposta</div></div><button class="btn ghost small" data-rm="'+x.id+'">Cancelar</button></div>'}).join("");
+  var fr=f.friends.map(function(x){
+    var L=FC.LEVELS[x.level_idx];
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+' · '+x.stamps+' de 5 carimbos</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+  box.innerHTML=
+    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(f.code)+'</div>'+
+      '<p class="muted small-t">Passe este código para quem você quer como amigo.</p><button class="btn ghost small" id="frCopy">Copiar código</button></section>'+
+    '<section class="panel"><b>Convidar um amigo</b><p class="muted small-t">Digite o código que ele passou para você.</p>'+
+      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="CÓDIGO"><button class="btn" type="submit">Enviar convite</button></form></section>'+
+    (inc?'<section class="panel"><b>Convites para você</b>'+inc+'</section>':'')+
+    '<section class="panel"><b>Seus amigos</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
+      '<p class="muted small-t gap">Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.</p></section>'+
+    (out?'<section class="panel"><b>Convites enviados</b>'+out+'</section>':'');
+  $("#frCopy").onclick=function(){var i=document.createElement("input");i.value=f.code;FC.copy(f.code,i,"código")};
+  $("#frForm").onsubmit=function(e){
+    e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
+    friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
+  };
+  $$("[data-ans]",box).forEach(function(b){b.onclick=function(){
+    var ok=!!b.getAttribute("data-ok");
+    friendsAct("student_friend_answer",{p_token:S.token,p_id:b.getAttribute("data-ans"),p_accept:ok},ok?"Amizade feita!":"Convite recusado.")}});
+  $$("[data-rm]",box).forEach(function(b){b.onclick=function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:b.getAttribute("data-rm")},"Convite cancelado.")}});
+  $$("[data-see]",box).forEach(function(b){b.onclick=function(){friendView(b.getAttribute("data-see"))}});
+}
+async function friendView(id){
+  var box=$("#frBox"),v;if(!box)return;
+  try{v=await rpc("student_friend_view",{p_token:S.token,p_id:id})}catch(e){FC.toast(FC.err(e),true);return friendsLoad()}
+  var L=FC.LEVELS[v.level_idx],stamps="";for(var i=0;i<5;i++)stamps+='<span class="stamp'+(i<v.stamps?" on":"")+'">✓</span>';
+  var ids=themesOf(v),tid=ids.indexOf(S.frTheme)>=0?S.frTheme:ids[0];S.frTheme=tid;
+  var got=gotOf(v,tid),th=FC.theme(tid);
+  var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
+  box.innerHTML='<div class="pagehead"><button type="button" class="link crumb" id="frBack">'+FC.icon("back")+'Amigos</button></div>'+
+    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' de '+FC.LEVELS.length+' · '+esc(L.name)+'</div>'+
+      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>'+
+    '<section class="panel">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
+      '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+      '<div class="gap">'+FC.albumHtml(tid,got)+'</div>'+
+      '<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p></section>';
+  $("#frBack").onclick=friendsLoad;
+  $$("[data-ft]",box).forEach(function(b){b.onclick=function(){S.frTheme=b.getAttribute("data-ft");friendView(id)}});
+  FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
 }
 /* ---------- álbuns e pacotinhos ---------- */
 function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}

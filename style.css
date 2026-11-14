@@ -448,3 +448,11 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .form-narrow{margin:0 auto}
 .pin-logo{width:72px;height:72px;border-radius:18px;box-shadow:var(--shadow-2)}
 .authbox>.logo-row{display:flex;justify-content:center;margin-bottom:10px}
+
+/* ---------- amigos ---------- */
+.fr-code{font-family:var(--font-num);font-size:2rem;letter-spacing:.18em;font-weight:700;text-align:center;margin:8px 0}
+.fr-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.fr-add input{flex:1 1 140px;font-family:var(--font-num);font-size:1.2rem;letter-spacing:.18em;text-transform:uppercase;text-align:center}
+.fr-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.fr-row:first-of-type{border-top:0}
+.fr-row .grow{flex:1 1 140px}
