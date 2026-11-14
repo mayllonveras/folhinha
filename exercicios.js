@@ -31,6 +31,8 @@ function typed(pre,a,fig,post){var it={pre:pre,post:post||"",a:a,_calc:a};if(fig
 
 /* ================== FIGURAS ================== */
 var uid=0;
+/* Número com espaço fino de milhar (3º ano): 3456 → "3 456". */
+function milh(v){return String(v).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202F")}
 /* INK: cor do texto do tema (escuro no tema claro, claro no tema escuro); o SVG herda de .figsvg{color:var(--ink)} */
 var INK="currentColor";
 var C={blue:"#2457D6",sky:"#8FB0FF",sun:"#FFB92B",coral:"#F2503F",mint:"#1CA97B",ink:"#14213D",soft:"#E6EDF9",line:"#9DB0CC"};
@@ -183,7 +185,16 @@ var DRAW={
   },
   /* placas de 100, barras de 10 e quadradinhos de 1 (material dourado, 2º ano): f.h placas, f.d barras, f.o quadradinhos */
   placas:function(f){
-    var inner="",pw=44,gap=4,per=6,y=4,i,j,x,py,d;
+    var milhar=f.m!==undefined,inner="",pw=milhar?36:44,gap=4,per=milhar?7:6,y=4,i,j,x,py,d;
+    if(milhar){                                      /* cubos de 1000 (3º ano), em perspectiva */
+      for(i=0;i<f.m;i++){
+        var cx=18+i*32;
+        inner+='<polygon class="cb" points="'+cx+','+y+' '+(cx+14)+','+(y+7)+' '+cx+','+(y+14)+' '+(cx-14)+','+(y+7)+'" fill="#D9CCFF" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>'+
+          '<polygon points="'+(cx-14)+','+(y+7)+' '+cx+','+(y+14)+' '+cx+','+(y+30)+' '+(cx-14)+','+(y+23)+'" fill="#A58BF0" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>'+
+          '<polygon points="'+(cx+14)+','+(y+7)+' '+cx+','+(y+14)+' '+cx+','+(y+30)+' '+(cx+14)+','+(y+23)+'" fill="#7B5FD1" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>';
+      }
+      if(f.m>0)y+=38;
+    }
     for(i=0;i<f.h;i++){
       x=4+(i%per)*(pw+gap);py=y+Math.floor(i/per)*(pw+gap);
       inner+='<rect class="pl" x="'+x+'" y="'+py+'" width="'+pw+'" height="'+pw+'" fill="#7EE0BE" stroke="'+INK+'" stroke-width="1.6"/>';
@@ -301,9 +312,20 @@ var DRAW={
     var W=360,x0=26,x1=334,n=(f.max-f.min)/f.step,inner='<line x1="'+(x0-12)+'" x2="'+(x1+12)+'" y1="68" y2="68" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>',k;
     for(k=0;k<=n;k++){var v=f.min+k*f.step,x=x0+(x1-x0)*k/n,lab=(f.labelEvery?(v-f.min)%f.labelEvery===0:true);
       inner+='<line x1="'+x+'" x2="'+x+'" y1="'+(lab?52:58)+'" y2="'+(lab?84:78)+'" stroke="'+INK+'" stroke-width="'+(lab?3.6:2.4)+'" stroke-linecap="round"/>';
-      if(lab&&v!==f.mark)inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+v+'</text>'}
+      if(lab&&v!==f.mark)inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+(f.milh?milh(v):v)+'</text>'}
     var mx=x0+(x1-x0)*((f.mark-f.min)/f.step)/n;
     inner+='<polygon points="'+mx+',62 '+(mx-11)+',38 '+(mx+11)+',38" fill="'+C.coral+'"/><text x="'+mx+'" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">?</text>';
+    return svg(W,114,inner,"fig-line");
+  },
+  /* reta numérica com pontos marcados por letras (3º ano): f.min, f.max, f.step, f.labelEvery, f.pts = [{v, l}]; o número dos pontos não é escrito */
+  reta2:function(f){
+    var W=360,x0=26,x1=334,n=(f.max-f.min)/f.step,inner='<line x1="'+(x0-12)+'" x2="'+(x1+12)+'" y1="68" y2="68" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>',k;
+    var isPt=function(v){return f.pts.some(function(p){return p.v===v})};
+    for(k=0;k<=n;k++){var v=f.min+k*f.step,x=x0+(x1-x0)*k/n,lab=(f.labelEvery?(v-f.min)%f.labelEvery===0:true);
+      inner+='<line x1="'+x+'" x2="'+x+'" y1="'+(lab?52:58)+'" y2="'+(lab?84:78)+'" stroke="'+INK+'" stroke-width="'+(lab?3.6:2.4)+'" stroke-linecap="round"/>';
+      if(lab&&!isPt(v))inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+milh(v)+'</text>'}
+    f.pts.forEach(function(p){var px=x0+(x1-x0)*((p.v-f.min)/f.step)/n;
+      inner+='<circle class="pt2" cx="'+px+'" cy="68" r="8" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="2"/><text x="'+px+'" y="42" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">'+p.l+'</text>'});
     return svg(W,114,inner,"fig-line");
   },
   /* malha quadriculada com quadradinhos pintados */
@@ -473,6 +495,6 @@ FC.EX=[
 ];
 FC.EXBY={};FC.EX.forEach(function(e){FC.EXBY[e.id]=e});
 /* Auxiliares para os geradores da grade nova (grade1.js). */
-FC.exh={rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
+FC.exh={milh:milh,rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
 FC.SHAPE_NAMES=Object.keys(SHAPES);
 })();
