@@ -32,10 +32,10 @@ FC.stickerInfo=function(themeId,slot){
 /* Cartão de uma figurinha. opts.dim deixa a figurinha apagada (visão do adulto para as que ainda não foram ganhas). */
 FC.stickerHtml=function(themeId,slot,opts){
   var it=FC.stickerInfo(themeId,slot),hue=(slot*37+20)%360,tier=FC.tierOf(themeId,slot);
-  var flip=!(opts&&opts.big)&&FC.theme(themeId).backOf;   // figurinha com verso: ao tocar, vira
+  var flip=!(opts&&(opts.big||opts.noflip))&&FC.theme(themeId).backOf;   // figurinha com verso: ao tocar, vira
   return '<div class="sticker'+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+(tier!=="comum"?" tier-"+tier:"")+(flip?" flippable":"")+'" style="--sh:'+hue+'" title="'+FC.esc(it.name)+'"'+
     (flip?' data-theme="'+themeId+'" data-slot="'+slot+'" role="button" tabindex="0" aria-label="'+FC.esc(it.name)+': tocar para ver o verso"':'')+'>'+
-    '<div class="st-art">'+it.art+'</div>'+(tier!=="comum"?'<div class="st-tier">'+FC.tierName(tier)+'</div>':'')+'<div class="st-name'+(it.name.length>10?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div></div>';
+    '<div class="st-art">'+it.art+'</div>'+(tier!=="comum"?'<div class="st-tier">'+FC.tierName(tier)+'</div>':'')+'<div class="st-name'+(it.name.length>10?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div>'+(opts&&opts.from?'<button type="button" class="st-trade" data-from="'+FC.esc(opts.from)+'" aria-label="Veio de uma troca com '+FC.esc(opts.from)+'. Toque para ver quem deu.">'+FC.icon("swap")+'</button>':'')+(opts&&opts.badge?'<span class="st-x" aria-label="'+opts.badge+(opts.badge>1?' repetidas':' repetida')+'">+'+opts.badge+'</span>':'')+'</div>';
 };
 /* Verso da figurinha: o cartão cresce no meio da tela, vira sozinho e mostra os detalhes. Tocar nele vira de novo. */
 FC.flipCard=function(themeId,slot){
@@ -62,6 +62,12 @@ function openFlip(el){
   if(!el||el.classList.contains("locked"))return;
   FC.flipCard(el.getAttribute("data-theme"),Number(el.getAttribute("data-slot")));
 }
+document.addEventListener("click",function(e){
+  var tb=e.target.closest&&e.target.closest(".st-trade");
+  if(!tb)return;
+  e.stopPropagation();e.preventDefault();
+  FC.overlay('<div class="center">'+FC.icon("swap")+'<h2>Figurinha de troca</h2><p>Esta figurinha veio de uma troca. Quem deu foi <b>'+FC.esc(tb.getAttribute("data-from"))+'</b>.</p></div>',{button:"Fechar"});
+},true);
 document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest(".sticker.flippable");if(el)openFlip(el)});
 document.addEventListener("keydown",function(e){
   if(e.key!=="Enter"&&e.key!==" ")return;
@@ -76,7 +82,7 @@ FC.albumHtml=function(themeId,earned,opts){
   var have={};earned.forEach(function(e){have[e.slot]=e});
   var cells="";
   for(var i=0;i<FC.ALBUM_SIZE;i++){
-    cells+=have[i]?FC.stickerHtml(themeId,i):(opts.adult?FC.stickerHtml(themeId,i,{dim:true}):FC.lockedHtml(i));
+    cells+=have[i]?FC.stickerHtml(themeId,i,have[i].from?{from:have[i].from}:null):(opts.adult?FC.stickerHtml(themeId,i,{dim:true}):FC.lockedHtml(i));
   }
   return '<div class="album">'+cells+'</div>';
 };
