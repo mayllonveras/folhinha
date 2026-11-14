@@ -443,6 +443,18 @@ function albumPane(m){
     '<p class="muted small-t gap">'+(got.length>=FC.ALBUM_SIZE?'Álbum completo! Parabéns! As repetidas ficam na aba Trocas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
     '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
+/* Atualiza na tela, na hora, o aviso de pacotinhos (Início) e o álbum (Álbum) com os dados atuais de S.me. */
+function refreshPacks(){
+  var m=S.me;if(!m)return;
+  $$(".packbox").forEach(function(el){
+    var h=packPanel(m);
+    if(!h){el.remove();return}
+    var t=document.createElement("div");t.innerHTML=h;el.replaceWith(t.firstChild);
+  });
+  var pane=$('.pane[data-pane="album"]');
+  if(pane){pane.innerHTML=albumPane(m);bindAlbum()}
+  bindPack();
+}
 function bindPack(){$$("[data-pack]").forEach(function(b){b.onclick=openPackFlow})}
 function bindAlbum(){$$("[data-album]").forEach(function(b){b.onclick=function(){
   S.albumTheme=b.getAttribute("data-album");
@@ -468,6 +480,7 @@ async function openPack(theme){
   catch(e){FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
   m.pending_packs=res.pending;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
+  refreshPacks();   // a contagem e o álbum já aparecem certos por trás, sem precisar recarregar a página
   showAward(res);
 }
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
