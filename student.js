@@ -268,9 +268,10 @@ function trStop(){
   TR.ch=null;if(TR.poll)clearInterval(TR.poll);TR.poll=null;TR.data=null;TR.hist=null;TR.announced={};TR.step="home";
 }
 function goTrocas(){
+  TR.sub="pedidos";
   FC.tabState.aluno="trocas";try{sessionStorage.setItem("fc_tab_aluno","trocas")}catch(e){}
   var b=$('.navtop [data-tab="trocas"]');
-  if(b&&$('.shell[data-scope="aluno"]'))b.click();else loadHome().catch(fail);
+  if(b&&$('.shell[data-scope="aluno"]')){b.click();TR.step="home";trRender()}else loadHome().catch(fail);
 }
 function trBanner(html){
   var old=$("#trBanner");if(old)old.remove();
@@ -320,14 +321,13 @@ function trRender(){
   var rep=dups.length?'<div class="album gap">'+dups.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>':
     '<p class="muted small-t gap">Você ainda não tem repetidas. Quando um pacotinho trouxer uma figurinha que você já tem, ela aparece aqui, pronta para trocar.</p>';
   box.innerHTML=
-    (inc?'<section class="panel"><b>Pedidos de troca para você</b>'+inc+'</section>':'')+
     '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
-    (out?'<section class="panel"><b>Pedidos que você fez</b>'+out+'</section>':'')+
     '<section class="panel"><div class="album-tabs" role="tablist">'+
+      '<button type="button" class="chip-btn'+(TR.sub==="pedidos"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="pedidos")+'" data-trsub="pedidos">Pedidos ('+(d.incoming.length+d.outgoing.length)+')'+(d.incoming.length?'<span class="tr-dot">'+d.incoming.length+'</span>':'')+'</button>'+
       '<button type="button" class="chip-btn'+(TR.sub==="repetidas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="repetidas")+'" data-trsub="repetidas">Minhas repetidas ('+total+')</button>'+
       '<button type="button" class="chip-btn'+(TR.sub==="feitas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="feitas")+'" data-trsub="feitas">Trocas feitas ('+(TR.hist||[]).length+')</button></div>'+
-      (TR.sub==="feitas"?histHtml():rep)+'</section>';
+      (TR.sub==="pedidos"?reqHtml(inc,out):TR.sub==="feitas"?histHtml():rep)+'</section>';
   $$("[data-trsub]",box).forEach(function(b){b.onclick=function(){TR.sub=b.getAttribute("data-trsub");trRender()}});
   var nb=$("#trNew");if(nb)nb.onclick=function(){TR.step="friend";TR.give=TR.want=TR.opts=null;trFlow()};
   $$("[data-tans]",box).forEach(function(b){b.onclick=function(){trAnswer(b.getAttribute("data-tans"),!!b.getAttribute("data-ok"),b)}});
@@ -335,6 +335,11 @@ function trRender(){
     b.disabled=true;
     try{await rpc("student_trade_cancel",{p_token:S.token,p_id:b.getAttribute("data-tcancel")});FC.toast("Pedido cancelado.")}catch(e){FC.toast(FC.err(e),true)}
     trLoad()}});
+}
+/* Aba Pedidos: os que chegaram para a criança e os que ela fez. */
+function reqHtml(inc,out){
+  if(!inc&&!out)return '<p class="muted small-t gap">Nenhum pedido de troca por enquanto.</p>';
+  return (inc?'<div class="gap"><b>Para você</b>'+inc+'</div>':'')+(out?'<div class="gap"><b>Que você fez</b>'+out+'</div>':'');
 }
 /* Trocas já feitas: com quem, o que a criança deu e o que recebeu. */
 function histHtml(){
