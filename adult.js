@@ -7,10 +7,10 @@ var PUB=null;   /* parâmetros do avanço (leitura): regras, virada do ano, teto
 async function ensurePub(){if(PUB)return;try{var r=await sb.rpc("app_public");if(!r.error&&r.data)PUB=r.data}catch(e){}}
 /* Etiqueta do ano: o que o aluno cursa e de que ano é o conteúdo que ele estuda. */
 function anoLine(s,L,today){
-  var a=FC.anoAluno(s,today,PUB);
-  if(!a)return "Conteúdo do "+FC.ordAno(L.ano);
+  var a=FC.anoAluno(s,today,PUB),h=L.hab&&L.hab.length?" · "+L.hab.join(", "):"";   /* habilidades da BNCC do nível */
+  if(!a)return "Conteúdo do "+FC.ordAno(L.ano)+h;
   var d=L.ano-a;
-  return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"");
+  return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"")+h;
 }
 /* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
 var MIN_SHEETS=3,MIN_DAYS=3,MAX_THEMES=2;

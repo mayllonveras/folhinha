@@ -851,4 +851,32 @@ FC.G2=[
   {nivel:41,id:"g2n41",nome:"Nível 41 — Tabelas de dupla entrada e gráficos",hab:["EF02MA22"],meta:130,gen:gTabelas,ano:2}
 ];
 FC.G2BY={};FC.G2.forEach(function(e){FC.G2BY[e.id]=e});
+
+/* ===================== O 2º ano na grade do app: FC.LEVELS (a trilha é uma só: os níveis do 2º ano seguem os 35 do 1º) ===================== */
+/* Os números das fichas (1 a 41) são do 2º ano; no app o aluno vê a numeração corrida, de 36 a 76. */
+var BASE=FC.LEVELS.length;                          /* 35 */
+var BLOCOS2=[[7,"Números até 1000"],[18,"Adição e subtração até 1000"],[26,"Multiplicação, dobro e metade"],[28,"Padrões e regularidades"],[32,"Geometria"],[39,"Medidas, tempo e dinheiro"],[41,"Dados e acaso"]];
+var DICAS2={1:"Complete o número que falta, contando de 2 em 2, de 5 em 5 ou de 10 em 10.",2:"Cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo e o que o zero faz.",
+  4:"Decomponha o número, como 345 = 300 + 40 + 5.",5:"Escolha o maior, o menor ou a ordem certa dos números.",6:"Complete a fila de números, de 1 em 1, de 10 em 10 ou de 100 em 100.",
+  7:"Compare a mancha de pontos com o quadro de 100 e escolha o número mais perto.",8:"Somas de dois algarismos sem passar da dezena, como 23 + 45.",9:"Somas de dois algarismos com \"vai um\", como 47 + 38.",
+  10:"Subtrações de dois algarismos sem emprestar, como 78 − 45.",11:"Subtrações de dois algarismos com empréstimo, como 82 − 29.",12:"Somas e subtrações de dois algarismos, misturadas.",
+  13:"Contas com centenas e dezenas inteiras, como 200 + 300 e 450 − 250.",14:"Somas e subtrações com três algarismos, sem reagrupar.",15:"Descubra o número que falta na conta, como 38 + ? = 50.",
+  16:"Quantos a mais e quantos a menos? Compare as quantidades.",17:"Problemas de somar e tirar com números até 100.",18:"Problemas de somar e tirar com números até 999.",
+  19:"Conte grupos iguais e some as parcelas, como 4 + 4 + 4.",20:"A tabuada do 2 e o dobro.",21:"A tabuada do 3 e o triplo.",22:"A tabuada do 4.",23:"A tabuada do 5.",
+  24:"As tabuadas do 2, 3, 4 e 5, misturadas.",25:"Divida em partes iguais: a metade e a terça parte.",26:"Problemas com grupos iguais, dobro, triplo e metade.",
+  27:"Descubra o que completa o padrão de figuras, símbolos e palavras.",28:"Descubra a regra da sequência de números.",29:"Entre, à direita de, à esquerda de: onde cada coisa está?",
+  30:"Siga o caminho no quadriculado e conte as casas.",31:"Reconheça cubo, bloco, pirâmide, cone, cilindro e esfera.",32:"Lados, vértices e características das figuras planas.",
+  33:"Meça com a régua, sempre a partir do zero.",34:"Some os lados para achar o contorno da figura.",35:"Litro, mililitro, grama e quilograma: qual unidade usar e o que pesa mais.",
+  36:"Dias da semana, meses e quantos dias entre duas datas.",37:"Leia o relógio digital e calcule quanto tempo passou.",38:"Moedas em centavos: some e troque.",
+  39:"Cédulas e moedas em reais: some e troque.",40:"Impossível, pouco provável, muito provável ou certo?",41:"Leia tabelas e gráficos e compare os números."};
+/* Texto de abertura (aparece no começo da folha). */
+var INTROS2={29:"Lembrete: a esquerda é o lado da sua mão esquerda, e a direita é o lado da sua mão direita.",
+  30:"Lembrete: direita e esquerda são do seu ponto de vista, e para cima é para o alto da tela. A linha 1 é a de baixo.",
+  33:"Lembrete: para medir, comece sempre pelo zero da régua e veja onde a peça termina."};
+FC.G2.forEach(function(e){
+  var grupo=BLOCOS2.filter(function(b){return e.nivel<=b[0]})[0][1];
+  var l={group:grupo,id:String(BASE+e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS2[e.nivel],target:e.meta,gen:e.gen,ano:2,hab:e.hab};
+  if(INTROS2[e.nivel])l.intro=INTROS2[e.nivel];
+  FC.LEVELS.push(l);
+});
 })();
