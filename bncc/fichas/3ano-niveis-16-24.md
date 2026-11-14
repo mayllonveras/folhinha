@@ -107,9 +107,6 @@ A escada deste bloco: **fluência** nas tabuadas do 2 ao 5 e a multiplicação p
 
 Tempo por dia (3 folhas): de 4,5 a 7 minutos.
 
-## Perguntas para o professor (com a minha sugestão)
+## Decisões do professor (14/11/2026)
 
-1. **Convenção do arranjo (nível 18):** "3 fileiras de 5" é `3 × 5`, com as fileiras primeiro, como no 2º ano ("3 grupos de 4"). **Sugiro** manter, para não trocar a ideia que o aluno já tem.
-2. **Dicas de estratégia (níveis 19 a 22):** uma dica curta por tabuada, na tela do nível. **Sugiro** incluir; a do 9 (os algarismos do resultado somam 9) e a do 6 (o dobro do 3) ajudam muito.
-3. **Fatores de 2 a 10 (sem o 1):** o 1 × n já é sabido desde o 2º ano. **Sugiro** manter de fora.
-4. **"Vezes mais" (nível 24):** a expressão "4 vezes mais" é ambígua em português (para alguns é 4 ×, para outros 5 ×). **Sugiro** deixar de fora e usar só parcelas iguais, disposição retangular, compra e "por 10".
+`3 × 5` lê-se "3 fileiras de 5" (fileiras primeiro); uma dica curta de estratégia nos níveis 19 a 22 (6: o dobro do 3; 7; 8: o dobro do dobro do dobro; 9: os algarismos do resultado somam 9); fatores de 2 a 10, sem o 1; "vezes mais" fica de fora do nível 24.
