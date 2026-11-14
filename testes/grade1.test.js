@@ -7,6 +7,7 @@ global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_UR
 require('../core.js');require('../exercicios.js');require('../grade1.js');
 const FC=global.FC,G=FC.G1BY,OBJ=FC.exh.OBJ,NAMES=FC.exh.NAMES;
 let falhas=0;const falha=(n,m)=>{falhas++;if(falhas<40)console.log("  FALHA",n,m)};
+const FRASES34={"Com certeza":["Depois do sábado vem o domingo.","Lançar um dado comum e sair um número de 1 a 6.","Uma semana tem sete dias.","Todo ano tem doze meses.","Se hoje é segunda-feira, amanhã é terça-feira.","Ao soltar uma pedra do alto, ela cai.","A noite vem depois da tarde.","Dois mais dois é igual a quatro."],"Impossível":["Uma pessoa viva ter 300 anos de idade.","Uma pessoa nascer com 10 anos de idade.","Uma semana ter dez dias.","Sair o número 7 ao lançar um dado comum.","Um dado comum mostrar o número zero.","Depois da segunda-feira vir a quinta-feira.","O dia ter trinta e cinco horas.","Um mês do calendário ter 40 dias."],"Talvez":["Chover amanhã.","Sair cara ao lançar uma moeda.","Sortear um menino numa turma de meninos e meninas.","Encontrar um amigo no parque.","Sair o número 3 ao lançar um dado.","Ganhar um jogo de cartas.","Fazer sol no sábado.","Tirar uma figurinha repetida do pacotinho."]};
 const N=6000,fra=(c,t)=>c/t;
 const draw=g=>{const a=[];for(let i=0;i<N;i++)a.push(g.gen());return a};
 const tem=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
@@ -406,8 +407,123 @@ for(const [nivel,permitidas,total] of [[19,["somaSem"],72],[20,["somaPassa","som
  console.log("nível 29: tipos",JSON.stringify(Object.fromEntries(Object.entries(tp).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
  for(const k in tp)if(Math.abs(tp[k]/N-.25)>.04)falha(29,"proporção do tipo "+k);}
 
+/* ---- Níveis 30 a 35 ---- */
+const DIAS=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+const MESES=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const dist3=(its,fn,alvo,nome,nivel,tol=.05)=>{const c={};its.forEach(p=>{const k=fn(p);c[k]=(c[k]||0)+1});
+  console.log("nível "+nivel+": "+nome,JSON.stringify(Object.fromEntries(Object.entries(c).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
+  for(const [k,v] of Object.entries(alvo))if(Math.abs((c[k]||0)/N-v)>tol)falha(nivel,"proporção de "+k+": "+((c[k]||0)/N).toFixed(2)+" (esperado "+v+")")};
+{ // nível 30
+ const its=draw(G.g1n30);
+ const razaoOk=sz=>{const o=[...sz].sort((a,b)=>a-b);return o[1]/o[0]>=1.249&&o[2]/o[1]>=1.249};
+ for(const p of its){const f=p.extra.fig,o=p.extra.opts;let m;
+  if(f.t==="barras"){
+   m=p.pre.match(/^Qual é a barra mais (comprida|curta|alta|baixa|larga|estreita)\?$/);if(!m){falha(30,"pergunta: "+p.pre);continue}
+   const par={h:["comprida","curta"],v:["alta","baixa"],w:["larga","estreita"]}[f.orient];if(!par.includes(m[1]))falha(30,"palavra "+m[1]+" não combina com a orientação "+f.orient);
+   if(!razaoOk(f.sizes))falha(30,"tamanhos próximos: "+f.sizes);
+   const alvo=m[1]===par[0]?Math.max(...f.sizes):Math.min(...f.sizes);
+   if(o[p.a-1]!=="ABC"[f.sizes.indexOf(alvo)])falha(30,"letra errada");if(o.join("")!=="ABC".split("").filter((x,i)=>true).sort().join("")&&new Set(o).size!==3)falha(30,"opções");
+   if(f.orient==="h"&&Math.max(...f.sizes)*250>262)falha(30,"barra passa da caixa");if(f.sizes.some(x=>x<=0||x>1))falha(30,"tamanho fora de 0 a 1")}
+  else if(f.t==="potes"){
+   m=p.pre.match(/^Em qual pote (cabe mais|cabe menos)\?$/);if(!m){falha(30,"pergunta: "+p.pre);continue}
+   if(!razaoOk(f.sizes))falha(30,"potes parecidos: "+f.sizes);
+   const alvo=m[1]==="cabe mais"?Math.max(...f.sizes):Math.min(...f.sizes);if(o[p.a-1]!=="ABC"[f.sizes.indexOf(alvo)])falha(30,"pote errado")}
+  else if(f.t==="balanca"){
+   m=p.pre.match(/^Qual é o mais (pesado|leve)\?$/);if(!m){falha(30,"pergunta: "+p.pre);continue}
+   if(Math.abs(f.a)!==12||f.l===f.r)falha(30,"balança: "+JSON.stringify(f));
+   const baixo=f.a>0?f.r:f.l,alto=f.a>0?f.l:f.r;if(o[p.a-1]!==(m[1]==="pesado"?baixo:alto))falha(30,"a resposta não vem da inclinação");
+   if(new Set(o).size!==2||!o.includes(f.l)||!o.includes(f.r))falha(30,"opções da balança");
+   const h=FC.fig(f);if(!h.includes(f.l)||!h.includes(f.r))falha(30,"objetos fora do desenho")}
+  else falha(30,"figura desconhecida")}
+ dist3(its,p=>p.extra.fig.t,{barras:.375,potes:.375,balanca:.25},"tipos",30);}
+{ // nível 31
+ const its=draw(G.g1n31),EV={"tomar o café da manhã":"de manhã","acordar para ir à escola":"de manhã","tomar o lanche da tarde":"de tarde","brincar depois do almoço":"de tarde","jantar":"de noite","ver as estrelas no céu":"de noite","escovar os dentes antes de dormir":"de noite"};
+ for(const p of its){let m;const o=p.extra&&p.extra.opts;
+  if((m=p.pre.match(/^(.+) é de manhã, de tarde ou de noite\?$/))){const ev=m[1].charAt(0).toLowerCase()+m[1].slice(1);
+    if(EV[ev]===undefined)falha(31,"acontecimento desconhecido: "+ev);else if(o[p.a-1]!==EV[ev])falha(31,"período errado para "+ev);if(new Set(o).size!==3)falha(31,"opções")}
+  else if((m=p.pre.match(/^Que dia vem (depois|antes) (do|da) (.+)\?$/))){const i=DIAS.indexOf(m[3]);
+    if(i<0)falha(31,"dia desconhecido: "+m[3]);else{if(m[2]!==((i===0||i===6)?"do":"da"))falha(31,"artigo: "+p.pre);
+      const cert=DIAS[(i+(m[1]==="depois"?1:6))%7];if(o[p.a-1]!==cert)falha(31,"dia errado: "+p.pre);
+      if(new Set(o).size!==4||o.some(x=>!DIAS.includes(x)))falha(31,"opções de dias")}}
+  else if((m=p.pre.match(/^Que mês vem (depois|antes) de (.+)\?$/))){const j=MESES.indexOf(m[2]);
+    if(j<0)falha(31,"mês desconhecido");else{const cert=MESES[(j+(m[1]==="depois"?1:11))%12];if(o[p.a-1]!==cert)falha(31,"mês errado: "+p.pre);
+      if(new Set(o).size!==4||o.some(x=>!MESES.includes(x)))falha(31,"opções de meses")}}
+  else if(p.pre==="Quantos dias tem a semana?"){if(p.a!==7)falha(31,"semana")}
+  else if(p.pre==="O ano tem quantos meses?"){if(p.a!==12)falha(31,"ano")}
+  else falha(31,"pergunta desconhecida: "+p.pre)}
+ dist3(its,p=>/manhã/.test(p.pre)?"periodo":/Que dia|dias tem/.test(p.pre)?"dias":"meses",{periodo:.375,dias:.375,meses:.25},"tipos",31);}
+{ // nível 32
+ const its=draw(G.g1n32);
+ for(const p of its){const f=p.extra&&p.extra.fig;let m;
+  if(f){if(f.t!=="calendario"){falha(32,"figura");continue}
+   const ult0=new Date(f.y,f.m+1,0).getDate(),h=FC.fig(f),dias=(h.match(/<span>\d+<\/span>/g)||[]).length,vazios=(h.match(/<span><\/span>/g)||[]).length;
+   if(dias!==ult0)falha(32,"calendário com "+dias+" dias, esperados "+ult0);if(vazios!==new Date(f.y,f.m,1).getDay())falha(32,"espaços antes do dia 1: "+vazios);
+   if(f.y<2026||f.y>2028)falha(32,"ano fora de 2026 a 2028")}
+  const ult=f?new Date(f.y,f.m+1,0).getDate():31;
+  if((m=p.pre.match(/^Neste calendário, o dia (\d+) cai em que dia da semana\?$/))){const d=+m[1];if(d<1||d>ult)falha(32,"dia fora do mês");
+    if(p.extra.opts[p.a-1]!==DIAS[new Date(f.y,f.m,d).getDay()])falha(32,"dia da semana errado");if(new Set(p.extra.opts).size!==4)falha(32,"opções")}
+  else if((m=p.pre.match(/^Qual é o dia do mês d(o primeiro|a primeira) (.+)\?$/))){const wd=DIAS.indexOf(m[2]);
+    if(wd<0)falha(32,"dia desconhecido");let a=1;while(new Date(f.y,f.m,a).getDay()!==wd)a++;if(p.a!==a||a>7)falha(32,"primeiro dia errado: "+p.pre);
+    if(m[1]!==((wd===0||wd===6)?"o primeiro":"a primeira"))falha(32,"concordância: "+p.pre)}
+  else if((m=p.pre.match(/^(Quantos|Quantas) (.+) tem este mês\?$/))){
+    let wd=DIAS.findIndex(d=>m[2]===(d==="domingo"||d==="sábado"?d+"s":d.replace("-feira","")+"s-feiras"));if(wd<0){falha(32,"plural desconhecido: "+m[2]);continue}
+    if(m[1]!==((wd===0||wd===6)?"Quantos":"Quantas"))falha(32,"Quantos/Quantas: "+p.pre);
+    let q=0;for(let k=1;k<=ult;k++)if(new Date(f.y,f.m,k).getDay()===wd)q++;if(p.a!==q||(q!==4&&q!==5))falha(32,"contagem: "+p.pre+" => "+p.a+" (esperado "+q+")")}
+  else if((m=p.pre.match(/^Como se escreve (\d+) de (\S+) de (\d+) em números\?$/))){const d=+m[1],mm=MESES.indexOf(m[2])+1,y=+m[3];
+    if(mm<1||y<2026||y>2028||d<1||d>new Date(y,mm,0).getDate())falha(32,"data inválida");
+    const certa=String(d).padStart(2,"0")+"/"+String(mm).padStart(2,"0")+"/"+y,o=p.extra.opts;
+    if(o[p.a-1]!==certa)falha(32,"data certa errada");if(new Set(o).size!==4)falha(32,"opções repetidas: "+o);
+    const trocada=String(mm).padStart(2,"0")+"/"+String(d).padStart(2,"0")+"/"+y;if(o.filter(x=>x!==certa).includes(trocada)&&!(d<=12&&d!==mm))falha(32,"dia e mês trocados em data ambígua")}
+  else falha(32,"pergunta desconhecida: "+p.pre)}
+ dist3(its,p=>/Neste calendário/.test(p.pre)?"semana":/Como se escreve/.test(p.pre)?"data":"contar",{semana:.375,data:.375,contar:.25},"tipos",32);}
+{ // nível 33
+ const its=draw(G.g1n33),CED=["2 reais","5 reais","10 reais","20 reais"],MOE=["5 centavos","10 centavos","25 centavos","50 centavos","1 real"];
+ const valor=it=>it.k==="cedula"?it.v*100:it.v,txtOk=(it,h)=>it.k==="cedula"?h.includes(">"+it.v+"<")&&h.includes("reais"):(it.v===100?h.includes(">1<")&&h.includes("real"):h.includes(">"+it.v+"<")&&h.includes("centavos"));
+ for(const p of its){const f=p.extra&&p.extra.fig;if(f?f.t!=="dinheiro":!(p.extra&&p.extra.opts&&p.extra.opts[0].fig)){falha(33,"figura");continue}
+  if(p.pre==="Quanto vale esta cédula?"){const v=f.items[0].v,o=p.extra.opts;if(f.items.length!==1||f.items[0].k!=="cedula"||!txtOk(f.items[0],FC.fig(f)))falha(33,"cédula");
+    if(o[p.a-1]!==v+" reais"||new Set(o).size!==4||o.some(x=>!CED.includes(x)))falha(33,"opções de cédula")}
+  else if(p.pre==="Quanto vale esta moeda?"){const it=f.items[0],o=p.extra.opts;if(it.k!=="moeda"||!txtOk(it,FC.fig(f)))falha(33,"moeda");
+    if(o[p.a-1]!==(it.v===100?"1 real":it.v+" centavos")||new Set(o).size!==o.length||o.some(x=>!MOE.includes(x)))falha(33,"opções de moeda")}
+  else if(p.pre==="Quantos reais?"){const tot=f.items.reduce((a,x)=>a+(x.k==="cedula"?x.v:(x.v===100?1:NaN)),0);
+    if(!(f.items.length>=2&&f.items.length<=3)||p.a!==tot||tot>20||!Number.isInteger(tot))falha(33,"soma em reais: "+JSON.stringify(f.items)+" => "+p.a)}
+  else if(p.pre==="Qual vale mais?"){const o=p.extra.opts.map(x=>x.fig.items[0]);if(o.length!==2||valor(o[0])===valor(o[1]))falha(33,"valores iguais");
+    if(valor(o[p.a-1])!==Math.max(valor(o[0]),valor(o[1])))falha(33,"o maior não é a resposta");o.forEach(x=>{if(!txtOk(x,FC.fig({t:"dinheiro",items:[x]})))falha(33,"valor desenhado")})}
+  else falha(33,"pergunta desconhecida: "+p.pre)}
+ dist3(its,p=>p.pre==="Quanto vale esta cédula?"?"cedula":p.pre==="Quanto vale esta moeda?"?"moeda":p.pre==="Quantos reais?"?"soma":"mais",{cedula:.375,moeda:.25,soma:.25,mais:.125},"tipos",33);}
+{ // nível 34
+ const its=draw(G.g1n34),BANCO={};for(const [k,v] of Object.entries({
+  "Com certeza":8,"Impossível":8,"Talvez":8}))BANCO[k]=v;
+ const lista=[];
+ let frases=0,caixas=0;const c={};
+ for(const p of its){const o=p.extra.opts;let m;
+  if(!(o.length===3&&new Set(o).size===3&&o.every(x=>["Com certeza","Talvez","Impossível"].includes(x))))falha(34,"opções: "+o);
+  const resp=o[p.a-1];c[resp]=(c[resp]||0)+1;
+  if((m=p.pre.match(/^Vai tirar uma bola (vermelha|azul), sem olhar\. Isso é…$/))){caixas++;
+    const cor=m[1]==="vermelha"?"r":"a",b=p.extra.fig.balls,n=b.filter(x=>x===cor).length;
+    if(b.length<3||b.length>8)falha(34,"número de bolas");
+    const esp=n===b.length?"Com certeza":n===0?"Impossível":"Talvez";if(resp!==esp)falha(34,"caixa: "+b+" "+m[1]+" => "+resp+" (esperado "+esp+")")}
+  else if(/ Isso é…$/.test(p.pre)){frases++;const fr=p.pre.replace(/ Isso é…$/,"");
+    const classes=["Com certeza","Impossível","Talvez"].filter(k=>FRASES34[k].includes(fr));
+    if(classes.length!==1)falha(34,"frase fora do banco: "+fr);else if(resp!==classes[0])falha(34,"frase com resposta errada: "+fr)}
+  else falha(34,"pergunta desconhecida: "+p.pre)}
+ console.log("nível 34: frases",(100*frases/N).toFixed(0)+"%, caixas",(100*caixas/N).toFixed(0)+"%; respostas",JSON.stringify(Object.fromEntries(Object.entries(c).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
+ for(const k of ["Com certeza","Talvez","Impossível"])if(Math.abs((c[k]||0)/N-1/3)>.04)falha(34,"as três respostas deviam ser parecidas: "+k)}
+{ // nível 35
+ const its=draw(G.g1n35),TEM={"Cores preferidas da turma":{l:["Azul","Verde","Rosa","Amarelo"],c:["#2457D6","#1CA97B","#F27AB0","#FFB92B"]},"Frutas preferidas da turma":{l:["Maçã","Uva","Banana","Pera"]},"Bichinhos preferidos da turma":{l:["Gato","Cão","Peixe","Pássaro"]},"Esportes preferidos da turma":{l:["Futebol","Vôlei","Natação","Judô"]}};
+ for(const p of its){const f=p.extra.fig,tm=TEM[f.title];let m;
+  if(!tm){falha(35,"tema desconhecido");continue}
+  if(f.values.length!==4||f.values.some(x=>!tem(x,1,9))||JSON.stringify(f.labels)!==JSON.stringify(tm.l))falha(35,"valores ou nomes: "+JSON.stringify(f));
+  if(tm.c&&f.t==="bars"&&JSON.stringify(f.colors)!==JSON.stringify(tm.c))falha(35,"cores das colunas não combinam com os nomes");
+  if(f.t==="tabela"){const h=FC.fig(f);f.values.forEach((v,i)=>{if(!h.includes("<td>"+f.labels[i]+"</td><td>"+v+"</td>"))falha(35,"tabela sem a linha de "+f.labels[i])})}
+  if((m=p.pre.match(/^Quantas crianças escolheram (\S+)\?$/))){const i=tm.l.indexOf(m[1]);if(i<0||p.a!==f.values[i])falha(35,"valor lido errado: "+p.pre)}
+  else if((m=p.pre.match(/^Qual teve (mais|menos) votos\?$/))){const alvo=m[1]==="mais"?Math.max(...f.values):Math.min(...f.values);
+    if(f.values.filter(x=>x===alvo).length!==1)falha(35,"empate no "+m[1]+": "+f.values);if(p.extra.opts[p.a-1]!==tm.l[f.values.indexOf(alvo)])falha(35,"nome errado");if(new Set(p.extra.opts).size!==4)falha(35,"opções")}
+  else if((m=p.pre.match(/^Quantas crianças escolheram (\S+) ou (\S+)\?$/))){const a=tm.l.indexOf(m[1]),b=tm.l.indexOf(m[2]);if(a<0||b<0||a===b||p.a!==f.values[a]+f.values[b]||p.a>18)falha(35,"soma errada: "+p.pre)}
+  else falha(35,"pergunta desconhecida: "+p.pre)}
+ dist3(its,p=>p.extra.fig.t==="tabela"?"tabela":/ ou /.test(p.pre)?"soma":/Qual teve/.test(p.pre)?"extremo":"coluna",{tabela:.25,soma:.125,extremo:.25,coluna:.375},"tipos",35);}
+
 /* ---- Limites de cada folha dos níveis 8 a 13 ---- */
-for(const nivel of [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29]){
+for(const nivel of [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29,30,31,32,33,34,35]){
   const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let viol=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0);const v=limitesOk(nivel,it);if(v){viol++;if(viol<3)console.log("   limite estourado:",v)}}
   console.log("nível "+nivel+": folhas que estouram um limite do grupo",viol,"de 1500");

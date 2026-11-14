@@ -537,6 +537,21 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-pacotes{display:flex;flex-direction:column;gap:6px}
 .fig-pacotes .pk{font-size:1.05rem;line-height:1.25;letter-spacing:.02em;white-space:nowrap}
 .fig-pacotes .pk.box{border:2px solid var(--line);border-radius:10px;padding:1px 8px;width:max-content}
+.fig-cal{max-width:300px}
+.fig-cal .cal-t{font-weight:700;margin-bottom:6px}
+.fig-cal .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-family:var(--font-num)}
+.fig-cal .cal-g b{color:var(--muted);font-size:.8rem;padding:2px 0}
+.fig-cal .cal-g span{padding:5px 0;border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:6px;font-size:.95rem}
+.fig-cal .cal-g span:empty{border:0}
+.fig-din{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fig-din .figsvg.fig-moeda{width:60px;max-width:60px}
+.fig-din .figsvg.fig-cedula{width:104px;max-width:104px}
+.figsvg.fig-balanca{max-width:240px}
+.figsvg.fig-bolas,.figsvg.fig-barras,.figsvg.fig-potes{max-width:300px}
+.fig-tab{border-collapse:collapse;min-width:220px}
+.fig-tab caption{font-weight:700;text-align:left;margin-bottom:6px}
+.fig-tab th,.fig-tab td{border:1px solid var(--line);padding:6px 14px;text-align:left}
+.fig-tab th{background:color-mix(in srgb,var(--line) 30%,transparent);font-size:.85rem}
 .fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
 .fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}

@@ -74,6 +74,66 @@ var DRAW={
       return '<div class="eg" aria-hidden="true">'+rows.map(function(r){return '<div>'+r+'</div>'}).join("")+'</div>'});
     return '<div class="fig-emoji'+(f.side?" side":"")+'">'+(f.sep?gs.join('<div class="sep" aria-hidden="true">'+f.sep+'</div>'):gs.join(""))+'</div>';
   },
+  /* três barras rotuladas A, B e C, só o tamanho muda: orient "h" (comprimento), "v" (altura) ou "w" (largura) */
+  barras:function(f){
+    var inner="",i,col="#2457D6",L=["A","B","C"];
+    if(f.orient==="h"){
+      f.sizes.forEach(function(z,i){var y=14+i*44;
+        inner+='<text x="12" y="'+(y+23)+'" font-size="18" font-weight="800" text-anchor="middle" fill="'+INK+'">'+L[i]+'</text><rect x="30" y="'+y+'" width="'+(z*250).toFixed(1)+'" height="30" rx="4" fill="'+col+'" stroke="'+INK+'" stroke-width="2"/>'});
+      return svg(300,150,inner,"fig-barras");
+    }
+    f.sizes.forEach(function(z,i){var cx=60+i*90,h=f.orient==="v"?z*130:110,w=f.orient==="w"?z*70:36;
+      inner+='<rect x="'+(cx-w/2).toFixed(1)+'" y="'+(150-h).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4" fill="'+col+'" stroke="'+INK+'" stroke-width="2"/><text x="'+cx+'" y="174" font-size="18" font-weight="800" text-anchor="middle" fill="'+INK+'">'+L[i]+'</text>'});
+    return svg(300,184,inner,"fig-barras");
+  },
+  /* três potes do mesmo formato em escalas diferentes (cabe mais no maior) */
+  potes:function(f){
+    var inner="",L=["A","B","C"];
+    f.sizes.forEach(function(z,i){var cx=55+i*95;
+      inner+='<g transform="translate('+cx+' 140) scale('+z+')"><path d="M-30,-95 L-30,-8 Q-30,0 -22,0 L22,0 Q30,0 30,-8 L30,-95 Q30,-102 22,-102 L-22,-102 Q-30,-102 -30,-95 Z" fill="#CFE3FF" stroke="'+INK+'" stroke-width="'+(2.5/z).toFixed(2)+'" stroke-linejoin="round"/><rect x="-34" y="-114" width="68" height="14" rx="4" fill="#8FB0FF" stroke="'+INK+'" stroke-width="'+(2.5/z).toFixed(2)+'"/></g>'+
+        '<text x="'+cx+'" y="166" font-size="18" font-weight="800" text-anchor="middle" fill="'+INK+'">'+L[i]+'</text>'});
+    return svg(300,176,inner,"fig-potes");
+  },
+  /* balança de dois pratos: a>0 = o prato da direita está mais baixo (o objeto de lá é o mais pesado) */
+  balanca:function(f){
+    var a=f.a*Math.PI/180,dx=Math.cos(a)*74,dy=Math.sin(a)*74,lx=100-dx,ly=44-dy,rx=100+dx,ry=44+dy,inner="";
+    inner+='<polygon points="100,44 86,112 114,112" fill="#CFD8E8" stroke="'+INK+'" stroke-width="2.5" stroke-linejoin="round"/><line x1="'+lx+'" y1="'+ly+'" x2="'+rx+'" y2="'+ry+'" stroke="'+INK+'" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="44" r="6" fill="'+INK+'"/>';
+    [[lx,ly,f.l],[rx,ry,f.r]].forEach(function(p){
+      inner+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+(p[0]-22)+'" y2="'+(p[1]+34)+'" stroke="'+INK+'" stroke-width="2"/><line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+(p[0]+22)+'" y2="'+(p[1]+34)+'" stroke="'+INK+'" stroke-width="2"/>'+
+        '<path d="M'+(p[0]-28)+','+(p[1]+34)+' L'+(p[0]+28)+','+(p[1]+34)+' Q'+(p[0]+24)+','+(p[1]+46)+' '+p[0]+','+(p[1]+46)+' Q'+(p[0]-24)+','+(p[1]+46)+' '+(p[0]-28)+','+(p[1]+34)+' Z" fill="#8FB0FF" stroke="'+INK+'" stroke-width="2.5" stroke-linejoin="round"/>'+
+        '<text x="'+p[0]+'" y="'+(p[1]+30)+'" font-size="30" text-anchor="middle">'+p[2]+'</text>'});
+    return svg(200,132,inner,"fig-balanca");
+  },
+  /* folha de um mês (D S T Q Q S S): f.y = ano, f.m = mês de 0 a 11 */
+  calendario:function(f){
+    var MES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"],
+      ult=new Date(f.y,f.m+1,0).getDate(),pri=new Date(f.y,f.m,1).getDay(),h="",i;
+    ["D","S","T","Q","Q","S","S"].forEach(function(d){h+='<b>'+d+'</b>'});
+    for(i=0;i<pri;i++)h+='<span></span>';
+    for(i=1;i<=ult;i++)h+='<span>'+i+'</span>';
+    return '<div class="fig-cal" aria-hidden="true"><div class="cal-t">'+MES[f.m]+' de '+f.y+'</div><div class="cal-g">'+h+'</div></div>';
+  },
+  /* moedas e cédulas desenhadas de forma genérica (sem a arte oficial): cada valor tem sempre a mesma cor */
+  dinheiro:function(f){
+    var CO={5:"#D9A066",10:"#E7C45A",25:"#E8B07A",50:"#CBD3DD",100:"#EBD08A"},CE={2:"#9CC3F5",5:"#C7AEF0",10:"#F29A9A",20:"#F7CF73"},K="#14213D";
+    return '<div class="fig-din" aria-hidden="true">'+f.items.map(function(it){
+      if(it.k==="moeda"){var u=it.v===100?["1","real"]:[String(it.v),"centavos"];
+        return svg(64,64,'<circle cx="32" cy="32" r="29" fill="'+CO[it.v]+'" stroke="'+K+'" stroke-width="3"/>'+(it.v===100?'<circle cx="32" cy="32" r="21" fill="none" stroke="'+K+'" stroke-width="2"/>':'')+'<text x="32" y="'+(u[1]==="real"?36:33)+'" font-size="'+(u[0].length>1?22:26)+'" font-weight="800" text-anchor="middle" fill="'+K+'">'+u[0]+'</text><text x="32" y="48" font-size="'+(u[1]==="real"?11:9)+'" font-weight="700" text-anchor="middle" fill="'+K+'">'+u[1]+'</text>',"fig-moeda");}
+      return svg(110,60,'<rect x="3" y="3" width="104" height="54" rx="7" fill="'+CE[it.v]+'" stroke="'+K+'" stroke-width="3"/><rect x="9" y="9" width="92" height="42" rx="4" fill="none" stroke="'+K+'" stroke-width="1.4" stroke-dasharray="3 3"/><text x="55" y="38" font-size="26" font-weight="800" text-anchor="middle" fill="'+K+'">'+it.v+'</text><text x="55" y="50" font-size="9" font-weight="700" text-anchor="middle" fill="'+K+'">reais</text>',"fig-cedula");
+    }).join("")+'</div>';
+  },
+  /* caixa de bolas vermelhas ("r") e azuis ("a") */
+  bolas:function(f){
+    var inner='<rect x="3" y="3" width="294" height="124" rx="14" fill="none" stroke="'+INK+'" stroke-width="3"/>';
+    f.balls.forEach(function(b,i){var cx=45+(i%4)*70,cy=42+Math.floor(i/4)*50;
+      inner+='<circle cx="'+cx+'" cy="'+cy+'" r="20" fill="'+(b==="r"?"#D93B3B":"#2457D6")+'" stroke="'+INK+'" stroke-width="2.5"/><ellipse cx="'+(cx-7)+'" cy="'+(cy-8)+'" rx="5" ry="3" fill="#fff" opacity=".55"/>'});
+    return svg(300,130,inner,"fig-bolas");
+  },
+  /* tabela simples de duas colunas */
+  tabela:function(f){
+    return '<table class="fig-tab"><caption>'+esc(f.title)+'</caption><thead><tr><th>Escolha</th><th>Crianças</th></tr></thead><tbody>'+
+      f.labels.map(function(l,i){return '<tr><td>'+esc(l)+'</td><td>'+f.values[i]+'</td></tr>'}).join("")+'</tbody></table>';
+  },
   /* pacotes de 10 objetos (cada um numa moldura) e alguns soltos, sem moldura */
   pacotes:function(f){
     function fila(n,box){return '<div class="pk'+(box?' box':'')+'">'+new Array(n+1).join(f.e)+'</div>'}
