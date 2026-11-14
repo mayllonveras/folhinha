@@ -210,6 +210,19 @@ var DRAW={
       '<text x="'+(pad+5*sp)+'" y="'+(top-4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+C.coral+'">100</text>';
     return '<svg class="figsvg fig-mancha" viewBox="0 0 '+W+' '+H+'" role="img" aria-hidden="true" focusable="false" style="width:'+Math.round(W*1.4)+'px">'+inner+'</svg>';
   },
+  /* grupos iguais (multiplicação, 2º ano): f.g caixas com f.q objetos cada uma */
+  grupos:function(f){
+    var h="",i,j,c=Math.min(f.q,5);
+    for(i=0;i<f.g;i++){var o="";for(j=0;j<f.q;j++)o+="<i>"+f.e+"</i>";h+='<span class="gbox" style="--c:'+c+'">'+o+"</span>"}
+    return '<div class="fig-grupos" aria-hidden="true">'+h+"</div>";
+  },
+  /* repartir em partes iguais (2º ano): f.n objetos soltos numa bandeja e f.g pratos vazios */
+  reparte:function(f){
+    var o="",p="",i;
+    for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
+    for(i=0;i<f.g;i++)p+='<span class="prato"></span>';
+    return '<div class="fig-reparte" aria-hidden="true"><div class="bandeja">'+o+'</div><div class="pratos">'+p+"</div></div>";
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;

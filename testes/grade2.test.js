@@ -275,6 +275,94 @@ function problemas(nivel,modo){
 }
 problemas("17",17);problemas("18",18);
 
+/* ---- Níveis 19 a 26: multiplicação, dobro, triplo e metade ---- */
+const OBJS=FC.exh.OBJ;
+const conta=(pre)=>{const m=pre.match(/^(\d+) × (\d+) =$/);return m?[+m[1],+m[2]]:null};
+function figGrupos(p,nivel,g,qmin,qmax){
+  const f=p.extra.fig;if(f.t!=="grupos"){falha(nivel,"figura de outro tipo");return null}
+  const html=FC.fig(f),caixas=html.split('class="gbox"').slice(1).map(c=>(c.match(/<i>/g)||[]).length);
+  if(caixas.length!==f.g||caixas.some(c=>c!==f.q))falha(nivel,"as caixas não têm todas "+f.q+" objetos: "+caixas);
+  if(g&&f.g!==g)falha(nivel,"número de grupos "+f.g+" em vez de "+g);
+  if(f.q<qmin||f.q>qmax)falha(nivel,"objetos por caixa fora de "+qmin+" a "+qmax);
+  const o=OBJS.find(o=>o.e===f.e),m=p.pre.match(/^(Quantas|Quantos) (\S+) há ao todo\?$/);
+  if(!m||m[1]!==(o.f?"Quantas":"Quantos")||m[2]!==o.pl)falha(nivel,"pergunta/concordância: "+p.pre);
+  if(p.a!==caixas.reduce((a,b)=>a+b,0))falha(nivel,"resposta diferente do total desenhado: "+p.pre+" → "+p.a);
+  return f;
+}
+{const its=draw(G.g2n19);let fg=0,sm=0;
+ for(const p of its){
+  if(p.extra){fg++;const f=figGrupos(p,19,0,2,6);if(f&&(f.g<2||f.g>5))falha(19,"grupos fora de 2 a 5")}
+  else{sm++;const v=nums(p.pre),k=v.length;if(!/^\d+( \+ \d+)+ =$/.test(p.pre)||k<2||k>5||new Set(v).size!==1||v[0]<2||v[0]>10)falha(19,"soma de parcelas: "+p.pre);
+   if(p.a!==v.reduce((a,b)=>a+b,0)||p.a>50)falha(19,"resposta: "+p.pre+" → "+p.a)}}
+ console.log("nível 19: figura",(100*fg/N).toFixed(0)+"%, soma",(100*sm/N).toFixed(0)+"%");if(Math.abs(fg/N-.5)>.04)falha(19,"proporção figura/soma")}
+function tabuada(nivel,ks){
+ const its=draw(G["g2n"+nivel]),tp={fig:0,conta:0,txt:0},ps={};
+ for(const p of its){
+  if(p.extra){tp.fig++;const f=figGrupos(p,nivel,ks.length===1?ks[0]:0,2,10);if(f&&!ks.includes(f.g))falha(nivel,"tabuada fora do nível: "+f.g);ps[f&&f.g]=(ps[f&&f.g]||0)+1;continue}
+  const c=conta(p.pre);
+  if(c){tp.conta++;const [a,b]=c;if(!(ks.includes(a)&&b>=2&&b<=10)&&!(ks.includes(b)&&a>=2&&a<=10))falha(nivel,"conta fora da tabuada: "+p.pre);if(p.a!==a*b)falha(nivel,"resposta: "+p.pre+" → "+p.a);ps[a]=(ps[a]||0)+1;continue}
+  let m=p.pre.match(/^Qual é o (dobro|triplo) de (\d+)\?$/);
+  if(m){tp.txt++;const k=m[1]==="dobro"?2:3;if(!ks.includes(k)||p.a!==k*+m[2]||+m[2]<2||+m[2]>10)falha(nivel,"dobro/triplo: "+p.pre+" → "+p.a);continue}
+  m=p.pre.match(/^Quanto é (\d+) vezes (\d+)\?$/);
+  if(m){tp.txt++;if(!ks.includes(+m[1])||+m[2]<2||+m[2]>10||p.a!==m[1]*m[2])falha(nivel,"vezes: "+p.pre+" → "+p.a);continue}
+  falha(nivel,"pergunta desconhecida: "+p.pre);
+ }
+ console.log("nível "+nivel+":",JSON.stringify(tp));
+ for(const k of["fig","conta"])if(Math.abs(tp[k]/N-.375)>.04)falha(nivel,k+" fora de 37,5%");if(Math.abs(tp.txt/N-.25)>.04)falha(nivel,"texto fora de 25%");
+ return ps;
+}
+tabuada(20,[2]);tabuada(21,[3]);tabuada(22,[4]);tabuada(23,[5]);
+{ // fatores trocados nunca na mesma folha (níveis 20 a 24)
+ for(const nivel of [20,21,22,23,24]){const gg=G["g2n"+nivel];let ruim=0;
+  for(let i=0;i<1500;i++){const it=niv(gg).map(p=>conta(p.pre)).filter(Boolean).map(([a,b])=>Math.min(a,b)+","+Math.max(a,b));if(new Set(it).size<it.length)ruim++}
+  console.log("nível "+nivel+": folhas com fatores trocados",ruim);if(ruim)falha(nivel,ruim+" folhas com fatores trocados")}}
+{const its=draw(G.g2n24),ks={2:0,3:0,4:0,5:0};
+ for(const p of its){let k;
+  if(p.extra){const f=figGrupos(p,24,0,2,10);k=f&&f.g}
+  else{const c=conta(p.pre);if(c){const [a,b]=c;k=[2,3,4,5].includes(a)?a:b;if(p.a!==a*b)falha(24,"resposta: "+p.pre)}
+   else{let m=p.pre.match(/^Qual é o (dobro|triplo) de (\d+)\?$/);if(m){k=m[1]==="dobro"?2:3;if(p.a!==k*+m[2])falha(24,p.pre)}
+    else{m=p.pre.match(/^Quanto é (\d+) vezes (\d+)\?$/);if(!m){falha(24,"pergunta: "+p.pre);continue}k=+m[1];if(p.a!==m[1]*m[2])falha(24,p.pre)}}}
+  if(k)ks[k]++}
+ console.log("nível 24: tabuadas",JSON.stringify(ks));for(const k in ks)if(Math.abs(ks[k]/N-.25)>.04)falha(24,"tabuada "+k)
+ let ruim=0;for(let i=0;i<1500;i++){const it=niv(G.g2n24),c={2:[0,0],3:[0,0],4:[0,0],5:[0,0]};
+  it.forEach(p=>{const fg=!!p.extra,k=fg?p.extra.fig.g:p._info.k;c[k][fg?0:1]++});
+  if(it.length!==8||[2,3,4,5].some(k=>c[k][0]!==1||c[k][1]!==1))ruim++}
+ console.log("nível 24: folhas sem 2 de cada tabuada (1 figura + 1 conta ou texto)",ruim);if(ruim)falha(24,ruim+" folhas fora do esperado")}
+{const its=draw(G.g2n25);let fg=0,me=0,te=0,div={2:0,3:0};
+ for(const p of its){
+  if(p.extra){fg++;const f=p.extra.fig;if(f.t!=="reparte"){falha(25,"figura de outro tipo");continue}
+   const html=FC.fig(f),band=html.split('class="bandeja"')[1].split('class="pratos"')[0],soltos=(band.match(/<i>/g)||[]).length,pratos=(html.match(/class="prato"/g)||[]).length;
+   if(soltos!==f.n||pratos!==f.g)falha(25,"desenho: "+[soltos,pratos]+" vs "+[f.n,f.g]);
+   const m=p.pre.match(/^Divida igualmente (as|os) (\d+) (\S+) em (\d+) pratos\. (Quantas|Quantos) (\S+) ficam em cada prato\?$/);
+   if(!m){falha(25,"pergunta: "+p.pre);continue}
+   const o=OBJS.find(o=>o.e===f.e);if(m[1]!==(o.f?"as":"os")||m[5]!==(o.f?"Quantas":"Quantos")||m[3]!==o.pl||m[6]!==o.pl)falha(25,"concordância: "+p.pre);
+   if(+m[2]!==f.n||+m[4]!==f.g||f.n%f.g!==0||p.a!==f.n/f.g||p.a<2||p.a>10)falha(25,"conta: "+p.pre+" → "+p.a);div[f.g]++}
+  else{let m=p.pre.match(/^Qual é a metade de (\d+)\?$/);
+   if(m){me++;if(+m[1]%2||p.a!==m[1]/2||m[1]<4||m[1]>20)falha(25,p.pre+" → "+p.a);continue}
+   m=p.pre.match(/^Qual é a terça parte de (\d+)\?$/);
+   if(m){te++;if(+m[1]%3||p.a!==m[1]/3||m[1]<6||m[1]>30)falha(25,p.pre+" → "+p.a);continue}
+   falha(25,"pergunta: "+p.pre)}}
+ console.log("nível 25: figura",(100*fg/N).toFixed(0)+"%, metade",(100*me/N).toFixed(0)+"%, terça parte",(100*te/N).toFixed(0)+"%, pratos",JSON.stringify(div));
+ if(Math.abs(fg/N-.375)>.04||Math.abs(me/N-.375)>.04||Math.abs(te/N-.25)>.04)falha(25,"proporções");if(Math.abs(div[2]/(div[2]+div[3])-.5)>.05)falha(25,"2 e 3 pratos")}
+{const its=draw(G.g2n26),tp={};
+ for(const p of its){
+  const w=p.pre.trim().split(/\s+/).length;if(w>18)falha(26,"enunciado com "+w+" palavras: "+p.pre);
+  let m,tipo;
+  if((m=p.pre.match(/^Cada (\S+) tem (\d+) (\S+)\. (Quantas|Quantos) (\S+) há em (\d+) (\S+)\?$/))){tipo="grupos";
+   if(m[3]!==m[5]||!["lápis","figurinhas","balas","livros","adesivos","flores"].includes(m[3]))falha(26,"objeto: "+p.pre);
+   const fem=["figurinhas","balas","flores"].includes(m[3]);if(m[4]!==(fem?"Quantas":"Quantos"))falha(26,"concordância: "+p.pre);
+   if(m[7]!==m[1]+"s"&&m[7]!==m[1]+"es")falha(26,"plural do recipiente: "+p.pre);if(+m[6]<2||+m[6]>5||+m[2]<2||+m[2]>10||p.a!==m[2]*m[6])falha(26,p.pre+" → "+p.a)}
+  else if((m=p.pre.match(/^(\S+) tem (\d+) (\S+)\. (\S+) tem (o dobro|o triplo)\. (Quantas|Quantos) (\S+) (\S+) tem\?$/))){tipo=m[5]==="o dobro"?"dobro":"triplo";
+   const f=tipo==="dobro"?2:3;if(m[1]===m[4]||m[8]!==m[4]||m[3]!==m[7])falha(26,"nomes/objeto: "+p.pre);if(+m[2]<2||+m[2]>10||p.a!==f*m[2])falha(26,p.pre+" → "+p.a);
+   const fem=["figurinhas","balas","flores"].includes(m[3]);if(m[6]!==(fem?"Quantas":"Quantos"))falha(26,"concordância: "+p.pre)}
+  else if((m=p.pre.match(/^(\S+) tinha (\d+) (\S+) e deu (a metade|a terça parte) para um amigo\. (Quantas|Quantos) (\S+) (ela|ele) deu\?$/))){tipo=m[4]==="a metade"?"metade":"terca";
+   const d=tipo==="metade"?2:3;if(+m[2]%d||p.a!==m[2]/d||m[3]!==m[6]||+m[2]/d<2||+m[2]/d>10)falha(26,p.pre+" → "+p.a);
+   const fem=["balas","figurinhas","bolinhas"].includes(m[3]);if(m[5]!==(fem?"Quantas":"Quantos"))falha(26,"concordância: "+p.pre);
+   const nome=FC.exh.NAMES.find(n=>n[0]===m[1]);if(!nome||m[7]!==(nome[1]==="f"?"ela":"ele"))falha(26,"ela/ele: "+p.pre)}
+  else{falha(26,"pergunta desconhecida: "+p.pre);continue}
+  if(p.a<=0||p.a>50)falha(26,"resultado fora de 1 a 50");tp[tipo]=(tp[tipo]||0)+1}
+ console.log("nível 26: tipos",JSON.stringify(tp));for(const k of["grupos","dobro","triplo","metade","terca"])if(Math.abs((tp[k]||0)/N-.2)>.04)falha(26,"tipo "+k+" fora de 20%")}
+
 /* ---- Folhas: 10 contas, sem repetição, com os limites de cada nível ---- */
 for(const g of FC.G2){
   let rep=0,estouro=0,tam=0;

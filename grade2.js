@@ -1,7 +1,7 @@
 /* Grade do 2º ano — geradores escritos do zero a partir das fichas em bncc/fichas/2ano-*.md.
    Mesma forma dos geradores do 1º ano (grade1.js): {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 18 (números até 1000, adição e subtração). */
+   Níveis feitos: 1 a 26 (números até 1000, adição e subtração, multiplicação, dobro, triplo e metade). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed;
@@ -304,6 +304,92 @@ function gProb(modo){
   };
 }
 
+/* ===================== Níveis 19 a 26: multiplicação, dobro, triplo e metade ===================== */
+/* `3 × 4` lê-se "3 grupos de 4". Fatores trocados (3 × 4 e 4 × 3) nunca na mesma folha. */
+var VEZES="×";
+function figGrupos(g,q){
+  var o=pick(X.OBJ),it=typed(qs(o.f)+o.pl+" há ao todo?",g*q,{t:"grupos",e:o.e,g:g,q:q});
+  it.key="gfig|"+o.e+"|"+g+"|"+q;it._info={tipo:"fig",g:g,q:q};return it;
+}
+function contaX(k,n){                                  /* k × n ou n × k, na ordem sorteada */
+  var dir=Math.random()<.5,it=typed((dir?k+" "+VEZES+" "+n:n+" "+VEZES+" "+k)+" =",k*n);
+  it._info={tipo:"conta",k:k,n:n};return it;
+}
+
+/* Nível 19 — Parcelas iguais (EF02MA07): figura de grupos e soma de parcelas iguais, 4 + 4. */
+function gParcelas(){
+  var it,i;
+  if(Math.random()<.5){it=figGrupos(rnd(2,5),rnd(2,6));it.limits=[["n19:fig",4]];return it}
+  var k=rnd(2,5),p=rnd(2,10),t=[];for(i=0;i<k;i++)t.push(p);
+  it=typed(t.join(" + ")+" =",k*p);it.limits=[["n19:som",4]];it._info={tipo:"soma",k:k,p:p};return it;
+}
+
+/* Níveis 20 a 23 — Multiplicar por 2, 3, 4 e 5 (EF02MA07, EF02MA08): figura, conta e texto (o dobro, o triplo ou "k vezes n"). */
+function gTab(k,nivel){
+  return function(){
+    var n=rnd(2,10),r=Math.random(),it,l;
+    if(r<.375){it=figGrupos(k,n);l=[["n"+nivel+":fig",3]]}
+    else if(r<.75){it=contaX(k,n);l=[["n"+nivel+":conta",3],["pm"+nivel+":"+n,1]]}
+    else{
+      var nome={2:"o dobro",3:"o triplo"}[k];
+      it=nome?typed("Qual é "+nome+" de "+n+"?",k*n):typed("Quanto é "+k+" vezes "+n+"?",k*n);
+      it._info={tipo:nome?"nome":"vezes",k:k,n:n};l=[["n"+nivel+":txt",2]];
+    }
+    it.limits=l;return it;
+  };
+}
+
+/* Nível 24 — As quatro tabuadas misturadas: 2 de cada tabuada nas 8 contas, uma de figura e uma de conta ou texto. */
+function gTab24(){
+  var k=rnd(2,5),n=rnd(2,10),it,r;
+  if(Math.random()<.5){it=figGrupos(k,n);it.limits=[["n24:k"+k,2],["n24:k"+k+"f",1]];return it}
+  r=Math.random();
+  if(r<.5){it=contaX(k,n);it.limits=[["n24:k"+k,2],["n24:k"+k+"c",1],["pm24:"+Math.min(k,n)+","+Math.max(k,n),1]];return it}
+  var nome={2:"o dobro",3:"o triplo"}[k];
+  if(nome&&r<.75){it=typed("Qual é "+nome+" de "+n+"?",k*n);it._info={tipo:"nome",k:k,n:n}}
+  else{it=typed("Quanto é "+k+" vezes "+n+"?",k*n);it._info={tipo:"vezes",k:k,n:n}}
+  it.limits=[["n24:k"+k,2],["n24:k"+k+"c",1]];return it;
+}
+
+/* Nível 25 — Metade e terça parte (EF02MA08): repartir objetos em pratos, a metade e a terça parte. */
+function gMetade(){
+  var r=Math.random(),it,g,q,o;
+  if(r<.375){                                       /* repartir com figura, 2 ou 3 pratos */
+    g=pick([2,3]);q=rnd(2,10);o=pick(X.OBJ);
+    it=typed("Divida igualmente "+(o.f?"as ":"os ")+g*q+" "+o.pl+" em "+g+" pratos. "+qs(o.f)+o.pl+" ficam em cada prato?",q,{t:"reparte",e:o.e,n:g*q,g:g});
+    it.key="rep|"+o.e+"|"+g+"|"+q;it._info={tipo:"fig",g:g,q:q};it.limits=[["n25:fig",3]];
+  }else if(r<.75){
+    q=rnd(2,10);it=typed("Qual é a metade de "+2*q+"?",q);it._info={tipo:"metade",q:q};it.limits=[["n25:metade",3]];
+  }else{
+    q=rnd(2,10);it=typed("Qual é a terça parte de "+3*q+"?",q);it._info={tipo:"terca",q:q};it.limits=[["n25:terca",3]];
+  }
+  return it;
+}
+
+/* Nível 26 — Problemas de multiplicação, dobro, triplo e metade (EF02MA07, EF02MA08). Frases de até 18 palavras. */
+var RECIP=[["caixa","caixas"],["pacote","pacotes"],["saco","sacos"],["cesta","cestas"],["prato","pratos"]];
+var OITEM=[["lápis",0],["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["flores",1]];
+var OMETADE=[["balas",1],["figurinhas",1],["adesivos",0],["livros",0],["bolinhas",1]];
+function gProb26(){
+  var tipo=pick(["grupos","dobro","triplo","metade","terca"]),n1=pick(NAMES),n2,it,pre,l=[["n26:"+tipo,2]],o,q;
+  if(tipo==="grupos"){
+    var rc=pick(RECIP),g=rnd(2,5);q=rnd(2,10);o=pick(OITEM);
+    pre="Cada "+rc[0]+" tem "+q+" "+o[0]+". "+qs(o[1])+o[0]+" há em "+g+" "+rc[1]+"?";
+    it=typed(pre,g*q);it.key="p26g|"+rc[0]+"|"+g+"|"+q+"|"+o[0];it._info={tipo:tipo,g:g,q:q};
+  }else if(tipo==="dobro"||tipo==="triplo"){
+    var f=tipo==="dobro"?2:3;q=rnd(2,10);o=pick(OITEM);do{n2=pick(NAMES)}while(n2[0]===n1[0]);
+    pre=n1[0]+" tem "+q+" "+o[0]+". "+n2[0]+" tem "+(f===2?"o dobro":"o triplo")+". "+qs(o[1])+o[0]+" "+n2[0]+" tem?";
+    it=typed(pre,f*q);it.key="p26"+tipo+"|"+n1[0]+"|"+n2[0]+"|"+q+"|"+o[0];it._info={tipo:tipo,q:q};
+    l.push(["nome:"+n1[0],1],["nome:"+n2[0],1]);
+  }else{
+    var d=tipo==="metade"?2:3;q=rnd(2,10);o=pick(OMETADE);
+    pre=n1[0]+" tinha "+d*q+" "+o[0]+" e deu "+(d===2?"a metade":"a terça parte")+" para um amigo. "+qs(o[1])+o[0]+" "+(n1[1]==="f"?"ela":"ele")+" deu?";
+    it=typed(pre,q);it.key="p26"+tipo+"|"+n1[0]+"|"+d*q+"|"+o[0];it._info={tipo:tipo,q:q};
+    l.push(["nome:"+n1[0],1]);
+  }
+  it.limits=l;return it;
+}
+
 FC.G2=[
   {nivel:1,id:"g2n01",nome:"Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10",hab:["EF02MA09","EF02MA11"],meta:90,gen:gContarDe,ano:2},
   {nivel:2,id:"g2n02",nome:"Nível 2 — Centenas, dezenas e unidades (material dourado)",hab:["EF02MA04"],meta:100,gen:gMaterial,ano:2},
@@ -322,7 +408,15 @@ FC.G2=[
   {nivel:15,id:"g2n15",nome:"Nível 15 — Quanto falta? (o número escondido)",hab:["EF02MA05"],meta:110,gen:gEscondido,ano:2},
   {nivel:16,id:"g2n16",nome:"Nível 16 — Quantos a mais, quantos a menos?",hab:["EF02MA03","EF02MA06"],meta:120,gen:gMaisMenos,ano:2},
   {nivel:17,id:"g2n17",nome:"Nível 17 — Problemas de adição e subtração até 100",hab:["EF02MA06"],meta:140,gen:gProb(17),ano:2},
-  {nivel:18,id:"g2n18",nome:"Nível 18 — Problemas de adição e subtração até 999",hab:["EF02MA06"],meta:150,gen:gProb(18),ano:2}
+  {nivel:18,id:"g2n18",nome:"Nível 18 — Problemas de adição e subtração até 999",hab:["EF02MA06"],meta:150,gen:gProb(18),ano:2},
+  {nivel:19,id:"g2n19",nome:"Nível 19 — Parcelas iguais",hab:["EF02MA07"],meta:100,gen:gParcelas,ano:2},
+  {nivel:20,id:"g2n20",nome:"Nível 20 — Multiplicar por 2 e o dobro",hab:["EF02MA07","EF02MA08"],meta:100,gen:gTab(2,20),ano:2},
+  {nivel:21,id:"g2n21",nome:"Nível 21 — Multiplicar por 3 e o triplo",hab:["EF02MA07","EF02MA08"],meta:100,gen:gTab(3,21),ano:2},
+  {nivel:22,id:"g2n22",nome:"Nível 22 — Multiplicar por 4",hab:["EF02MA07"],meta:100,gen:gTab(4,22),ano:2},
+  {nivel:23,id:"g2n23",nome:"Nível 23 — Multiplicar por 5",hab:["EF02MA07"],meta:100,gen:gTab(5,23),ano:2},
+  {nivel:24,id:"g2n24",nome:"Nível 24 — Multiplicar por 2, 3, 4 e 5, misturadas",hab:["EF02MA07"],meta:120,gen:gTab24,ano:2},
+  {nivel:25,id:"g2n25",nome:"Nível 25 — Metade e terça parte",hab:["EF02MA08"],meta:110,gen:gMetade,ano:2},
+  {nivel:26,id:"g2n26",nome:"Nível 26 — Problemas de multiplicação, dobro, triplo e metade",hab:["EF02MA07","EF02MA08"],meta:140,gen:gProb26,ano:2}
 ];
 FC.G2BY={};FC.G2.forEach(function(e){FC.G2BY[e.id]=e});
 })();
