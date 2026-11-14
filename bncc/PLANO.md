@@ -128,6 +128,17 @@ o lembrete das mãos). A migração `migracoes/2026-11-14-grade-1ano.sql` troca 
 que as metas da migração são as do app. **Faltam** a grade do 2º ao 5º ano (mesmo processo de fichas) e os anos finais; enquanto isso, quem termina o nível 35 fica
 nele (como já acontece no último nível).
 
+## 2º ano (grade, fichas, geradores e ligação ao app prontos; falta aplicar a migração)
+
+Grade com 41 níveis em `GRADE-2ANO.md`; as 41 fichas (`fichas/2ano-niveis-*.md`) foram revisadas bloco por bloco, com as decisões do professor registradas em cada arquivo.
+Os geradores estão em `grade2.js` (testes em `testes/grade2.test.js`, com folhas reais de 8 contas do nível e 2 de revisão).
+
+**Ligação ao app (14/11/2026):** a trilha é uma só. Os níveis do 2º ano seguem os 35 do 1º e o aluno vê a numeração corrida, **36 a 76** (os números 1 a 41 das fichas
+são internos). `FC.LEVELS` ganha os 41 níveis no fim de `grade2.js`, com blocos, dicas, lembretes de abertura (níveis 64, 65 e 68: as mãos, as direções do quadriculado e o zero da régua)
+e as habilidades da BNCC (`hab`), que aparecem na tela dos pais junto do ano do conteúdo. A migração `migracoes/2026-11-14-grade-2ano.sql` **só acrescenta** 41 linhas em `levels`
+(idx 35 a 75, ano 2), sem tocar em alunos nem em níveis existentes; as funções de avanço já leem a tabela, então o último nível passa a ser o 76. Testada numa transação desfeita
+(76 níveis, meta do nível 76 = 130 s, 5 carimbos pelo padrão). `testes/grade.test.js` confere as metas contra as duas migrações.
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.

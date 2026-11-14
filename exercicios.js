@@ -53,7 +53,7 @@ var TRI=[[[50,14],[86,76],[14,76]],[[50,8],[78,86],[22,86]],[[50,32],[90,78],[10
 function formaGeom(f){
   var n=f.n,w,h,pts;
   if(n==="círculo")return {circle:true};
-  if(n==="quadrado")return {pts:[[14,14],[86,14],[86,86],[14,86]]};
+  if(n==="quadrado")return {pts:f.rot===45?[[50,14],[86,50],[50,86],[14,50]]:[[14,14],[86,14],[86,86],[14,86]]};   /* rot 45: quadrado "de ponta" (2º ano) */
   if(n==="retângulo"){
     var r=f.r||1.8;if(f.o==="v"){h=84;w=84/r}else{w=84;h=84/r}
     return {pts:[[50-w/2,50-h/2],[50+w/2,50-h/2],[50+w/2,50+h/2],[50-w/2,50+h/2]].map(function(q){return[+q[0].toFixed(2),+q[1].toFixed(2)]})};
@@ -115,7 +115,7 @@ var DRAW={
   },
   /* moedas e cédulas desenhadas de forma genérica (sem a arte oficial): cada valor tem sempre a mesma cor */
   dinheiro:function(f){
-    var CO={5:"#D9A066",10:"#E7C45A",25:"#E8B07A",50:"#CBD3DD",100:"#EBD08A"},CE={2:"#9CC3F5",5:"#C7AEF0",10:"#F29A9A",20:"#F7CF73"},K="#14213D";
+    var CO={5:"#D9A066",10:"#E7C45A",25:"#E8B07A",50:"#CBD3DD",100:"#EBD08A"},CE={2:"#9CC3F5",5:"#C7AEF0",10:"#F29A9A",20:"#F7CF73",50:"#E9A15B"},K="#14213D";
     return '<div class="fig-din" aria-hidden="true">'+f.items.map(function(it){
       if(it.k==="moeda"){var u=it.v===100?["1","real"]:[String(it.v),"centavos"];
         return svg(64,64,'<circle cx="32" cy="32" r="29" fill="'+CO[it.v]+'" stroke="'+K+'" stroke-width="3"/>'+(it.v===100?'<circle cx="32" cy="32" r="21" fill="none" stroke="'+K+'" stroke-width="2"/>':'')+'<text x="32" y="'+(u[1]==="real"?36:33)+'" font-size="'+(u[0].length>1?22:26)+'" font-weight="800" text-anchor="middle" fill="'+K+'">'+u[0]+'</text><text x="32" y="48" font-size="'+(u[1]==="real"?11:9)+'" font-weight="700" text-anchor="middle" fill="'+K+'">'+u[1]+'</text>',"fig-moeda");}
@@ -124,10 +124,10 @@ var DRAW={
   },
   /* caixa de bolas vermelhas ("r") e azuis ("a") */
   bolas:function(f){
-    var inner='<rect x="3" y="3" width="294" height="124" rx="14" fill="none" stroke="'+INK+'" stroke-width="3"/>';
+    var H=Math.max(130,Math.ceil(f.balls.length/4)*50+30),inner='<rect x="3" y="3" width="294" height="'+(H-6)+'" rx="14" fill="none" stroke="'+INK+'" stroke-width="3"/>';
     f.balls.forEach(function(b,i){var cx=45+(i%4)*70,cy=42+Math.floor(i/4)*50;
       inner+='<circle cx="'+cx+'" cy="'+cy+'" r="20" fill="'+(b==="r"?"#D93B3B":"#2457D6")+'" stroke="'+INK+'" stroke-width="2.5"/><ellipse cx="'+(cx-7)+'" cy="'+(cy-8)+'" rx="5" ry="3" fill="#fff" opacity=".55"/>'});
-    return svg(300,130,inner,"fig-bolas");
+    return svg(300,H,inner,"fig-bolas");
   },
   /* tabela simples de duas colunas */
   tabela:function(f){
@@ -180,6 +180,95 @@ var DRAW={
       inner+='<rect x="'+cx+'" y="'+cy+'" width="13" height="13" fill="'+C.sun+'" stroke="'+INK+'" stroke-width="1.6"/>'}
     var w=Math.max(x+(f.ones>0?(Math.min(f.ones,5)*16+6):6),60);
     return svg(w,122,inner,"fig-b10");
+  },
+  /* placas de 100, barras de 10 e quadradinhos de 1 (material dourado, 2º ano): f.h placas, f.d barras, f.o quadradinhos */
+  placas:function(f){
+    var inner="",pw=44,gap=4,per=6,y=4,i,j,x,py,d;
+    for(i=0;i<f.h;i++){
+      x=4+(i%per)*(pw+gap);py=y+Math.floor(i/per)*(pw+gap);
+      inner+='<rect class="pl" x="'+x+'" y="'+py+'" width="'+pw+'" height="'+pw+'" fill="#7EE0BE" stroke="'+INK+'" stroke-width="1.6"/>';
+      for(j=1;j<10;j++){d=+(j*pw/10).toFixed(1);
+        inner+='<line x1="'+(x+d)+'" x2="'+(x+d)+'" y1="'+py+'" y2="'+(py+pw)+'" stroke="'+INK+'" stroke-width=".5" opacity=".6"/>'+
+          '<line x1="'+x+'" x2="'+(x+pw)+'" y1="'+(py+d)+'" y2="'+(py+d)+'" stroke="'+INK+'" stroke-width=".5" opacity=".6"/>'}
+    }
+    if(f.h>0)y+=Math.ceil(f.h/per)*(pw+gap)+4;
+    for(i=0;i<f.d;i++){
+      x=4+i*15;
+      inner+='<rect class="br" x="'+x+'" y="'+y+'" width="10" height="'+pw+'" fill="'+C.sky+'" stroke="'+INK+'" stroke-width="1.4"/>';
+      for(j=1;j<10;j++)inner+='<line x1="'+x+'" x2="'+(x+10)+'" y1="'+(y+j*pw/10)+'" y2="'+(y+j*pw/10)+'" stroke="'+INK+'" stroke-width=".7"/>';
+    }
+    if(f.d>0)y+=pw+10;
+    for(i=0;i<f.o;i++)inner+='<rect class="un" x="'+(4+i*16)+'" y="'+y+'" width="12" height="12" fill="'+C.sun+'" stroke="'+INK+'" stroke-width="1.4"/>';
+    if(f.o>0)y+=16;
+    return svg(300,Math.max(y,24),inner,"fig-b100");
+  },
+  /* mancha de pontos em linhas e colunas (estimativa, 2º ano): f.n pontos em f.c colunas, com um quadro marcado "100" (10 x 10 pontos) no canto */
+  mancha:function(f){
+    var sp=6,pad=6,top=16,rows=Math.ceil(f.n/f.c),W=f.c*sp+pad*2,H=rows*sp+top+pad,inner="",k;
+    for(k=0;k<f.n;k++)inner+='<circle class="pt" cx="'+(pad+(k%f.c)*sp+sp/2)+'" cy="'+(top+Math.floor(k/f.c)*sp+sp/2)+'" r="1.7" fill="'+INK+'"/>';
+    inner+='<rect class="q100" x="'+pad+'" y="'+top+'" width="'+(10*sp)+'" height="'+(10*sp)+'" fill="none" stroke="'+C.coral+'" stroke-width="2.2"/>'+
+      '<text x="'+(pad+5*sp)+'" y="'+(top-4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+C.coral+'">100</text>';
+    return '<svg class="figsvg fig-mancha" viewBox="0 0 '+W+' '+H+'" role="img" aria-hidden="true" focusable="false" style="width:'+Math.round(W*1.4)+'px">'+inner+'</svg>';
+  },
+  /* grupos iguais (multiplicação, 2º ano): f.g caixas com f.q objetos cada uma */
+  grupos:function(f){
+    var h="",i,j,c=Math.min(f.q,5);
+    for(i=0;i<f.g;i++){var o="";for(j=0;j<f.q;j++)o+="<i>"+f.e+"</i>";h+='<span class="gbox" style="--c:'+c+'">'+o+"</span>"}
+    return '<div class="fig-grupos" aria-hidden="true">'+h+"</div>";
+  },
+  /* repartir em partes iguais (2º ano): f.n objetos soltos numa bandeja e f.g pratos vazios */
+  reparte:function(f){
+    var o="",p="",i;
+    for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
+    for(i=0;i<f.g;i++)p+='<span class="prato"></span>';
+    return '<div class="fig-reparte" aria-hidden="true"><div class="bandeja">'+o+'</div><div class="pratos">'+p+"</div></div>";
+  },
+  /* quadriculado com letras nas colunas e números nas linhas (a linha 1 fica embaixo); f.c colunas, f.r linhas,
+     f.s = [coluna, linha] do ponto de partida (●) e f.d = [coluna, linha] do destino (★), se houver */
+  quadriculado:function(f){
+    var cs=38,ml=20,top=6,W=ml+f.c*cs+6,H=top+f.r*cs+22,inner="",i,j;
+    for(i=0;i<=f.c;i++)inner+='<line x1="'+(ml+i*cs)+'" x2="'+(ml+i*cs)+'" y1="'+top+'" y2="'+(top+f.r*cs)+'" stroke="'+C.line+'" stroke-width="1.4"/>';
+    for(j=0;j<=f.r;j++)inner+='<line x1="'+ml+'" x2="'+(ml+f.c*cs)+'" y1="'+(top+j*cs)+'" y2="'+(top+j*cs)+'" stroke="'+C.line+'" stroke-width="1.4"/>';
+    for(i=0;i<f.c;i++)inner+='<text x="'+(ml+i*cs+cs/2)+'" y="'+(top+f.r*cs+16)+'" text-anchor="middle" font-size="13" font-weight="700" fill="'+INK+'">'+"ABCDEFGH".charAt(i)+'</text>';
+    for(j=0;j<f.r;j++)inner+='<text x="'+(ml-6)+'" y="'+(top+j*cs+cs/2+5)+'" text-anchor="end" font-size="13" font-weight="700" fill="'+INK+'">'+(f.r-j)+'</text>';
+    function cx(col){return ml+(col-.5)*cs}function cy(row){return top+(f.r-row+.5)*cs}
+    if(f.d)inner+='<text class="dest" x="'+cx(f.d[0])+'" y="'+(cy(f.d[1])+9)+'" text-anchor="middle" font-size="28" fill="'+C.sun+'" stroke="'+INK+'" stroke-width="1" paint-order="stroke">★</text>';
+    if(f.s)inner+='<circle class="start" cx="'+cx(f.s[0])+'" cy="'+cy(f.s[1])+'" r="11" fill="'+C.blue+'" stroke="#fff" stroke-width="2.5"/>';
+    return svg(W,H,inner,"fig-quad");
+  },
+  /* régua de 0 a f.max cm (as peças ficam encostadas no zero): f.objs = [{k:"lapis"|"fita"|"clipe"|"borracha", len}] */
+  regua:function(f){
+    var sc=18,x0=10,oh=22,gap=8,rows=f.objs.length,y0=rows*(oh+gap)+8,W=x0*2+f.max*sc,H=y0+44,inner="",i;
+    f.objs.forEach(function(o,r){
+      var y=4+r*(oh+gap),w=o.len*sc,fill={lapis:"#FFD36B",fita:"#7EE0BE",clipe:"#CFD8E8",borracha:"#F7A8C4"}[o.k],yy=o.k==="clipe"?y+5:y,hh=o.k==="clipe"?oh-10:oh;
+      inner+='<rect class="obj" x="'+x0+'" y="'+yy+'" width="'+w+'" height="'+hh+'" rx="'+(o.k==="lapis"?2:o.k==="clipe"?5:6)+'" fill="'+fill+'" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="lapis")inner+='<polygon points="'+(x0+w-12)+','+y+' '+(x0+w)+','+(y+oh/2)+' '+(x0+w-12)+','+(y+oh)+'" fill="#E8B56B" stroke="'+INK+'" stroke-width="1.8" stroke-linejoin="round"/><rect x="'+x0+'" y="'+y+'" width="9" height="'+oh+'" fill="#F2503F" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="borracha")inner+='<rect x="'+(x0+w*.55)+'" y="'+y+'" width="'+(w*.45)+'" height="'+oh+'" rx="6" fill="#8FB0FF" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="fita")for(i=1;i*10<w-4;i++)inner+='<line x1="'+(x0+i*10)+'" x2="'+(x0+i*10)+'" y1="'+(y+4)+'" y2="'+(y+oh-4)+'" stroke="'+INK+'" stroke-width="1.2" opacity=".5"/>';
+    });
+    inner+='<rect x="'+x0+'" y="'+y0+'" width="'+(f.max*sc)+'" height="34" fill="#F7E9B4" stroke="'+INK+'" stroke-width="1.8"/>';
+    for(i=0;i<=f.max;i++)inner+='<line x1="'+(x0+i*sc)+'" x2="'+(x0+i*sc)+'" y1="'+y0+'" y2="'+(y0+12)+'" stroke="'+INK+'" stroke-width="1.4"/><text x="'+(x0+i*sc)+'" y="'+(y0+27)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+INK+'">'+i+'</text>';
+    return svg(W,H,inner,"fig-regua");
+  },
+  /* relógio digital: f.h e f.m (a hora fica sem zero à esquerda, os minutos com dois algarismos) */
+  digital:function(f){return '<div class="fig-dig" aria-hidden="true">'+f.h+":"+(f.m<10?"0":"")+f.m+"</div>"},
+  /* polígono com a medida de cada lado escrita (f.lados em cm; f.falta = índice do lado escondido, escrito "?") */
+  poligono:function(f){
+    var PTS={"triângulo":[[110,18],[196,142],[24,142]],"quadrado":[[60,22],[160,22],[160,122],[60,122]],"retângulo":[[28,32],[192,32],[192,122],[28,122]],"pentágono":[[110,12],[170,56],[148,126],[72,126],[50,56]]},
+      P=PTS[f.n].map(function(q){return [q[0]+36,q[1]]}),n=P.length,cx=0,cy=0,inner="",i;   /* margem à esquerda e à direita para os rótulos */
+    P.forEach(function(q){cx+=q[0]/n;cy+=q[1]/n});
+    inner+='<polygon points="'+P.map(function(q){return q.join(",")}).join(" ")+'" fill="'+C.sky+'" fill-opacity=".55" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>';
+    for(i=0;i<n;i++){
+      var a=P[i],b=P[(i+1)%n],mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,dx=mx-cx,dy=my-cy,d=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/d,uy=dy/d,
+        tx=mx+ux*10,ty=my+uy*10+(uy>.4?12:uy<-.4?-2:4),an=ux<-.4?"end":ux>.4?"start":"middle";
+      inner+='<text class="lab" x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)+'" text-anchor="'+an+'" font-size="14" font-weight="700" fill="'+INK+'">'+(i===f.falta?"?":f.lados[i]+" cm")+'</text>';
+    }
+    return svg(290,176,inner,"fig-poli");
+  },
+  /* tabela de dupla entrada: f.rows (linhas), f.cols (colunas), f.v[linha][coluna] */
+  tabela2:function(f){
+    return '<table class="fig-tab"><caption>'+esc(f.title)+'</caption><thead><tr><th></th>'+f.cols.map(function(c){return '<th>'+esc(c)+'</th>'}).join("")+'</tr></thead><tbody>'+
+      f.rows.map(function(r,i){return '<tr><th>'+esc(r)+'</th>'+f.v[i].map(function(x){return '<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>';
   },
   /* gráfico de colunas */
   bars:function(f){

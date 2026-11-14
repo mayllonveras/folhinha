@@ -726,7 +726,7 @@ var DICAS={1:"Conte os objetos e digite quantos são.",2:"Olhe os dois grupos: o
 var INTROS={16:"Lembrete: a esquerda é o lado da sua mão esquerda, e a direita é o lado da sua mão direita."};
 FC.LEVELS=FC.G1.map(function(e){
   var grupo=BLOCOS.filter(function(b){return e.nivel<=b[0]})[0][1];
-  var l={group:grupo,id:String(e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS[e.nivel],target:e.meta,gen:e.gen,ano:1};
+  var l={group:grupo,id:String(e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS[e.nivel],target:e.meta,gen:e.gen,ano:1,hab:e.hab};
   if(INTROS[e.nivel])l.intro=INTROS[e.nivel];
   return l;
 });
