@@ -34,8 +34,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Testes específicos:** a figura desenhada corresponde ao nome (lados, ângulos e proporção medidos no desenho); quadrado nunca rotacionado;
   retângulo nunca com proporção abaixo de 1,4; "retângulo" fora das opções quando a figura é um quadrado; "quadrado" nunca entre as opções de
   "qual é um retângulo?"; a posição da certa é uniforme.
-- **Para o professor decidir:** o texto da habilidade também fala em **"contornos de faces de sólidos"** (por exemplo, a tampa da lata
-  é um círculo). Proponho tratar isso no nível 15, junto com os sólidos, e não aqui. De acordo?
+- **Decisão do professor:** as "faces dos sólidos" (a tampa da lata é um círculo) ficam no nível 15.
 
 ## Nível 15 — Sólidos e objetos do dia a dia
 
@@ -55,8 +54,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Meta de tempo:** 100 s.
 - **Testes específicos:** nunca duas opções que descrevam o mesmo objeto; nenhum objeto ambíguo (ex.: nada de cubo como opção para "bloco
   retangular"); o desenho do sólido tem sombreado e é legível no tema escuro; a posição da certa é uniforme.
-- **Para o professor decidir:** o cilindro fica com **uma** emoji (🥫) e três objetos desenhados. Aceita desenhar a lata, o tubo e o copo,
-  ou prefere só a lata?
+- **Decisão do professor:** o cilindro tem a lata 🥫 e três objetos **desenhados** (lata, tubo e copo).
 
 ## Nível 16 — Esquerda, direita, em cima e embaixo
 
@@ -75,8 +73,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Meta de tempo:** 100 s.
 - **Testes específicos:** a resposta é recalculada pela posição dos objetos; a referência nunca está na ponta da fileira; os emojis nunca olham
   para um lado; nenhuma conta tem duas respostas possíveis; a posição da certa é uniforme.
-- **Para o professor decidir:** o lembrete das mãos fica no enunciado de **todas** as contas, ou só no começo da folha? Recomendo só no começo da
-  folha, com o desenho das mãos, para não poluir a conta.
+- **Decisão do professor:** o lembrete das mãos aparece **só no começo da folha**, com o desenho das mãos.
 
 ## Nível 17 — Organizar por cor, forma e tamanho; padrões de figuras
 
@@ -98,8 +95,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Exemplos:** "Qual não combina?": 🔵 🔵 🔵 🟡 (só a cor muda) → o amarelo. Padrão: ● ■ ● ■ ● ? → ■.
 - **Testes específicos:** em "não combina", exatamente uma figura difere e só em um atributo; em "padrão", a próxima figura é recalculada pelo
   padrão e é a única consistente com a fila mostrada; os tamanhos têm razão mínima de 1,4; as quatro cores são distintas em cor e luminosidade.
-- **Para o professor decidir:** os padrões **ABC** (três figuras diferentes) ficam neste nível ou vão para o 2º ano? Recomendo manter: com dois
-  períodos completos a fila já é clara, e o nível passa a cumprir o EF01MA10 de fato.
+- **Decisão do professor:** os padrões **ABC** ficam neste nível.
 
 ## Nível 18 — Dezena mais um número
 
@@ -130,9 +126,6 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 
 Tempo por dia (3 folhas): de 4 a 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 14 e 15:** as "faces dos sólidos" (EF01MA14) ficam no nível 15?
-2. **Nível 15:** desenhar a lata, o tubo e o copo para o cilindro?
-3. **Nível 16:** lembrete das mãos só no começo da folha?
-4. **Nível 17:** manter os padrões ABC?
+Faces dos sólidos no nível 15; cilindro com a lata e três objetos desenhados; lembrete das mãos só no começo da folha; padrões ABC mantidos no nível 17.

@@ -8,16 +8,18 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 
 1. **Folha** = 10 contas. O aluno faz 3 folhas por dia. **Meta de tempo** = segundos para a folha inteira; vale para o dia ouro
    (≤ 80% da meta) e o salto (≤ 60%).
-2. **Nada repetido na mesma folha.** Duas contas são a mesma se tiverem a mesma pergunta, a mesma figura e a mesma resposta certa
+2. **Revisão:** 2 das 10 contas de cada folha vêm de **níveis anteriores** (o motor sorteia, etapa 4a). As proporções descritas nas
+   fichas (por exemplo "5 somas e 5 subtrações") valem para as contas do nível, ou seja, para as outras 8, arredondadas.
+3. **Nada repetido na mesma folha.** Duas contas são a mesma se tiverem a mesma pergunta, a mesma figura e a mesma resposta certa
    (a ordem das opções e a cor não contam). Cada ficha diz quantas contas diferentes existem; abaixo de 10, o nível mistura outro tipo.
-3. **Respostas digitadas** são números inteiros de até 2 algarismos neste bloco. **Respostas de escolha** têm sempre 3 ou 4 opções,
+4. **Respostas digitadas** são números inteiros de até 2 algarismos neste bloco. **Respostas de escolha** têm sempre 3 ou 4 opções,
    com a certa em posição sorteada.
-4. **Concordância:** "Quantos/Quantas", "o/a", "1º/1ª" corretos pelo gênero do objeto ou do nome.
-5. **Emojis só de objetos inequívocos**, que o aluno nomeie do mesmo jeito. Sem emoji que possa ser dois objetos, e sem
+5. **Concordância:** "Quantos/Quantas", "o/a", "1º/1ª" corretos pelo gênero do objeto ou do nome.
+6. **Emojis só de objetos inequívocos**, que o aluno nomeie do mesmo jeito. Sem emoji que possa ser dois objetos, e sem
    figura em que dê para duvidar da quantidade (nada de emoji cortado, sobreposto ou muito pequeno).
-6. **Testes automáticos** em todo nível: a resposta certa é recalculada de forma independente do gerador; nenhuma opção errada
+7. **Testes automáticos** em todo nível: a resposta certa é recalculada de forma independente do gerador; nenhuma opção errada
    pode ser também correta; a posição da certa é uniforme; folhas de 10 não têm repetição; o tema escuro mostra tudo.
-7. **Sem números negativos, sem zero** neste bloco (a ideia de zero entra em níveis posteriores).
+8. **Sem números negativos, sem zero** neste bloco (a ideia de zero entra em níveis posteriores).
 
 ---
 
