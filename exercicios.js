@@ -118,7 +118,7 @@ var DRAW={
   /* objeto em forma de cone: chapéu de festa (não existe emoji de cone inteiro) */
   hat:function(){
     var id="g"+(++uid),s=INK;
-    return svg(100,100,'<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#FFD36B"/><stop offset=".45" stop-color="#F2A33A"/><stop offset="1" stop-color="#C46A12"/></linearGradient></defs><path d="M16,80 L50,12 L84,80 A34,10 0 0 1 16,80 Z" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><circle cx="44" cy="52" r="4" fill="#fff"/><circle cx="58" cy="64" r="4" fill="#E8456B"/><circle cx="36" cy="70" r="3.5" fill="#2457D6"/><circle cx="50" cy="12" r="6" fill="#E8456B" stroke="'+s+'" stroke-width="2"/>',"fig-solid");
+    return svg(100,100,'<defs><linearGradient id="'+id+'" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#FFD36B"/><stop offset=".45" stop-color="#F2A33A"/><stop offset="1" stop-color="#C46A12"/></linearGradient></defs><path d="M16,80 L50,12 L84,80 A34,10 0 0 1 16,80 Z" fill="url(#'+id+')" stroke="'+s+'" stroke-width="2.5" stroke-linejoin="round"/><circle cx="44" cy="52" r="4" fill="#fff"/><circle cx="58" cy="64" r="4" fill="#E8456B"/><circle cx="36" cy="70" r="3.5" fill="#2457D6"/><circle cx="50" cy="12" r="6" fill="#E8456B" stroke="'+s+'" stroke-width="2"/>',"fig-hat");
   },
   solid:function(f){
     var id="g"+(++uid),s=INK,inner="";

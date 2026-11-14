@@ -499,6 +499,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .opt:disabled{cursor:default}
 .opt .figsvg{width:64px;max-width:64px}
 .opt .fig{display:block}
+.opt .figsvg.fig-hat{width:30px;max-width:30px}
+.figsvg.fig-hat{max-width:130px}
 .opt .otx{font-family:var(--font-num)}
 .row.bad .opt.sel{border-color:var(--mark)}
 .sitem{display:flex;flex-direction:column;gap:8px;padding:8px 0}
