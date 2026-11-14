@@ -84,15 +84,29 @@ Opcional, feito na hora do cadastro. Cinco folhas curtas de 5 contas, uma por an
 ## Ordem de trabalho proposta
 
 1. **Revisão do inventário** pelo professor (grupos A, B e C da planilha).
-2. **Fundação:** parâmetros no `/adm`, ano escolar, teto e a nova regra de fechamento do dia (ouro, salto e oferta de voltar). Dá para construir e testar com os 45 níveis atuais.
-3. **Motor de exercícios:** os novos tipos de resposta, começando pelos que destravam mais habilidades (escolha e figura).
-4. **A grade, um ano por vez**, cada ano num PR revisado pelo professor.
+2. **Fundação (feita, PR #23):** parâmetros no `/adm`, ano escolar, teto e a nova regra de fechamento do dia (ouro, salto e oferta de voltar). Dá para construir e testar com os 45 níveis atuais.
+3. **Motor de exercícios (feito, PR #24; os geradores ainda não estão ligados a nenhum nível):** os novos tipos de resposta, começando pelos que destravam mais habilidades (escolha e figura).
+4. **A grade, um ano por vez**, cada ano num PR revisado pelo professor. Dividida em duas partes (ver "Decisões da etapa 4").
 5. **Nivelamento** (depende da grade dos cinco anos).
 6. **Telas dos pais:** ano de cada nível, etiquetas e avisos.
 7. **Anos finais** (6º ao 9º), necessários a partir de janeiro de 2027.
 
+## Decisões da etapa 4 (14/11/2026)
+
+Conta de ritmo, com os valores atuais (estudo de segunda a sexta, 5 carimbos por nível, dia normal = 1 carimbo, dia ouro = 2, salto = 1 dia, no máximo 2 por semana): aluno regular ≈ 1 nível por semana, aluno forte ≈ 1,7, aluno excepcional ≈ 3. O ano letivo tem cerca de 40 semanas.
+
+- **30 níveis por ano** (1º ao 5º = 150 níveis; anos finais depois, com a mesma conta). O aluno regular termina o ano em ~30 semanas e sobram ~10 de folga; o aluno forte (ouro todo dia) consome o ano e o teto +1 em ~36 semanas. O ritmo se ajusta pelos parâmetros do `/adm`, não pela quantidade de níveis. Um nível não é uma habilidade: uma habilidade vira de 1 a 3 níveis.
+- **No teto,** em vez de repetir o último nível, o aluno recebe folhas de **revisão e de desafio**.
+- **Revisão:** cerca de **20% de cada folha** vem de níveis anteriores (a tabuada já tem revisão espaçada).
+- **Carimbos por nível** viram campo ajustável no `/adm` (padrão 5), para níveis mais difíceis ou mais fáceis.
+- **Teto +2:** quando o aluno estiver perto de bater o teto +1, a tela do responsável mostra a **sugestão de liberar +2**, e o responsável decide (campo `teto_anos` do aluno).
+- **Etapa 4 em duas partes:**
+  - **4a. Mecanismos:** carimbos por nível, revisão de 20%, folha de revisão/desafio no teto, sugestão de +2 na tela do responsável.
+  - **4b. Grade:** os 30 níveis do 1º ano a partir do inventário, ligando cada nível a códigos EF01MA e aos geradores; o professor revisa antes de entrar no app. Depois, 2º ao 5º. A classificação A/B/C do 1º ano é proposta junto com a grade.
+- **Lembretes levantados na conversa:** revisão dos níveis saltados (ficaram sem carimbos); meta de tempo inicial estimada para os 150 níveis, ajustada com dados reais; banco de questões escrito à mão para conteúdos que não têm gerador (problemas de texto); aviso de "retomada" depois de um mês parado; teste de nivelamento para aluno novo.
+
 ## Pontos em aberto
 
-- Os valores iniciais da tabela acima (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
-- Quantos níveis por ano ficam na grade (a conta do ritmo indica de 24 a 32 por ano, com 5 carimbos por nível).
-- Se o número de carimbos por nível (hoje 5, fixo no código) passa a ser parâmetro.
+- Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
+- Revisão do inventário pelo professor (grupos A, B e C).
+- Metas de tempo dos 150 níveis novos (estimativa inicial, ajuste com dados).
