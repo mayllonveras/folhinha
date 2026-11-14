@@ -136,7 +136,6 @@ function home(){
   if(canStart){$("#start").onclick=startSheet;prepare()}
   bindOffer(m);
   bindPack();bindAlbum();friendsLoad();TR.step="home";trLoad();
-  if(m.pending_packs>0&&!S.packAsked){S.packAsked=true;setTimeout(openPackFlow,500)}
 }
 /* ---------- oferta de voltar: depois de um salto sem carimbo, a criança escolhe (nunca é automático) ---------- */
 function offerHtml(m,L){
@@ -221,7 +220,7 @@ async function friendView(id){
 /* Fluxo: Trocas > Nova troca > escolher o amigo > escolher uma repetida minha que ele ainda não tem (e cujo álbum ele tem)
    > escolher uma repetida dele que ainda não tenho (e cujo álbum eu tenho) > pedir. O amigo aceita ou recusa na aba Trocas.
    O aviso chega em tempo real, mas só aparece ENTRE as folhas (nunca com a folha aberta). */
-var TR={step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
+var TR={sub:"repetidas",step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
 function stk(t,sl,badge){return FC.stickerHtml(t,sl,{noflip:true,badge:badge||0})}
 function tradesPane(){return '<div id="trBox"><p class="loading">Carregando…</p></div>'}
 function canNotify(){return !busy&&(!cur||cur.secs!=null)}
@@ -269,9 +268,10 @@ function trStop(){
   TR.ch=null;if(TR.poll)clearInterval(TR.poll);TR.poll=null;TR.data=null;TR.hist=null;TR.announced={};TR.step="home";
 }
 function goTrocas(){
+  TR.sub="pedidos";
   FC.tabState.aluno="trocas";try{sessionStorage.setItem("fc_tab_aluno","trocas")}catch(e){}
   var b=$('.navtop [data-tab="trocas"]');
-  if(b&&$('.shell[data-scope="aluno"]'))b.click();else loadHome().catch(fail);
+  if(b&&$('.shell[data-scope="aluno"]')){b.click();TR.step="home";trRender()}else loadHome().catch(fail);
 }
 function trBanner(html){
   var old=$("#trBanner");if(old)old.remove();
@@ -321,12 +321,14 @@ function trRender(){
   var rep=dups.length?'<div class="album gap">'+dups.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>':
     '<p class="muted small-t gap">Você ainda não tem repetidas. Quando um pacotinho trouxer uma figurinha que você já tem, ela aparece aqui, pronta para trocar.</p>';
   box.innerHTML=
-    (inc?'<section class="panel"><b>Pedidos de troca para você</b>'+inc+'</section>':'')+
     '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
-    (out?'<section class="panel"><b>Pedidos que você fez</b>'+out+'</section>':'')+
-    histHtml()+
-    '<section class="panel"><div class="split"><b>Minhas repetidas</b><span class="muted small-t num">'+total+'</span></div>'+rep+'</section>';
+    '<section class="panel"><div class="album-tabs" role="tablist">'+
+      '<button type="button" class="chip-btn'+(TR.sub==="pedidos"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="pedidos")+'" data-trsub="pedidos">Pedidos ('+(d.incoming.length+d.outgoing.length)+')'+(d.incoming.length?'<span class="tr-dot">'+d.incoming.length+'</span>':'')+'</button>'+
+      '<button type="button" class="chip-btn'+(TR.sub==="repetidas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="repetidas")+'" data-trsub="repetidas">Minhas repetidas ('+total+')</button>'+
+      '<button type="button" class="chip-btn'+(TR.sub==="feitas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="feitas")+'" data-trsub="feitas">Trocas feitas ('+(TR.hist||[]).length+')</button></div>'+
+      (TR.sub==="pedidos"?reqHtml(inc,out):TR.sub==="feitas"?histHtml():rep)+'</section>';
+  $$("[data-trsub]",box).forEach(function(b){b.onclick=function(){TR.sub=b.getAttribute("data-trsub");trRender()}});
   var nb=$("#trNew");if(nb)nb.onclick=function(){TR.step="friend";TR.give=TR.want=TR.opts=null;trFlow()};
   $$("[data-tans]",box).forEach(function(b){b.onclick=function(){trAnswer(b.getAttribute("data-tans"),!!b.getAttribute("data-ok"),b)}});
   $$("[data-tcancel]",box).forEach(function(b){b.onclick=async function(){
@@ -334,13 +336,19 @@ function trRender(){
     try{await rpc("student_trade_cancel",{p_token:S.token,p_id:b.getAttribute("data-tcancel")});FC.toast("Pedido cancelado.")}catch(e){FC.toast(FC.err(e),true)}
     trLoad()}});
 }
+/* Aba Pedidos: os que chegaram para a criança e os que ela fez. */
+function reqHtml(inc,out){
+  if(!inc&&!out)return '<p class="muted small-t gap">Nenhum pedido de troca por enquanto.</p>';
+  return (inc?'<div class="gap"><b>Para você</b>'+inc+'</div>':'')+(out?'<div class="gap"><b>Que você fez</b>'+out+'</div>':'');
+}
 /* Trocas já feitas: com quem, o que a criança deu e o que recebeu. */
 function histHtml(){
-  var h=TR.hist||[];if(!h.length)return "";
-  return '<section class="panel"><div class="split"><b>Trocas que você já fez</b><span class="muted small-t num">'+h.length+'</span></div>'+h.map(function(x){
+  var h=TR.hist||[];
+  if(!h.length)return '<p class="muted small-t gap">Você ainda não fez nenhuma troca. Quando um amigo aceitar um pedido seu (ou você aceitar o dele), a troca aparece aqui.</p>';
+  return h.map(function(x){
     return '<div class="tr-req"><div class="muted small-t">'+FC.dm(String(x.at).slice(0,10))+' · com <b>'+esc(x.friend)+'</b></div>'+
       pairHtml([x.got_theme,x.got_slot],[x.gave_theme,x.gave_slot])+
-      '<div class="muted small-t center">Você deu '+esc(nameOf(x.gave_theme,x.gave_slot))+' e recebeu '+esc(nameOf(x.got_theme,x.got_slot))+'.</div></div>'}).join("")+'</section>';
+      '<div class="muted small-t center">Você deu '+esc(nameOf(x.gave_theme,x.gave_slot))+' e recebeu '+esc(nameOf(x.got_theme,x.got_slot))+'.</div></div>'}).join("");
 }
 async function trAnswer(id,ok,btn){
   $$("#trBox button").forEach(function(b){b.disabled=true});
@@ -443,6 +451,18 @@ function albumPane(m){
     '<p class="muted small-t gap">'+(got.length>=FC.ALBUM_SIZE?'Álbum completo! Parabéns! As repetidas ficam na aba Trocas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
     '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
+/* Atualiza na tela, na hora, o aviso de pacotinhos (Início) e o álbum (Álbum) com os dados atuais de S.me. */
+function refreshPacks(){
+  var m=S.me;if(!m)return;
+  $$(".packbox").forEach(function(el){
+    var h=packPanel(m);
+    if(!h){el.remove();return}
+    var t=document.createElement("div");t.innerHTML=h;el.replaceWith(t.firstChild);
+  });
+  var pane=$('.pane[data-pane="album"]');
+  if(pane){pane.innerHTML=albumPane(m);bindAlbum()}
+  bindPack();
+}
 function bindPack(){$$("[data-pack]").forEach(function(b){b.onclick=openPackFlow})}
 function bindAlbum(){$$("[data-album]").forEach(function(b){b.onclick=function(){
   S.albumTheme=b.getAttribute("data-album");
@@ -468,6 +488,7 @@ async function openPack(theme){
   catch(e){FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
   m.pending_packs=res.pending;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
+  refreshPacks();   // a contagem e o álbum já aparecem certos por trás, sem precisar recarregar a página
   showAward(res);
 }
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
@@ -478,7 +499,7 @@ function showAward(aw){
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:m.pending_packs>0?"Abrir o próximo":(rep_?"Guardar nas repetidas":"Colar no álbum"),cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(m.pending_packs>0)openPackFlow();else if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   setTimeout(function(){
     FC.sfx.pack();var el=$("#packReveal");if(el)el.classList.add("opened");
     if(tier==="comum"){FC.confetti();return}
@@ -687,8 +708,8 @@ async function send(payload,score){
     if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
       FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);
-      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.'+(themesOf(S.me).length>1?' Você escolhe de qual álbum quer cada figurinha.':'')+'</p>',
-        {button:got>1?"Abrir os pacotinhos":"Abrir o pacotinho",onClose:openPackFlow});
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Seus pacotinhos estão esperando na tela inicial. Toque em <b>Abrir pacotinho</b> quando quiser'+(themesOf(S.me).length>1?' e escolha de qual álbum quer a figurinha':'')+'.</p>',
+        {button:"Entendi"});
     },res.advanced?3600:2300);
   }
   if(res.stamp)FC.sfx.stamp();

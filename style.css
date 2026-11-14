@@ -220,7 +220,7 @@ details .form{margin-top:12px}
   .confetti i{animation:fall linear forwards}
   @keyframes fall{to{transform:translate3d(var(--dx),110vh,0) rotate(var(--rot))}}
 }
-.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:60}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:80}   /* acima das janelas (.overlay = 70), para o confete cair na frente */
 .confetti i{position:absolute;top:-16px;width:10px;height:16px;border-radius:2px}
 
 /* trilha até o baú */
