@@ -90,3 +90,7 @@ A multiplicação vem antes da divisão (a divisão usa a tabuada). Os blocos de
 2. **Uma tabuada por nível (6, 7, 8 e 9):** são os fatos mais difíceis de memorizar. **Sugiro** manter um nível para cada, em vez de juntar dois a dois; custam quatro semanas, mas são o ponto de maior dificuldade do ano.
 3. **Total de 42 níveis:** fica dois acima do teto prático de 40. **Sugiro** manter os 42; se faltar fôlego mais tarde, o nível 30 (problemas com as quatro operações) e o 15 (igualdades) são os que se poderiam juntar a outros.
 4. **Miligrama (nível 36):** a BNCC cita o miligrama. **Sugiro** só reconhecer a unidade (por exemplo, "o remédio vem em miligramas"), sem converter entre unidades, que fica para o 4º ano.
+
+## Decisões do professor (14/11/2026)
+
+Ordem e total (42 níveis) aprovados; o número por extenso entra no 3º ano, só no nível 1; uma tabuada por nível do 6 ao 9; o miligrama só como unidade a reconhecer, sem conversão.
