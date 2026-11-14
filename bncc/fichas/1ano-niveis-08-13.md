@@ -31,9 +31,7 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Exemplos:** `3 + 2 = ?` com 🍎🍎🍎 e 🍎🍎 → 5. `5 − 2 = ?` com 5 ⚽ e os dois últimos riscados → 3.
 - **Testes específicos:** a resposta é recalculada; a quantidade de emojis desenhados bate com os números da conta; na subtração, os
   riscados são exatamente `b`; soma nunca passa de 5; subtração nunca dá zero; 5 somas e 5 subtrações por folha.
-- **Para o professor decidir:** (a) o emoji **riscado** é a melhor forma de mostrar "tirar", ou prefere o grupo de `a` emojis e o
-  texto "tire 2", sem riscar? (b) Aceita contas com resultado **zero** (3 − 3 = 0)? Eu deixei de fora até o nível 13; o zero
-  como resultado pode entrar mais à frente, com a figura do prato vazio.
+- **Decisão do professor:** o "tirar" é mostrado com o emoji **riscado**; contas com **resultado zero** (3 − 3) ficam para mais à frente.
 
 ## Nível 9 — Somar e tirar de 1 a 3, com números até 10
 
@@ -95,9 +93,7 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Exemplos:** `6 + 3 = ?` → 9. `8 − 5 = ?` → 3.
 - **Testes específicos:** as respostas são recalculadas; limites de soma e subtração como nos níveis 10 e 11; 5 e 5 por folha;
   a família aparece em cerca de metade das folhas.
-- **Para o professor decidir:** aceita que, numa segunda versão da grade, entrem contas com o
-  **resultado escondido no meio** (`3 + ? = 8`)? Eu deixei de fora porque é uma ideia nova (complemento) e vem junto com a
-  álgebra do 2º ano ("descubra o x").
+- **Decisão do professor:** contas com o **resultado escondido** (`3 + ? = 8`) ficam para uma segunda versão da grade.
 
 ## Nível 13 — Problemas de juntar e tirar, até 10
 
@@ -117,8 +113,7 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Testes específicos:** a resposta é recalculada a partir dos números do problema (não do texto); frases não passam de 14
   palavras; concordância de gênero e número para todos os objetos e nomes; a figura tem as quantidades certas; o resultado nunca é zero;
   nenhum problema repete o mesmo nome na mesma folha.
-- **Para o professor decidir:** o app **ler o problema em voz alta** ajudaria quem ainda está aprendendo a ler. Anoto como ideia
-  futura (precisa de som e de revisão de acessibilidade); neste nível, o texto fica curto para a criança dar conta de ler.
+- **Decisão do professor:** o **áudio** do enunciado fica como ideia futura (precisa de som e de revisão de acessibilidade).
 
 ---
 
@@ -135,8 +130,6 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 
 Tempo por dia (3 folhas): de 4 a 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 8:** mostrar o "tirar" com o emoji **riscado**? E o resultado **zero** (3 − 3) entra mais à frente?
-2. **Nível 12:** contas com o **resultado escondido** (`3 + ? = 8`) ficam para uma segunda versão?
-3. **Nível 13:** o **áudio** do enunciado fica como ideia futura?
+Emoji riscado para o "tirar" (nível 8); resultado zero depois; complemento (`3 + ? = 8`) numa segunda versão; áudio como ideia futura.
