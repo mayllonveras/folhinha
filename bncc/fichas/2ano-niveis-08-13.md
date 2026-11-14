@@ -99,3 +99,7 @@ Tempo por dia (3 folhas): de 5 a 6 minutos.
 
 1. **Níveis 8 e 10:** unidades sempre de **1 a 8** (ou 9), evitando o zero nas parcelas, para a criança treinar o cálculo e não o atalho das dezenas inteiras (que já foi do 1º ano). De acordo?
 2. **Nível 13:** as contas `450 − 250` (subtrair centenas e dezenas inteiras) entram aqui, mesmo sendo de três algarismos. De acordo?
+
+## Decisões do professor (14/11/2026)
+
+Unidades sem zero nos níveis 8 e 10; `450 − 250` entra no nível 13.

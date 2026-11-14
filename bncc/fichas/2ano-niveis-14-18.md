@@ -89,3 +89,7 @@ Tempo por dia (3 folhas): de 6 a 7,5 minutos.
 1. **Nível 14:** o 2º ano não pede reagrupar com três algarismos, só até "casa a casa". De acordo em deixar o reagrupamento de centenas para o 3º ano?
 2. **Nível 15:** os quatro formatos (parcela escondida nas somas e nas subtrações) entram todos no 2º ano? Recomendo sim: ajudam a ver a subtração como o inverso da soma.
 3. **Nível 18:** as quantidades como **múltiplos de 10** mantêm o problema de cabeça. De acordo?
+
+## Decisões do professor (14/11/2026)
+
+Reagrupamento com três algarismos fica para o 3º ano (nível 14); as quatro formas de número escondido entram no nível 15; quantidades em múltiplos de 10 no nível 18.
