@@ -238,10 +238,32 @@ function itemKey(p){
   return p.pre+"|"+(p.post||"")+"|"+figKey(ex.fig);
 }
 FC.itemKey=itemKey;
-FC.makeItems=function(levelIdx,keep){
-  var items=(keep||[]).map(FC.plainItem),seen={},g=0;
+/* Revisão (etapa 4a): 2 das 10 contas de cada folha vêm de níveis anteriores; no teto, a folha inteira é de revisão.
+   Sorteio do nível: 60% entre os 3 últimos níveis concluídos (30%, 20% e 10%) e 40% em qualquer um dos anteriores.
+   No teto o próprio nível atual entra também (20%), depois os 3 anteriores (15% cada) e o resto (35%). */
+function reviewLevel(levelIdx,teto){
+  var r=Math.random(),k;
+  if(teto){
+    if(r<.2)return levelIdx;
+    if(r<.65){k=r<.35?1:r<.5?2:3;if(levelIdx-k>=0)return levelIdx-k}
+    return Math.floor(Math.random()*(levelIdx+1));
+  }
+  if(r<.6){k=r<.3?1:r<.5?2:3;if(levelIdx-k>=0)return levelIdx-k}
+  return Math.floor(Math.random()*levelIdx);
+}
+FC.reviewLevel=reviewLevel;
+/* levelIdx: nível atual; keep: contas de reforço (até 4); opts.teto: folha de revisão do teto. */
+FC.makeItems=function(levelIdx,keep,opts){
+  opts=opts||{};
+  var teto=!!opts.teto&&levelIdx>0,revN=teto?10:(levelIdx>0?2:0);
+  var items=(keep||[]).slice(0,teto?4:10-revN-2).map(FC.plainItem),seen={},g=0,tries=0;
   items.forEach(function(p){seen[itemKey(p)]=1});
-  while(items.length<10&&g++<400){
+  var added=0;
+  while(added<revN&&items.length<10&&g++<revN*40){
+    var lv=reviewLevel(levelIdx,teto),q=FC.LEVELS[lv].gen(),kq=itemKey(q);
+    if(seen[kq])continue;seen[kq]=1;q._rev=true;items.push(q);added++;
+  }
+  while(items.length<10&&tries++<400){
     var p=FC.LEVELS[levelIdx].gen(),k=itemKey(p);
     if(seen[k])continue;seen[k]=1;items.push(p);
   }

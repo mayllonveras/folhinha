@@ -310,12 +310,19 @@ async function detail(id){
     var p=profs.filter(function(x){return x.id===g.user_id})[0];
     return '<li>'+esc(p?p.name||"Sem nome":"Adulto")+' <span class="muted">· '+(p&&p.role==="professor"?"professor(a)":"responsável")+(g.role==="owner"?" · cadastrou o aluno":"")+(g.user_id===U.user.id?" · você":"")+'</span></li>';
   }).join("");
-  var need=(PUB&&PUB.stamps_needed)||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<s.stamps?" on":"")+'">✓</span>';
+  var need=s.stamps_needed||(PUB&&PUB.stamps_needed)||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<s.stamps?" on":"")+'">✓</span>';
   var anoNow=FC.anoAluno(s,today,PUB),notices="";
   /* limite de avanço atingido: carimbos completos e o próximo nível é de um ano além do teto */
   var tetoPad=(PUB&&PUB.teto_anos_padrao!=null)?PUB.teto_anos_padrao:1,tetoVal=s.teto_anos!=null?s.teto_anos:tetoPad,nextL=FC.LEVELS[s.level_idx+1];
   var atTeto=anoNow&&nextL&&s.stamps>=need&&nextL.ano>anoNow+tetoVal;
   if(atTeto)notices+='<div class="panel offer"><b>O aluno chegou ao limite do plano</b><p class="small-t">Ele completou os carimbos do nível '+L.id+' e o próximo nível é do '+FC.ordAno(nextL.ano)+', além do limite definido (até '+tetoVal+' ano'+(tetoVal===1?"":"s")+' à frente do '+FC.ordAno(anoNow)+'). Ele continua praticando e ganhando figurinhas.</p><div class="actions"><button class="btn small" id="liberar">Liberar mais 1 ano</button></div></div>';
+  /* perto do limite: faltam poucos níveis (até 3) dentro do limite atual; sugere liberar mais um ano (o professor decide) */
+  if(anoNow&&!atTeto){
+    var maxAno=anoNow+tetoVal,firstBeyond=-1;
+    for(var q=0;q<FC.LEVELS.length;q++)if(FC.LEVELS[q].ano>maxAno){firstBeyond=q;break}
+    var left=firstBeyond>=0?firstBeyond-1-s.level_idx:-1;
+    if(firstBeyond>=0&&left>=0&&left<=3)notices+='<div class="panel offer"><b>O aluno está chegando ao limite do plano</b><p class="small-t">'+(left===0?'Falta só terminar o nível '+L.id+' para chegar':'Faltam '+left+' nível'+(left===1?'':'s')+' depois deste para ele chegar')+' ao limite definido (até '+tetoVal+' ano'+(tetoVal===1?"":"s")+' à frente do '+FC.ordAno(anoNow)+'). Se ele está indo bem, você pode liberar mais um ano à frente (até '+(tetoVal+1)+'), e ele continua avançando sem parar. Quando chegar ao limite, ele faz folhas de revisão.</p><div class="actions"><button class="btn small" id="liberar">Liberar mais 1 ano</button></div></div>';
+  }
   if(s.reached_by_jump&&s.dry_days>=((PUB&&PUB.dias_sem_carimbo_voltar)||2))notices+='<div class="panel offer"><b>Nível difícil depois do salto</b><p class="small-t">Depois de pular para o nível '+L.id+', o aluno passou '+s.dry_days+' dias de estudo sem ganhar carimbo. O app ofereceu a ele voltar ao nível anterior e treinar mais; ele escolhe. Você também pode trocar o nível na aba Programa.</p></div>';
   if(s.ano_escolar&&s.ano_ref&&FC.anoLetivo(today,PUB)>s.ano_ref)notices+='<div class="panel offer"><b>O ano escolar foi atualizado</b><p class="small-t">Na virada do ano, o ano escolar passou automaticamente para o <b>'+FC.ordAno(anoNow)+'</b>. O nível do aluno não mudou. Confira se está certo; para corrigir, use a aba Programa.</p><div class="actions"><button class="btn small" id="anoOk">Está certo</button></div></div>';
   var movesHtml='<div class="panel"><div class="eyebrow gap">Mudanças de nível</div>'+(moves.length?'<ul class="plain miss">'+moves.map(function(m){

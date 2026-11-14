@@ -3,7 +3,7 @@
 (function(){
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
-var DATA=null,SET=null,SETERR=null,TAB="alunos",FILTER="";
+var DATA=null,SET=null,SETERR=null,LEV=null,TAB="alunos",FILTER="";
 
 function dt(s){if(!s)return "—";var d=new Date(s);return FC.pad(d.getDate())+"/"+FC.pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+FC.pad(d.getHours())+":"+FC.pad(d.getMinutes())}
 function dtDay(s){return s?dt(s).slice(0,10):"—"}
@@ -49,6 +49,8 @@ async function load(user){
   DATA=r.data;
   var sr=await sb.rpc("admin_get_settings");
   SET=sr.error?null:sr.data;SETERR=sr.error?FC.err(sr.error):null;
+  var lr=await sb.rpc("admin_levels");   /* só existe depois da migração da etapa 4a */
+  LEV=lr.error?null:lr.data;
   show(user);
 }
 
@@ -131,7 +133,39 @@ function paramsHtml(){
       return '<label class="field">'+esc(f[1])+'<span class="adm-in"><input type="number" inputmode="numeric" step="1" min="'+f[2]+'" max="'+f[3]+'" name="'+f[0]+'" value="'+esc(SET[f[0]])+'"><em>'+esc(f[4])+'</em></span></label>'}).join("")+'</div></fieldset>'}).join("")+
     '<p class="msg" id="parMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="parSave">Salvar parâmetros</button>'+
     '<button class="btn ghost" type="button" id="parDef">Voltar aos valores iniciais</button></div>'+
-    '<p class="muted small-t">As mudanças valem para todos os alunos, a partir do próximo dia de estudo.</p></form>';
+    '<p class="muted small-t">As mudanças valem para todos os alunos, a partir do próximo dia de estudo.</p></form>'+levelsHtml();
+}
+/* Carimbos por nível: vazio = o padrão geral. Níveis mais difíceis podem pedir mais carimbos; os fáceis, menos. */
+function levelsHtml(){
+  if(!LEV)return "";
+  var rows=LEV.map(function(l){
+    var L=FC.LEVELS[l.idx];
+    return '<tr><td>'+esc(L?L.id:l.code)+'</td><td>'+esc(L?L.name:"")+'</td><td>'+esc(l.ano)+'º</td><td><input class="adm-lv" type="number" inputmode="numeric" step="1" min="1" max="10" data-idx="'+l.idx+'" data-was="'+(l.stamps_needed==null?"":l.stamps_needed)+'" value="'+(l.stamps_needed==null?"":l.stamps_needed)+'" placeholder="'+esc(SET?SET.stamps_needed:5)+'" aria-label="Carimbos do nível '+esc(L?L.id:l.code)+'"></td></tr>'}).join("");
+  return '<fieldset class="adm-group"><legend>Carimbos por nível</legend><p class="muted small-t">Quantos carimbos concluem cada nível. Deixe em branco para usar o padrão geral ('+esc(SET?SET.stamps_needed:5)+'). Vale de 1 a 10.</p>'+
+    '<div class="adm-wrap"><table class="adm-table"><thead><tr><th>Nível</th><th>Nome</th><th>Ano</th><th>Carimbos</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="msg" id="lvMsg" role="alert"></p><div class="actions"><button class="btn" type="button" id="lvSave">Salvar carimbos dos níveis</button></div></fieldset>';
+}
+function bindLevels(){
+  var b=$("#lvSave");if(!b)return;
+  b.onclick=async function(){
+    var msg=$("#lvMsg"),ch=[],bad=null;
+    $$(".adm-lv").forEach(function(i){
+      var v=i.value.trim(),was=i.getAttribute("data-was");
+      if(v===was)return;
+      if(v!==""&&(!/^\d+$/.test(v)||Number(v)<1||Number(v)>10))bad=bad||"Os carimbos de um nível precisam ser um número inteiro de 1 a 10, ou ficar em branco.";
+      ch.push([Number(i.getAttribute("data-idx")),v===""?null:Number(v)])});
+    if(bad){msg.textContent=bad;msg.className="msg bad";return}
+    if(!ch.length){msg.textContent="Nada mudou.";msg.className="msg";return}
+    b.disabled=true;
+    for(var k=0;k<ch.length;k++){
+      var r=await sb.rpc("admin_set_level_stamps",{p_idx:ch[k][0],p_stamps:ch[k][1]});
+      if(r.error){b.disabled=false;msg.textContent=parErr(r.error);msg.className="msg bad";return}
+      LEV=r.data;
+    }
+    b.disabled=false;
+    $$(".adm-lv").forEach(function(i){i.setAttribute("data-was",i.value.trim())});
+    msg.textContent="Carimbos dos níveis salvos.";msg.className="msg good";FC.toast("Carimbos dos níveis salvos.");
+  };
 }
 function parErr(e){
   var m=String(e&&e.message||"");
@@ -197,7 +231,7 @@ function show(user){
   bindBar();
   $("#reload").onclick=function(){load(user)};
   $$(".tab").forEach(function(b){b.onclick=function(){TAB=b.getAttribute("data-t");show(user)}});
-  bindParams(user);bindEx();
+  bindParams(user);bindLevels();bindEx();
   if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable()};
 }
 })();
