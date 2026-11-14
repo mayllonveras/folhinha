@@ -8,7 +8,7 @@ global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_UR
 require('../core.js');require('../exercicios.js');
 const FC=global.FC;
 const sc=f=>f?JSON.stringify(f,(k,v)=>k==="color"?undefined:v):"";
-function visual(p){const ex=p.extra||{};if(!ex.opts)return p.pre+"|"+(p.post||"")+"|"+sc(ex.fig);return p.pre+"|"+sc(ex.fig)+"|"+sc(ex.opts[p.a-1])}
+function visual(p){if(p.key)return p.key;const ex=p.extra||{};if(!ex.opts)return p.pre+"|"+(p.post||"")+"|"+sc(ex.fig);return p.pre+"|"+sc(ex.fig)+"|"+sc(ex.opts[p.a-1])}
 let falhas=0;const falha=m=>{falhas++;console.log("  FALHA",m)};
 function repetidas(gen,folhas,keep){FC.LEVELS=[{gen}];let n=0;
   for(let s=0;s<folhas;s++){const itens=FC.makeItems(0,keep&&keep());const ks=itens.map(visual);if(new Set(ks).size<ks.length)n++}return n}

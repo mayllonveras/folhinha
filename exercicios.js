@@ -181,7 +181,7 @@ function gBigger(lo,hi,which){return function(){var x=rnd(lo,hi),y;do{y=rnd(lo,h
   return choice("Qual é o "+w+" número?",String(w==="maior"?big:small),[String(w==="maior"?small:big)],null)}}
 function gNeighbor(lo,hi){return function(){var n=rnd(lo,hi),after=Math.random()<.5;
   return typed("Que número vem "+(after?"depois":"antes")+" do "+n+"?",after?n+1:n-1)}}
-function gOrdinal(){var n=pick(NAMES),p=rnd(2,9),f=n[1]==="f";
+function gOrdinal(){var n=pick(NAMES),p=rnd(2,15),f=n[1]==="f";
   var it=typed(n[0]+" é "+(f?"a "+p+"ª":"o "+p+"º")+" da fila. Quantas crianças estão na frente "+(f?"dela":"dele")+"?",p-1);
   it.key="fila|"+p;return it}   /* key: identidade para não repetir na folha (só trocar o nome não é conta nova) */
 /* Em geometria, alguns nomes valem também para os casos particulares: todo quadrado é retângulo, losango e paralelogramo;
