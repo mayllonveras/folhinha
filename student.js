@@ -220,7 +220,7 @@ async function friendView(id){
 /* Fluxo: Trocas > Nova troca > escolher o amigo > escolher uma repetida minha que ele ainda não tem (e cujo álbum ele tem)
    > escolher uma repetida dele que ainda não tenho (e cujo álbum eu tenho) > pedir. O amigo aceita ou recusa na aba Trocas.
    O aviso chega em tempo real, mas só aparece ENTRE as folhas (nunca com a folha aberta). */
-var TR={step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
+var TR={sub:"repetidas",step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
 function stk(t,sl,badge){return FC.stickerHtml(t,sl,{noflip:true,badge:badge||0})}
 function tradesPane(){return '<div id="trBox"><p class="loading">Carregando…</p></div>'}
 function canNotify(){return !busy&&(!cur||cur.secs!=null)}
@@ -324,8 +324,11 @@ function trRender(){
     '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
     (out?'<section class="panel"><b>Pedidos que você fez</b>'+out+'</section>':'')+
-    histHtml()+
-    '<section class="panel"><div class="split"><b>Minhas repetidas</b><span class="muted small-t num">'+total+'</span></div>'+rep+'</section>';
+    '<section class="panel"><div class="album-tabs" role="tablist">'+
+      '<button type="button" class="chip-btn'+(TR.sub==="repetidas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="repetidas")+'" data-trsub="repetidas">Minhas repetidas ('+total+')</button>'+
+      '<button type="button" class="chip-btn'+(TR.sub==="feitas"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="feitas")+'" data-trsub="feitas">Trocas feitas ('+(TR.hist||[]).length+')</button></div>'+
+      (TR.sub==="feitas"?histHtml():rep)+'</section>';
+  $$("[data-trsub]",box).forEach(function(b){b.onclick=function(){TR.sub=b.getAttribute("data-trsub");trRender()}});
   var nb=$("#trNew");if(nb)nb.onclick=function(){TR.step="friend";TR.give=TR.want=TR.opts=null;trFlow()};
   $$("[data-tans]",box).forEach(function(b){b.onclick=function(){trAnswer(b.getAttribute("data-tans"),!!b.getAttribute("data-ok"),b)}});
   $$("[data-tcancel]",box).forEach(function(b){b.onclick=async function(){
@@ -335,11 +338,12 @@ function trRender(){
 }
 /* Trocas já feitas: com quem, o que a criança deu e o que recebeu. */
 function histHtml(){
-  var h=TR.hist||[];if(!h.length)return "";
-  return '<section class="panel"><div class="split"><b>Trocas que você já fez</b><span class="muted small-t num">'+h.length+'</span></div>'+h.map(function(x){
+  var h=TR.hist||[];
+  if(!h.length)return '<p class="muted small-t gap">Você ainda não fez nenhuma troca. Quando um amigo aceitar um pedido seu (ou você aceitar o dele), a troca aparece aqui.</p>';
+  return h.map(function(x){
     return '<div class="tr-req"><div class="muted small-t">'+FC.dm(String(x.at).slice(0,10))+' · com <b>'+esc(x.friend)+'</b></div>'+
       pairHtml([x.got_theme,x.got_slot],[x.gave_theme,x.gave_slot])+
-      '<div class="muted small-t center">Você deu '+esc(nameOf(x.gave_theme,x.gave_slot))+' e recebeu '+esc(nameOf(x.got_theme,x.got_slot))+'.</div></div>'}).join("")+'</section>';
+      '<div class="muted small-t center">Você deu '+esc(nameOf(x.gave_theme,x.gave_slot))+' e recebeu '+esc(nameOf(x.got_theme,x.got_slot))+'.</div></div>'}).join("");
 }
 async function trAnswer(id,ok,btn){
   $$("#trBox button").forEach(function(b){b.disabled=true});
