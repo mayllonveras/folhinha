@@ -518,6 +518,9 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-line{max-width:420px}
 .figsvg.fig-grid{max-width:240px}
 .fig-emoji{display:flex;flex-direction:column;gap:6px}
+.fig-emoji.side{flex-direction:row;gap:32px;align-items:flex-start}
+.fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
+.fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}
 .rans{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .opts{display:flex;flex-wrap:wrap;gap:10px}

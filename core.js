@@ -263,9 +263,14 @@ FC.makeItems=function(levelIdx,keep,opts){
     var lv=reviewLevel(levelIdx,teto),q=FC.LEVELS[lv].gen(),kq=itemKey(q);
     if(seen[kq])continue;seen[kq]=1;q._rev=true;items.push(q);added++;
   }
+  var cnt={},capTries=0;
+  items.forEach(function(x){if(x.grp)cnt[x.grp]=(cnt[x.grp]||0)+1});
   while(items.length<10&&tries++<400){
     var p=FC.LEVELS[levelIdx].gen(),k=itemKey(p);
-    if(seen[k])continue;seen[k]=1;items.push(p);
+    if(seen[k])continue;
+    /* p.grp/p.cap: no máximo p.cap contas do mesmo grupo na folha (por exemplo, o mesmo número) */
+    if(p.grp&&(cnt[p.grp]||0)>=p.cap&&capTries++<200)continue;
+    seen[k]=1;if(p.grp)cnt[p.grp]=(cnt[p.grp]||0)+1;items.push(p);
   }
   while(items.length<10)items.push(FC.LEVELS[levelIdx].gen());
   return items;

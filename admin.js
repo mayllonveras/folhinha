@@ -3,6 +3,8 @@
 (function(){
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
+function catalogo(){return (FC.EX||[]).concat(FC.G1||[])}
+function porId(id){return catalogo().filter(function(e){return e.id===id})[0]}
 var DATA=null,SET=null,SETERR=null,LEV=null,TAB="alunos",FILTER="";
 
 function dt(s){if(!s)return "—";var d=new Date(s);return FC.pad(d.getDate())+"/"+FC.pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+FC.pad(d.getHours())+":"+FC.pad(d.getMinutes())}
@@ -67,12 +69,12 @@ function exHtml(){
     '<div class="adm-extools"><label class="field">Exemplos por gerador<select id="exN"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></label>'+
       '<button class="btn small" id="exCopy" type="button">Sortear e copiar os dados</button></div>'+
     '<p class="muted small-t">Copia, em texto, os exercícios sorteados (pergunta, figura, opções e resposta certa), para colar numa conversa e conferir.</p><div id="exOut"></div>'+
-    '<div class="adm-ex">'+FC.EX.map(function(e){return '<section class="panel adm-excard" data-ex="'+esc(e.id)+'">'+exCard(e)+'</section>'}).join("")+'</div>';
+    '<div class="adm-ex">'+catalogo().map(function(e){return '<section class="panel adm-excard" data-ex="'+esc(e.id)+'">'+exCard(e)+'</section>'}).join("")+'</div>';
 }
 /* Dados dos exercícios em texto (JSON, um exercício por linha): perguntas, figuras, opções e resposta certa. */
 function exDump(n){
   var out=[];
-  FC.EX.forEach(function(e){
+  catalogo().forEach(function(e){
     var itens=[],seen={},t=0;
     while(itens.length<n&&t++<n*60){
       var it=e.gen(),k=FC.itemKey(it);if(seen[k])continue;seen[k]=1;
@@ -94,12 +96,12 @@ function bindEx(){
       var ta=$("#exTxt");ta.value=txt;ta.focus();ta.select();
       FC.toast("Não consegui copiar sozinho: o texto está selecionado, é só copiar (Ctrl+C).",true);
     }
-    var msg="Copiado: "+FC.EX.length+" geradores, até "+n+" exemplos de cada ("+Math.round(txt.length/1024)+" KB).";
+    var msg="Copiado: "+catalogo().length+" geradores, até "+n+" exemplos de cada ("+Math.round(txt.length/1024)+" KB).";
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){box.innerHTML="";FC.toast(msg)},manual);
     else manual();
   };
   $$("[data-again]").forEach(function(b){b.onclick=function(){
-    var e=FC.EXBY[b.getAttribute("data-again")];if(!e)return;
+    var e=porId(b.getAttribute("data-again"));if(!e)return;
     b.closest(".adm-excard").innerHTML=exCard(e);bindEx();
   }});
 }

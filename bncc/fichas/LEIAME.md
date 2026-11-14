@@ -16,6 +16,15 @@ quantidade de contas diferentes, meta de tempo, exemplos e testes automáticos. 
 
 As regras comuns a todos os níveis ficam no começo de `1ano-niveis-01-07.md`.
 
+## Código dos geradores (`grade1.js`, testes em `testes/grade1.test.js`)
+
+| Níveis | Estado |
+|---|---|
+| 1 a 7 | gerador e testes prontos (14/11/2026); aparecem na aba Exercícios do `/adm`; **ainda não ligados aos níveis do app** |
+| 8 a 35 | a fazer, bloco por bloco |
+
+A grade nova só entra no app quando os 35 níveis do 1º ano estiverem prontos (troca de `FC.LEVELS` e da tabela `levels`).
+
 ## Próximos passos
 
 1. Revisão do professor do último bloco (níveis 30 a 35).

@@ -54,9 +54,14 @@ var DRAW={
   /* grupos de objetos (emoji), em linhas de 'per' */
   emoji:function(f){
     var per=f.per||5;
-    return '<div class="fig-emoji">'+f.groups.map(function(g){
+    return '<div class="fig-emoji'+(f.side?" side":"")+'">'+f.groups.map(function(g){
       var rows=[],i=0;while(i<g.n){rows.push(new Array(Math.min(per,g.n-i)+1).join(g.e));i+=per}
       return '<div class="eg" aria-hidden="true">'+rows.map(function(r){return '<div>'+r+'</div>'}).join("")+'</div>'}).join("")+'</div>';
+  },
+  /* objetos espalhados numa caixa (pts em pontos de uma caixa de 300 x 200; o tamanho se ajusta à largura) */
+  scatter:function(f){
+    return '<div class="fig-scatter" aria-hidden="true">'+f.pts.map(function(q){
+      return '<span style="left:'+(q[0]/3).toFixed(2)+'%;top:'+(q[1]/2).toFixed(2)+'%">'+f.e+'</span>'}).join("")+'</div>';
   },
   /* dezenas (barras de 10) e unidades (cubinhos) */
   base10:function(f){
@@ -271,5 +276,7 @@ FC.EX=[
   {id:"moedas",nome:"Moedas em centavos",hab:["EF02MA20"],gen:gCoins}
 ];
 FC.EXBY={};FC.EX.forEach(function(e){FC.EXBY[e.id]=e});
+/* Auxiliares para os geradores da grade nova (grade1.js). */
+FC.exh={rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES};
 FC.SHAPE_NAMES=Object.keys(SHAPES);
 })();
