@@ -456,3 +456,14 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fr-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
 .fr-row:first-of-type{border-top:0}
 .fr-row .grow{flex:1 1 140px}
+
+/* Administração (/adm) */
+.adm-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.adm-stat{background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.adm-stat b{font-family:var(--font-num);font-size:1.7rem;line-height:1.1}
+.adm-stat span{color:var(--muted);font-size:.85rem}
+.adm-wrap{overflow-x:auto;margin-top:14px}
+.adm-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.adm-table th,.adm-table td{text-align:left;padding:8px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
+.adm-table th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.adm-table td{overflow-wrap:anywhere}

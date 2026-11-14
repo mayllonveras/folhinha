@@ -13,3 +13,9 @@
   [headers.values]
     Content-Type = "application/manifest+json"
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# /adm abre a área de administração (a mesma página; o main.js reconhece o endereço). Não há link para ela no site.
+[[redirects]]
+  from = "/adm"
+  to = "/index.html"
+  status = 200
