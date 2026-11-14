@@ -117,10 +117,7 @@ Em todos os níveis a conta aparece como `12 + 5 = ?` e a criança digita o resu
 
 Tempo por dia (3 folhas): de 4,5 a 7 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Níveis 20 e 22:** aceita as contas **"chegando a 20"** (`13 + 7`) e **"tirando de 20"** (`20 − 7`), em no máximo uma por folha? Recomendo sim:
-   elas completam a vintena e preparam o 2º ano.
-2. **Dica:** quando o aluno errar uma conta que passa da dezena, o reforço poderia mostrar a **estratégia de completar a dezena**
-   (8 + 7 = 8 + 2 + 5). Fica como ideia para depois, junto com o áudio? Recomendo sim: a ficha atual só cobre exercício e correção.
-3. **Nível 24:** manter as **fileiras de 5** nas figuras dos problemas até 20? Recomendo sim, porque ajudam a ver 15 e 20 sem contar um a um.
+Contas "chegando a 20" (`13 + 7`) e "tirando de 20" (`20 − 7`) aceitas, em no máximo uma por folha; a dica de completar a dezena no reforço fica
+para depois, junto com o áudio; as figuras dos problemas até 20 mantêm as fileiras de 5.
