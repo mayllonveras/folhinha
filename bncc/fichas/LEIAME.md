@@ -22,7 +22,7 @@ As regras comuns a todos os níveis ficam no começo de `1ano-niveis-01-07.md`.
 |---|---|
 | 1 a 35 | **grade inteira do 1º ano**: gerador e testes prontos (14/11/2026); aparecem na aba Exercícios do `/adm`; **ainda não ligados aos níveis do app** |
 
-Os 35 níveis do 1º ano estão prontos. Falta ligar a grade nova ao app: trocar `FC.LEVELS` e a tabela `levels` (com migração do banco) e mapear os alunos existentes.
+Os 35 níveis do 1º ano estão prontos e ligados ao app (`FC.LEVELS` em `grade1.js`; migração `2026-11-14-grade-1ano.sql`).
 
 ## Próximos passos
 
