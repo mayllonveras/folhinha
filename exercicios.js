@@ -43,7 +43,7 @@ var SHAPES={
   "triângulo":{sides:3,svg:function(f){return '<polygon points="50,12 92,84 8,84" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
   "trapézio":{sides:4,svg:function(f){return '<polygon points="30,22 70,22 94,80 6,80" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
   "paralelogramo":{sides:4,svg:function(f){return '<polygon points="28,24 94,24 72,76 6,76" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
-  "losango":{sides:4,svg:function(f){return '<polygon points="50,8 92,50 50,92 8,50" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
+  "losango":{sides:4,svg:function(f){return '<polygon points="50,16 94,50 50,84 6,50" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
   "pentágono":{sides:5,svg:function(f){return '<polygon points="50,8 92,38 76,88 24,88 8,38" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}},
   "hexágono":{sides:6,svg:function(f){return '<polygon points="28,12 72,12 94,50 72,88 28,88 6,50" fill="'+f+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>'}}
 };
@@ -163,15 +163,18 @@ FC.itemStatic=function(p,v){
 };
 
 /* ================== GERADORES ================== */
-var OBJ=[{e:"🍎",pl:"maçãs"},{e:"🐟",pl:"peixes"},{e:"⭐",pl:"estrelas"},{e:"🎈",pl:"balões"},{e:"🐶",pl:"cachorros"},{e:"🌼",pl:"flores"},{e:"⚽",pl:"bolas"},{e:"🍪",pl:"biscoitos"},{e:"🚗",pl:"carros"},{e:"🐥",pl:"pintinhos"}];
+/* f: palavra feminina (Quantas maçãs…), senão Quantos peixes… */
+var OBJ=[{e:"🍎",pl:"maçãs",f:1},{e:"🐟",pl:"peixes"},{e:"⭐",pl:"estrelas",f:1},{e:"🎈",pl:"balões"},{e:"🐶",pl:"cachorros"},{e:"🌼",pl:"flores",f:1},{e:"⚽",pl:"bolas",f:1},{e:"🍪",pl:"biscoitos"},{e:"🚗",pl:"carros"},{e:"🐥",pl:"pintinhos"}];
 var NAMES=[["Ana","f"],["Bia","f"],["Caio","m"],["Davi","m"],["Eva","f"],["Gui","m"],["Isa","f"],["Léo","m"],["Lia","f"],["Nina","f"],["Pedro","m"],["Rita","f"]];
 var FIG2D=["círculo","quadrado","retângulo","triângulo"],FIG2D_MAIS=["círculo","quadrado","retângulo","triângulo","trapézio","paralelogramo","losango","pentágono","hexágono"];
 
 function gCount(lo,hi,per){return function(){var n=rnd(lo,hi),o=pick(OBJ);
-  return typed("Quantos "+o.pl+" têm aqui?",n,{t:"emoji",groups:[{e:o.e,n:n}],per:per||5})}}
+  return typed((o.f?"Quantas ":"Quantos ")+o.pl+" têm aqui?",n,{t:"emoji",groups:[{e:o.e,n:n}],per:per||5})}}
 function gMoreBy(){var o1=pick(OBJ),o2;do{o2=pick(OBJ)}while(o2.e===o1.e);
-  var n2=rnd(2,10),n1=Math.random()<.12?n2:n2+rnd(1,6);
-  return typed("Quantos "+o1.e+" a mais do que "+o2.e+" há aqui?",n1-n2,{t:"emoji",groups:[{e:o1.e,n:n1},{e:o2.e,n:n2}],per:5});}
+  var n2=rnd(2,10),n1=Math.random()<.12?n2:n2+rnd(1,6),menos=n1!==n2&&Math.random()<.5;
+  var grupos=[{e:o1.e,n:n1},{e:o2.e,n:n2}];if(Math.random()<.5)grupos.reverse();
+  /* "a mais": pergunta sobre o grupo maior; "a menos": sobre o grupo menor. A resposta é a mesma diferença. */
+  return typed(menos?"Quantos "+o2.e+" a menos do que "+o1.e+" há aqui?":"Quantos "+o1.e+" a mais do que "+o2.e+" há aqui?",n1-n2,{t:"emoji",groups:grupos,per:5});}
 function gTens(){var t=rnd(1,9),o=rnd(0,9);return typed("Cada barra vale 10 e cada quadradinho vale 1. Quanto vale tudo junto?",t*10+o,{t:"base10",tens:t,ones:o})}
 function gBigger(lo,hi,which){return function(){var x=rnd(lo,hi),y;do{y=rnd(lo,hi)}while(y===x||(y>9&&x>9&&String(y).split("").reverse().join("")===String(x)&&Math.random()<.7));
   var big=Math.max(x,y),small=Math.min(x,y),w=which||pick(["maior","menor"]);
@@ -179,7 +182,8 @@ function gBigger(lo,hi,which){return function(){var x=rnd(lo,hi),y;do{y=rnd(lo,h
 function gNeighbor(lo,hi){return function(){var n=rnd(lo,hi),after=Math.random()<.5;
   return typed("Que número vem "+(after?"depois":"antes")+" do "+n+"?",after?n+1:n-1)}}
 function gOrdinal(){var n=pick(NAMES),p=rnd(2,9),f=n[1]==="f";
-  return typed(n[0]+" é "+(f?"a "+p+"ª":"o "+p+"º")+" da fila. Quantas crianças estão na frente "+(f?"dela":"dele")+"?",p-1)}
+  var it=typed(n[0]+" é "+(f?"a "+p+"ª":"o "+p+"º")+" da fila. Quantas crianças estão na frente "+(f?"dela":"dele")+"?",p-1);
+  it.key="fila|"+p;return it}   /* key: identidade para não repetir na folha (só trocar o nome não é conta nova) */
 /* Em geometria, alguns nomes valem também para os casos particulares: todo quadrado é retângulo, losango e paralelogramo;
    todo cubo é um bloco retangular. Uma opção errada nunca pode ser também verdadeira, senão a criança certa leva um erro. */
 var TAMBEM={"retângulo":["quadrado"],"losango":["quadrado"],"paralelogramo":["retângulo","losango","quadrado"],
@@ -197,7 +201,7 @@ function gSides(){return function(){var list=FIG2D_MAIS.filter(function(n){retur
 var SOLIDOBJ={"esfera":["⚽","🏀","🌍"],"cubo":["🎲","🧊"],"cilindro":["🥫","🛢️"],"cone":["🍦"],"bloco retangular":["📦","🧱"]};
 function gSolidObject(){var names=Object.keys(SOLIDOBJ),n=pick(names),good=pick(SOLIDOBJ[n]),wr=[];
   /* cubo e bloco retangular não aparecem juntos: o dado também é um bloco retangular, e a caixa pode parecer um cubo */
-  seededShuffle(names.filter(function(x){return x!==n&&!tambemE(x,n)&&!tambemE(n,x)}),"s"+n+rnd(0,999999)).slice(0,3).forEach(function(x){wr.push(SOLIDOBJ[x][0])});
+  seededShuffle(names.filter(function(x){return x!==n&&!tambemE(x,n)&&!tambemE(n,x)&&!(n==="esfera"&&x==="cone")}),"s"+n+rnd(0,999999)).slice(0,3).forEach(function(x){wr.push(SOLIDOBJ[x][0])});
   return choice("Qual objeto tem a forma de "+(n==="esfera"||n==="pirâmide"?"uma ":"um ")+n+"?",good,wr,null)}
 function gSolidName(){var list=["cubo","bloco retangular","esfera","cilindro","cone","pirâmide"],n=pick(list),wr=seededShuffle(list.filter(function(x){return x!==n&&!tambemE(n,x)}),"n"+n+rnd(0,999999)).slice(0,3);
   return choice("Como se chama este sólido?",n,wr,{t:"solid",n:n})}
@@ -227,7 +231,7 @@ var TINTAS=[["amarelo","#FFB92B"],["azul","#2457D6"],["rosa","#F27AB0"]];
 function gGrid(){var rows=rnd(3,5),cols=rnd(4,7),all=[],r,c,tinta=pick(TINTAS);for(r=0;r<rows;r++)for(c=0;c<cols;c++)all.push([r,c]);
   var k=rnd(4,Math.min(14,rows*cols-2)),cells=seededShuffle(all.map(function(p){return p.join(",")}),"g"+rnd(0,999999)).slice(0,k).map(function(s){return s.split(",").map(Number)});
   return typed("Cada quadradinho vale 1. Quantos quadradinhos estão pintados de "+tinta[0]+"?",k,{t:"grid",rows:rows,cols:cols,cells:cells,color:tinta[1]})}
-var CHANCE=[["O Sol vai aparecer amanhã de manhã.",0],["Tirar uma bola azul de uma caixa que só tem bolas vermelhas.",2],["Vai chover no sábado.",1],["Lançar um dado e sair o número 7.",2],["Lançar um dado e sair um número de 1 a 6.",0],["Sortear um menino numa turma de meninos e meninas.",1],["Depois da segunda-feira vem a terça-feira.",0],["Um gato falar português.",2],["Sair cara ao lançar uma moeda.",1],["Uma pessoa viva ter 300 anos de idade.",2],["Na semana, o domingo vir depois do sábado.",0],["Sortear uma bola vermelha de um saco com bolas vermelhas e azuis.",1],["Tirar uma bola verde de um saco que só tem bolas verdes.",0],["Um cachorro voar sem ajuda de nada.",2],["Sair o número 3 ao lançar um dado.",1],["A água de uma panela ferver no fogo aceso, se esperarmos bastante.",0]];
+var CHANCE=[["O Sol vai aparecer amanhã de manhã.",0],["Tirar uma bola azul de uma caixa que só tem bolas vermelhas.",2],["Vai chover no sábado.",1],["Lançar um dado e sair o número 7.",2],["Lançar um dado e sair um número de 1 a 6.",0],["Sortear um menino numa turma de meninos e meninas.",1],["Depois da segunda-feira vem a terça-feira.",0],["Um gato falar português.",2],["Sair cara ao lançar uma moeda.",1],["Uma pessoa viva ter 300 anos de idade.",2],["Depois do sábado vem o domingo.",0],["Sortear uma bola vermelha de um saco com bolas vermelhas e azuis.",1],["Tirar uma bola verde de um saco que só tem bolas verdes.",0],["Um cachorro voar sem ajuda de nada.",2],["Sair o número 3 ao lançar um dado.",1],["A água de uma panela ferver no fogo aceso, se esperarmos bastante.",0]];
 var CH_OPTS=["Com certeza","Talvez","Impossível"];
 function gChance(){var e=pick(CHANCE);return choice(e[0]+" Isso é…",CH_OPTS[e[1]],CH_OPTS.filter(function(_,i){return i!==e[1]}),null)}
 function gCoins(){var v=pick([10,25,50]),n=rnd(2,7),m=pick([5,10,25,50,100].filter(function(x){return x!==v}));
@@ -253,7 +257,7 @@ FC.EX=[
   {id:"relogio2",nome:"Ler o relógio (de 5 em 5 minutos)",hab:["EF03MA22","EF03MA23"],gen:gClock([0,5,10,15,20,25,30,35,40,45,50,55])},
   {id:"graficoLer",nome:"Ler um gráfico de colunas",hab:["EF01MA21","EF02MA22","EF03MA26"],gen:gBarRead},
   {id:"graficoMais",nome:"Qual coluna é a maior ou a menor",hab:["EF03MA27"],gen:gBarTop},
-  {id:"reta20",nome:"Número na reta numérica (até 20)",hab:["EF03MA04"],gen:gLine([[0,20,1,5],[10,30,1,5],[20,40,1,5],[0,10,1,5]])},
+  {id:"reta20",nome:"Número na reta numérica (de 1 em 1)",hab:["EF03MA04"],gen:gLine([[0,20,1,5],[10,30,1,5],[20,40,1,5],[0,10,1,5]])},
   {id:"reta100",nome:"Número na reta numérica (de 5 em 5, de 10 em 10, de 20 em 20)",hab:["EF03MA04"],gen:gLine([[0,100,10,20],[0,50,5,10],[0,200,20,40],[100,200,10,20],[0,100,5,25]])},
   {id:"malha",nome:"Contar quadradinhos na malha (área)",hab:["EF04MA21"],gen:gGrid},
   {id:"acaso",nome:"Certeza, talvez ou impossível",hab:["EF01MA20","EF02MA21"],gen:gChance},

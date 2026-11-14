@@ -222,6 +222,7 @@ FC.plainItem=function(p){var o={pre:p.pre,post:p.post||"",a:p.a};if(p.extra)o.ex
    mesmo que as opções erradas, a ordem das opções ou a cor do desenho sejam outras. */
 function figKey(f){return f?JSON.stringify(f,function(k,v){return k==="color"?undefined:v}):""}
 function itemKey(p){
+  if(p.key)return p.key;   /* o gerador pode definir a identidade (não vai para o banco) */
   var ex=p.extra;
   if(!ex)return p.pre+"|"+(p.post||"");
   if(ex.opts)return p.pre+"|"+figKey(ex.fig)+"|"+figKey(ex.opts[p.a-1]||null);

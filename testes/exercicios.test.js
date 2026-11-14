@@ -84,6 +84,40 @@ for(const e of FC.EX){
 {const NOME={"#FFB92B":"amarelo","#2457D6":"azul","#F27AB0":"rosa"};let n=0;
  for(let i=0;i<2000;i++){const it=FC.EXBY.malha.gen();n++;if(!it.pre.endsWith("pintados de "+NOME[it.extra.fig.color]+"?"))falha("malha","a pergunta não diz a cor da malha",it)}
  console.log("malhas conferidas:",n)}
+
+// ---- geometria dos desenhos: o que o nome diz tem que ser verdade na figura (o losango já saiu como um quadrado girado) ----
+{const SRC=require("fs").readFileSync(__dirname+"/../exercicios.js","utf8");
+ const pts=n=>{const m=SRC.match(new RegExp('"'+n+'":\\{sides:\\d,svg:function\\(f\\)\\{return \'<polygon points="([^"]+)"'));return m&&m[1].trim().split(/\s+/).map(p=>p.split(",").map(Number))};
+ const d=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+ const losango=pts("losango"),par=pts("paralelogramo"),trap=pts("trapézio");
+ const lados=P=>P.map((p,i)=>d(p,P[(i+1)%P.length])),eq=(a,b)=>Math.abs(a-b)<0.5;
+ if(!losango){falha("geometria","não achei o losango")}
+ else{const L=lados(losango),d1=d(losango[0],losango[2]),d2=d(losango[1],losango[3]);
+  if(!(L.every(x=>eq(x,L[0]))))falha("geometria","losango sem 4 lados iguais",L);
+  if(eq(d1,d2))falha("geometria","losango com diagonais iguais é um quadrado girado ("+d1.toFixed(0)+" e "+d2.toFixed(0)+")",{})}
+ if(par){const L=lados(par);if(L.every(x=>eq(x,L[0])))falha("geometria","paralelogramo com 4 lados iguais é um losango",L);
+  if(!(eq(L[0],L[2])&&eq(L[1],L[3])))falha("geometria","paralelogramo sem lados opostos iguais",L)}
+ if(trap){const L=lados(trap);if(eq(L[0],L[2]))falha("geometria","trapézio com os dois lados paralelos iguais seria paralelogramo",L)}
+ console.log("geometria dos desenhos conferida (losango: diagonais diferentes; paralelogramo e trapézio distintos)")}
+// ---- concordância: palavra feminina pede "Quantas" ----
+{const FEM=["maçãs","estrelas","flores","bolas"];let n=0;
+ for(let i=0;i<3000;i++){for(const id of ["contar10","contar20"]){const it=FC.EXBY[id].gen();n++;const fem=FEM.some(w=>it.pre.includes(" "+w+" "));
+   if(fem&&!it.pre.startsWith("Quantas "))falha("concordância","feminino com Quantos: "+it.pre,it);
+   if(!fem&&!it.pre.startsWith("Quantos "))falha("concordância","masculino com Quantas: "+it.pre,it)}}
+ console.log("concordância conferida em",n,"perguntas de contagem")}
+// ---- sorvete não aparece como opção errada de esfera ----
+{let n=0;for(let i=0;i<4000;i++){const it=FC.EXBY["sólidoObjeto"].gen();if(!/forma de uma esfera/.test(it.pre))continue;n++;
+  if(it.extra.opts.includes("🍦"))falha("sólidoObjeto","sorvete (bola em cima do cone) como opção de esfera",it)}
+ console.log("perguntas de esfera conferidas:",n)}
+// ---- quantos a mais / a menos: a resposta é sempre a diferença; pergunta "a menos" só quando há diferença ----
+{let mais=0,menos=0;for(let i=0;i<4000;i++){const it=FC.EXBY.aMais.gen(),g=it.extra.fig.groups;
+  const diff=Math.abs(g[0].n-g[1].n);if(it.a!==diff)falha("aMais","resposta diferente da diferença",it);
+  if(it.pre.includes(" a menos do que ")){menos++;if(diff===0)falha("aMais","'a menos' com grupos iguais",it);
+    const m=it.pre.match(/Quantos (\S+) a menos do que (\S+) há/);const gm=g.find(x=>x.e===m[1]),gM=g.find(x=>x.e===m[2]);
+    if(!(gm&&gM&&gm.n<gM.n))falha("aMais","'a menos' perguntando sobre o grupo maior",it)}
+  else{mais++;const m=it.pre.match(/Quantos (\S+) a mais do que (\S+) há/);const gM=g.find(x=>x.e===m[1]),gm=g.find(x=>x.e===m[2]);
+    if(!(gM&&gm&&gM.n>=gm.n))falha("aMais","'a mais' perguntando sobre o grupo menor",it)}}
+ console.log("quantos a mais/a menos: a mais =",mais,"| a menos =",menos)}
 // determinismo: a mesma pergunta mantém a mesma ordem de opções
 let det=0;for(const e of FC.EX){for(let i=0;i<30;i++){const it=e.gen();if(!it.extra||!it.extra.opts)continue;
   const sorted=it.extra.opts.slice().reverse();// reconstrução: gerar de novo com as mesmas opções reembaralhadas nunca é feita; aqui basta checar que a ordem é estável entre duas serializações
