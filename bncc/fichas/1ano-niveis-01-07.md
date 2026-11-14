@@ -1,4 +1,4 @@
-# Fichas do 1º ano — níveis 1 a 6 (contagem e comparação)
+# Fichas do 1º ano — níveis 1 a 7 (contagem e comparação)
 
 Fichas para revisão do professor, **antes de qualquer código**. Cada ficha descreve um nível do zero: nenhum gerador antigo é
 copiado, só as peças técnicas do app (desenhos de emojis, botões de escolha, teclado numérico) servem de material.
@@ -37,8 +37,7 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Exemplos:** "Quantos 🐥 têm aqui?" (figura com 7) → 7. "Quantas 🍎 têm aqui?" (figura com 10) → 10.
 - **Testes específicos:** a resposta é igual ao número de emojis na figura; as fileiras nunca passam de 5; todas as quantidades
   de 1 a 10 aparecem em 1000 sorteios; concordância de gênero para os 10 objetos.
-- **Para o professor decidir:** (a) deixamos o 1 e o 10 mesmo? (b) fileiras de 5 sempre, ou depois de alguns acertos mostramos os
-  objetos soltos?
+- **Decisão do professor:** fileiras de 5 sempre neste nível. Objetos soltos viram um nível próprio (nível 5).
 
 ## Nível 2 — Mais, menos ou igual
 
@@ -55,8 +54,8 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Exemplos:** grupos 🍎 6 e ⚽ 4, "Onde tem mais?" → 🍎. Grupos 🐶 5 e 🐟 5, "Onde tem menos?" → "a mesma quantidade".
 - **Testes específicos:** a certa é recalculada pelas contagens; em empate a única certa é "a mesma quantidade"; fora do empate,
   "a mesma quantidade" é sempre errada; os dois emojis do grupo são diferentes.
-- **Para o professor decidir:** o antigo "Quantos a mais?", com resposta numérica, **sai do 1º ano**: o texto da habilidade pede
-  só "tem mais, tem menos, mesma quantidade". Proponho levar o "quantos a mais" para o 2º ano. Concorda?
+- **Decisão do professor:** o antigo "Quantos a mais?", com resposta numérica, **sai do 1º ano** e vai para o 2º ano: o texto da
+  habilidade pede só "tem mais, tem menos, mesma quantidade".
 
 ## Nível 3 — Sequências numéricas até 20
 
@@ -66,15 +65,14 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Regra da sequência (neste nível só uma):** de 1 em 1, **crescente** (70% das contas) ou **decrescente** (30%).
 - **Números:** de 1 a 20; a sequência inteira fica dentro de 1 a 20.
 - **Posição do espaço:** sorteada entre a 2ª, 3ª e 4ª (nunca a primeira ou a última, para não virar "o que vem depois" ou
-  "antes", que é o nível 5).
+  "antes", que é o nível 6).
 - **Resposta:** digitada (1 ou 2 algarismos).
 - **Contas diferentes:** 16 inícios × 2 sentidos × 3 posições ≈ 90.
 - **Meta de tempo:** 90 s.
 - **Exemplos:** `4  5  ?  7  8` → 6. `13  12  ?  10  9` → 11.
 - **Testes específicos:** a sequência mostrada é de fato de 1 em 1; a resposta confere pela regra; os cinco números ficam em 1 a 20;
   o espaço nunca está nas pontas.
-- **Para o professor decidir:** sequências de 2 em 2 e de figuras ficam para depois (de 2 em 2 é do 2º ano; padrões de figuras
-  proponho incluir no nível 16, "organizar por cor, forma e tamanho"). De acordo?
+- **Decisão do professor:** sequências de 2 em 2 ficam para o 2º ano; padrões de figuras entram no nível 17 ("organizar por cor, forma e tamanho").
 
 ## Nível 4 — Contar objetos até 20
 
@@ -88,10 +86,25 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Meta de tempo:** 110 s.
 - **Exemplos:** "Quantas ⭐ têm aqui?" (figura com 18: 3 fileiras cheias e uma de 3) → 18.
 - **Testes específicos:** como no nível 1; fileiras de 5; 11 a 20 aparecem em 80% das contas, com tolerância.
-- **Para o professor decidir:** objetos soltos (não organizados) são uma etapa mais difícil. Proponho deixá-los para um nível
-  próprio, mais à frente, se o senhor quiser. Quer?
+- **Decisão do professor:** objetos soltos viram o nível 5, logo depois deste.
 
-## Nível 5 — Antes, depois e posição na fila
+## Nível 5 — Contar objetos soltos até 20
+
+- **Habilidades:** EF01MA02 (contar "com diferentes estratégias, como o pareamento e outros agrupamentos") e EF01MA04.
+- **O que a criança faz:** igual ao nível 4, mas os objetos estão **espalhados**, sem fileiras. Ela precisa inventar uma estratégia
+  (agrupar de 2 em 2, de 5 em 5, riscar com o olhar), que é justamente o que a habilidade pede.
+- **Pergunta:** "Quantos/Quantas 🍎 têm aqui?"
+- **Figura:** os objetos ficam numa caixa, com posição **espalhada mas sem sobreposição**: cada objeto cai numa célula de uma grade
+  invisível, com um pequeno desvio sorteado, e nunca toca no vizinho. Todos do mesmo tamanho, nenhum cortado pela borda.
+- **Quantidades:** 6 a 20, com 70% entre 11 e 20 e 30% entre 6 e 10. **O mesmo número aparece no máximo 2 vezes por folha.**
+- **Resposta:** digitada (1 ou 2 algarismos).
+- **Contas diferentes:** 15 quantidades × 10 objetos = 150 (o desenho muda a cada sorteio, mas não conta como outra conta).
+- **Meta de tempo:** 120 s.
+- **Exemplo:** "Quantas 🌼 têm aqui?" (figura com 13 flores espalhadas) → 13.
+- **Testes específicos:** o número de emojis desenhados é igual à resposta; nenhum par de objetos se sobrepõe (distância mínima maior
+  que o tamanho do emoji); todos dentro da caixa; o desenho é legível no tema escuro; a quantidade 6 a 20 respeita a faixa.
+
+## Nível 6 — Antes, depois e posição na fila
 
 - **Habilidades:** EF01MA01 (número como quantidade e como ordem), EF01MA05 (comparar, ordem).
 - **O que a criança faz:** três tipos de pergunta, misturados na folha:
@@ -108,10 +121,9 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Meta de tempo:** 100 s.
 - **Testes específicos:** a resposta de antes/depois/entre é recalculada; a de fila é a posição menos 1 (ou mais 1 no inverso);
   concordância "o/a", "1º/1ª", "dele/dela"; nunca "antes do 1" nem "depois do 20".
-- **Para o professor decidir:** o inverso ("Ana é a que posição?") é novo. Ele ajuda a entender o ordinal nos dois sentidos, mas
-  é um pouco mais difícil. Mantemos?
+- **Decisão do professor:** o inverso da fila ("Ana é a que posição?") fica.
 
-## Nível 6 — Maior e menor até 20
+## Nível 7 — Maior e menor até 20
 
 - **Habilidade:** EF01MA05 (comparar números naturais).
 - **O que a criança faz:** vê três números e toca no maior, ou no menor.
@@ -127,7 +139,7 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 - **Exemplos:** `6   12   9`, "Qual é o maior?" → 12. `15   5   11`, "Qual é o menor?" → 5.
 - **Testes específicos:** os três números são distintos e ficam em 1 a 20; a certa é o máximo ou o mínimo recalculado; as duas
   erradas são sempre claramente erradas; a posição da certa é uniforme.
-- **Para o professor decidir:** nada pendente.
+- **Decisão do professor:** com 3 opções.
 
 ---
 
@@ -138,16 +150,15 @@ Ordem e habilidades vêm de `bncc/GRADE-1ANO.md`.
 | 1. Contar até 10 | EF01MA02 | digitada | 90 s | 100 |
 | 2. Mais, menos ou igual | EF01MA03 | escolha (3) | 100 s | milhares |
 | 3. Sequências até 20 | EF01MA10, EF01MA01 | digitada | 90 s | ~90 |
-| 4. Contar até 20 | EF01MA02, EF01MA04 | digitada | 110 s | 150 |
-| 5. Antes, depois e fila | EF01MA01, EF01MA05 | digitada | 100 s | 100+ |
-| 6. Maior e menor até 20 | EF01MA05 | escolha (3) | 90 s | 2.280 |
+| 4. Contar até 20, em fileiras | EF01MA02, EF01MA04 | digitada | 110 s | 150 |
+| 5. Contar até 20, objetos soltos | EF01MA02, EF01MA04 | digitada | 120 s | 150 |
+| 6. Antes, depois e fila | EF01MA01, EF01MA05 | digitada | 100 s | 100+ |
+| 7. Maior e menor até 20 | EF01MA05 | escolha (3) | 90 s | 2.280 |
 
-Tempo por dia (3 folhas), com a meta: entre 4,5 e 5,5 minutos.
+Tempo por dia (3 folhas), com a meta: entre 4,5 e 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 1:** fileiras de 5 sempre, ou objetos soltos mais adiante?
-2. **Nível 2:** concorda em tirar o "quantos a mais" do 1º ano e levá-lo ao 2º?
-3. **Nível 3:** padrões de figuras no nível 16? Sequências de 2 em 2 só no 2º ano?
-4. **Nível 4:** quer um nível próprio de contagem com objetos soltos?
-5. **Nível 5:** o inverso da fila ("Ana é a que posição?") entra?
+1. Nível 1 com fileiras de 5 sempre. 2. "Quantos a mais?" sai do 1º ano e vai para o 2º. 3. Sequências de 2 em 2 no 2º ano e padrões de
+figuras no nível 17. 4. Contagem de objetos soltos vira o nível 5. 5. O inverso da fila (nível 6) fica. Com isso o bloco tem 7 níveis
+e a grade do 1º ano passa a ter 35.
