@@ -111,6 +111,16 @@ Os 45 níveis antigos são descartados, para não herdar vícios do planejamento
 (habilidade, parâmetros de dificuldade, tipos de conta, distratores, meta de tempo, testes) revisada pelo professor antes de virar código.
 Vale para o 1º ano (`GRADE-1ANO.md`) e para os seguintes, incluindo tabuada, divisão e equações.
 
+## Etapa 4a (mecanismos): estado
+
+Escrita em 14/11/2026, **migração ainda não aplicada** (`migracoes/2026-11-14-etapa-4a.sql`):
+
+- **Carimbos por nível:** `levels.stamps_needed` opcional (vazio = padrão geral, hoje 5), editável no `/adm` (Parâmetros → Carimbos por nível).
+- **Revisão de 20%:** 2 das 10 contas de cada folha vêm de níveis anteriores (60% dos 3 últimos, 40% de qualquer anterior). Sem mudança de banco.
+- **Folha de revisão no teto:** com o nível concluído e o próximo além do limite, a folha é toda de revisão (inclui o nível atual). A folha de **desafio**
+  fica para depois: ela depende de os geradores da grade nova terem versões mais difíceis.
+- **Sugestão de liberar mais um ano:** na tela do responsável, quando faltam até 3 níveis para o limite; ele decide (botão "Liberar mais 1 ano").
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.

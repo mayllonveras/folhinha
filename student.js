@@ -558,14 +558,16 @@ async function buildSheet(){
   var m=S.me,day=FC.today(),items,base="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.",intro=base;
   var plan=null;
   try{plan=await rpc("student_sheet_plan",{p_token:S.token})}catch(e){if(FC.isSessionErr(e))throw e}
+  var teto=!!(plan&&plan.teto_mode)&&m.level_idx>0;
   if(plan&&plan.mode==="mesma"&&plan.repeat&&plan.repeat.length===10){
     items=plan.repeat.map(FC.plainItem);
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
   }else if(plan&&plan.mode==="reforco"&&plan.weak&&plan.weak.length){
-    items=FC.shuffle(FC.makeItems(m.level_idx,plan.weak));
+    items=FC.shuffle(FC.makeItems(m.level_idx,plan.weak,{teto:teto}));
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
-  }else{items=FC.makeItems(m.level_idx)}
+  }else{items=FC.shuffle(FC.makeItems(m.level_idx,null,{teto:teto}))}
+  if(teto)intro="Você já concluiu tudo o que dá para avançar por enquanto. Hoje é folha de revisão: contas dos níveis que você já fez. "+intro;
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
   var o=await rpc("student_open_sheet",{p_token:S.token,p_day:day,
     p_problems:items.map(FC.plainItem)});
