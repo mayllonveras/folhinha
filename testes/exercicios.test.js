@@ -1,6 +1,7 @@
 /* Teste dos geradores de exercício. Rodar com: node testes/exercicios.test.js
    Confere, em milhares de itens sorteados: resposta certa recalculada de forma independente, opções distintas,
-   itens leves, figuras sem erro e nenhuma opção errada que também seja verdadeira (todo quadrado é retângulo; todo cubo é bloco retangular). */
+   itens leves, figuras sem erro, nenhuma opção errada que também seja verdadeira (todo quadrado é retângulo; todo cubo é bloco retangular),
+   posição da opção certa sem viés, cores das colunas iguais ao nome e malha que diz a cor pintada. */
 global.window=global;
 const FC={esc:t=>String(t==null?"":t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))};
 global.FC=FC;
@@ -65,6 +66,24 @@ for(const e of FC.EX){
   {const it=FC.EXBY["sólidoObjeto"].gen();vistos++;const X=it.pre.match(/forma de (?:um|uma) (.+)\?/)[1];it.extra.opts.forEach((o,k)=>{if(k!==it.a-1){const kd=kind(o);if(kd&&(T(kd,X)||T(X,kd))){amb++;falha("sólidoObjeto","objeto errado também serve: "+kd+" para "+X,it)}}})}
  }
  console.log("ambiguidade geométrica: itens verificados",vistos,"| opções erradas que também valem:",amb)}
+
+// ---- a posição da opção certa não pode ser previsível (nem viciada por figura) ----
+{let pior=0,ruim=[];
+ for(const e of FC.EX){const por={};let tem=false;
+  for(let i=0;i<6000;i++){const it=e.gen();if(!it.extra||!it.extra.opts)continue;tem=true;const k=it.extra.opts.length;(por[k]=por[k]||{n:0,pos:{}}).n++;por[k].pos[it.a]=(por[k].pos[it.a]||0)+1}
+  if(!tem)continue;
+  for(const k of Object.keys(por)){const g=por[k];if(g.n<300)continue;for(let p=1;p<=Number(k);p++){const dev=Math.abs((g.pos[p]||0)/g.n-1/Number(k));pior=Math.max(pior,dev);if(dev>0.06)ruim.push(e.id+" ("+k+" opções): posição "+p+" = "+(100*(g.pos[p]||0)/g.n).toFixed(0)+"%")}}}
+ console.log("posição da certa: maior desvio da distribuição uniforme =",(100*pior).toFixed(1),"pontos");
+ ruim.forEach(r=>falha("posicao",r,{}))}
+// ---- cores das colunas: na pesquisa de cores, cada coluna tem a cor do nome ----
+{const COR={"Azul":"#2457D6","Verde":"#1CA97B","Rosa":"#F27AB0","Amarelo":"#FFB92B"};let n=0,erradas=0;
+ for(let i=0;i<4000;i++){const it=FC.EXBY[Math.random()<.5?"graficoLer":"graficoMais"].gen(),f=it.extra.fig;if(f.title.indexOf("Cores")!==0)continue;n++;
+  if(!f.colors||f.labels.some((l,k)=>f.colors[k]!==COR[l])){erradas++;falha("cores","coluna com cor diferente do nome",it)}}
+ console.log("pesquisas de cores conferidas:",n,"| com cor errada:",erradas)}
+// ---- malha: a pergunta nomeia a cor usada ----
+{const NOME={"#FFB92B":"amarelo","#2457D6":"azul","#F27AB0":"rosa"};let n=0;
+ for(let i=0;i<2000;i++){const it=FC.EXBY.malha.gen();n++;if(!it.pre.endsWith("pintados de "+NOME[it.extra.fig.color]+"?"))falha("malha","a pergunta não diz a cor da malha",it)}
+ console.log("malhas conferidas:",n)}
 // determinismo: a mesma pergunta mantém a mesma ordem de opções
 let det=0;for(const e of FC.EX){for(let i=0;i<30;i++){const it=e.gen();if(!it.extra||!it.extra.opts)continue;
   const sorted=it.extra.opts.slice().reverse();// reconstrução: gerar de novo com as mesmas opções reembaralhadas nunca é feita; aqui basta checar que a ordem é estável entre duas serializações

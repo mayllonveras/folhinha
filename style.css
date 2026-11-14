@@ -485,7 +485,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-shape,.figsvg.fig-solid{max-width:130px}
 .figsvg.fig-clock{max-width:190px}
 .figsvg.fig-b10{max-width:220px}
-.figsvg.fig-line{max-width:360px}
+.figsvg.fig-line{max-width:420px}
 .figsvg.fig-grid{max-width:240px}
 .fig-emoji{display:flex;flex-direction:column;gap:6px}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}
@@ -508,3 +508,4 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 @media (max-width:640px){.items{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none}}
 .adm-ex{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
 .adm-excard{display:flex;flex-direction:column;gap:6px}
+.figsvg{color:var(--ink)}
