@@ -268,7 +268,7 @@ async function detail(id){
     (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
     '<p class="muted small-t">As figurinhas apagadas ainda não foram ganhas: a criança só vê as que conquistou. Toque em uma figurinha para ver o verso.</p>'+
     themeIds.map(function(id,i){
-      var th=FC.theme(id),got=awards.filter(function(a){return a.kind==="figurinha"&&a.theme===id}).map(function(a){return{slot:a.slot,end:a.period_end}});
+      var th=FC.theme(id),seen={},got=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}});
       return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</summary>'+FC.rarityLegend(id)+FC.albumHtml(id,got,{adult:true})+'</details>';
     }).join("")+'</div>';
   var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});

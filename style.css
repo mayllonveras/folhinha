@@ -456,6 +456,21 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fr-row:first-of-type{border-top:0}
 .fr-row .grow{flex:1 1 140px}
 
+/* ---------- repetidas e trocas ---------- */
+.sticker{position:relative}
+.st-x{position:absolute;top:-6px;right:-6px;background:var(--accent);color:var(--accent-ink);font:700 .72rem var(--font-num);border-radius:99px;padding:2px 7px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tr-pick{border:3px solid transparent;border-radius:18px;background:none;padding:0;cursor:pointer;font:inherit;color:inherit;text-align:inherit}
+.tr-pick:hover,.tr-pick:focus-visible{border-color:var(--accent)}
+.tr-pick.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.tr-swap{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:10px 0}
+.tr-swap .sticker{width:112px}
+.tr-swap svg.i{width:28px;height:28px}
+.tr-req{border-top:1px solid var(--line);padding:12px 0}
+.tr-req:first-of-type{border-top:0}
+.tr-banner{position:fixed;left:50%;transform:translateX(-50%);top:10px;z-index:60;width:min(92vw,460px);display:flex;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--accent);border-radius:16px;box-shadow:var(--shadow-2);padding:10px 12px}
+.tr-banner .grow{flex:1;min-width:0}
+.tr-dot{display:inline-block;min-width:18px;height:18px;border-radius:99px;background:#d6336c;color:#fff;font:700 .7rem/18px var(--font-num);text-align:center;margin-left:4px}
+
 /* Administração (/adm) */
 .adm-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .adm-stat{background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
