@@ -181,9 +181,11 @@ function gMoreBy(){var o1=pick(OBJ),o2;do{o2=pick(OBJ)}while(o2.e===o1.e);
   /* "a mais": pergunta sobre o grupo maior; "a menos": sobre o grupo menor. A resposta é a mesma diferença. */
   return typed(menos?"Quantos "+o2.e+" a menos do que "+o1.e+" há aqui?":"Quantos "+o1.e+" a mais do que "+o2.e+" há aqui?",n1-n2,{t:"emoji",groups:grupos,per:5});}
 function gTens(){var t=rnd(1,9),o=rnd(0,9);return typed("Cada barra vale 10 e cada quadradinho vale 1. Quanto vale tudo junto?",t*10+o,{t:"base10",tens:t,ones:o})}
-function gBigger(lo,hi,which){return function(){var x=rnd(lo,hi),y;do{y=rnd(lo,hi)}while(y===x||(y>9&&x>9&&String(y).split("").reverse().join("")===String(x)&&Math.random()<.7));
-  var big=Math.max(x,y),small=Math.min(x,y),w=which||pick(["maior","menor"]);
-  return choice("Qual é o "+w+" número?",String(w==="maior"?big:small),[String(w==="maior"?small:big)],null)}}
+function gBigger(lo,hi,which){return function(){var x=rnd(lo,hi),y,z;do{y=rnd(lo,hi)}while(y===x||(y>9&&x>9&&String(y).split("").reverse().join("")===String(x)&&Math.random()<.7));
+  do{z=rnd(lo,hi)}while(z===x||z===y);
+  /* três opções: chutar acerta 1 em 3, não 1 em 2 */
+  var v=[x,y,z],big=Math.max.apply(null,v),small=Math.min.apply(null,v),w=which||pick(["maior","menor"]),good=w==="maior"?big:small;
+  return choice("Qual é o "+w+" número?",String(good),v.filter(function(n){return n!==good}).map(String),null)}}
 function gNeighbor(lo,hi){return function(){var n=rnd(lo,hi),after=Math.random()<.5;
   return typed("Que número vem "+(after?"depois":"antes")+" do "+n+"?",after?n+1:n-1)}}
 function gOrdinal(){var n=pick(NAMES),p=rnd(2,15),f=n[1]==="f";
