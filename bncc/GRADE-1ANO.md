@@ -4,9 +4,22 @@ Base: inventário `inventario-anos-iniciais.csv` (22 habilidades do 1º ano: 20 
 **EF01MA16** e **EF01MA22**, grupo C, que são atividades de casa) e as decisões da etapa 4.
 
 **Critério:** a dificuldade entra aos poucos. Cada degrau novo (uma operação nova, um intervalo maior, um tipo novo de
-exercício) tem o seu nível. Os "30 níveis por ano" são uma **referência de ritmo**, não um limite: com 5 carimbos por nível,
-o aluno regular faz 1 nível por semana, e 33 níveis cabem nas cerca de 40 semanas do ano letivo com folga de 7 semanas.
-Acima de uns 35 níveis a folga começa a apertar; nesse caso se ajustam os carimbos por nível, e não a progressão.
+exercício) tem o seu nível. Os "30 níveis por ano" são uma **referência de ritmo**, não um limite.
+
+**Base de tempo (decisão do professor):** conta-se o ano de **52 semanas, sem férias**. O app é um reforço leve: 3 folhas por dia,
+de 1 a 2 minutos cada, ou seja, de **5 a 10 minutos por dia**, e quem não quiser fazer num dia simplesmente avança mais devagar. Com 5 carimbos por nível, o aluno regular
+faz 1 nível por semana de estudo (de segunda a sexta). Em 52 semanas isso dá, conforme a frequência:
+
+| Frequência | Níveis feitos em 52 semanas |
+|---|---|
+| Todos os dias | 52 |
+| 90% dos dias | 46 |
+| 80% dos dias | 41 |
+| 70% dos dias | 36 |
+
+Por isso o teto prático da grade fica em **cerca de 40 níveis por ano**, o que deixa folga até para quem falta um dia por semana.
+Os dias ouro (2 carimbos) aceleram o aluno, e as pausas só atrasam: nada disso estraga a trajetória da criança.
+Quando o aluno chegar perto do final dos níveis do ano, a sugestão de liberar o teto +2 aparece para os pais.
 
 Legenda de "Gerador": **existe** = já está no app (os 45 níveis atuais ou o catálogo de exercícios da etapa 3);
 **ajustar** = existe, mas precisa de uma mudança pequena; **novo** = precisa ser escrito.
