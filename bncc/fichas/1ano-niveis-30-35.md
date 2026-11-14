@@ -26,8 +26,7 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
 - **Exemplos:** barras A, B e C na horizontal, "Qual é a mais comprida?" → a maior. Balança com 🍉 no prato baixo e 🍎 no alto, "Qual é o mais pesado?" → 🍉.
 - **Testes específicos:** o tamanho desenhado corresponde à ordem pedida; a razão mínima de 1,25 entre os dois maiores (ou menores); a balança está inclinada para o
   lado do mais pesado; os potes têm a mesma forma; na balança, a resposta vem sempre da inclinação dos pratos, nunca do objeto que a criança acha mais pesado.
-- **Para o professor decidir:** a balança é lida pelo desenho (o prato que desce), sem depender do que a criança acha de um objeto ser mais pesado. Concorda?
-  Recomendo sim: a habilidade é comparar, e comparar pela balança é o que a criança faz na vida.
+- **Decisão do professor:** a massa é comparada pela balança de pratos, lida pelo desenho.
 
 ## Nível 31 — Períodos do dia, dias da semana e meses
 
@@ -60,7 +59,7 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
 - **Meta de tempo:** 120 s.
 - **Testes específicos:** o dia da semana de cada número é calculado pela data real; o calendário mostra o número certo de dias do mês e dos anos bissextos; a data escrita tem
   dia entre 1 e o último do mês; "dia e mês trocados" só é uma opção errada quando difere da certa (dia maior que 12 nunca vira troca ambígua).
-- **Para o professor decidir:** o formato **dd/mm/aaaa** é o oficial do app? Recomendo sim, é o formato brasileiro.
+- **Decisão do professor:** formato **dd/mm/aaaa**.
 
 ## Nível 33 — Moedas e cédulas
 
@@ -78,7 +77,7 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
 - **Meta de tempo:** 120 s.
 - **Exemplos:** cédula azul com "5" → "5 reais". Cédula de 5 e cédula de 2 juntas, "Quantos reais?" → 7.
 - **Testes específicos:** o valor desenhado é o valor escrito; a soma é recalculada; nenhum tipo 3 passa de 20 reais nem tem centavos; as cores de cada valor são sempre as mesmas.
-- **Para o professor decidir:** aceita desenhos **genéricos** (sem arte oficial) das moedas e cédulas? Recomendo sim, porque é mais seguro e a criança reconhece pelo valor e pela cor.
+- **Decisão do professor:** moedas e cédulas **desenhadas de forma genérica**, sem arte oficial.
 
 ## Nível 34 — Certeza, talvez ou impossível
 
@@ -90,20 +89,23 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
      - só bolas vermelhas → **com certeza**;
      - nenhuma bola vermelha → **impossível**;
      - bolas vermelhas e outras → **talvez**.
-- **Banco de frases (para o professor revisar; só entram frases objetivas, sem ambiguidade):**
-  - **Com certeza:** "Depois do sábado vem o domingo." / "O Sol vai aparecer amanhã de manhã." / "Uma semana tem sete dias." / "Todo ano tem doze meses." /
-    "Se hoje é segunda-feira, amanhã é terça-feira." / "Ao soltar uma bola do alto, ela cai." / "A noite vem depois da tarde." / "Dois mais dois é igual a quatro."
-  - **Impossível:** "Uma pessoa viva ter 300 anos de idade." / "Um cachorro falar português." / "Uma semana ter dez dias." / "Sair o número 7 ao lançar um dado comum." /
-    "Uma árvore andar sozinha pela rua." / "Depois da segunda-feira vir a quinta-feira." / "O dia ter trinta e cinco horas." / "Um sapato nascer de uma semente de feijão."
+- **Banco de frases (revisado em 14/11/2026; só entram frases objetivas, da vida real, sem fantasia):**
+  - **Com certeza:** "Depois do sábado vem o domingo." / "Lançar um dado comum e sair um número de 1 a 6." / "Uma semana tem sete dias." / "Todo ano tem doze meses." /
+    "Se hoje é segunda-feira, amanhã é terça-feira." / "Ao soltar uma pedra do alto, ela cai." / "A noite vem depois da tarde." / "Dois mais dois é igual a quatro."
+  - **Impossível:** "Uma pessoa viva ter 300 anos de idade." / "Uma pessoa nascer com 10 anos de idade." / "Uma semana ter dez dias." / "Sair o número 7 ao lançar um dado comum." /
+    "Um dado comum mostrar o número zero." / "Depois da segunda-feira vir a quinta-feira." / "O dia ter trinta e cinco horas." / "Um mês do calendário ter 40 dias."
   - **Talvez:** "Chover amanhã." / "Sair cara ao lançar uma moeda." / "Sortear um menino numa turma de meninos e meninas." / "Encontrar um amigo no parque." /
     "Sair o número 3 ao lançar um dado." / "Ganhar um jogo de cartas." / "Fazer sol no sábado." / "Tirar uma figurinha repetida do pacotinho."
+- **O que a revisão mudou:** saiu "O Sol vai aparecer amanhã de manhã" (em dia nublado a criança pode achar que "talvez"); entrou o dado de 1 a 6. Saíram as três frases de
+  **fantasia** ("um cachorro falar português", "uma árvore andar sozinha pela rua", "um sapato nascer de uma semente de feijão"), porque uma criança que gosta de histórias pode achar
+  que "talvez"; entraram "nascer com 10 anos", "dado mostrar o zero" e "mês com 40 dias". O dado aparece nas três respostas (certeza: de 1 a 6; talvez: sair o 3; impossível: 7 e zero),
+  o que ensina bem a ideia. "Ao soltar uma bola do alto" virou "uma pedra", para não haver bola de gás.
 - **Resposta:** escolha (3 opções).
 - **Distribuição:** as três respostas aparecem, em média, em partes iguais.
 - **Contas diferentes:** 24 frases + dezenas de caixas.
 - **Meta de tempo:** 100 s.
 - **Testes específicos:** a resposta da caixa é recalculada pelas bolas desenhadas; cada frase tem uma só resposta certa; a distribuição das três respostas é uniforme.
-- **Para o professor decidir:** pode revisar as 24 frases acima e **cortar ou trocar** as que o senhor achar ambíguas? É a parte mais delicada do nível: um "talvez" que a
-  criança considere "impossível" estraga o exercício.
+- **Decisão do professor:** a revisão das 24 frases foi delegada a mim e está aplicada acima.
 
 ## Nível 35 — Ler gráficos e tabelas
 
@@ -140,9 +142,7 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
 
 Tempo por dia (3 folhas): de 5 a 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 30:** comparar massas pela **balança de pratos**, lida pelo desenho. Recomendo sim.
-2. **Nível 32:** formato de data **dd/mm/aaaa**. Recomendo sim.
-3. **Nível 33:** moedas e cédulas **desenhadas de forma genérica**, sem arte oficial. Recomendo sim.
-4. **Nível 34:** revisar as 24 frases do banco, cortando ou trocando as ambíguas. **Esta é a pergunta que mais precisa do senhor.**
+Balança de pratos para comparar massas (nível 30); data em dd/mm/aaaa (nível 32); moedas e cédulas desenhadas de forma genérica (nível 33); banco de 24 frases do
+nível 34 revisado (frases de fantasia e a do Sol removidas).
