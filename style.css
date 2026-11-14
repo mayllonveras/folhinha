@@ -517,6 +517,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-b10{max-width:220px}
 .figsvg.fig-b100{max-width:300px}
 .figsvg.fig-mancha{max-width:100%}
+.figsvg.fig-quad{max-width:290px}
 .fig-grupos{display:flex;flex-wrap:wrap;gap:8px;max-width:300px}
 .fig-grupos .gbox{display:grid;grid-template-columns:repeat(var(--c),auto);gap:2px;padding:6px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:1.15rem;line-height:1.15}
 .fig-grupos .gbox i{font-style:normal}

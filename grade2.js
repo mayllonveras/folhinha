@@ -1,7 +1,7 @@
 /* Grade do 2º ano — geradores escritos do zero a partir das fichas em bncc/fichas/2ano-*.md.
    Mesma forma dos geradores do 1º ano (grade1.js): {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 26 (números até 1000, adição e subtração, multiplicação, dobro, triplo e metade). */
+   Níveis feitos: 1 a 32 (números até 1000, adição e subtração, multiplicação, dobro, triplo, metade, padrões e geometria). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed;
@@ -390,6 +390,189 @@ function gProb26(){
   it.limits=l;return it;
 }
 
+/* ===================== Níveis 27 a 32: padrões e geometria ===================== */
+var COR_FIG=["#2457D6","#FFB92B","#F27AB0","#1CA97B"];      /* azul, amarelo, rosa e verde: diferem também em luminosidade */
+function sortearCor(){return pick(COR_FIG)}
+
+/* Nível 27 — Padrões de figuras, símbolos e palavras (EF02MA10, EF02MA11). A fila mostra dois períodos completos e o começo do
+   terceiro, com um espaço no meio ou no fim; só um elemento completa o padrão. */
+var PADROES={AB:"AB",AAB:"AAB",ABB:"ABB",ABC:"ABC",AABB:"AABB"};
+var NPAD=Object.keys(PADROES);
+var SIMB=["★","●","■","▲","♥","♦"],LETR=["A","B","C","D","E"];
+var PALAV=[["sol","lua","estrela"],["gato","cachorro","peixe"],["verde","azul","amarelo"],["segunda","terça","quarta"],["janeiro","fevereiro","março"],["manhã","tarde","noite"]];
+var SHP=["círculo","quadrado","triângulo"];
+function fig27(c){return {fig:{t:"forma",n:c[0],color:c[1],s:.9,v:0,rot:0}}}
+/* A fila é periódica se algum período q repete até o fim, com pelo menos dois períodos inteiros mais um elemento. */
+function periodica(a){
+  for(var q=1;2*q+1<=a.length;q++){var ok=true;for(var j=0;j+q<a.length;j++)if(a[j]!==a[j+q]){ok=false;break}if(ok)return true}
+  return false;
+}
+function montaPadrao(){
+  for(var tent=0;tent<200;tent++){
+    var nome=pick(NPAD),pat=PADROES[nome],p=pat.length,e=rnd(1,p-1),S=2*p+e,seq=[],k,i;
+    var letras=[];for(k=0;k<pat.length;k++)if(letras.indexOf(pat[k])<0)letras.push(pat[k]);
+    var cel=function(i){return letras.indexOf(pat[i%p])};
+    for(i=0;i<S;i++)seq.push(cel(i));
+    var meio=Math.random()<.5,pos=meio?rnd(1,S-2):S;       /* S = o espaço fica no fim (depois do último) */
+    var certa=meio?seq[pos]:cel(S),unico=true;
+    for(var c=0;c<Math.max(3,letras.length);c++){
+      var f=meio?seq.slice():seq.concat([0]);f[meio?pos:S]=c;
+      if(periodica(f)!==(c===certa))unico=false;
+    }
+    if(unico)return {nome:nome,p:p,S:S,seq:seq,pos:pos,meio:meio,n:letras.length,certa:certa};
+  }
+  return {nome:"AB",p:2,S:5,seq:[0,1,0,1,0],pos:5,meio:false,n:2,certa:1};
+}
+function gPadroes(){
+  var d=montaPadrao(),r=Math.random(),it,tp;
+  var vis=function(el){return d.seq.map(function(k,i){return d.meio&&i===d.pos?"?":el[k]})};
+  var fim=function(a){return d.meio?a:a.concat(["?"])};
+  if(r<.375){                                        /* figuras */
+    var combos=[],t=0;while(combos.length<Math.max(3,d.n)&&t++<300){var cb=[pick(SHP),sortearCor()];if(!combos.some(function(c){return c[0]===cb[0]&&c[1]===cb[1]}))combos.push(cb)}
+    var el=combos.slice(0,d.n),certa=el[d.certa],wr=el.filter(function(c){return c!==certa}).concat(combos.slice(d.n)).slice(0,2).map(fig27);
+    var items=fim(vis(el).map(function(x){return x==="?"?"?":fig27(x)}));
+    it=choice("Qual figura completa o padrão?",fig27(certa),wr,{t:"fila",items:items,dir:"h"});
+    it.limits=[["n27:fig",3]];tp="fig";
+  }else if(r<.75){                                   /* símbolos e letras */
+    var base=Math.random()<.5?SIMB:LETR,ev=embaralhar(base).slice(0,Math.max(3,d.n)),el2=ev.slice(0,d.n);
+    var cert2=el2[d.certa],wr2=ev.filter(function(x){return x!==cert2}).slice(0,2);
+    it=choice("Qual completa o padrão? "+fim(vis(el2)).join(" "),cert2,wr2,null);it.limits=[["n27:sim",3]];tp="sim";
+  }else{                                             /* palavras */
+    var conj=pick(PALAV),ev3=embaralhar(conj).slice(0,3),el3=ev3.slice(0,d.n);
+    var cert3=el3[d.certa],wr3=ev3.filter(function(x){return x!==cert3}).slice(0,2);
+    it=choice("Qual palavra completa o padrão? "+fim(vis(el3)).join(", "),cert3,wr3,null);it.limits=[["n27:pal",2]];tp="pal";
+  }
+  it._info={nome:d.nome,p:d.p,S:d.S,seq:d.seq,pos:d.pos,meio:d.meio,tipo:tp,certa:d.certa};
+  return it;
+}
+
+/* Nível 28 — A regra de uma sequência de números (EF02MA10, EF02MA11): de quanto em quanto, o próximo e a regra. */
+function seqNum(){
+  var passo=pick([2,2,3,3,4,5,5,10,10,100]),sobe=Math.random()<.7,s,i,v=[];
+  if(sobe)s=rnd(1,999-5*passo);else s=rnd(5*passo+1,999);
+  for(i=0;i<5;i++)v.push(sobe?s+i*passo:s-i*passo);
+  return {passo:passo,sobe:sobe,v:v};
+}
+function gRegra(){
+  var q=seqNum(),r=Math.random(),it;
+  if(r<.375){                                        /* de quanto em quanto? */
+    var m=rnd(4,5),sh=q.v.slice(0,m);
+    it=typed(sh.join(", ")+". De quanto em quanto a sequência "+(q.sobe?"cresce":"diminui")+"?",q.passo);it.limits=[["n28:t1",3]];
+  }else if(r<.75){                                   /* qual é o próximo? */
+    var m2=rnd(4,4);it=typed(q.v.slice(0,m2).join(", ")+",",q.v[m2]);it.limits=[["n28:t2",3]];
+  }else{                                             /* qual é a regra? */
+    var sh2=q.v.slice(0,rnd(4,5)),txt=function(sobe,p){return (sobe?"soma ":"tira ")+p};
+    var certa=txt(q.sobe,q.passo),wr=[txt(!q.sobe,q.passo)],outro=[2,3,4,5,10].filter(function(x){return x!==q.passo});
+    wr.push(txt(q.sobe,pick(outro)));
+    it=choice(sh2.join(", ")+". Qual é a regra da sequência?",certa,wr,null);it.limits=[["n28:t3",2]];
+  }
+  it._info={passo:q.passo,sobe:q.sobe,v:q.v};
+  return it;
+}
+
+/* Nível 29 — Localização com mais de um ponto de referência (EF02MA12): fileiras de objetos frontais e simétricos. */
+var POS29=[{e:"🍎",n:"maçã",f:1},{e:"⚽",n:"bola",f:1},{e:"⭐",n:"estrela",f:1},{e:"🌼",n:"flor",f:1},{e:"🎈",n:"balão"},{e:"🍪",n:"biscoito"},{e:"🐶",n:"cachorro"},{e:"🐱",n:"gato"}];
+function art(o){return o.f?"a ":"o "}
+function cont(o){return o.f?"da ":"do "}
+function gLocal(){
+  var entre=Math.random()<.5,len=entre?rnd(4,5):5,ps=embaralhar(POS29).slice(0,len),i=rnd(0,len-3),a=ps[i],c=ps[i+2],meio=ps[i+1],it,fig;
+  var wr=embaralhar(ps.filter(function(x){return x!==meio})).slice(0,3).map(function(x){return x.e});
+  fig={t:"fila",items:ps.map(function(x){return x.e}),dir:"h"};
+  if(entre){
+    var o1=Math.random()<.5?[a,c]:[c,a];
+    it=choice("Quem está entre "+art(o1[0])+o1[0].n+" e "+art(o1[1])+o1[1].n+"?",meio.e,wr,fig);it.limits=[["n29:entre",4]];
+  }else if(Math.random()<.5){
+    it=choice("Quem está à direita "+cont(a)+a.n+" e à esquerda "+cont(c)+c.n+"?",meio.e,wr,fig);it.limits=[["n29:dois",4]];
+  }else{
+    it=choice("Quem está à esquerda "+cont(c)+c.n+" e à direita "+cont(a)+a.n+"?",meio.e,wr,fig);it.limits=[["n29:dois",4]];
+  }
+  it._info={itens:ps.map(function(x){return x.e}),a:a.e,c:c.e,meio:meio.e,entre:entre};
+  return it;
+}
+
+/* Nível 30 — Deslocamentos em quadriculado (EF02MA12): siga o caminho ou conte as casas. */
+var CASA=function(c,r){return "ABCDEFGH".charAt(c-1)+r};
+function gQuadro(){
+  var n=pick([5,6]),it;
+  if(Math.random()<.5){                              /* siga o caminho: um ou dois movimentos */
+    var t=0,sx,sy,dx,dy,ex,ey,dir=["direita","esquerda","cima","baixo"],m1,m2,n1,n2;
+    do{
+      sx=rnd(1,n);sy=rnd(1,n);m1=pick(dir);n1=rnd(1,4);
+      m2=Math.random()<.6?pick(dir.filter(function(d){return (m1==="direita"||m1==="esquerda")?(d==="cima"||d==="baixo"):(d==="direita"||d==="esquerda")})):null;n2=m2?rnd(1,4):0;
+      dx=(m1==="direita"?n1:m1==="esquerda"?-n1:0)+(m2==="direita"?n2:m2==="esquerda"?-n2:0);
+      dy=(m1==="cima"?n1:m1==="baixo"?-n1:0)+(m2==="cima"?n2:m2==="baixo"?-n2:0);
+      ex=sx+dx;ey=sy+dy;
+    }while((ex<1||ex>n||ey<1||ey>n)&&t++<500);
+    var frase=function(m,k){return k+(k===1?" casa":" casas")+" para "+(m==="cima"?"cima":m==="baixo"?"baixo":"a "+m)};
+    var certa=CASA(ex,ey),cand=[[ex+1,ey],[ex-1,ey],[ex,ey+1],[ex,ey-1],[sx-dx,sy-dy],[sx+dy,sy+dx],[sx+dx,sy-dy]],wr=[];
+    embaralhar(cand).forEach(function(q){if(q[0]>=1&&q[0]<=n&&q[1]>=1&&q[1]<=n&&CASA(q[0],q[1])!==certa&&wr.indexOf(CASA(q[0],q[1]))<0&&wr.length<3)wr.push(CASA(q[0],q[1]))});
+    for(var u=0;wr.length<3&&u<50;u++){var cc=CASA(rnd(1,n),rnd(1,n));if(cc!==certa&&wr.indexOf(cc)<0)wr.push(cc)}
+    it=choice("Comece em "+CASA(sx,sy)+". Ande "+frase(m1,n1)+(m2?" e "+frase(m2,n2):"")+". Onde você chega?",certa,wr,{t:"quadriculado",c:n,r:n,s:[sx,sy]});
+    it.limits=[["n30:t1",4]];it._info={n:n,sx:sx,sy:sy,m1:m1,n1:n1,m2:m2,n2:n2,ex:ex,ey:ey};
+  }else{                                             /* quantas casas, para a direita, esquerda, cima ou baixo */
+    var ax,ay,bx,by,k=0;
+    do{ax=rnd(1,n);ay=rnd(1,n);bx=rnd(1,n);by=rnd(1,n)}while((ax===bx&&ay===by)&&k++<100);
+    var eixos=[];if(bx!==ax)eixos.push("x");if(by!==ay)eixos.push("y");var eixo=pick(eixos);
+    var palavra=eixo==="x"?(bx>ax?"para a direita":"para a esquerda"):(by>ay?"para cima":"para baixo");
+    it=typed("Para ir da ● até a ★, quantas casas "+palavra+"?",Math.abs(eixo==="x"?bx-ax:by-ay),{t:"quadriculado",c:n,r:n,s:[ax,ay],d:[bx,by]});
+    it.limits=[["n30:t2",4]];it._info={n:n,ax:ax,ay:ay,bx:bx,by:by,eixo:eixo};
+  }
+  return it;
+}
+
+/* Nível 31 — Sólidos geométricos (EF02MA14): o nome pelo desenho, por uma característica e por um objeto. */
+var SOLS=["cubo","bloco retangular","pirâmide","cone","cilindro","esfera"];
+function solOpts(certa){                              /* cubo e bloco retangular nunca juntos nas opções: todo cubo também é um bloco */
+  var out=[certa],pool=embaralhar(SOLS.filter(function(x){return x!==certa}));
+  pool.forEach(function(x){
+    var par=x==="cubo"?"bloco retangular":x==="bloco retangular"?"cubo":null;
+    if(out.length<4&&!(par&&out.indexOf(par)>=0))out.push(x);
+  });
+  return out.slice(1);
+}
+var CARACT=[["Qual sólido tem 6 faces quadradas?","cubo"],["Qual sólido tem 6 faces retangulares?","bloco retangular"],["Qual sólido tem duas faces redondas e rola?","cilindro"],
+  ["Qual sólido tem uma ponta e uma face redonda?","cone"],["Qual sólido não tem nenhuma face plana?","esfera"],["Qual sólido tem uma base quadrada e quatro faces triangulares?","pirâmide"]];
+var OBJS31=[["uma bola de futebol","esfera"],["uma bola de basquete","esfera"],["o globo terrestre","esfera"],["uma lata de leite","cilindro"],["uma vela","cilindro"],["um tubo de cola","cilindro"],
+  ["uma caixa de sapato","bloco retangular"],["um tijolo","bloco retangular"],["um chapéu de festa","cone"],["um dado","cubo"],["um cubo de gelo","cubo"]];
+function cap1(t){return t.charAt(0).toUpperCase()+t.slice(1)}
+function gSolidos2(){
+  var r=Math.random(),it,n;
+  if(r<.375){n=pick(SOLS);it=choice("Como se chama este sólido?",n,solOpts(n),{t:"solid",n:n});it.limits=[["n31:t1",3]];it._info={tipo:"nome",n:n}}
+  else if(r<.75){var c=pick(CARACT);it=choice(c[0],c[1],solOpts(c[1]),null);it.key="car|"+c[0];it.limits=[["n31:t2",3]];it._info={tipo:"car",n:c[1]}}
+  else{var o=pick(OBJS31);it=choice(cap1(o[0])+" tem a forma de qual sólido?",o[1],solOpts(o[1]),null);it.key="obj|"+o[0];it.limits=[["n31:t3",2]];it._info={tipo:"obj",n:o[1]}}
+  return it;
+}
+
+/* Nível 32 — Figuras planas: lados, vértices e características (EF02MA15). */
+var FIGS=["triângulo","quadrado","retângulo","círculo","pentágono","hexágono"];
+function fig32(n,cor,ponta){
+  if(n==="pentágono"||n==="hexágono")return {t:"shape",n:n,color:cor};
+  var f={t:"forma",n:n,color:cor};
+  if(n==="retângulo"){f.o=pick(["h","v"]);f.r=+(1.4+Math.random()*1.1).toFixed(2)}
+  if(n==="triângulo"){f.v=rnd(0,4);f.rot=pick([0,90,180,270])}
+  if(n==="quadrado"&&ponta)f.rot=45;
+  return f;
+}
+var LADOS={"triângulo":3,"quadrado":4,"retângulo":4,"pentágono":5,"hexágono":6};
+function gPlanas(){
+  var r=Math.random(),cor=sortearCor(),it,n;
+  if(r<.375){                                        /* contar lados ou vértices */
+    n=pick(Object.keys(LADOS));var lado=Math.random()<.5;
+    it=typed("Quantos "+(lado?"lados":"vértices")+" tem esta figura?",LADOS[n],fig32(n,cor,Math.random()<.3));it.limits=[["n32:t1",3]];
+    it.key="cont|"+(lado?"l":"v")+"|"+n+"|"+JSON.stringify(it.extra.fig);it._info={tipo:"cont",n:n};
+  }else if(r<.75){                                   /* nome da figura (o quadrado pode vir "de ponta"; "retângulo" fica fora das opções do quadrado) */
+    n=pick(FIGS);var wr=embaralhar(FIGS.filter(function(x){return x!==n&&!(n==="quadrado"&&x==="retângulo")})).slice(0,3);
+    var f=fig32(n,cor,Math.random()<.35);
+    it=choice("Como se chama esta figura?",n,wr,f);it.key="nome|"+n+"|"+JSON.stringify(f);it.limits=[["n32:t2",3]];it._info={tipo:"nome",n:n};
+  }else{                                             /* qual figura tem… */
+    var q=pick([["Qual figura tem 4 lados iguais?","quadrado"],["Qual figura não tem vértices?","círculo"],["Qual figura tem 3 vértices?","triângulo"],["Qual figura tem 5 lados?","pentágono"],["Qual figura tem 6 lados?","hexágono"]]);
+    var outros=embaralhar(FIGS.filter(function(x){return x!==q[1]&&!(q[1]==="quadrado"&&x==="quadrado")})).slice(0,rnd(2,3));
+    var opts=outros.map(function(x){return {fig:fig32(x,cor,false)}});
+    it=choice(q[0],{fig:fig32(q[1],cor,false)},opts,null);it.key="qual|"+q[0]+"|"+outros.join(",");it.limits=[["n32:t3",2]];it._info={tipo:"qual",n:q[1]};
+  }
+  return it;
+}
+
 FC.G2=[
   {nivel:1,id:"g2n01",nome:"Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10",hab:["EF02MA09","EF02MA11"],meta:90,gen:gContarDe,ano:2},
   {nivel:2,id:"g2n02",nome:"Nível 2 — Centenas, dezenas e unidades (material dourado)",hab:["EF02MA04"],meta:100,gen:gMaterial,ano:2},
@@ -416,7 +599,13 @@ FC.G2=[
   {nivel:23,id:"g2n23",nome:"Nível 23 — Multiplicar por 5",hab:["EF02MA07"],meta:100,gen:gTab(5,23),ano:2},
   {nivel:24,id:"g2n24",nome:"Nível 24 — Multiplicar por 2, 3, 4 e 5, misturadas",hab:["EF02MA07"],meta:120,gen:gTab24,ano:2},
   {nivel:25,id:"g2n25",nome:"Nível 25 — Metade e terça parte",hab:["EF02MA08"],meta:110,gen:gMetade,ano:2},
-  {nivel:26,id:"g2n26",nome:"Nível 26 — Problemas de multiplicação, dobro, triplo e metade",hab:["EF02MA07","EF02MA08"],meta:140,gen:gProb26,ano:2}
+  {nivel:26,id:"g2n26",nome:"Nível 26 — Problemas de multiplicação, dobro, triplo e metade",hab:["EF02MA07","EF02MA08"],meta:140,gen:gProb26,ano:2},
+  {nivel:27,id:"g2n27",nome:"Nível 27 — Padrões de figuras, símbolos e palavras",hab:["EF02MA10","EF02MA11"],meta:100,gen:gPadroes,ano:2},
+  {nivel:28,id:"g2n28",nome:"Nível 28 — A regra de uma sequência de números",hab:["EF02MA10","EF02MA11"],meta:110,gen:gRegra,ano:2},
+  {nivel:29,id:"g2n29",nome:"Nível 29 — Localização com mais de um ponto de referência",hab:["EF02MA12"],meta:110,gen:gLocal,ano:2},
+  {nivel:30,id:"g2n30",nome:"Nível 30 — Deslocamentos em quadriculado",hab:["EF02MA12"],meta:120,gen:gQuadro,ano:2},
+  {nivel:31,id:"g2n31",nome:"Nível 31 — Sólidos geométricos",hab:["EF02MA14"],meta:110,gen:gSolidos2,ano:2},
+  {nivel:32,id:"g2n32",nome:"Nível 32 — Figuras planas: lados, vértices e características",hab:["EF02MA15"],meta:110,gen:gPlanas,ano:2}
 ];
 FC.G2BY={};FC.G2.forEach(function(e){FC.G2BY[e.id]=e});
 })();

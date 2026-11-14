@@ -53,7 +53,7 @@ var TRI=[[[50,14],[86,76],[14,76]],[[50,8],[78,86],[22,86]],[[50,32],[90,78],[10
 function formaGeom(f){
   var n=f.n,w,h,pts;
   if(n==="círculo")return {circle:true};
-  if(n==="quadrado")return {pts:[[14,14],[86,14],[86,86],[14,86]]};
+  if(n==="quadrado")return {pts:f.rot===45?[[50,14],[86,50],[50,86],[14,50]]:[[14,14],[86,14],[86,86],[14,86]]};   /* rot 45: quadrado "de ponta" (2º ano) */
   if(n==="retângulo"){
     var r=f.r||1.8;if(f.o==="v"){h=84;w=84/r}else{w=84;h=84/r}
     return {pts:[[50-w/2,50-h/2],[50+w/2,50-h/2],[50+w/2,50+h/2],[50-w/2,50+h/2]].map(function(q){return[+q[0].toFixed(2),+q[1].toFixed(2)]})};
@@ -222,6 +222,19 @@ var DRAW={
     for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
     for(i=0;i<f.g;i++)p+='<span class="prato"></span>';
     return '<div class="fig-reparte" aria-hidden="true"><div class="bandeja">'+o+'</div><div class="pratos">'+p+"</div></div>";
+  },
+  /* quadriculado com letras nas colunas e números nas linhas (a linha 1 fica embaixo); f.c colunas, f.r linhas,
+     f.s = [coluna, linha] do ponto de partida (●) e f.d = [coluna, linha] do destino (★), se houver */
+  quadriculado:function(f){
+    var cs=38,ml=20,top=6,W=ml+f.c*cs+6,H=top+f.r*cs+22,inner="",i,j;
+    for(i=0;i<=f.c;i++)inner+='<line x1="'+(ml+i*cs)+'" x2="'+(ml+i*cs)+'" y1="'+top+'" y2="'+(top+f.r*cs)+'" stroke="'+C.line+'" stroke-width="1.4"/>';
+    for(j=0;j<=f.r;j++)inner+='<line x1="'+ml+'" x2="'+(ml+f.c*cs)+'" y1="'+(top+j*cs)+'" y2="'+(top+j*cs)+'" stroke="'+C.line+'" stroke-width="1.4"/>';
+    for(i=0;i<f.c;i++)inner+='<text x="'+(ml+i*cs+cs/2)+'" y="'+(top+f.r*cs+16)+'" text-anchor="middle" font-size="13" font-weight="700" fill="'+INK+'">'+"ABCDEFGH".charAt(i)+'</text>';
+    for(j=0;j<f.r;j++)inner+='<text x="'+(ml-6)+'" y="'+(top+j*cs+cs/2+5)+'" text-anchor="end" font-size="13" font-weight="700" fill="'+INK+'">'+(f.r-j)+'</text>';
+    function cx(col){return ml+(col-.5)*cs}function cy(row){return top+(f.r-row+.5)*cs}
+    if(f.d)inner+='<text class="dest" x="'+cx(f.d[0])+'" y="'+(cy(f.d[1])+9)+'" text-anchor="middle" font-size="28" fill="'+C.sun+'" stroke="'+INK+'" stroke-width="1" paint-order="stroke">★</text>';
+    if(f.s)inner+='<circle class="start" cx="'+cx(f.s[0])+'" cy="'+cy(f.s[1])+'" r="11" fill="'+C.blue+'" stroke="#fff" stroke-width="2.5"/>';
+    return svg(W,H,inner,"fig-quad");
   },
   /* gráfico de colunas */
   bars:function(f){
