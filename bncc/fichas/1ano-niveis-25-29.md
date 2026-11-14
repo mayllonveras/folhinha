@@ -72,7 +72,7 @@ A escada deste bloco:
 - **O que a criança faz:** soma e tira **dezenas inteiras** e **unidades** de números de dois algarismos, **sem passar da dezena**.
 - **Seis famílias de contas** (as 8 contas do nível seguem esta distribuição: 1 + 1 + 2 + 2 + 1 + 1):
   1. **Dezena + dezena:** `30 + 20 = ?` (dezenas de 10 a 90, resultado até 100). 45 contas.
-  2. **Dezena − dezena:** `80 − 50 = ?` (resultado de 10 a 80). 45 contas.
+  2. **Dezena − dezena:** `80 − 50 = ?` (resultado de 10 a 90) *(corrigido ao programar: com 100 − 10 o resultado chega a 90)*. 45 contas.
   3. **Número + unidade:** `34 + 5 = ?` (a soma das unidades não passa de 9). 324 contas.
   4. **Número − unidade:** `38 − 5 = ?` (a unidade tirada é menor que a unidade do número). 324 contas.
   5. **Dezena + unidade:** `40 + 7 = ?` (compor o número). 81 contas.

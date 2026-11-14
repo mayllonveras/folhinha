@@ -74,6 +74,12 @@ var DRAW={
       return '<div class="eg" aria-hidden="true">'+rows.map(function(r){return '<div>'+r+'</div>'}).join("")+'</div>'});
     return '<div class="fig-emoji'+(f.side?" side":"")+'">'+(f.sep?gs.join('<div class="sep" aria-hidden="true">'+f.sep+'</div>'):gs.join(""))+'</div>';
   },
+  /* pacotes de 10 objetos (cada um numa moldura) e alguns soltos, sem moldura */
+  pacotes:function(f){
+    function fila(n,box){return '<div class="pk'+(box?' box':'')+'">'+new Array(n+1).join(f.e)+'</div>'}
+    var h="",i;for(i=0;i<f.packs;i++)h+=fila(10,true);if(f.loose>0)h+=fila(f.loose,false);
+    return '<div class="fig-pacotes" aria-hidden="true">'+h+'</div>';
+  },
   /* objetos espalhados numa caixa (pts em pontos de uma caixa de 300 x 200; o tamanho se ajusta à largura) */
   scatter:function(f){
     return '<div class="fig-scatter" aria-hidden="true">'+f.pts.map(function(q){

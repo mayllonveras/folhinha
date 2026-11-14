@@ -336,8 +336,78 @@ for(const [nivel,permitidas,total] of [[19,["somaSem"],72],[20,["somaPassa","som
  if(troc)falha(23,troc+" folhas com parcelas trocadas");
  if(ruim)falha(23,ruim+" folhas sem 2 de cada família");if(vinteRuim)falha(23,vinteRuim+" folhas com mais de 1 'vinte'")}
 
+/* ---- Níveis 25 a 29 ---- */
+{ // nível 25
+ const its=draw(G.g1n25);const tp={t1:0,t2:0,t3:0};let zeros=0,t1z=0;
+ for(const p of its){const f=p.extra.fig;if(f.t!=="base10"){falha(25,"figura");continue}
+  if(!tem(f.tens,1,9)||!tem(f.ones,0,9))falha(25,"barras ou quadradinhos fora de 1 a 9 / 0 a 9");
+  const h=FC.fig(f),rects=(h.match(/<rect/g)||[]).length;if(rects!==f.tens+f.ones)falha(25,"html com "+rects+" formas, esperadas "+(f.tens+f.ones));
+  let m;
+  if(/^Cada barra vale 10 e cada quadradinho vale 1\. Quanto vale tudo junto\?$/.test(p.pre)){tp.t1++;
+    if(p.a!==f.tens*10+f.ones)falha(25,"valor da figura errado");if(p.a<11||p.a>99)falha(25,"fora de 11 a 99: "+p.a);if(f.ones===0){t1z++;if(f.tens<2)falha(25,"10 não entra")}}
+  else if((m=p.pre.match(/^O número (\d+) é formado por quantas barras de 10\?$/))){tp.t2++;
+    if(+m[1]!==f.tens*10+f.ones||p.a!==f.tens||f.ones<1)falha(25,"dezenas: "+p.pre)}
+  else if((m=p.pre.match(/^O número (\d+) tem quantos quadradinhos soltos\?$/))){tp.t3++;
+    if(+m[1]!==f.tens*10+f.ones||p.a!==f.ones||f.ones<1)falha(25,"unidades: "+p.pre)}
+  else falha(25,"pergunta desconhecida: "+p.pre)}
+ console.log("nível 25: tipos",(100*tp.t1/N).toFixed(0)+"/"+(100*tp.t2/N).toFixed(0)+"/"+(100*tp.t3/N).toFixed(0)+"%; valor redondo no tipo 1:",(100*t1z/tp.t1).toFixed(0)+"%");
+ if(Math.abs(tp.t1/N-.625)>.04||Math.abs(tp.t2/N-.25)>.04)falha(25,"proporção dos tipos");if(t1z/tp.t1>.2)falha(25,"muitos números redondos");}
+{ // nível 26
+ const its=draw(G.g1n26);let soPacotes=0,ate=new Set();
+ for(const p of its){const f=p.extra.fig,n=f.packs*10+f.loose;
+  if(p.a!==n||!tem(n,21,100))falha(26,"total: "+n+" resposta "+p.a);if(!tem(f.loose,0,9)||!tem(f.packs,2,10))falha(26,"pacotes ou soltos fora da faixa");
+  const h=FC.fig(f),emo=(h.match(new RegExp(f.e,"g"))||[]).length;if(emo!==n)falha(26,"html com "+emo+" objetos, esperados "+n);
+  if((h.match(/class="pk box"/g)||[]).length!==f.packs)falha(26,"pacotes sem moldura");
+  if(f.loose===0)soPacotes++;ate.add(n);
+  const o=OBJ.find(x=>x.e===f.e);if(!p.pre.startsWith(o.f?"Quantas ":"Quantos "))falha(26,"concordância")}
+ console.log("nível 26: só pacotes",(100*soPacotes/N).toFixed(0)+"%; totais distintos",ate.size);
+ if(Math.abs(soPacotes/N-.2)>.04)falha(26,"proporção de só pacotes");if(ate.size!==80)falha(26,"esperados 80 totais, vieram "+ate.size);}
+{ // nível 27
+ const its=draw(G.g1n27);const modos={sep:0,mesma:0,troca:0},pos=[0,0,0,0];
+ const troca=v=>v.some(a=>v.some(b=>a!==b&&Math.floor(a/10)===b%10&&a%10===Math.floor(b/10)));
+ for(const p of its){const v=p.extra.opts.map(Number),maior=/maior/.test(p.pre);
+  if(v.length!==3||new Set(v).size!==3||v.some(x=>!tem(x,10,99)))falha(27,"opções: "+v);
+  if(v[p.a-1]!==(maior?Math.max(...v):Math.min(...v)))falha(27,"resposta errada");pos[p.a]++;
+  const d=v.map(x=>Math.floor(x/10)),dist=new Set(d).size;
+  if(troca(v))modos.troca++;else if(dist<3)modos.mesma++;else{modos.sep++;const s=[...d].sort((a,b)=>a-b);if(s[1]-s[0]<2||s[2]-s[1]<2)falha(27,"dezenas pouco separadas: "+v)}}
+ console.log("nível 27: dezenas separadas",(100*modos.sep/N).toFixed(0)+"%, mesma dezena",(100*modos.mesma/N).toFixed(0)+"%, algarismos trocados",(100*modos.troca/N).toFixed(0)+"%");
+ if(Math.abs(modos.sep/N-.5)>.06||Math.abs(modos.mesma/N-.4)>.06||modos.troca/N<.05||modos.troca/N>.18)falha(27,"proporção dos modos");
+ for(let k=1;k<=3;k++)if(Math.abs(pos[k]/N-1/3)>.04)falha(27,"posição da certa");}
+{ // nível 28
+ const its=draw(G.g1n28),d=new Set(),fam={};
+ for(const p of its){let m,f=null;d.add(p.pre);
+  if((m=p.pre.match(/^(\d+) \+ (\d+) =$/))){const a=+m[1],b=+m[2];
+    if(a%10===0&&b%10===0&&b>0){f="f1";if(a+b>100||a<10||b<10)falha(28,"dezena + dezena: "+p.pre)}
+    else if(a%10===0&&b>=1&&b<=9){f="f5";if(a<10)falha(28,"dezena + unidade: "+p.pre)}
+    else if(a%10>=1&&b>=1&&b<=9){f="f3";if(a%10+b>9)falha(28,"soma passa da dezena: "+p.pre)}
+    else falha(28,"formato: "+p.pre);
+    if(p.a!==a+b)falha(28,"soma errada: "+p.pre)}
+  else if((m=p.pre.match(/^(\d+) − (\d+) =$/))){const a=+m[1],b=+m[2];
+    if(a%10===0&&b%10===0&&b>0){f="f2";if(a-b<10)falha(28,"dezena − dezena: "+p.pre)}
+    else if(b>=1&&b<=9&&a%10>=2&&b<a%10){f="f4"}
+    else if(b===a%10&&b>=1&&a>10){f="f6a"}
+    else if(b%10===0&&b===a-a%10&&a%10>=1){f="f6b"}
+    else falha(28,"formato: "+p.pre);
+    if(p.a!==a-b||p.a<1)falha(28,"subtração errada: "+p.pre)}
+  else falha(28,"formato desconhecido: "+p.pre);
+  fam[f]=(fam[f]||0)+1;if(p.extra)falha(28,"sem figura")}
+ console.log("nível 28: contas diferentes",d.size,"; famílias",JSON.stringify(Object.fromEntries(Object.entries(fam).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
+ {const g2=new Set();for(let i=0;i<80000;i++)g2.add(G.g1n28.gen().pre);console.log("nível 28: contas diferentes em 80000 sorteios",g2.size);if(g2.size!==981)falha(28,"esperadas 981 contas, vieram "+g2.size)}
+ if(Math.abs(fam.f3/N-.25)>.04||Math.abs(fam.f4/N-.25)>.04||Math.abs((fam.f1||0)/N-.125)>.04)falha(28,"proporção das famílias");}
+{ // nível 29
+ const its=draw(G.g1n29),tp={a:0,b:0,c:0,d:0};
+ for(const p of its){let m;
+  if((m=p.pre.match(/^(\d+) = (\d+) \+$/))&&p.post===""){tp.a++;if(+m[1]!==+m[2]+p.a||+m[2]%10!==0)falha(29,"completar a unidade: "+p.pre)}
+  else if((m=p.pre.match(/^(\d+) =$/))&&(m=[m[1],p.post.match(/^\+ (\d+)$/)])&&m[1]){tp.b++;const n=+m[0],u=+m[1][1];if(n!==p.a+u||p.a%10!==0)falha(29,"completar a dezena: "+p.pre+" "+p.post)}
+  else if((m=p.pre.match(/^Qual número tem (\d) dezenas e (\d) unidades\?$/))){tp.c++;if(p.a!==+m[1]*10+ +m[2])falha(29,"dezenas e unidades: "+p.pre)}
+  else if((m=p.pre.match(/^O número (\d+) tem quantas (dezenas|unidades)\?$/))){tp.d++;const n=+m[1];if(p.a!==(m[2]==="dezenas"?Math.floor(n/10):n%10))falha(29,"quantas: "+p.pre)}
+  else falha(29,"pergunta desconhecida: "+p.pre+" | "+p.post);
+  if(p.a<1)falha(29,"resposta zero");}
+ console.log("nível 29: tipos",JSON.stringify(Object.fromEntries(Object.entries(tp).map(([k,v])=>[k,(100*v/N).toFixed(0)+"%"]))));
+ for(const k in tp)if(Math.abs(tp[k]/N-.25)>.04)falha(29,"proporção do tipo "+k);}
+
 /* ---- Limites de cada folha dos níveis 8 a 13 ---- */
-for(const nivel of [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24]){
+for(const nivel of [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29]){
   const g=G["g1n"+String(nivel).padStart(2,"0")];FC.LEVELS=[{gen:g.gen}];let viol=0;
   for(let i=0;i<1500;i++){const it=FC.makeItems(0);const v=limitesOk(nivel,it);if(v){viol++;if(viol<3)console.log("   limite estourado:",v)}}
   console.log("nível "+nivel+": folhas que estouram um limite do grupo",viol,"de 1500");
