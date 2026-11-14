@@ -142,10 +142,6 @@ A numeração do app para estes níveis é 77 a 83 (os números 1 a 7 abaixo sã
 
 Tempo por dia (3 folhas): de 5,5 a 6,5 minutos.
 
-## Perguntas para o professor (com a minha sugestão)
+## Decisões do professor (14/11/2026)
 
-1. **Espaço fino de milhar (`3 456`):** os números de quatro algarismos aparecem com um espaço fino entre o milhar e a centena, e o aluno digita sem espaço. **Sugiro** usar em todas as telas a partir do nível 1:
-   é o padrão da BNCC e ajuda a ler. (Uma opção é mostrar `3.456`, mas o ponto lembra decimal e vírgula.)
-2. **Regra do "e" e da vírgula no extenso (nível 1):** "mil e cem", "dois mil e quarenta", mas "mil, cento e dez" e "dois mil, trezentos e quarenta e cinco". **Sugiro** seguir esta regra, que é a mais usada nos livros didáticos.
-3. **Reta até 10 000 (nível 6):** o rótulo "10 000" tem cinco algarismos, mas só aparece escrito na reta; as respostas digitadas nunca passam de 9999 (a caixa aceita quatro algarismos). **Sugiro** manter essa reta, porque mostra o próximo milhar.
-4. **Regra escondida no nível 7 (tipos 2 e 3):** só o tipo 1 traz a regra escrita ("de 50 em 50"); nos outros o aluno a descobre. **Sugiro** manter assim, que é o que a habilidade pede ("descrever uma regra de formação").
+Espaço fino de milhar (`3 456`) em todas as telas, com o aluno digitando sem espaço; regra do "e" e da vírgula no extenso dos livros didáticos ("mil e cem", "mil, cento e dez"); reta até 10 000 mantida (o rótulo "10 000" só aparece escrito na reta); regra escondida nos tipos 2 e 3 do nível 7.
