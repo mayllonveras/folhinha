@@ -255,6 +255,73 @@ problemas3("13",13);problemas3("14",14);
  }
  console.log("nível 15: tipos",JSON.stringify(tp),"verdadeiras",(100*verd/v3).toFixed(0)+"%");if(Math.abs(tp[1]/N-.5)>.04||Math.abs(tp[2]/N-.25)>.04)falha(15,"proporção dos tipos");if(Math.abs(verd/v3-.5)>.05)falha(15,"verdadeiras e falsas em partes iguais")}
 
+/* ---- Níveis 16 a 24: multiplicação ---- */
+const OBJN=FC.exh.OBJ;
+const lerConta=p=>{                                                   // devolve {a,b,c} da igualdade a × b = c (qualquer posição do espaço)
+ const L=strip(p.pre+" "+p.a+" "+p.post).trim(),m=L.match(/^(\d+) × (\d+) =(?: (\d+))?$/);if(m)return {a:+m[1],b:+m[2],c:m[3]!==undefined?+m[3]:null,L};return null};
+function arranjoOk(p,nivel){
+ const f=p.extra.fig;if(f.t!=="arranjo"){falha(nivel,"figura de outro tipo");return null}
+ const html=FC.fig(f),linhas=html.split('class="arr-r"').slice(1).map(c=>(c.match(/<i>/g)||[]).length);
+ if(linhas.length!==f.r||linhas.some(x=>x!==f.c))falha(nivel,"o arranjo não tem "+f.r+" fileiras de "+f.c+": "+linhas);if(f.r<2||f.r>10||f.c<2||f.c>10)falha(nivel,"arranjo fora de 2 a 10");
+ return {R:f.r,C:f.c,e:f.e};
+}
+function perguntaArranjo(p,nivel,f){const o=OBJN.find(o=>o.e===f.e),m=p.pre.match(/^(Quantas|Quantos) (\S+) há ao todo\?$/);if(!m||m[1]!==(o.f?"Quantas":"Quantos")||m[2]!==o.pl)falha(nivel,"pergunta/concordância: "+p.pre);if(p.a!==f.R*f.C)falha(nivel,"resposta do arranjo: "+p.pre+" → "+p.a+" vs "+f.R*f.C)}
+function foliaFatos(nivel,gg){let ruim=0;for(let i=0;i<1500;i++){const k=niv(gg).filter(p=>p._info&&p._info.k!==undefined&&p._info.n!==undefined&&p._info.tipo!=="por10").map(p=>Math.min(p._info.k,p._info.n)+","+Math.max(p._info.k,p._info.n));if(new Set(k).size<k.length)ruim++}
+ console.log("nível "+nivel+": folhas com o mesmo fato (ou fatores trocados)",ruim);if(ruim)falha(nivel,ruim+" folhas com fatos repetidos")}
+{const its=draw(G.g3n16),tp={direta:0,escondido:0},ks={2:0,3:0,4:0,5:0};
+ for(const p of its){const c=lerConta(p);if(!c){falha(16,"formato: "+p.pre);continue}
+  const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="direta"){if(c.c!==c.a*c.b||p.a!==c.c)falha(16,"direta: "+c.L)}else{if(c.c!==c.a*c.b||p.a<2||p.a>10)falha(16,"escondido: "+c.L)}
+  const [f1,f2]=[c.a,c.b];const k=[2,3,4,5].includes(i.k)?i.k:0;if(!k||i.n<2||i.n>10)falha(16,"fatores: "+c.L);if(!((f1===i.k&&f2===i.n)||(f1===i.n&&f2===i.k)))falha(16,"fatores diferentes dos da conta: "+c.L);ks[i.k]++}
+ console.log("nível 16:",JSON.stringify(tp),JSON.stringify(ks));if(Math.abs(tp.direta/N-.625)>.04)falha(16,"proporção");for(const k in ks)if(Math.abs(ks[k]/N-.25)>.04)falha(16,"tabuada "+k);foliaFatos(16,G.g3n16)}
+{const its=draw(G.g3n17),tp={direta:0,texto:0,dinheiro:0};let grande=0,tot=0;
+ for(const p of its){const i=p._info;tp[i.tipo]++;let n;
+  if(i.tipo==="direta"){const m=strip(p.pre).match(/^(?:10 × (\d+)|(\d+) × 10) =$/);if(!m){falha(17,"conta: "+p.pre);continue}n=+(m[1]||m[2])}
+  else if(i.tipo==="texto"){const m=strip(p.pre).match(/^Quanto é 10 vezes (\d+)\?$/);if(!m){falha(17,"texto: "+p.pre);continue}n=+m[1]}
+  else{const m=p.pre.match(/^Quantos reais há em (\d+) cédulas de 10 reais\?$/);if(!m||+m[1]<2){falha(17,"dinheiro: "+p.pre);continue}n=+m[1]}
+  if(p.a!==n*10||p.a%10||p.a<20||p.a>9990)falha(17,"resposta: "+p.pre+" → "+p.a);if(/\d{4}/.test(p.pre))falha(17,"número de quatro algarismos sem espaço: "+p.pre);
+  if(i.tipo!=="dinheiro"){tot++;if(n>=100)grande++}}
+ console.log("nível 17:",JSON.stringify(tp),"fator de 100 a 999",(100*grande/tot).toFixed(0)+"%");if(Math.abs(tp.direta/N-.5)>.04)falha(17,"proporção");if(Math.abs(grande/tot-.3)>.05)falha(17,"fatores grandes fora de 30%")}
+{const its=draw(G.g3n18),tp={arranjo:0,conta:0,texto:0};
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="arranjo"){const f=arranjoOk(p,18);if(f)perguntaArranjo(p,18,f)}
+  else if(i.tipo==="conta"){const f=arranjoOk(p,18);if(!f)continue;const op=p.extra.opts,val=t=>{const m=t.match(/^(\d+) ([+×]) (\d+)$/);return m[2]==="+"?+m[1]+ +m[3]:+m[1]*+m[3]};
+   if(p.pre!=="Qual conta mostra quantos há ao todo?"||op.length!==3||new Set(op).size!==3||val(op[p.a-1])!==f.R*f.C||op.filter(o=>val(o)===f.R*f.C).length!==1)falha(18,"conta do desenho: "+op+" → "+p.a+" ("+f.R+"x"+f.C+")");
+   if(op.includes(f.C+" × "+f.R)&&f.R!==f.C)falha(18,"conta com fatores trocados entre as opções")}
+  else{const m=p.pre.match(/^(?:A sala tem|O pomar tem|A estante tem|A caixa tem) (\d+) fileiras de (\d+) (\S+)\. (Quantas|Quantos) (\S+) há\?$/);if(!m||m[3]!==m[5]){falha(18,"texto: "+p.pre);continue}
+   const fem=["cadeiras","árvores"].includes(m[3]);if(m[4]!==(fem?"Quantas":"Quantos")||p.a!==m[1]*m[2])falha(18,"texto: "+p.pre+" → "+p.a)}}
+ console.log("nível 18:",JSON.stringify(tp));if(Math.abs(tp.arranjo/N-.5)>.04||Math.abs(tp.conta/N-.25)>.04)falha(18,"proporção")}
+for(const [nivel,k] of [[19,6],[20,7],[21,8],[22,9]]){
+ const its=draw(G["g3n"+nivel]),tp={direta:0,escondido:0,arranjo:0,texto:0};
+ for(const p of its){const i=p._info;tp[i.tipo]++;if(i.k!==k||i.n<2||i.n>10)falha(nivel,"tabuada: "+JSON.stringify(i));
+  if(i.tipo==="arranjo"){const f=arranjoOk(p,nivel);if(f){perguntaArranjo(p,nivel,f);if(!((f.R===k&&f.C===i.n)||(f.C===k&&f.R===i.n)))falha(nivel,"arranjo fora da tabuada: "+f.R+"x"+f.C)}}
+  else if(i.tipo==="texto"){const m=p.pre.match(/^Quanto é (\d+) vezes (\d+)\?$/);if(!m||+m[1]!==k||p.a!==k*m[2]||+m[2]<2||+m[2]>10)falha(nivel,"texto: "+p.pre+" → "+p.a)}
+  else{const c=lerConta(p);if(!c){falha(nivel,"formato: "+p.pre);continue}if(!(c.a===k||c.b===k)||c.c!==c.a*c.b||(i.tipo==="direta"&&p.a!==c.c)||(i.tipo==="escondido"&&(p.a<2||p.a>10||(p.a!==c.a&&p.a!==c.b))))falha(nivel,"conta: "+c.L)}
+  if(nivel===22&&[...String(p.a===0?0:i.k*i.n)].reduce((a,x)=>a+ +x,0)!==9)falha(22,"os algarismos do resultado da tabuada do 9 deveriam somar 9: "+i.k*i.n)}
+ console.log("nível "+nivel+":",JSON.stringify(tp));if(Math.abs(tp.direta/N-.375)>.04||Math.abs(tp.escondido/N-.25)>.04||Math.abs(tp.arranjo/N-.25)>.04||Math.abs(tp.texto/N-.125)>.04)falha(nivel,"proporção dos tipos");foliaFatos(nivel,G["g3n"+nivel]);
+ let ruim=0;for(let i=0;i<1500;i++){const it=niv(G["g3n"+nivel]),c={};it.forEach(p=>{c[p._info.tipo]=(c[p._info.tipo]||0)+1});if(it.length!==8||c.direta>4||c.escondido>3||c.arranjo>3||c.texto>2)ruim++}
+ if(ruim)falha(nivel,ruim+" folhas fora da distribuição dos tipos")}
+{const its=draw(G.g3n23),tp={direta:0,escondido:0,arranjo:0},ks={};
+ for(const p of its){const i=p._info;tp[i.tipo]++;ks[i.k]=(ks[i.k]||0)+1;if(i.k<2||i.k>9||i.n<2||i.n>10)falha(23,"fatores");
+  if(i.tipo==="arranjo"){const f=arranjoOk(p,23);if(f)perguntaArranjo(p,23,f)}else{const c=lerConta(p);if(!c){falha(23,"formato: "+p.pre);continue}if(c.c!==c.a*c.b||(i.tipo==="direta"&&p.a!==c.c))falha(23,"conta: "+c.L)}}
+ const novas=[6,7,8,9].reduce((a,k)=>a+(ks[k]||0),0);console.log("nível 23:",JSON.stringify(tp),"tabuadas do 6 ao 9",(100*novas/N).toFixed(0)+"%");
+ if(Math.abs(tp.direta/N-.5)>.04)falha(23,"proporção");if(Math.abs(novas/N-2/3)>.04)falha(23,"as tabuadas do 6 ao 9 deveriam pesar o dobro");foliaFatos(23,G.g3n23);
+ let ruim=0;for(let i=0;i<1500;i++){const it=niv(G.g3n23),c={};it.forEach(p=>{c[p._info.tipo]=(c[p._info.tipo]||0)+1});if(it.length!==8||c.direta!==4||c.escondido!==2||c.arranjo!==2)ruim++}
+ console.log("nível 23: folhas sem 4 diretas, 2 escondidas e 2 com figura",ruim);if(ruim)falha(23,ruim+" folhas fora da distribuição")}
+{const its=draw(G.g3n24),tp={parcelas:0,fileiras:0,compra:0,por10:0};
+ const OIT=[["lápis",0],["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["flores",1]],COMP=[["cadernos",0],["borrachas",1],["livros",0],["bolas",1],["camisetas",1],["bonecas",1]];
+ for(const p of its){const i=p._info;tp[i.tipo]++;const w=p.pre.trim().split(/ +/).length;if(w>20)falha(24,"enunciado com "+w+" palavras: "+p.pre);let m;
+  if(i.tipo==="parcelas"){m=p.pre.match(/^Cada (\S+) tem (\d+) (\S+)\. (Quantas|Quantos) (\S+) há em (\d+) (\S+)\?$/);
+   if(!m||m[3]!==m[5]){falha(24,"parcelas: "+p.pre);continue}const o=OIT.find(x=>x[0]===m[3]);if(!o||m[4]!==(o[1]?"Quantas":"Quantos")||p.a!==m[2]*m[6]||m[7]!==m[1]+"s")falha(24,"parcelas: "+p.pre+" → "+p.a)}
+  else if(i.tipo==="fileiras"){m=p.pre.match(/^(?:O pátio tem|O pomar tem|A estante tem|A caixa tem) (\d+) fileiras com (\d+) (\S+) em cada uma\. (Quantas|Quantos) (\S+) há\?$/);
+   if(!m||m[3]!==m[5]){falha(24,"fileiras: "+p.pre);continue}const fem=["cadeiras","árvores"].includes(m[3]);if(m[4]!==(fem?"Quantas":"Quantos")||p.a!==m[1]*m[2])falha(24,"fileiras: "+p.pre+" → "+p.a)}
+  else if(i.tipo==="compra"){m=p.pre.match(/^(Um|Uma) (\S+) custa (\d+) reais\. Quanto custam (\d+) (\S+)\?$/);
+   const g=m&&COMP.find(x=>x[0]===m[5]);if(!m||!g||p.post!=="reais"||m[1]!==(g[1]?"Uma":"Um")||p.a!==m[3]*m[4]||m[2]+"s"!==m[5])falha(24,"compra: "+p.pre+" → "+p.a)}
+  else{m=p.pre.match(/^Cada (\S+) tem 10 (\S+)\. (Quantas|Quantos) (\S+) há em (\d+) (\S+)\?$/);
+   const o=m&&OIT.find(x=>x[0]===m[2]);if(!m||m[2]!==m[4]||!o||m[3]!==(o[1]?"Quantas":"Quantos")||p.a!==10*m[5]||+m[5]<11||+m[5]>99)falha(24,"por 10: "+p.pre+" → "+p.a)}
+ }
+ console.log("nível 24:",JSON.stringify(tp));if(Math.abs(tp.parcelas/N-.375)>.04||Math.abs(tp.fileiras/N-.25)>.04||Math.abs(tp.compra/N-.25)>.04)falha(24,"proporção dos tipos")}
+
 /* ---- Folhas reais: 8 contas do nível + 2 de revisão, sem repetição e dentro dos limites ---- */
 for(const g of FC.G3){
   let rep=0,estouro=0,tam=0;

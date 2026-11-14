@@ -281,6 +281,12 @@ var DRAW={
     return '<table class="fig-tab"><caption>'+esc(f.title)+'</caption><thead><tr><th></th>'+f.cols.map(function(c){return '<th>'+esc(c)+'</th>'}).join("")+'</tr></thead><tbody>'+
       f.rows.map(function(r,i){return '<tr><th>'+esc(r)+'</th>'+f.v[i].map(function(x){return '<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>';
   },
+  /* arranjo retangular (3º ano): f.r fileiras de f.c objetos (f.e) */
+  arranjo:function(f){
+    var h="",i,j;
+    for(i=0;i<f.r;i++){h+='<span class="arr-r">';for(j=0;j<f.c;j++)h+='<i>'+f.e+'</i>';h+='</span>'}
+    return '<div class="fig-arr" aria-hidden="true">'+h+'</div>';
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;

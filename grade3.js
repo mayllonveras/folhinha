@@ -1,7 +1,7 @@
 /* Grade do 3º ano — geradores escritos do zero a partir das fichas em bncc/fichas/3ano-*.md.
    Mesma forma dos geradores do 1º e do 2º ano: {pre, post, a, extra?}, com limits/key/_info só para o app e os testes.
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 15 (números até 9999, adição e subtração, igualdades). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
+   Níveis feitos: 1 a 24 (números até 9999, adição e subtração, igualdades, multiplicação). Os números de quatro algarismos aparecem com espaço fino de milhar (3 456). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,fmt=X.milh;
@@ -215,7 +215,7 @@ function seq7(){
   do{
     var lo=100,hi=9999,mult=(passo===5||passo>=20&&passo<100)?5:1;
     if(sobe)s=rnd(lo,hi-4*passo);else s=rnd(lo+4*passo,hi);
-    s=Math.round(s/mult)*mult;if(sobe&&s+4*passo>hi)s-=mult;if(!sobe&&s-4*passo<lo)s+=mult;
+    s=Math.round(s/mult)*mult;while(s>hi)s-=mult;if(sobe&&s+4*passo>hi)s-=mult;if(!sobe&&s-4*passo<lo)s+=mult;
     v=[];for(i=0;i<5;i++)v.push(sobe?s+i*passo:s-i*passo);
     var f=Math.floor(Math.min(v[0],v[4])/(10*passo)),l=Math.floor(Math.max(v[0],v[4])/(10*passo));
     if(!cruza||f!==l)break;
@@ -431,6 +431,101 @@ function gIgual(){
   return it;
 }
 
+/* ===================== Níveis 16 a 24: multiplicação ===================== */
+/* `3 × 5` lê-se "3 fileiras de 5" (ou "3 grupos de 5"); fatores trocados (7 × 6 e 6 × 7) nunca na mesma folha. */
+function fato(nivel,a,b){return "pf"+nivel+":"+Math.min(a,b)+","+Math.max(a,b)}
+function itArranjo(R,C,l){
+  var o=pick(X.OBJ),it=typed(qs3(o.f)+o.pl+" há ao todo?",R*C,{t:"arranjo",e:o.e,r:R,c:C});
+  it.key="arr|"+o.e+"|"+R+"|"+C;it.limits=l;it._info={tipo:"arranjo",r:R,c:C};return it;
+}
+/* Nível 16 — Tabuadas do 2, 3, 4 e 5 (fluência): conta direta (5) e fator escondido (3). */
+function gTab16(){
+  var k=rnd(2,5),n=rnd(2,10),esc=Math.random()<.375,dir=Math.random()<.5,it;
+  if(!esc){it=typed((dir?k+" × "+n:n+" × "+k)+" =",k*n);it.limits=[["n16:dir",5],[fato(16,k,n),1]];it._info={tipo:"direta",k:k,n:n}}
+  else{
+    it=dir?typed(k+" ×",n,null,"= "+k*n):typed("",n,null,"× "+k+" = "+k*n);
+    it.limits=[["n16:esc",3],[fato(16,k,n),1]];it._info={tipo:"escondido",k:k,n:n};
+  }
+  return it;
+}
+/* Nível 17 — Multiplicar por 10 (EF03MA07). */
+function gPor10(){
+  var r=Math.random(),n=Math.random()<.7?rnd(2,99):rnd(100,999),it;
+  if(r<.5){
+    it=typed((Math.random()<.5?"10 × "+fmt(n):fmt(n)+" × 10")+" =",n*10);it.limits=[["n17:dir",4],["pf17:"+n,1]];it._info={tipo:"direta",n:n};
+  }else if(r<.75){
+    it=typed("Quanto é 10 vezes "+fmt(n)+"?",n*10);it.limits=[["n17:txt",2]];it._info={tipo:"texto",n:n};
+  }else{
+    n=rnd(2,99);it=typed("Quantos reais há em "+n+" cédulas de 10 reais?",n*10);it.limits=[["n17:din",2]];it._info={tipo:"dinheiro",n:n};
+  }
+  return it;
+}
+/* Nível 18 — Disposição retangular (EF03MA07). */
+var SALAS=[["A sala tem","cadeiras",1],["O pomar tem","árvores",1],["A estante tem","livros",0],["A caixa tem","ovos",0]];
+function gArranjo(){
+  var r=Math.random(),R,C,it;
+  do{R=rnd(2,9);C=rnd(2,10)}while(R===2&&C===2);
+  if(r<.5){it=itArranjo(R,C,[["n18:t1",4]])}
+  else if(r<.75){
+    while(R===C)C=rnd(2,10);                        /* em arranjo quadrado as opções erradas se repetiriam */
+    var cand=[[R+C,R+" + "+C],[2*C,C+" + "+C],[R*R,R+" × "+R],[C*C,C+" × "+C],[2*R,R+" + "+R]].filter(function(x){return x[0]!==R*C}),ws=[];
+    embaralhar(cand).forEach(function(x){if(ws.length<2&&ws.indexOf(x[1])<0&&x[1]!==R+" × "+C)ws.push(x[1])});
+    var o=pick(X.OBJ);
+    it=choice("Qual conta mostra quantos há ao todo?",R+" × "+C,ws,{t:"arranjo",e:o.e,r:R,c:C});it.key="arrconta|"+o.e+"|"+R+"|"+C;it.limits=[["n18:t2",2]];it._info={tipo:"conta",r:R,c:C};
+  }else{
+    var sc=pick(SALAS);
+    it=typed(sc[0]+" "+R+" fileiras de "+C+" "+sc[1]+". "+qs3(sc[2])+sc[1]+" há?",R*C);it.limits=[["n18:t3",2],["o18:"+sc[1],1]];it._info={tipo:"texto",r:R,c:C};
+  }
+  return it;
+}
+/* Níveis 19 a 22 — uma tabuada nova por nível: em média 3 diretas, 2 com o fator escondido, 2 com a figura e 1 por texto
+   (os limites por folha são um pouco folgados, porque só há 9 fatos para 8 contas e o fato não pode se repetir). */
+function gTabK(k,nivel){
+  return function(){
+    var n=rnd(2,10),r=Math.random(),it,fk=[fato(nivel,k,n),1];
+    if(r<.375){
+      it=typed((Math.random()<.5?k+" × "+n:n+" × "+k)+" =",k*n);it.limits=[["n"+nivel+":dir",4],fk];it._info={tipo:"direta",k:k,n:n};
+    }else if(r<.625){
+      it=Math.random()<.5?typed(k+" ×",n,null,"= "+k*n):typed("",n,null,"× "+k+" = "+k*n);it.limits=[["n"+nivel+":esc",3],fk];it._info={tipo:"escondido",k:k,n:n};
+    }else if(r<.875){
+      var rows=Math.random()<.5;it=itArranjo(rows?k:n,rows?n:k,[["n"+nivel+":fig",3],fk]);it._info.k=k;it._info.n=n;
+    }else{
+      it=typed("Quanto é "+k+" vezes "+n+"?",k*n);it.limits=[["n"+nivel+":txt",2],fk];it._info={tipo:"texto",k:k,n:n};
+    }
+    return it;
+  };
+}
+/* Nível 23 — Todas as tabuadas misturadas: as do 6 ao 9 pesam o dobro. 4 diretas, 2 com o fator escondido e 2 com a figura. */
+function gTodas(){
+  var k=pick([2,3,4,5,6,6,7,7,8,8,9,9]),n=rnd(2,10),r=Math.random(),it,fk=[fato(23,k,n),1];
+  if(r<.5){it=typed((Math.random()<.5?k+" × "+n:n+" × "+k)+" =",k*n);it.limits=[["n23:dir",4],fk];it._info={tipo:"direta",k:k,n:n}}
+  else if(r<.75){it=Math.random()<.5?typed(k+" ×",n,null,"= "+k*n):typed("",n,null,"× "+k+" = "+k*n);it.limits=[["n23:esc",2],fk];it._info={tipo:"escondido",k:k,n:n}}
+  else{var rows=Math.random()<.5;it=itArranjo(rows?k:n,rows?n:k,[["n23:fig",2],fk]);it._info.k=k;it._info.n=n}
+  return it;
+}
+/* Nível 24 — Problemas de multiplicação (EF03MA07): parcelas iguais (3), disposição retangular (2), compra (2) e por 10 (1). */
+var RECIP3=[["caixa","caixas"],["pacote","pacotes"],["saco","sacos"],["cesta","cestas"],["prato","pratos"],["estante","estantes"]];
+var OIT3=[["lápis",0],["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["flores",1]];
+var COMPRA=[["caderno","cadernos","Um"],["borracha","borrachas","Uma"],["livro","livros","Um"],["bola","bolas","Uma"],["camiseta","camisetas","Uma"],["boneca","bonecas","Uma"]];
+var FIL=[["O pátio tem","cadeiras",1],["O pomar tem","árvores",1],["A estante tem","livros",0],["A caixa tem","ovos",0]];
+function gProbMult(){
+  var r=Math.random(),it,k=rnd(2,10),n=rnd(2,10),rc,o;
+  if(r<.375){
+    rc=pick(RECIP3);o=pick(OIT3);
+    it=typed("Cada "+rc[0]+" tem "+k+" "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",k*n);it.limits=[["n24:t1",3],["o24:"+o[0],1]];it._info={tipo:"parcelas",k:k,n:n};
+  }else if(r<.625){
+    var sc=pick(FIL);
+    it=typed(sc[0]+" "+n+" fileiras com "+k+" "+sc[1]+" em cada uma. "+qs3(sc[2])+sc[1]+" há?",k*n);it.limits=[["n24:t2",2],["o24:"+sc[1],1]];it._info={tipo:"fileiras",k:k,n:n};
+  }else if(r<.875){
+    var c=pick(COMPRA);
+    it=typed(c[2]+" "+c[0]+" custa "+k+" reais. Quanto custam "+n+" "+c[1]+"?",k*n,null,"reais");it.limits=[["n24:t3",2],["o24:"+c[1],1]];it._info={tipo:"compra",k:k,n:n};
+  }else{
+    rc=pick(RECIP3);o=pick(OIT3);n=rnd(11,99);
+    it=typed("Cada "+rc[0]+" tem 10 "+o[0]+". "+qs3(o[1])+o[0]+" há em "+n+" "+rc[1]+"?",10*n);it.limits=[["n24:t4",1],["o24:"+o[0],1]];it._info={tipo:"por10",k:10,n:n};
+  }
+  return it;
+}
+
 FC.G3=[
   {nivel:1,id:"g3n01",nome:"Nível 1 — Ler e escrever números até 9999",hab:["EF03MA01"],meta:130,gen:gLer,ano:3},
   {nivel:2,id:"g3n02",nome:"Nível 2 — Milhares, centenas, dezenas e unidades (material dourado)",hab:["EF03MA02"],meta:120,gen:gMaterial3,ano:3},
@@ -446,7 +541,16 @@ FC.G3=[
   {nivel:12,id:"g3n12",nome:"Nível 12 — Somas e subtrações com quatro algarismos",hab:["EF03MA05"],meta:140,gen:gQuatro,ano:3},
   {nivel:13,id:"g3n13",nome:"Nível 13 — Problemas de adição e subtração até 999",hab:["EF03MA06"],meta:160,gen:gProb3(13),ano:3},
   {nivel:14,id:"g3n14",nome:"Nível 14 — Problemas de adição e subtração até 9999",hab:["EF03MA06"],meta:170,gen:gProb3(14),ano:3},
-  {nivel:15,id:"g3n15",nome:"Nível 15 — Igualdades e sentenças equivalentes",hab:["EF03MA11"],meta:120,gen:gIgual,ano:3}
+  {nivel:15,id:"g3n15",nome:"Nível 15 — Igualdades e sentenças equivalentes",hab:["EF03MA11"],meta:120,gen:gIgual,ano:3},
+  {nivel:16,id:"g3n16",nome:"Nível 16 — Tabuadas do 2, 3, 4 e 5 (fluência)",hab:["EF03MA03","EF03MA07"],meta:90,gen:gTab16,ano:3},
+  {nivel:17,id:"g3n17",nome:"Nível 17 — Multiplicar por 10",hab:["EF03MA07"],meta:100,gen:gPor10,ano:3},
+  {nivel:18,id:"g3n18",nome:"Nível 18 — Disposição retangular (linhas e colunas)",hab:["EF03MA07"],meta:110,gen:gArranjo,ano:3},
+  {nivel:19,id:"g3n19",nome:"Nível 19 — Tabuada do 6",hab:["EF03MA03"],meta:100,gen:gTabK(6,19),ano:3},
+  {nivel:20,id:"g3n20",nome:"Nível 20 — Tabuada do 7",hab:["EF03MA03"],meta:100,gen:gTabK(7,20),ano:3},
+  {nivel:21,id:"g3n21",nome:"Nível 21 — Tabuada do 8",hab:["EF03MA03"],meta:100,gen:gTabK(8,21),ano:3},
+  {nivel:22,id:"g3n22",nome:"Nível 22 — Tabuada do 9",hab:["EF03MA03"],meta:100,gen:gTabK(9,22),ano:3},
+  {nivel:23,id:"g3n23",nome:"Nível 23 — Todas as tabuadas, misturadas",hab:["EF03MA03"],meta:110,gen:gTodas,ano:3},
+  {nivel:24,id:"g3n24",nome:"Nível 24 — Problemas de multiplicação",hab:["EF03MA07"],meta:140,gen:gProbMult,ano:3}
 ];
 FC.G3BY={};FC.G3.forEach(function(e){FC.G3BY[e.id]=e});
 FC.extenso=extenso;
