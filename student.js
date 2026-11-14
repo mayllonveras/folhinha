@@ -397,7 +397,16 @@ function trFlow(){
 /* ---------- álbuns e pacotinhos ---------- */
 function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}
 /* Cada cópia ganha é uma linha em m.stickers. gotOf = as figurinhas diferentes do álbum (sem contar repetidas). */
-function gotOf(m,id){var seen={};return (m.stickers||[]).filter(function(g){if((g.theme||m.sticker_theme)!==id||seen[g.slot])return false;seen[g.slot]=1;return true})}
+function gotOf(m,id){
+  var by={},out=[];
+  (m.stickers||[]).forEach(function(g){
+    if((g.theme||m.sticker_theme)!==id)return;
+    var cur=by[g.slot];
+    if(!cur){by[g.slot]=g;out.push(g)}
+    else if(g.from&&!cur.from)out[out.indexOf(cur)]=by[g.slot]=g;   // a cópia que veio de troca é a que aparece marcada
+  });
+  return out;
+}
 /* Repetidas: cópias além da primeira de cada figurinha. */
 function dupsOf(m){
   var c={},out=[];
