@@ -75,6 +75,16 @@ FC.err=function(e){
 };
 FC.isSessionErr=function(e){return !!(e&&String(e.message||"").indexOf("sessao_invalida")>=0)};
 
+/* Códigos curtos: o hífen é só visual. O código de amigo (6) vira ABC-DEF; o do link do aluno (8) vira ABCD-EFGH.
+   Links antigos (16 caracteres) ficam como estão. normCode devolve o código como o banco guarda (minúsculas, sem hífen). */
+FC.fmtCode=function(c){
+  c=String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"");
+  if(c.length===6)return (c.slice(0,3)+"-"+c.slice(3)).toUpperCase();
+  if(c.length===8)return (c.slice(0,4)+"-"+c.slice(4)).toUpperCase();
+  return c;
+};
+FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
+
 FC.copy=function(text,input,what){
   what=what||"link";
   function fallback(){if(input){input.focus();input.select()}FC.toast("Selecione e copie o "+what+" manualmente.",true)}

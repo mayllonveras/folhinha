@@ -157,15 +157,15 @@ function friendsList(){
     var L=FC.LEVELS[x.level_idx];
     return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+' · '+x.stamps+' de 5 carimbos</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
   box.innerHTML=
-    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(f.code)+'</div>'+
+    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
       '<p class="muted small-t">Passe este código para quem você quer como amigo.</p><button class="btn ghost small" id="frCopy">Copiar código</button></section>'+
     '<section class="panel"><b>Convidar um amigo</b><p class="muted small-t">Digite o código que ele passou para você.</p>'+
-      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="CÓDIGO"><button class="btn" type="submit">Enviar convite</button></form></section>'+
+      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>'+
     (inc?'<section class="panel"><b>Convites para você</b>'+inc+'</section>':'')+
     '<section class="panel"><b>Seus amigos</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
       '<p class="muted small-t gap">Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.</p></section>'+
     (out?'<section class="panel"><b>Convites enviados</b>'+out+'</section>':'');
-  $("#frCopy").onclick=function(){var i=document.createElement("input");i.value=f.code;FC.copy(f.code,i,"código")};
+  $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
   $("#frForm").onsubmit=function(e){
     e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
     friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});

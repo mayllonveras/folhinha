@@ -1,7 +1,8 @@
--- Link do aluno mais curto: o código novo tem 8 caracteres (ex.: ?aluno=k7m3q9xw) em vez de 16 hexadecimais.
+-- Link do aluno mais curto: o código novo tem 8 caracteres (ex.: ?aluno=K7M3-Q9XW) em vez de 16 hexadecimais.
 -- Links já entregues continuam funcionando (a coluna link_code não muda); só os novos (cadastro e "Gerar novo link") ficam curtos.
 -- Alfabeto de 32 letras/números sem caracteres confusos (sem 0/o, 1/l): 32^8 ≈ 1,1 trilhão de combinações, e o aluno ainda precisa do PIN.
--- Aplicar no Supabase (SQL Editor) antes de publicar; não precisa mudar o site.
+-- O hífen é só visual: o site mostra A2D5-7THK, mas o banco guarda a2d57thk (o site tira o hífen e põe em minúsculas antes de consultar).
+-- Aplicar no Supabase (SQL Editor) ANTES de publicar o site novo (o site novo já mostra o hífen).
 begin;
 
 create or replace function public.gen_link_code() returns text
