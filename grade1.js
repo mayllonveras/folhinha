@@ -141,8 +141,9 @@ function gUmATres(){
 /* Nível 10 — Somas até 10 (EF01MA06): parcelas de 1 a 9, soma até 10. 20% dão exatamente 10. Parcela 1 no máximo 3 por folha;
    parcela 2 ou 3 no máximo 4 por folha (já foram treinadas no nível 9). */
 function par10(){
-  var a=rnd(1,9),b;
-  if(Math.random()<.2)b=10-a;else b=rnd(1,10-a);
+  var a,b;
+  if(Math.random()<.2){a=rnd(1,9);b=10-a}        /* soma exatamente 10 em 20% das contas */
+  else{a=rnd(1,8);b=rnd(1,9-a)}                  /* e soma até 9 nas outras */
   return [a,b];
 }
 function classe10(a,b){var m=Math.min(a,b);return m===1?"um":m<=3?"dois3":"grande"}

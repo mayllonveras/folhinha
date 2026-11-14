@@ -144,7 +144,7 @@ function limitesOk(nivel,it){const c={};for(const p of it)for(const [g,m] of (p.
  for(const p of its){const c=conta(p);if(!c||c.op!=="+"){falha(10,"formato");continue}d.add(p.pre);
   if(c.a<1||c.b<1||c.a+c.b>10||p.a!==c.a+c.b)falha(10,"soma: "+p.pre);if(c.a+c.b===10)dez++;if(p.extra)falha(10,"sem figura")}
  console.log("nível 10: contas diferentes",d.size,"; soma 10 em",(100*dez/N).toFixed(0)+"%");if(d.size!==45)falha(10,"esperadas 45 contas, vieram "+d.size);
- if(dez/N<.2||dez/N>.45)falha(10,"proporção de somas 10");}
+ if(dez/N<.16||dez/N>.26)falha(10,"proporção de somas 10: "+dez/N);}
 { // nível 11
  const its=draw(G.g1n11);let a6=0,dez=0;const d=new Set();
  for(const p of its){const c=conta(p);if(!c||c.op!=="-"){falha(11,"formato");continue}d.add(p.pre);
