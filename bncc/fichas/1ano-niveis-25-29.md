@@ -64,8 +64,7 @@ A escada deste bloco:
 - **Exemplos:** `23   61   87`, "Qual é o maior?" → 87. `43   71   47`, "Qual é o menor?" → 43.
 - **Testes específicos:** os três números são distintos e ficam de 10 a 99; a certa é o máximo ou o mínimo recalculado; em cada folha há no máximo 1 par de
   algarismos trocados; a posição da certa é uniforme.
-- **Para o professor decidir:** a habilidade fala em comparar "**com e sem o suporte da reta numérica**". Recomendo **não** usar a reta
-  neste nível, porque ler a reta é conteúdo do 2º ano. O senhor concorda?
+- **Decisão do professor:** a reta numérica fica **de fora** do 1º ano (ler a reta é conteúdo do 2º).
 
 ## Nível 28 — Dezenas inteiras e unidades
 
@@ -116,8 +115,6 @@ A escada deste bloco:
 
 Tempo por dia (3 folhas): de 4,5 a 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 26:** os **pacotes de 10 com moldura** deixam claro o agrupamento. Recomendo sim.
-2. **Nível 27:** a reta numérica fica de fora do 1º ano? Recomendo sim.
-3. **Nível 27:** manter 1 par de **algarismos trocados** (34 e 43) por folha, de propósito? Recomendo sim: é o teste de valor posicional.
+Pacotes de 10 com moldura no nível 26; reta numérica fora do 1º ano; um par de algarismos trocados (34 e 43) por folha no nível 27.

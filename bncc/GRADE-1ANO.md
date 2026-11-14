@@ -3,6 +3,8 @@
 Base: inventário `inventario-anos-iniciais.csv` (22 habilidades do 1º ano: 20 treináveis, grupos A e B; fora ficam
 **EF01MA16** e **EF01MA22**, grupo C, que são atividades de casa) e as decisões da etapa 4.
 
+> **Estado (14/11/2026):** as 35 fichas do 1º ano estão escritas em `fichas/` e as decisões do professor dos níveis 1 a 29 estão incorporadas; falta a revisão dos níveis 30 a 35.
+>
 > **Decisão do professor (14/11/2026): a grade é refeita do zero.** Nenhum nível da grade antiga é reaproveitado como está, para não
 > carregar vícios do planejamento anterior, que ficou defasado. A coluna "Gerador" abaixo diz apenas **que peças o app já tem**
 > (desenhos, tipos de resposta, geradores da etapa 3) e que podem servir de material; cada nível será reescrito a partir de uma
