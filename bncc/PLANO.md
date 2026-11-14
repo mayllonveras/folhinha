@@ -95,7 +95,7 @@ Opcional, feito na hora do cadastro. Cinco folhas curtas de 5 contas, uma por an
 
 Conta de ritmo, com os valores atuais (estudo de segunda a sexta, 5 carimbos por nível, dia normal = 1 carimbo, dia ouro = 2, salto = 1 dia, no máximo 2 por semana): aluno regular ≈ 1 nível por semana, aluno forte ≈ 1,7, aluno excepcional ≈ 3. O ano letivo tem cerca de 40 semanas.
 
-- **30 níveis por ano** (1º ao 5º = 150 níveis; anos finais depois, com a mesma conta). O aluno regular termina o ano em ~30 semanas e sobram ~10 de folga; o aluno forte (ouro todo dia) consome o ano e o teto +1 em ~36 semanas. O ritmo se ajusta pelos parâmetros do `/adm`, não pela quantidade de níveis. Um nível não é uma habilidade: uma habilidade vira de 1 a 3 níveis.
+- **Cerca de 30 níveis por ano, como referência de ritmo, não como limite:** o professor decidiu que a progressão de dificuldade manda (31, 32 ou 35 níveis são aceitáveis; acima de ~35 a folga do ano letivo aperta e se ajustam os carimbos). A grade do 1º ano proposta tem 33 níveis, ver `GRADE-1ANO.md` (1º ao 5º ≈ 150 níveis; anos finais depois, com a mesma conta). O aluno regular termina o ano em ~30 semanas e sobram ~10 de folga; o aluno forte (ouro todo dia) consome o ano e o teto +1 em ~36 semanas. O ritmo se ajusta pelos parâmetros do `/adm`, não pela quantidade de níveis. Um nível não é uma habilidade: uma habilidade vira de 1 a 3 níveis.
 - **No teto,** em vez de repetir o último nível, o aluno recebe folhas de **revisão e de desafio**.
 - **Revisão:** cerca de **20% de cada folha** vem de níveis anteriores (a tabuada já tem revisão espaçada).
 - **Carimbos por nível** viram campo ajustável no `/adm` (padrão 5), para níveis mais difíceis ou mais fáceis.
