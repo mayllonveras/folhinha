@@ -45,7 +45,7 @@ for(const e of FC.EX){
     if(e.id==="qualFigura"){const n=it.pre.match(/é um (.+)\?/)[1];if(ex.opts[it.a-1].fig.n!==n)falha(e.id,"qual figura",it)}
     if(e.id.startsWith("maior")){const nums=ex.opts.map(Number),want=it.pre.includes("maior")?Math.max(...nums):Math.min(...nums);if(Number(ex.opts[it.a-1])!==want)falha(e.id,"maior/menor",it)}
     if(e.id==="vizinho"){const n=Number(it.pre.match(/do (\d+)/)[1]);if(it.a!==(it.pre.includes("depois")?n+1:n-1))falha(e.id,"vizinho",it)}
-    if(e.id==="fila"){const p=Number(it.pre.match(/(\d)[ºª]/)[1]);if(it.a!==p-1)falha(e.id,"fila",it)}
+    if(e.id==="fila"){const p=Number(it.pre.match(/(\d+)[ºª]/)[1]);if(it.a!==p-1)falha(e.id,"fila",it)}
     if(e.id==="moedas"){const m=it.pre.match(/^(\d+) moedas de (\d+)/);if(it.a!==m[1]*m[2])falha(e.id,"moedas",it)}
     // desenhar não pode quebrar nem sair vazio
     const html=FC.itemInner({...it,i:0},0), st=FC.itemStatic(it);
