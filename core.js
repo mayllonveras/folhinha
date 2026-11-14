@@ -139,11 +139,17 @@ var G={
    var c=rnd(30,99);return sub(c,rnd(10,c-5))},
  table:function(ts,bmin){return function(){return flip(mul,pick(ts),rnd(bmin,9))}},
  divs:function(ds){return function(){var d=pick(ds);return div(d*rnd(2,9),d)}},
+ /* Mistura ponderada: parts = [[gerador, peso], ...]. Serve para a revisão espaçada: o assunto do nível
+    vem com o peso maior e o que ele já aprendeu volta "aqui e ali" com peso menor. */
+ mix:function(parts){var tot=0;parts.forEach(function(p){tot+=p[1]});
+   return function(){var r=Math.random()*tot;for(var i=0;i<parts.length;i++){r-=parts[i][1];if(r<0)return parts[i][0]()}return parts[parts.length-1][0]()}},
  eqAdd:function(){var a=rnd(2,20),x=rnd(2,20);return eq("x + "+a+" = "+(x+a),x)},
  eqSub:function(){var a=rnd(2,20),x=rnd(a+1,a+20);return eq("x − "+a+" = "+(x-a),x)},
  eqMul:function(){var a=rnd(2,9),x=rnd(2,9);return eq(a+" × x = "+(a*x),x)},
  eqMix:function(){return pick([G.eqAdd,G.eqSub,G.eqMul])()}
 };
+function T(ts){return G.table(ts,2)}   /* tabuada(s) de ts, multiplicando por 2 a 9 (sem a tabuada do 1) */
+var A=G.mix2;                          /* revisão de soma e subtração de dois algarismos */
 function L(group,id,name,hint,target,gen){return{group:group,id:id,name:name,hint:hint,target:target,gen:gen}}
 FC.LEVELS=[
  L("Contagem","1","Sequências numéricas","Complete o número que falta na fila.",90,G.seq),
@@ -162,19 +168,38 @@ FC.LEVELS=[
  L("Dezenas","14","Subtrações de dois algarismos, sem empréstimo","Como 78 − 45.",150,G.sub2a),
  L("Dezenas","15","Subtrações de dois algarismos, com empréstimo","Como 82 − 29.",180,G.sub2b),
  L("Dezenas","16","Contas com dezenas, misturadas","Somas e subtrações de dois algarismos.",180,G.mix2),
- L("Tabuada","17","Tabuadas do 1, do 2 e do 10","Os primeiros passos da multiplicação.",90,G.table([1,2,10],1)),
- L("Tabuada","18","Tabuadas do 3 e do 4","Multiplicação por 3 e por 4.",110,G.table([3,4],2)),
- L("Tabuada","19","Tabuadas do 5 e do 6","Multiplicação por 5 e por 6.",110,G.table([5,6],2)),
- L("Tabuada","20","Tabuadas do 7 e do 8","Multiplicação por 7 e por 8.",120,G.table([7,8],2)),
- L("Tabuada","21","Tabuada do 9","Multiplicação por 9.",100,G.table([9],2)),
- L("Tabuada","22","Tabuada completa","Todas as tabuadas de 2 a 9, misturadas.",120,G.table([2,3,4,5,6,7,8,9],2)),
- L("Divisão","23","Divisão por 2, 3, 4 e 5","Divisões exatas, usando a tabuada de trás para frente.",120,G.divs([2,3,4,5])),
- L("Divisão","24","Divisão por 6, 7, 8 e 9","Divisões exatas com os divisores maiores.",140,G.divs([6,7,8,9])),
- L("Divisão","25","Divisão exata, misturada","Divisões por 2 a 9, misturadas.",150,G.divs([2,3,4,5,6,7,8,9])),
- L("Equações","26","Descubra o x: soma","Como x + 7 = 15.",150,G.eqAdd),
- L("Equações","27","Descubra o x: subtração","Como x − 6 = 12.",160,G.eqSub),
- L("Equações","28","Descubra o x: multiplicação","Como 4 × x = 28.",150,G.eqMul),
- L("Equações","29","Descubra o x: misturado","Os três tipos de equação.",210,G.eqMix)
+ /* Tabuada: começa no 2 e avança uma de cada vez. Entre uma tabuada e a seguinte há um nível que mistura as duas.
+    As difíceis (6, 7 e 8) ganham um nível a mais, que mistura a própria tabuada com as anteriores. Em todos os níveis,
+    parte das contas é revisão do que já foi aprendido (as outras tabuadas e, no começo, somas e subtrações). */
+ L("Tabuada","17","Tabuada do 2","Só o 2, com algumas somas e subtrações de revisão.",90,G.mix([[T([2]),75],[A,25]])),
+ L("Tabuada","18","Tabuadas do 2 e do 3, misturadas","Os dois juntos, com um pouco de soma e subtração.",100,G.mix([[T([2,3]),80],[A,20]])),
+ L("Tabuada","19","Tabuada do 3","O 3 em destaque. Voltam o 2 e a soma e subtração.",100,G.mix([[T([3]),70],[T([2]),15],[A,15]])),
+ L("Tabuada","20","Tabuadas do 3 e do 4, misturadas","Os dois juntos, com revisão do 2.",110,G.mix([[T([3,4]),80],[T([2]),10],[A,10]])),
+ L("Tabuada","21","Tabuada do 4","O 4 em destaque. Voltam o 2 e o 3.",110,G.mix([[T([4]),70],[T([2,3]),20],[A,10]])),
+ L("Tabuada","22","Tabuadas do 4 e do 5, misturadas","Os dois juntos, com revisão do 2 e do 3.",110,G.mix([[T([4,5]),80],[T([2,3]),12],[A,8]])),
+ L("Tabuada","23","Tabuada do 5","O 5 em destaque. Voltam o 2, o 3 e o 4.",100,G.mix([[T([5]),70],[T([2,3,4]),25],[A,5]])),
+ L("Tabuada","24","Tabuada do 5, com as anteriores","O 5 misturado com o 2, o 3 e o 4.",100,G.mix([[T([5]),40],[T([2,3,4]),60]])),
+ L("Tabuada","25","Tabuadas do 5 e do 6, misturadas","O 6 começa a aparecer.",120,G.mix([[T([5,6]),75],[T([2,3,4]),25]])),
+ L("Tabuada","26","Tabuada do 6","O 6 em destaque. Voltam as tabuadas de 2 a 5.",120,G.mix([[T([6]),65],[T([2,3,4,5]),35]])),
+ L("Tabuada","27","Tabuada do 6, com as anteriores","Metade das contas é do 6; a outra metade é do 3, 4 e 5.",120,G.mix([[T([6]),40],[T([3,4,5]),60]])),
+ L("Tabuada","28","Tabuadas do 6 e do 7, misturadas","O 7 começa a aparecer.",130,G.mix([[T([6,7]),75],[T([2,3,4,5]),25]])),
+ L("Tabuada","29","Tabuada do 7","O 7 em destaque. Voltam o 3, o 4, o 5 e o 6.",130,G.mix([[T([7]),60],[T([3,4,5,6]),40]])),
+ L("Tabuada","30","Tabuada do 7, com as anteriores","O 7 misturado com o 4, o 5 e o 6.",130,G.mix([[T([7]),40],[T([4,5,6]),60]])),
+ L("Tabuada","31","Tabuadas do 7 e do 8, misturadas","O 8 começa a aparecer.",140,G.mix([[T([7,8]),75],[T([3,4,5,6]),25]])),
+ L("Tabuada","32","Tabuada do 8","O 8 em destaque. Voltam do 4 ao 7.",130,G.mix([[T([8]),60],[T([4,5,6,7]),40]])),
+ L("Tabuada","33","Tabuada do 8, com as anteriores","O 8 misturado com o 6, o 7 e as menores.",140,G.mix([[T([8]),40],[T([6,7]),40],[T([3,4,5]),20]])),
+ L("Tabuada","34","Tabuadas do 8 e do 9, misturadas","O 9 começa a aparecer.",130,G.mix([[T([8,9]),70],[T([5,6,7]),30]])),
+ L("Tabuada","35","Tabuada do 9","O 9 em destaque. Voltam o 6, o 7 e o 8.",110,G.mix([[T([9]),60],[T([6,7,8]),40]])),
+ L("Tabuada","36","Tabuada do 9, com as anteriores","O 9 misturado com o 6, o 7, o 8 e as menores.",120,G.mix([[T([9]),40],[T([6,7,8]),45],[T([3,4,5]),15]])),
+ L("Tabuada","37","As tabuadas difíceis: 6, 7, 8 e 9","Só as quatro mais difíceis, com um pouco das menores.",140,G.mix([[T([6,7,8,9]),90],[T([2,3,4,5]),10]])),
+ L("Tabuada","38","Tabuada completa","Todas as tabuadas de 2 a 9, misturadas.",130,T([2,3,4,5,6,7,8,9])),
+ L("Divisão","39","Divisão por 2, 3, 4 e 5","Divisões exatas, usando a tabuada de trás para frente.",120,G.mix([[G.divs([2,3,4,5]),75],[T([2,3,4,5,6,7,8,9]),25]])),
+ L("Divisão","40","Divisão por 6, 7, 8 e 9","Divisões exatas com os divisores maiores.",140,G.mix([[G.divs([6,7,8,9]),75],[T([6,7,8,9]),25]])),
+ L("Divisão","41","Divisão exata, misturada","Divisões por 2 a 9, misturadas.",150,G.mix([[G.divs([2,3,4,5,6,7,8,9]),75],[T([2,3,4,5,6,7,8,9]),25]])),
+ L("Equações","42","Descubra o x: soma","Como x + 7 = 15.",150,G.eqAdd),
+ L("Equações","43","Descubra o x: subtração","Como x − 6 = 12.",160,G.eqSub),
+ L("Equações","44","Descubra o x: multiplicação","Como 4 × x = 28.",150,G.eqMul),
+ L("Equações","45","Descubra o x: misturado","Os três tipos de equação.",210,G.eqMix)
 ];
 FC.shuffle=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a};
 /* 'keep' = contas que já devem estar na folha (reforço); o resto é sorteado sem repetir. */

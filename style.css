@@ -197,7 +197,6 @@ details .form{margin-top:12px}
 
 .installbox{display:flex;gap:12px;align-items:center}
 .installbox img{border-radius:12px;flex:none}
-.lvl .of{font-size:1.1rem;color:var(--muted);font-weight:500;font-family:var(--font-ui)}
 
 /* carimbos e subida de nível */
 .stamprow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}

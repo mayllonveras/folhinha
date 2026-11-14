@@ -110,7 +110,7 @@ function home(){
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
     '<p class="muted small-t gap">Um carimbo por dia, com 80% ou mais de acertos de primeira. Cada carimbo vale um pacotinho de figurinhas. Com '+need+' carimbos você sobe de nível.</p></section>'+
     '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
-  var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'<span class="of"> de '+FC.LEVELS.length+'</span></div>'+
+  var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
     '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
     '<div class="stamps">'+stamps+'<span>'+Math.min(m.stamps,need)+' de '+need+'</span></div></section>'+
     '<section class="panel rule"><b>Como ganhar o carimbo</b><p class="small-t">Cada dia em que você acerta <b>80% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p></section>'+
@@ -184,7 +184,7 @@ async function friendView(id){
   var got=gotOf(v,tid),th=FC.theme(tid);
   var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
   box.innerHTML='<div class="pagehead"><button type="button" class="link crumb" id="frBack">'+FC.icon("back")+'Amigos</button></div>'+
-    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' de '+FC.LEVELS.length+' · '+esc(L.name)+'</div>'+
+    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
       '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>'+
     '<section class="panel">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
