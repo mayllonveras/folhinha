@@ -14,7 +14,7 @@ Legenda de "Peças": **existe** = há uma peça pronta no app (desenho ou tipo d
 | **Números até 1000** | | | | |
 | 1 | Contar de 2 em 2, de 5 em 5 e de 10 em 10 até 100 | EF02MA09, EF02MA11 | existe (sequências) | ponte com o 1º ano; contar com os dedos e com a fila |
 | 2 | Centenas, dezenas e unidades (material dourado) | EF02MA04 | **novo** (placas de 100) + existe (barras e cubinhos) | "quanto vale tudo junto?" até 999 |
-| 3 | Ler e escrever números até 999 | EF02MA01, EF02MA04 | existe | valor posicional e o zero: "o 4 de 345 vale quanto?" |
+| 3 | Valor posicional e o zero (números até 999) | EF02MA01, EF02MA04 | existe | "o 4 de 345 vale quanto?"; sem número por extenso |
 | 4 | Decompor números até 999 | EF02MA04 | existe | 345 = 300 + 40 + ?; diferentes adições |
 | 5 | Comparar e ordenar números até 999 | EF02MA01 | existe | maior, menor e a ordem certa; o zero no meio (305 e 350) |
 | 6 | Sequências a partir de qualquer número (1, 10 e 100 em 100) | EF02MA09, EF02MA11 | existe | crescente e decrescente; elementos ausentes |

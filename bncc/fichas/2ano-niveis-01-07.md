@@ -7,7 +7,6 @@ nada repetido na mesma folha, concordância, emojis inequívocos, testes com a r
 - **O zero pode ser resposta** quando a própria pergunta é sobre o zero (a "função do zero" faz parte da habilidade EF02MA01), por exemplo "que algarismo está na casa das dezenas de 305?".
   Fora desses casos, a resposta continua nunca sendo zero.
 - **Meta de tempo** um pouco maior que a do 1º ano: de 90 a 120 segundos por folha neste bloco.
-- **Número por extenso:** quando um nível pede ler ou escrever um número por extenso, os testes recalculam o valor **lendo o texto de volta** (um leitor de números por extenso independente do gerador).
 
 ---
 
@@ -40,19 +39,17 @@ nada repetido na mesma folha, concordância, emojis inequívocos, testes com a r
 - **Meta de tempo:** 100 s.
 - **Testes específicos:** o desenho tem exatamente as placas, barras e quadradinhos do número; cada placa tem 100 divisões e cada barra, 10; a resposta é recalculada; o zero só é resposta quando a pergunta é sobre a casa vazia; nada passa da largura do celular.
 
-## Nível 3 — Ler e escrever números até 999
+## Nível 3 — Valor posicional e o zero (números até 999)
 
 - **Habilidades:** EF02MA01 (valor posicional e função do zero) e EF02MA04.
-- **Três tipos de conta**, entre as 8 do nível (2 + 3 + 3):
+- **Dois tipos de conta**, em partes iguais:
   1. **Montar o número:** "Qual número tem **3 centenas, 4 dezenas e 5 unidades**?" → 345 (digitada). Com zero em 30% das contas ("3 centenas, 0 dezenas e 5 unidades" → 305).
   2. **O valor do algarismo:** "No número 345, quanto vale o algarismo **4**?" → 40; também 300 e 5. Com zero: "Que algarismo está na casa das **dezenas** de 305?" → 0 (digitada).
-  3. **Número por extenso:** "Como se escreve **trezentos e quarenta e cinco** em números?" → escolha entre 4 números: o certo, os **algarismos trocados** (354), o erro de **escrever as palavras como números** (300405 não entra; entra 3045) e um número de **outra centena** (445).
-     Os números por extenso seguem a regra: cem (100), cento e um, duzentos, trezentos... e o "e" entre as ordens (quatrocentos e cinquenta e seis).
-- **Resposta:** digitada (tipos 1 e 2) e escolha (tipo 3).
+  *(Decisão do professor: o número **por extenso** não entra no 2º ano.)*
+- **Resposta:** digitada.
 - **Contas diferentes:** milhares.
 - **Meta de tempo:** 110 s.
-- **Testes específicos:** o número formado confere com as centenas, dezenas e unidades da pergunta; o valor do algarismo é recalculado; o número por extenso é lido de volta por um leitor independente e bate com a resposta certa; as opções erradas nunca são o mesmo número.
-- **Para o professor decidir:** a **escrita por extenso** (trezentos e quarenta e cinco) entra neste nível. Ela é parte natural de "ler e escrever" números. De acordo?
+- **Testes específicos:** o número formado confere com as centenas, dezenas e unidades da pergunta; o valor do algarismo é recalculado; o zero só é resposta quando a pergunta é sobre a casa vazia.
 
 ## Nível 4 — Decompor números até 999
 
@@ -104,7 +101,7 @@ nada repetido na mesma folha, concordância, emojis inequívocos, testes com a r
 - **Contas diferentes:** centenas.
 - **Meta de tempo:** 120 s.
 - **Testes específicos:** o número de pontos desenhados é o total; o quadro de 100 cobre exatamente 10 x 10 pontos; a opção certa é a mais próxima do total e as outras ficam a pelo menos 100 de distância dela; nunca há empate.
-- **Para o professor decidir:** a criança estima **comparando a mancha com o quadro de 100** (o que a habilidade chama de "estratégias diversas"). Os pontos são pequenos de propósito, para não dar para contar um a um. De acordo?
+- **Decisão do professor:** a criança estima **comparando a mancha com o quadro de 100**. Os pontos são pequenos de propósito, para não dar para contar um a um.
 
 ---
 
@@ -114,7 +111,7 @@ nada repetido na mesma folha, concordância, emojis inequívocos, testes com a r
 |---|---|---|---|
 | 1. Contar de 2 em 2, 5 em 5 e 10 em 10 | EF02MA09, EF02MA11 | digitada | 90 s |
 | 2. Centenas, dezenas e unidades | EF02MA04 | digitada | 100 s |
-| 3. Ler e escrever até 999 | EF02MA01, EF02MA04 | digitada e escolha | 110 s |
+| 3. Valor posicional e o zero | EF02MA01, EF02MA04 | digitada | 110 s |
 | 4. Decompor até 999 | EF02MA04 | digitada | 110 s |
 | 5. Comparar e ordenar até 999 | EF02MA01 | escolha | 100 s |
 | 6. Sequências a partir de qualquer número | EF02MA09, EF02MA11 | digitada | 100 s |
@@ -122,8 +119,6 @@ nada repetido na mesma folha, concordância, emojis inequívocos, testes com a r
 
 Tempo por dia (3 folhas): de 4,5 a 6 minutos.
 
-## Perguntas para o professor
+## Decisões do professor (14/11/2026)
 
-1. **Nível 3:** a escrita por extenso (trezentos e quarenta e cinco) entra no nível? Recomendo sim.
-2. **Nível 7:** a estimativa por comparação com o quadro de 100? Recomendo sim.
-3. **Zero como resposta** nos níveis 2, 3 e 4, só quando a pergunta é sobre o zero? Recomendo sim: é a "função do zero" da EF02MA01.
+Sem número por extenso no nível 3; estimativa por comparação com o quadro de 100 (nível 7); zero como resposta só quando a pergunta é sobre o zero (níveis 2, 3 e 4).
