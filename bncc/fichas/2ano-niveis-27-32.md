@@ -34,10 +34,10 @@ desenho legível e inequívoco, cores que diferem também em luminosidade (nunca
 ## Nível 29 — Localização com mais de um ponto de referência
 
 - **Habilidade:** EF02MA12 (identificar e registrar a localização de pessoas e objetos, com mais de um ponto de referência).
-- **Três tipos de conta**, com fileiras e colunas de objetos (emojis frontais e simétricos):
+- **Dois tipos de conta**, com fileiras de objetos (emojis frontais e simétricos), 4 de cada nas 8 do nível:
   1. **Entre:** "Quem está **entre** a bola e o gato?" (fila de 4 a 5 objetos) → o objeto do meio.
   2. **Dois pontos:** "Quem está **à direita da bola** e **à esquerda da flor**?" → o único objeto que satisfaz as duas.
-  3. **Atrás e na frente:** uma coluna de 3 a 4 objetos de cima para baixo, com "na frente" = embaixo e "atrás" = em cima. Uma pequena legenda diz isso. "Quem está **atrás do** gato?"
+- **"Atrás" e "na frente"** ficam para o 3º ano (decisão do professor).
 - **Esquerda e direita:** sempre do ponto de vista de quem olha a tela, com o lembrete das mãos no começo da folha.
 - **Resposta:** escolha (3 ou 4 opções, só objetos da fila).
 - **Contas diferentes:** centenas.
@@ -74,7 +74,7 @@ desenho legível e inequívoco, cores que diferem também em luminosidade (nunca
 - **Habilidade:** EF02MA15 (reconhecer, comparar e nomear figuras planas, por características como lados e vértices).
 - **Três tipos de conta** (3 + 3 + 2):
   1. **Contar lados e vértices:** "Quantos **lados** tem esta figura?" ou "Quantos **vértices**...?" → digitada (3 a 6). Figuras: triângulo, quadrado, retângulo, pentágono e hexágono.
-  2. **Nome da figura:** o desenho em posições variadas (inclusive quadrado "de ponta", dessa vez com a pergunta pelo nome e a opção "retângulo" fora das alternativas), "Como se chama esta figura?" Opções: 4 nomes (triângulo, quadrado, retângulo, círculo, pentágono ou hexágono).
+  2. **Nome da figura:** o desenho em posições variadas (inclusive quadrado "de ponta", com a opção "retângulo" fora das alternativas), "Como se chama esta figura?" Opções: 4 nomes (triângulo, quadrado, retângulo, círculo, pentágono ou hexágono).
   3. **Qual tem...?:** "Qual figura tem **4 lados iguais**?" → quadrado. "Qual figura **não tem vértices**?" → círculo. Escolha entre 3 ou 4 figuras desenhadas.
 - **Regras:** retângulo com proporção de 1,4 a 2,5; polígonos regulares ou claramente reconhecíveis; pentágono e hexágono só na contagem e no nome.
 - **Resposta:** digitada (tipo 1) e escolha (tipos 2 e 3).
@@ -97,9 +97,6 @@ desenho legível e inequívoco, cores que diferem também em luminosidade (nunca
 
 Tempo por dia (3 folhas): de 5 a 6 minutos.
 
-## Perguntas para o professor (com a minha sugestão)
+## Decisões do professor (14/11/2026)
 
-1. **Nível 29, "atrás" e "na frente":** na coluna, "na frente" é embaixo e "atrás" é em cima, com legenda. **Sugiro** manter só "à esquerda, à direita, entre, em cima e embaixo" nas contas de fileira e deixar "atrás/na frente" para uma pequena folha com a legenda, porque a convenção é ambígua para crianças. Ou, se preferir, tirar "atrás/na frente" e deixar tudo para o 3º ano.
-2. **Nível 30, nomes das casas (`B2`):** a criança lê letra e número. **Sugiro** manter, pois a BNCC pede essa localização e o aluno vê a legenda na figura.
-3. **Nível 31, cubo com o dado 🎲 e o cubo de gelo 🧊:** no 1º ano eles ficaram de fora por serem cubos. **Sugiro** liberar agora, só no tipo "objeto para sólido" do cubo.
-4. **Nível 32, pentágono e hexágono:** só na contagem de lados e no nome. **Sugiro** manter, sem ir além disso.
+"Atrás" e "na frente" ficam para o 3º ano (nível 29 com dois tipos); casas `B2` mantidas no nível 30; dado 🎲 e cubo de gelo 🧊 liberados como cubos no nível 31; pentágono e hexágono só na contagem de lados e no nome (nível 32).
