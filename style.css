@@ -519,6 +519,10 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-grid{max-width:240px}
 .fig-emoji{display:flex;flex-direction:column;gap:6px}
 .fig-emoji.side{flex-direction:row;gap:32px;align-items:flex-start}
+.fig-emoji .sep{align-self:center;font-weight:700;font-size:1.5rem;color:var(--muted)}
+.fig-emoji .x{position:relative;display:inline-block}
+.fig-emoji .x i{font-style:normal;opacity:.4}
+.fig-emoji .x::after{content:"\2715";position:absolute;inset:0;display:grid;place-items:center;color:#D93B3B;font-size:1.25em;font-weight:900;line-height:1}
 .fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
 .fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}

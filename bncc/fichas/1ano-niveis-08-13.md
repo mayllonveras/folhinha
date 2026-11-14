@@ -44,7 +44,7 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Dificuldade dentro do nível:** o número maior `a` vai de 2 a 10, sorteado por igual; contas com `k = 1` em cerca de um terço, para
   o "mais um / menos um" ficar automático.
 - **Resposta:** digitada (1 ou 2 algarismos).
-- **Contas diferentes:** 24 somas na ordem a + k, 24 na ordem k + a e 24 subtrações: 72.
+- **Contas diferentes:** 39 somas (a + k e k + a, descontadas as que coincidem, como 2 + 3) e 24 subtrações: 63. *(Corrigido na hora de programar: a ficha dizia 72.)*
 - **Meta de tempo:** 80 s.
 - **Exemplos:** `7 + 2 = ?` → 9. `3 + 6 = ?` → 9. `9 − 3 = ?` → 6.
 - **Testes específicos:** a resposta é recalculada; soma nunca passa de 10; subtração nunca dá zero; o `k` está sempre entre 1 e 3;
@@ -56,9 +56,9 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Habilidade:** EF01MA06.
 - **O que a criança faz:** soma dois números de 1 a 9 com resultado de até 10.
 - **Contas:** `a + b = ?` com **a ≥ 1, b ≥ 1 e a + b ≤ 10**. São 45 contas (com as parcelas em qualquer ordem).
-- **Dificuldade dentro do nível:** as contas em que **uma das parcelas é 1, 2 ou 3** (já treinadas no nível 9) ficam em no máximo
-  **3 por folha**; as outras 7 têm as duas parcelas de 4 a 9. Contas com resultado **exatamente 10** ficam em cerca de 2 por folha,
-  para fixar os "pares de 10".
+- **Dificuldade dentro do nível:** contas com **resultado exatamente 10** em cerca de 20% (os "pares de 10"). Contas em que **uma das parcelas é 1** ficam em no máximo
+  **3 por folha** e as com parcela **2 ou 3**, em no máximo **4 por folha** (já foram treinadas no nível 9). *(Corrigido na hora de programar: a ficha pedia no máximo 3
+  contas com parcela 1, 2 ou 3 e 7 com as duas parcelas de 4 a 9, o que é impossível: só existem 4 contas assim com soma até 10.)*
 - **Resposta:** digitada (1 ou 2 algarismos).
 - **Contas diferentes:** 45. Sem repetição na folha, com a regra das parcelas trocadas.
 - **Meta de tempo:** 90 s.
@@ -85,8 +85,9 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 - **Habilidades:** EF01MA06 e EF01MA08.
 - **O que a criança faz:** soma e subtração misturadas, só com números, até 10.
 - **Contas:** as mesmas dos níveis 10 e 11, **5 de soma e 5 de subtração por folha, embaralhadas**.
-- **Dificuldade dentro do nível:** além dos fatos, **uma "família" por folha**: uma soma e uma subtração que formam
-  uma família (por exemplo `3 + 4 = ?` e `7 − 3 = ?`). Isso aproxima soma e subtração como operações inversas, sem dizer isso à criança.
+- **Dificuldade dentro do nível:** as regras de cada família são as dos níveis 10 e 11. *(Corrigido na hora de programar: a "família" de uma soma e de uma subtração
+  ligadas, como `3 + 4` e `7 − 3`, ficou de fora, porque o gerador sorteia uma conta de cada vez e não consegue coordenar duas contas da mesma folha. Pode voltar
+  quando a folha passar a ser montada por um gerador que veja a folha inteira.)*
 - **Resposta:** digitada.
 - **Contas diferentes:** 90.
 - **Meta de tempo:** 100 s.
@@ -122,7 +123,7 @@ números até 10, depois até 10 completo), e o tipo de exercício (figura de ap
 | Nível | Habilidades | Figura | Meta | Contas diferentes |
 |---|---|---|---|---|
 | 8. Somas e subtrações até 5 | EF01MA06 | com emojis (soma e riscado) | 80 s | 20 |
-| 9. Somar e tirar de 1 a 3, até 10 | EF01MA06 | sem figura | 80 s | 72 |
+| 9. Somar e tirar de 1 a 3, até 10 | EF01MA06 | sem figura | 80 s | 63 |
 | 10. Somas até 10 | EF01MA06 | sem figura | 90 s | 45 |
 | 11. Subtrações até 10 | EF01MA06 | sem figura | 100 s | 45 |
 | 12. Somas e subtrações até 10 | EF01MA06, EF01MA08 | sem figura | 100 s | 90 |

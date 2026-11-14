@@ -4,7 +4,7 @@
    - key: identidade da conta (quando o desenho muda mas a conta é a mesma);
    - _calc/_why: a resposta, para os testes (nunca vão para o banco).
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 7 (contagem e comparação). */
+   Níveis feitos: 1 a 13 (contagem, comparação, soma e subtração até 10, problemas). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,OBJ=X.OBJ,NAMES=X.NAMES;
@@ -106,6 +106,119 @@ function gMaiorMenor(){
   return it;
 }
 
+
+/* ===================== Níveis 8 a 13: soma e subtração até 10, problemas ===================== */
+var MENOS="−";
+function conta(a,op,b){return a+" "+op+" "+b+" ="}
+function parc(nivel,a,b){return "p"+nivel+":"+Math.min(a,b)+","+Math.max(a,b)}   /* parcelas trocadas = mesma conta na folha */
+function soma(a,b,nivel,extra){var it=typed(conta(a,"+",b),a+b,extra&&extra.fig||null);it._info={op:"+",a:a,b:b};return it}
+function sub(a,b,nivel,extra){var it=typed(conta(a,MENOS,b),a-b,extra&&extra.fig||null);it._info={op:"-",a:a,b:b};return it}
+function lims(it,l){it.limits=l;return it}
+
+/* Nível 8 — Somas e subtrações até 5, com figura de apoio (EF01MA06). Subtração: os últimos b emojis aparecem riscados. */
+function gAte5(){
+  var o=pick(OBJ),a,b;
+  if(Math.random()<.5){
+    a=rnd(1,4);b=rnd(1,5-a);
+    return lims(soma(a,b,8,{fig:{t:"emoji",groups:[{e:o.e,n:a},{e:o.e,n:b}],per:5,side:true,sep:"+"}}),[["n8:op+",5],[parc(8,a,b),1]]);
+  }
+  a=rnd(2,5);b=rnd(1,a-1);
+  return lims(sub(a,b,8,{fig:{t:"emoji",groups:[{e:o.e,n:a,x:b}],per:5}}),[["n8:op-",5]]);
+}
+
+/* Nível 9 — Somar e tirar de 1 a 3, com números até 10, só com números (EF01MA06). */
+function gUmATres(){
+  var k=rnd(1,3),a;
+  if(Math.random()<.5){
+    a=rnd(1,10-k);
+    var it=Math.random()<.5?soma(a,k,9):soma(k,a,9);
+    return lims(it,[["n9:op+",5],[parc(9,a,k),1]]);
+  }
+  a=rnd(k+1,10);
+  return lims(sub(a,k,9),[["n9:op-",5]]);
+}
+
+/* Nível 10 — Somas até 10 (EF01MA06): parcelas de 1 a 9, soma até 10. 20% dão exatamente 10. Parcela 1 no máximo 3 por folha;
+   parcela 2 ou 3 no máximo 4 por folha (já foram treinadas no nível 9). */
+function par10(){
+  var a,b;
+  if(Math.random()<.2){a=rnd(1,9);b=10-a}        /* soma exatamente 10 em 20% das contas */
+  else{a=rnd(1,8);b=rnd(1,9-a)}                  /* e soma até 9 nas outras */
+  return [a,b];
+}
+function classe10(a,b){var m=Math.min(a,b);return m===1?"um":m<=3?"dois3":"grande"}
+function gSomaAte10(){
+  var p=par10(),a=p[0],b=p[1],c=classe10(a,b),l=[[parc(10,a,b),1]];
+  if(c==="um")l.push(["n10:um",3]);else if(c==="dois3")l.push(["n10:dois3",4]);
+  return lims(soma(a,b,10),l);
+}
+
+/* Nível 11 — Subtrações até 10 (EF01MA06): a até 10, b menor que a (nunca dá zero). b de 1 a 3 no máximo 3 por folha;
+   a de 6 a 10 em cerca de 60%; 10 − b em cerca de 2 por folha. */
+function gSubAte10(){
+  var a,b,r=Math.random();
+  if(r<.2){a=10;b=rnd(1,9)}
+  else if(r<.62){a=rnd(6,10);b=rnd(1,a-1)}
+  else{a=rnd(2,5);b=rnd(1,a-1)}
+  var l=[];if(b<=3)l.push(["n11:b13",3]);
+  return lims(sub(a,b,11),l);
+}
+
+/* Nível 12 — Somas e subtrações até 10, misturadas, 5 de cada por folha (EF01MA06, EF01MA08). */
+function gMistoAte10(){
+  if(Math.random()<.5){
+    var p=par10(),a=p[0],b=p[1],c=classe10(a,b),l=[["n12:op+",5],[parc(12,a,b),1]];
+    if(c==="um")l.push(["n12:um",3]);else if(c==="dois3")l.push(["n12:dois3",4]);
+    return lims(soma(a,b,12),l);
+  }
+  var a2,b2,r=Math.random();
+  if(r<.2){a2=10;b2=rnd(1,9)}else if(r<.62){a2=rnd(6,10);b2=rnd(1,a2-1)}else{a2=rnd(2,5);b2=rnd(1,a2-1)}
+  var l2=[["n12:op-",5]];if(b2<=3)l2.push(["n12:b13",3]);
+  return lims(sub(a2,b2,12),l2);
+}
+
+/* Nível 13 — Problemas de juntar, acrescentar, separar e retirar, até 10, com figura (EF01MA08). */
+var PROB={"🍎":["maçã","maçãs",1],"🐟":["peixe","peixes",0],"⭐":["estrela","estrelas",1],"🎈":["balão","balões",0],"🐶":["cachorro","cachorros",0],
+  "🌼":["flor","flores",1],"⚽":["bola","bolas",1],"🍪":["biscoito","biscoitos",0],"🚗":["carro","carros",0],"🐥":["pintinho","pintinhos",0]};
+var DAR=["⚽","🍎","🍪","🎈","🌼","⭐"],SAIR=["🐥","🐟","🐶","🚗","🎈"];
+function sq(n,e){var o=PROB[e];return n+" "+(n===1?o[0]:o[1])}
+function pl(e){return PROB[e][1]}
+function qs(e){return PROB[e][2]?"Quantas ":"Quantos "}
+function ele(n){return n[1]==="f"?"Ela":"Ele"}
+function gProblema(maxTotal){
+  return function(){
+    var tipo=pick(["juntar","acrescentar","separar","retirar"]),s=rnd(3,maxTotal),a,b,e,it,n1=pick(NAMES),n2,fig,pre,l=[];
+    if(tipo==="juntar"||tipo==="acrescentar"){
+      a=rnd(1,s-1);b=s-a;e=pick(Object.keys(PROB));
+      if(tipo==="juntar"){
+        do{n2=pick(NAMES)}while(n2[0]===n1[0]);
+        var elas=n1[1]==="f"&&n2[1]==="f";
+        pre=n1[0]+" tem "+sq(a,e)+" e "+n2[0]+" tem "+sq(b,e)+". "+qs(e)+pl(e)+" "+(elas?"elas":"eles")+" têm "+(elas?"juntas":"juntos")+"?";
+        l.push(["nome:"+n1[0],1],["nome:"+n2[0],1]);
+      }else{
+        pre="Havia "+sq(a,e)+". "+(b===1?"Chegou ":"Chegaram ")+b+". "+qs(e)+pl(e)+" há agora?";
+      }
+      fig={t:"emoji",groups:[{e:e,n:a},{e:e,n:b}],per:5,side:true,sep:"+"};
+      it=typed(pre,s,fig);it._info={tipo:tipo,a:a,b:b};
+    }else{
+      b=rnd(1,s-1);a=s;
+      if(tipo==="separar"){
+        e=pick(DAR);
+        pre=n1[0]+" tinha "+sq(a,e)+". "+ele(n1)+" deu "+b+" para um amigo. "+qs(e)+pl(e)+" sobraram?";
+        l.push(["nome:"+n1[0],1]);
+      }else{
+        e=pick(SAIR);
+        pre="Havia "+sq(a,e)+". "+(b===1?"Foi":"Foram")+" embora "+b+". "+qs(e)+pl(e)+" ficaram?";
+      }
+      fig={t:"emoji",groups:[{e:e,n:a}],per:5};
+      it=typed(pre,a-b,fig);it._info={tipo:tipo,a:a,b:b};
+    }
+    it.key=tipo+"|"+a+"|"+b+"|"+e;
+    it.limits=l;
+    return it;
+  };
+}
+
 FC.G1=[
   {nivel:1,id:"g1n01",nome:"Nível 1 — Contar objetos até 10",hab:["EF01MA02"],meta:90,gen:gContar10},
   {nivel:2,id:"g1n02",nome:"Nível 2 — Mais, menos ou igual",hab:["EF01MA03"],meta:100,gen:gComparar},
@@ -113,7 +226,13 @@ FC.G1=[
   {nivel:4,id:"g1n04",nome:"Nível 4 — Contar objetos até 20",hab:["EF01MA02","EF01MA04"],meta:110,gen:gContar20},
   {nivel:5,id:"g1n05",nome:"Nível 5 — Contar objetos soltos até 20",hab:["EF01MA02","EF01MA04"],meta:120,gen:gSolto},
   {nivel:6,id:"g1n06",nome:"Nível 6 — Antes, depois e posição na fila",hab:["EF01MA01","EF01MA05"],meta:100,gen:gOrdem},
-  {nivel:7,id:"g1n07",nome:"Nível 7 — Maior e menor até 20",hab:["EF01MA05"],meta:90,gen:gMaiorMenor}
+  {nivel:7,id:"g1n07",nome:"Nível 7 — Maior e menor até 20",hab:["EF01MA05"],meta:90,gen:gMaiorMenor},
+  {nivel:8,id:"g1n08",nome:"Nível 8 — Somas e subtrações até 5",hab:["EF01MA06"],meta:80,gen:gAte5},
+  {nivel:9,id:"g1n09",nome:"Nível 9 — Somar e tirar de 1 a 3, até 10",hab:["EF01MA06"],meta:80,gen:gUmATres},
+  {nivel:10,id:"g1n10",nome:"Nível 10 — Somas até 10",hab:["EF01MA06"],meta:90,gen:gSomaAte10},
+  {nivel:11,id:"g1n11",nome:"Nível 11 — Subtrações até 10",hab:["EF01MA06"],meta:100,gen:gSubAte10},
+  {nivel:12,id:"g1n12",nome:"Nível 12 — Somas e subtrações até 10",hab:["EF01MA06","EF01MA08"],meta:100,gen:gMistoAte10},
+  {nivel:13,id:"g1n13",nome:"Nível 13 — Problemas de juntar e tirar, até 10",hab:["EF01MA08"],meta:120,gen:gProblema(10)}
 ];
 FC.G1BY={};FC.G1.forEach(function(e){FC.G1BY[e.id]=e});
 })();
