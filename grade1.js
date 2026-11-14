@@ -4,7 +4,7 @@
    - key: identidade da conta (quando o desenho muda mas a conta é a mesma);
    - _calc/_why: a resposta, para os testes (nunca vão para o banco).
    Por enquanto os geradores não estão ligados aos níveis do app: aparecem na aba Exercícios do /adm.
-   Níveis feitos: 1 a 13 (contagem, comparação, soma e subtração até 10, problemas). */
+   Níveis feitos: 1 a 18 (contagem, comparação, soma e subtração até 10, problemas, formas, sólidos, posição, atributos, dezena mais um). */
 (function(){
 "use strict";
 var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,OBJ=X.OBJ,NAMES=X.NAMES;
@@ -140,11 +140,13 @@ function gUmATres(){
 
 /* Nível 10 — Somas até 10 (EF01MA06): parcelas de 1 a 9, soma até 10. 20% dão exatamente 10. Parcela 1 no máximo 3 por folha;
    parcela 2 ou 3 no máximo 4 por folha (já foram treinadas no nível 9). */
+/* As 45 somas ordenadas até 10, agrupadas pela menor parcela: 1 ("um"), 2 ou 3 ("dois3") e 4 ou mais ("grande").
+   Sorteia a classe antes (35%, 40%, 25%) para a folha conseguir se encher respeitando os limites de cada classe. */
+var PARES10={um:[],dois3:[],grande:[]};
+(function(){for(var a=1;a<=9;a++)for(var b=1;a+b<=10;b++){var m=Math.min(a,b);PARES10[m===1?"um":m<=3?"dois3":"grande"].push([a,b])}})();
 function par10(){
-  var a,b;
-  if(Math.random()<.2){a=rnd(1,9);b=10-a}        /* soma exatamente 10 em 20% das contas */
-  else{a=rnd(1,8);b=rnd(1,9-a)}                  /* e soma até 9 nas outras */
-  return [a,b];
+  var r=Math.random(),c=r<.35?"um":r<.75?"dois3":"grande";
+  return pick(PARES10[c]);
 }
 function classe10(a,b){var m=Math.min(a,b);return m===1?"um":m<=3?"dois3":"grande"}
 function gSomaAte10(){
@@ -219,6 +221,136 @@ function gProblema(maxTotal){
   };
 }
 
+
+/* ===================== Níveis 14 a 18: formas, sólidos, posição, atributos e padrões, dezena mais um ===================== */
+var FORMAS4=["círculo","quadrado","retângulo","triângulo"];
+var COR_FIG=["#2457D6","#FFB92B","#F27AB0","#1CA97B"];      /* azul, amarelo, rosa e verde: diferem também em luminosidade */
+function sortearCor(){return pick(COR_FIG)}
+/* Figura plana com as variações da ficha: retângulo deitado ou em pé (proporção 1,4 a 2,5); triângulo de 5 formatos em 4 posições. */
+function formaFig(n,cor){
+  var f={t:"forma",n:n,color:cor};
+  if(n==="retângulo"){f.o=pick(["h","v"]);f.r=+(1.4+Math.random()*1.1).toFixed(2)}
+  if(n==="triângulo"){f.v=rnd(0,4);f.rot=pick([0,90,180,270])}
+  return f;
+}
+function idForma(f){return f.n+(f.n==="retângulo"?f.o:f.n==="triângulo"?f.v+"."+f.rot:"")}
+
+/* Nível 14 — Figuras planas (EF01MA14): o nome da figura, ou qual destas figuras é um X.
+   Todo quadrado é também retângulo: com um quadrado na figura, "retângulo" não é opção; e "qual é um retângulo?" nunca tem um quadrado. */
+function gFormas(){
+  var n=pick(FORMAS4),cor=sortearCor();
+  if(Math.random()<.5){
+    var f=formaFig(n,cor),wr=FORMAS4.filter(function(x){return x!==n&&!(n==="quadrado"&&x==="retângulo")});
+    var it=choice("Como se chama esta figura?",n,wr,f);
+    it.key="forma1|"+idForma(f);it.limits=[["n14:t1",5]];
+    return it;
+  }
+  var outros=FORMAS4.filter(function(x){return x!==n&&!(n==="retângulo"&&x==="quadrado")});
+  var c=formaFig(n,cor),w=outros.map(function(x){return {fig:formaFig(x,cor)}});
+  var it2=choice("Qual destas figuras é um "+n+"?",{fig:c},w,null);
+  it2.key="forma2|"+n+"|"+outros.join(",")+"|"+idForma(c);it2.limits=[["n14:t2",5]];
+  return it2;
+}
+
+/* Nível 15 — Sólidos e objetos (EF01MA13, faces: EF01MA14). Sem cubo e sem pirâmide. */
+var SOL={
+  "esfera":{art:"uma esfera",obj:["⚽","🏀","🌍"],txt:["uma bola de futebol","uma bola de basquete","o globo terrestre"]},
+  "cilindro":{art:"um cilindro",obj:["🥫",{fig:{t:"obj",k:"lata"}},{fig:{t:"obj",k:"tubo"}},{fig:{t:"obj",k:"vela"}}],txt:["uma lata de leite","uma vela","um tubo de cola"]},
+  "bloco retangular":{art:"um bloco retangular",obj:["📦","🧱",{fig:{t:"obj",k:"caixa"}}],txt:["uma caixa de sapato","um tijolo"]},
+  "cone":{art:"um cone",obj:[{fig:{t:"hat"}}],txt:["um chapéu de festa","uma casquinha de sorvete"]}
+};
+var SOLIDOS=Object.keys(SOL);
+var FACES=[["A tampa de uma lata","círculo"],["A tampa de um tubo","círculo"],["A face de uma caixa de sapato","retângulo"],["A face maior de um tijolo","retângulo"]];
+function cap1(t){return t.charAt(0).toUpperCase()+t.slice(1)}
+function gSolidos(){
+  var r=Math.random(),n=pick(SOLIDOS),it;
+  if(r<.4){                                        /* objeto → sólido */
+    var certa=pick(SOL[n].obj),wr=SOLIDOS.filter(function(x){return x!==n}).map(function(x){return pick(SOL[x].obj)});
+    it=choice("Qual objeto tem a forma de "+SOL[n].art+"?",certa,wr,null);it.limits=[["n15:t1",4]];
+  }else if(r<.7){                                  /* desenho do sólido → nome */
+    it=choice("Como se chama este sólido?",n,SOLIDOS.filter(function(x){return x!==n}),{t:"solid",n:n});it.limits=[["n15:t2",3]];
+  }else if(r<.9){                                  /* objeto por escrito → nome do sólido */
+    var tx=pick(SOL[n].txt);
+    it=choice(cap1(tx)+" tem a forma de qual sólido?",n,SOLIDOS.filter(function(x){return x!==n}),null);it.key="solt|"+tx;it.limits=[["n15:t3",2]];
+  }else{                                           /* face do sólido → figura plana */
+    var fc=pick(FACES),resp=fc[1],wr2=FORMAS4.filter(function(x){return x!==resp&&!(resp==="retângulo"&&x==="quadrado")});
+    it=choice(fc[0]+" tem a forma de qual figura?",resp,wr2,null);it.key="face|"+fc[0];it.limits=[["n15:t4",1]];
+  }
+  return it;
+}
+
+/* Nível 16 — Esquerda, direita, em cima e embaixo (EF01MA11, EF01MA12). Só emojis frontais (nada que olhe para um lado). */
+var POS=[{e:"🍎",n:"maçã",f:1},{e:"⚽",n:"bola",f:1},{e:"⭐",n:"estrela",f:1},{e:"🌼",n:"flor",f:1},{e:"🎈",n:"balão"},{e:"🍪",n:"biscoito"},{e:"🐶",n:"cachorro"},{e:"🐱",n:"gato"}];
+function embaralhar(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(0,i),t=a[i];a[i]=a[j];a[j]=t}return a}
+function gPosicao(){
+  var r=Math.random(),it,ps,ref,viz,i;
+  if(r<.4){                                        /* fileira: quem está logo à direita/esquerda */
+    var len=rnd(3,5);ps=embaralhar(POS).slice(0,len);i=rnd(1,len-2);ref=ps[i];
+    var dir=Math.random()<.5;viz=ps[dir?i+1:i-1];
+    var wr=ps.filter(function(x){return x!==viz}).map(function(x){return x.e});
+    it=choice("Quem está logo à "+(dir?"direita ":"esquerda ")+(ref.f?"da ":"do ")+ref.n+"?",viz.e,wr,{t:"fila",items:ps.map(function(x){return x.e}),dir:"h"});
+    it._info={tipo:"h",itens:ps.map(function(x){return x.e}),ref:ref.e,dir:dir?"direita":"esquerda"};
+  }else if(r<.7){                                  /* coluna de 3: em cima / embaixo */
+    ps=embaralhar(POS).slice(0,3);ref=ps[1];var cima=Math.random()<.5;viz=ps[cima?0:2];
+    it=choice("Quem está "+(cima?"em cima ":"embaixo ")+(ref.f?"da ":"do ")+ref.n+"?",viz.e,ps.filter(function(x){return x!==viz}).map(function(x){return x.e}),{t:"fila",items:ps.map(function(x){return x.e}),dir:"v"});
+    it._info={tipo:"v",itens:ps.map(function(x){return x.e}),ref:ref.e,dir:cima?"cima":"baixo"};
+  }else{                                           /* uma caixa com um objeto: onde está? */
+    var o=pick(POS),pos=pick(["esq","dir","meio","cima"]),TX={esq:"à esquerda",dir:"à direita",meio:"no meio",cima:"em cima"};
+    it=choice("Onde está "+(o.f?"a ":"o ")+o.n+" na caixa?",TX[pos],Object.keys(TX).filter(function(k){return k!==pos}).map(function(k){return TX[k]}),{t:"caixa",e:o.e,pos:pos});
+    it._info={tipo:"caixa",pos:pos};
+  }
+  return it;
+}
+
+/* Nível 17 — Organizar por atributos e padrões de figuras (EF01MA09, EF01MA10). */
+var SH17=["círculo","quadrado","triângulo"];
+function fig17(n,cor,s){var f={t:"forma",n:n,color:cor,s:s};if(n==="triângulo"){f.v=0;f.rot=0}return f}
+function gAtributos(){
+  var r=Math.random(),it;
+  if(r<.4){                                        /* qual não combina: só um atributo varia, e só uma figura é diferente */
+    var attr=pick(["cor","forma","tamanho"]),sh=pick(SH17),co=sortearCor(),sz=pick([.55,1]);
+    var x,y;
+    if(attr==="cor"){x=co;do{y=sortearCor()}while(y===x)}
+    else if(attr==="forma"){x=sh;do{y=pick(SH17)}while(y===x)}
+    else{x=sz;y=sz===1?.55:1}
+    function fg(v,k){var f=fig17(attr==="forma"?v:sh,attr==="cor"?v:co,attr==="tamanho"?v:sz);f.k=k;return {fig:f}}
+    var ids=embaralhar([1,2,3,4]),igual=[fg(x,ids[0]),fg(x,ids[1]),fg(x,ids[2])],dif=fg(y,ids[3]);
+    it=choice("Qual figura não combina com as outras?",dif,igual,null);
+    it.key="nc|"+attr+"|"+x+"|"+y+"|"+sh+"|"+co+"|"+sz;it.limits=[["n17:t1",4]];it._info={attr:attr};
+  }else if(r<.6){                                  /* a maior ou a menor entre 3 */
+    var s0,s1,s2,t=0;
+    do{s0=pick([.35,.4,.45]);s1=+(s0*(1.45+Math.random()*.25)).toFixed(2);s2=+(s1*(1.45+Math.random()*.2)).toFixed(2)}while(s2>1&&t++<200);
+    var f3=pick(SH17),c3=sortearCor(),maior=Math.random()<.5,tam=embaralhar([s0,s1,s2]);
+    var opts=tam.map(function(sz){return {fig:fig17(f3,c3,sz)}}),certa=opts.filter(function(o){return o.fig.s===(maior?s2:s0)})[0];
+    it=choice("Qual é a figura mais "+(maior?"grande":"pequena")+"?",certa,opts.filter(function(o){return o!==certa}),null);
+    it.key="tam|"+f3+"|"+c3+"|"+s0+","+s1+","+s2+"|"+maior;it.limits=[["n17:t2",2]];
+  }else{                                           /* padrão: qual vem depois? (dois períodos completos e o começo do terceiro) */
+    var pad=pick(["AB","AAB","ABC"]),combos=[],t2=0;
+    while(combos.length<(pad==="ABC"?3:2)&&t2++<200){var cb=[pick(SH17),sortearCor()];if(!combos.some(function(c){return c[0]===cb[0]&&c[1]===cb[1]}))combos.push(cb)}
+    var seq=[],ix={A:0,B:1,C:2},tot=pad.length*2+1;
+    for(var i=0;i<tot;i++)seq.push(combos[ix[pad[i%pad.length]]]);
+    var prox=combos[ix[pad[tot%pad.length]]];
+    var fa=function(c){return {fig:fig17(c[0],c[1],.9)}};
+    var wrongs=combos.filter(function(c){return c!==prox}).map(fa);
+    while(wrongs.length<2){var nv=[pick(SH17),sortearCor()];if(!(nv[0]===prox[0]&&nv[1]===prox[1])&&!wrongs.some(function(w){return w.fig.n===nv[0]&&w.fig.color===nv[1]}))wrongs.push(fa(nv))}
+    wrongs=wrongs.slice(0,2);
+    it=choice("Qual figura vem depois?",fa(prox),wrongs,{t:"fila",items:seq.map(fa),q:true,dir:"h"});
+    it.key="pad|"+pad+"|"+combos.map(function(c){return c.join(":")}).join(",");it.limits=[["n17:t3",4]];it._info={pad:pad};
+  }
+  return it;
+}
+
+/* Nível 18 — Dezena mais um número (EF01MA06, EF01MA07): 10 + 4, 4 + 10, 14 − 4, 14 − 10. */
+function gDezenaMais(){
+  var n=rnd(1,9);
+  if(Math.random()<.5){
+    var it=Math.random()<.5?soma(10,n,18):soma(n,10,18);
+    return lims(it,[["n18:op+",5],[parc(18,10,n),1]]);
+  }
+  var it2=Math.random()<.5?sub(10+n,n,18):sub(10+n,10,18);
+  return lims(it2,[["n18:op-",5]]);
+}
+
 FC.G1=[
   {nivel:1,id:"g1n01",nome:"Nível 1 — Contar objetos até 10",hab:["EF01MA02"],meta:90,gen:gContar10},
   {nivel:2,id:"g1n02",nome:"Nível 2 — Mais, menos ou igual",hab:["EF01MA03"],meta:100,gen:gComparar},
@@ -232,7 +364,12 @@ FC.G1=[
   {nivel:10,id:"g1n10",nome:"Nível 10 — Somas até 10",hab:["EF01MA06"],meta:90,gen:gSomaAte10},
   {nivel:11,id:"g1n11",nome:"Nível 11 — Subtrações até 10",hab:["EF01MA06"],meta:100,gen:gSubAte10},
   {nivel:12,id:"g1n12",nome:"Nível 12 — Somas e subtrações até 10",hab:["EF01MA06","EF01MA08"],meta:100,gen:gMistoAte10},
-  {nivel:13,id:"g1n13",nome:"Nível 13 — Problemas de juntar e tirar, até 10",hab:["EF01MA08"],meta:120,gen:gProblema(10)}
+  {nivel:13,id:"g1n13",nome:"Nível 13 — Problemas de juntar e tirar, até 10",hab:["EF01MA08"],meta:120,gen:gProblema(10)},
+  {nivel:14,id:"g1n14",nome:"Nível 14 — Figuras planas",hab:["EF01MA14"],meta:100,gen:gFormas},
+  {nivel:15,id:"g1n15",nome:"Nível 15 — Sólidos e objetos do dia a dia",hab:["EF01MA13","EF01MA14"],meta:100,gen:gSolidos},
+  {nivel:16,id:"g1n16",nome:"Nível 16 — Esquerda, direita, em cima e embaixo",hab:["EF01MA11","EF01MA12"],meta:100,gen:gPosicao},
+  {nivel:17,id:"g1n17",nome:"Nível 17 — Atributos e padrões de figuras",hab:["EF01MA09","EF01MA10"],meta:120,gen:gAtributos},
+  {nivel:18,id:"g1n18",nome:"Nível 18 — Dezena mais um número",hab:["EF01MA06","EF01MA07"],meta:80,gen:gDezenaMais}
 ];
 FC.G1BY={};FC.G1.forEach(function(e){FC.G1BY[e.id]=e});
 })();

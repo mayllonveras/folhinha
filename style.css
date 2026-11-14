@@ -523,6 +523,16 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-emoji .x{position:relative;display:inline-block}
 .fig-emoji .x i{font-style:normal;opacity:.4}
 .fig-emoji .x::after{content:"\2715";position:absolute;inset:0;display:grid;place-items:center;color:#D93B3B;font-size:1.25em;font-weight:900;line-height:1}
+.fig-fila{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fig-fila.v{flex-direction:column;align-items:flex-start}
+.fig-fila .fi{font-size:2rem;line-height:1;display:inline-flex}
+.fig-fila .fi .fig{display:block}
+.fig-fila .fi .figsvg{width:52px;max-width:52px}
+.fig-fila .fi.q{width:52px;height:52px;border:3px dashed var(--line);border-radius:12px;align-items:center;justify-content:center;font-weight:800;font-size:1.6rem;color:var(--muted)}
+.fig-caixa{position:relative;width:100%;max-width:300px;aspect-ratio:3/1;border:2px solid var(--line);border-radius:14px;background:var(--surface);container-type:inline-size}
+.fig-caixa span{position:absolute;font-size:16cqw;line-height:1;transform:translate(-50%,-50%)}
+.fig-caixa .p-esq{left:14%;top:50%}.fig-caixa .p-dir{left:86%;top:50%}.fig-caixa .p-meio{left:50%;top:50%}.fig-caixa .p-cima{left:50%;top:22%}
+.opt .fig-fila .fi{font-size:1.4rem}
 .fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
 .fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}
 .fig-emoji .eg{font-size:1.45rem;line-height:1.25;letter-spacing:.06em}

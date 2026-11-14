@@ -55,6 +55,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Testes específicos:** nunca duas opções que descrevam o mesmo objeto; nenhum objeto ambíguo (ex.: nada de cubo como opção para "bloco
   retangular"); o desenho do sólido tem sombreado e é legível no tema escuro; a posição da certa é uniforme.
 - **Decisão do professor:** o cilindro tem a lata 🥫 e três objetos **desenhados** (lata, tubo e copo).
+  *(Ao programar: o copo saiu e entrou a **vela**, porque um copo é um cone cortado, e não um cilindro. Os objetos desenhados do cilindro são lata, tubo e vela.)*
 
 ## Nível 16 — Esquerda, direita, em cima e embaixo
 
@@ -74,6 +75,7 @@ Terceiro bloco de fichas, para revisão do professor antes de qualquer código. 
 - **Testes específicos:** a resposta é recalculada pela posição dos objetos; a referência nunca está na ponta da fileira; os emojis nunca olham
   para um lado; nenhuma conta tem duas respostas possíveis; a posição da certa é uniforme.
 - **Decisão do professor:** o lembrete das mãos aparece **só no começo da folha**, com o desenho das mãos.
+  *(Ainda não feito: depende de a folha poder ter um texto de abertura próprio do nível, o que entra quando a grade nova for ligada ao app. Os geradores só fazem as contas.)*
 
 ## Nível 17 — Organizar por cor, forma e tamanho; padrões de figuras
 
