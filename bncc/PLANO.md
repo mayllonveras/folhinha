@@ -1,6 +1,8 @@
 # Plano da reformulação da grade com base na BNCC
 
-Estado: **planejamento**. Nada deste plano foi implementado ainda. O app não está em produção e os alunos atuais são de teste, então o banco pode ser refeito do zero.
+Estado: **etapa 2 (fundação) implementada neste PR, ainda não aplicada no banco**. As demais etapas seguem em planejamento. O app não está em produção e os alunos atuais são de teste, então o banco pode ser refeito do zero.
+
+Etapa 2 entregue: parâmetros editáveis no `/adm`, ano escolar e teto por aluno (ano calculado, sem gravar na virada), regras de dia normal, ouro e salto, oferta de voltar, histórico de mudanças de nível e telas do aluno e dos pais. Migração: `migracoes/2026-11-14-fundacao-avanco.sql`. O ano de cada nível (`levels.ano`) é **provisório** (1 a 4) até a grade nova.
 
 ## Decisões já tomadas
 

@@ -201,6 +201,19 @@ FC.LEVELS=[
  L("Equações","44","Descubra o x: multiplicação","Como 4 × x = 28.",150,G.eqMul),
  L("Equações","45","Descubra o x: misturado","Os três tipos de equação.",210,G.eqMix)
 ];
+/* Ano da BNCC de cada nível. PROVISÓRIO: vale para os 45 níveis atuais e precisa bater com levels.ano no banco. */
+FC.LEVELS.forEach(function(l,i){l.ano=i<=10?1:i<=23?2:i<=40?3:4});
+FC.ordAno=function(n){return n+"º ano"};
+/* Ano letivo de uma data (a virada vem dos parâmetros: mês e dia). */
+FC.anoLetivo=function(day,pub){
+  var y=Number(day.slice(0,4)),m=Number(day.slice(5,7)),d=Number(day.slice(8,10)),vm=pub?pub.virada_mes:1,vd=pub?pub.virada_dia:1;
+  return y-((m<vm||(m===vm&&d<vd))?1:0);
+};
+/* Ano escolar do aluno hoje: calculado a partir do ano informado (nada é gravado na virada). null = não informado. */
+FC.anoAluno=function(s,today,pub){
+  if(!s.ano_escolar||!s.ano_ref)return null;
+  return Math.min(9,Math.max(1,s.ano_escolar+FC.anoLetivo(today,pub)-s.ano_ref));
+};
 FC.shuffle=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a};
 /* 'keep' = contas que já devem estar na folha (reforço); o resto é sorteado sem repetir. */
 FC.makeItems=function(levelIdx,keep){

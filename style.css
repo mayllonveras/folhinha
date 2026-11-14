@@ -466,3 +466,12 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .adm-table th,.adm-table td{text-align:left;padding:8px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
 .adm-table th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
 .adm-table td{overflow-wrap:anywhere}
+.adm-group{border:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:var(--r-md);padding:14px 16px;margin:0 0 14px;min-width:0}
+.adm-group legend{font-weight:600;padding:0 6px}
+.adm-params{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
+.adm-in{display:flex;align-items:center;gap:8px}
+.adm-in input{max-width:110px}
+.adm-in em{font-style:normal;color:var(--muted);font-size:.85rem;font-weight:400}
+.offer{border-left:5px solid var(--reward)}
+.offer .actions{margin-top:10px}
+.ano-line{display:block;margin-top:2px}
