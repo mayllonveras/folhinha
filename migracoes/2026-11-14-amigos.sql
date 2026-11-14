@@ -2,21 +2,25 @@
 -- Na amizade, cada uma vê SÓ o nível, os carimbos e as figurinhas da outra. Nada de acertos, tempos, folhas ou sequência.
 -- O adulto responsável vê a lista de amigos do aluno e pode desfazer qualquer amizade.
 --
---  * Cada aluno ganha um código de 6 caracteres (sem 0, O, 1, I, L, para ninguém confundir ao digitar).
+--  * Cada aluno ganha um código de 6 caracteres (só consoantes e números, sem vogais, para nunca formar palavra).
 --  * Só o servidor mexe nas tabelas (RLS ligada, sem política). Tudo passa por funções que conferem a sessão do aluno.
 --  * Seguro para aplicar com dados em produção: só acrescenta coisas.
 begin;
 
 -- 1. Código de amizade.
+--    Sem vogais (nem 3 e 4, que imitam E e A): assim o código nunca forma uma palavra, muito menos um palavrão.
+--    Também sem 0, 1, L e Y, para ninguém confundir ao digitar. Siglas ofensivas ficam numa lista de bloqueio.
 create or replace function public._new_friend_code() returns text
  language plpgsql volatile security definer set search_path to 'public', 'extensions'
 as $$
-declare abc constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; c text; i int;
+declare abc constant text := 'BCDFGHJKMNPQRSTVWXZ26789'; c text; i int;
+  vetadas constant text[] := array['PQP','FDP','KKK','XXX','BCT','PNC','VTNC','TNC','XTC','BST','MRD','CRL','PRR','PUT','VSF','FDS','CZ'];
 begin
   loop
     c := '';
     for i in 1..6 loop c := c || substr(abc, 1 + floor(random() * length(abc))::int, 1); end loop;
-    exit when not exists(select 1 from students where friend_code = c);
+    exit when not exists(select 1 from students where friend_code = c)
+          and not exists(select 1 from unnest(vetadas) v where position(v in c) > 0);
   end loop;
   return c;
 end $$;
