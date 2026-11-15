@@ -338,14 +338,43 @@ async function showForm(){
   };
 }
 /* QR Code do link do aluno: o aluno aponta a câmera do celular e abre a página dele. */
+/* Desenha o QR Code (SVG) numa imagem PNG de fundo branco, para compartilhar como figura. */
+function qrPng(svg){
+  return new Promise(function(res){
+    try{
+      var img=new Image(),u=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml"}));
+      img.onload=function(){
+        var c=document.createElement("canvas");c.width=c.height=720;var x=c.getContext("2d");
+        x.fillStyle="#fff";x.fillRect(0,0,720,720);x.drawImage(img,0,0,720,720);URL.revokeObjectURL(u);
+        try{c.toBlob(function(b){res(b)},"image/png")}catch(e){res(null)}
+      };
+      img.onerror=function(){res(null)};img.src=u;
+    }catch(e){res(null)}
+  });
+}
 function showQr(name,link){
   var svg="";
   try{var qr=qrcode(0,"M");qr.addData(link);qr.make();svg=qr.createSvgTag({cellSize:6,margin:4,alt:"QR Code do link de "+name,title:"QR Code"})}
   catch(e){svg=""}
+  var text="Link da Folhinha VIP de "+name+": "+link,canShare=!!navigator.share;
   FC.overlay('<h2>QR Code de '+esc(name)+'</h2>'+(svg?'<div class="qr-box">'+svg+'</div>':'<p class="msg bad">Não deu para gerar o QR Code. Use o link.</p>')+
     '<p class="muted small-t">O aluno aponta a câmera do celular para o QR Code e abre a página dele (depois digita o PIN). Quem tiver este QR Code chega à página do aluno, então mostre só a quem deve usar.</p>'+
+    '<div class="actions">'+(canShare?'<button class="btn" id="qrShare">'+FC.icon("share")+' Compartilhar</button>':
+      '<a class="btn" id="qrWa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(text)+'">WhatsApp</a><a class="btn ghost" id="qrMail" href="mailto:?subject='+encodeURIComponent("Folhinha VIP: "+name)+'&body='+encodeURIComponent(text)+'">E-mail</a>')+'</div>'+
     '<div class="linkrow"><input id="qrLnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="qrCp">Copiar link</button></div>',{button:"Fechar"});
   $("#qrCp").onclick=function(){FC.copy(link,$("#qrLnk"))};
+  if(canShare){
+    /* Compartilhar pelo celular (WhatsApp, e-mail, redes sociais...): manda a figura do QR Code junto, quando o aparelho aceita arquivos. */
+    var file=null;
+    if(svg)qrPng(svg).then(function(b){if(b)try{file=new File([b],"qrcode-"+name.replace(/[^A-Za-z0-9]+/g,"-")+".png",{type:"image/png"})}catch(e){}});
+    $("#qrShare").onclick=async function(){
+      var data={title:"Folhinha VIP: "+name,text:text};
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]}))data.files=[file];
+      try{await navigator.share(data)}
+      catch(e){if(e&&e.name==="AbortError")return;   // a pessoa fechou a janela de compartilhar
+        try{await navigator.share({title:data.title,text:text})}catch(x){if(!x||x.name!=="AbortError")FC.copy(link,$("#qrLnk"))}}
+    };
+  }
 }
 function openStudent(id){FC.tabState.pai="resumo";try{sessionStorage.setItem("fc_tab_pai","resumo")}catch(e){}detail(id)}
 function linkFor(code){return location.origin+location.pathname+"?aluno="+FC.fmtCode(code)}

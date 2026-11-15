@@ -13,4 +13,8 @@ ok(/vendor\/qrcode\.js/.test(sw),"service worker guarda a biblioteca (funciona s
 ok(/id="i-qr"/.test(idx),"ícone do QR Code existe");
 ok(/data-qr=/.test(ad)&&/function showQr\(/.test(ad),"cartão do aluno tem o botão do QR Code e a tela que o mostra");
 ok(/card-open[\s\S]{0,40}$/.test("card-open")&&ad.indexOf('class="card-qr"')>ad.indexOf('<div class="cardwrap">')&&ad.indexOf('class="card-qr"')<ad.indexOf('class="card-open"'),"botão do QR Code no cartão, junto do que abre em nova aba");
+ok(/navigator\.share\(/.test(ad)&&/id="qrShare"/.test(ad),"botão Compartilhar usa o compartilhamento do celular");
+ok(/wa\.me\//.test(ad)&&/mailto:/.test(ad),"sem compartilhamento nativo, há WhatsApp e e-mail");
+ok(/files:\[file\]/.test(ad)&&/image\/png/.test(ad),"compartilha também a figura do QR Code quando o aparelho aceita");
+ok(/id="i-share"/.test(idx),"ícone de compartilhar existe");
 console.log(falhas?"\n"+falhas+" falha(s)":"qrcode: tudo certo");process.exit(falhas?1:0);
