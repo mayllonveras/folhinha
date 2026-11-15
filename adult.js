@@ -18,7 +18,7 @@ function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 /* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado e #/aluno/ID/ABA. */
-var PAI_TABS=["resumo","album","historico","programa","acesso"];
+var PAI_TABS=["resumo","album","historico","dificuldades","programa","acesso"];
 function route(path){
   if(!U.user)return;
   var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+))?$/.exec(path);
@@ -473,7 +473,8 @@ async function detail(id){
   miss.reverse();
 
   var rows=sheets.slice(0,40).map(function(x){
-    return '<tr><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+
+    var er=x.total-x.first_ok;
+    return '<tr data-err="'+er+'"><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td class="errs" data-sid="'+x.id+'">'+(er?'<span class="tag bad">'+er+' erro'+(er>1?'s':'')+'</span>':'<span class="muted">–</span>')+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+
       (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td><button class="btn ghost small" data-sheet="'+x.id+'">Ver</button></td></tr>';
   }).join("");
   var names=guards.map(function(g){
@@ -518,7 +519,10 @@ async function detail(id){
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
-    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+  var dificuldades='<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
+    '<div class="dif-tools"><label class="field inline">Período<select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
+    '<div id="difBox"><p class="loading">Carregando…</p></div></div>';
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>';
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
@@ -533,6 +537,7 @@ async function detail(id){
     {id:"resumo",label:"Resumo",icon:"resumo",html:resumo},
     {id:"album",label:"Álbum",icon:"album",html:rewardPanel},
     {id:"historico",label:"Histórico",icon:"history",html:historico},
+    {id:"dificuldades",label:"Atenção",icon:"progress",html:dificuldades},
     {id:"programa",label:"Programa",icon:"program",html:programa},
     {id:"acesso",label:"Acesso",icon:"key",html:acesso}]}));
   U.detail=id;FC.nav.at("/aluno/"+id+"/"+FC.tabState.pai);
@@ -557,7 +562,7 @@ async function detail(id){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadFriends(id);loadTrades(id);
+  loadSlow(id);loadFriends(id);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
@@ -592,8 +597,68 @@ async function detail(id){
     FC.toast("Programa salvo.");detail(id);
   };
   $$("[data-sheet]").forEach(function(b){b.onclick=function(){openSheet(b.getAttribute("data-sheet"),b)}});
+  var onlyErr=$("#onlyErr");
+  if(onlyErr)onlyErr.onchange=function(){$$("tr[data-err]").forEach(function(tr){tr.hidden=onlyErr.checked&&tr.getAttribute("data-err")==="0"})};
 }
 
+/* ---------- folhas feitas e dificuldades ---------- */
+var SEM_TXT={vermelho:"Dificuldade",amarelo:"Atenção",verde:"Tranquilo",poucos:"Poucos dados"};
+function contaTxt(p){
+  var pre=String(p.pre||"").replace(/\s*=\s*$/,"");
+  return p.extra&&(p.extra.fig||p.extra.opts)?pre+' <span class="muted small-t">(com figura)</span>':esc(pre)+(p.post?" "+esc(p.post):"");
+}
+function respTxt(c){
+  var cnt={};c.resp.forEach(function(v){cnt[v]=(cnt[v]||0)+1});
+  var ks=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,3);
+  return ks.length?"respondeu "+ks.map(esc).join(", "):"sem resposta";
+}
+/* Baixa as últimas folhas com as contas e respostas e preenche a lista de contas erradas do Histórico e a aba Dificuldades. */
+async function loadAnalise(id){
+  var box=$("#difBox");
+  var r=await sb.from("sheets").select("id,level_idx,study_day,problems,answers,first_ok,total").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(150);
+  if(r.error){if(box)box.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
+  U.an={id:id,sheets:r.data};
+  r.data.forEach(function(sh){
+    var cell=$('.errs[data-sid="'+sh.id+'"]');if(!cell||sh.total<=sh.first_ok)return;
+    var bad=[];(sh.problems||[]).forEach(function(p,i){var a=(sh.answers||[])[i];if(p&&a&&a.ok!==true)bad.push({n:i+1,p:p,a:a})});
+    if(!bad.length)return;
+    cell.innerHTML='<span class="tag bad">'+bad.length+' erro'+(bad.length>1?'s':'')+'</span><ul class="errlist">'+bad.slice(0,5).map(function(b){
+      var plain=!(b.p.extra&&(b.p.extra.fig||b.p.extra.opts));
+      return '<li>'+(plain?esc(String(b.p.pre||"").replace(/\s*=\s*$/,""))+' = <s>'+esc(b.a.v===""||b.a.v==null?"–":b.a.v)+'</s> <b>'+esc(FC.answerText(b.p,b.p.a))+'</b>':'conta '+b.n+' <span class="muted small-t">(com figura)</span>')+'</li>'}).join("")+
+      (bad.length>5?'<li class="muted">+'+(bad.length-5)+' ver na folha</li>':'')+'</ul>';
+  });
+  if($("#difPer"))$("#difPer").onchange=renderDif;
+  renderDif();
+}
+function renderDif(){
+  var box=$("#difBox");if(!box||!U.an)return;
+  var per=Number($("#difPer")?$("#difPer").value:30),from=per?FC.addDays(FC.today(),-per):"";
+  var list=U.an.sheets.filter(function(sh){return !from||sh.study_day>=from});
+  if(!list.length){box.innerHTML='<p class="muted">Nenhuma folha feita '+(per?'nos últimos '+per+' dias':'ainda')+'.</p>';return}
+  var rows=FC.analisar(list,{target:function(i){return FC.LEVELS[i].target},hab:function(i){return FC.LEVELS[i].hab||[]}});
+  var n=0,e=0;rows.forEach(function(r){n+=r.n;e+=r.erros});
+  function card(r){
+    var L=FC.LEVELS[r.level],ok=r.semaforo==="verde";
+    return '<div class="dif-card sem-'+r.semaforo+'"><div class="dif-head"><b>Nível '+esc(L.id)+' · '+esc(L.name)+'</b><span class="tag sem">'+SEM_TXT[r.semaforo]+'</span></div>'+
+      '<p>Errou de primeira <b>'+r.erros+' de '+r.n+'</b> contas ('+Math.round(r.taxa)+'%), em '+r.folhas+' folha'+(r.folhas>1?'s':'')+'.</p>'+
+      (r.msMedio?'<p class="muted small-t">Tempo médio por conta: '+FC.fmtSec(r.msMedio)+' (esperado até '+FC.fmtSec(r.esperadoMs)+')'+(r.devagar?' · <span class="tag warn">devagar</span>':'')+'</p>':'')+
+      (r.numericos>=3&&r.porUm*2>=r.numericos?'<p class="small-t">Em '+r.porUm+' dos '+r.numericos+' erros a resposta ficou a <b>1 de distância</b> da certa.</p>':'')+
+      (r.semResposta?'<p class="small-t">'+r.semResposta+' conta'+(r.semResposta>1?'s':'')+' ficou sem resposta.</p>':'')+
+      (!ok&&r.contas.length?'<details><summary>Contas que mais errou ('+r.contas.length+')</summary><ul class="errlist">'+r.contas.slice(0,8).map(function(c){
+        return '<li>'+contaTxt(c.p)+' = <b>'+esc(FC.answerText(c.p,c.p.a))+'</b> <span class="muted small-t">· errou '+c.erros+' de '+c.vezes+' vez'+(c.vezes>1?'es':'')+' · '+respTxt(c)+'</span></li>'}).join("")+'</ul></details>':'')+
+      (r.hab.length?'<div class="hab-chips">'+r.hab.map(function(c){var h=FC.HAB&&FC.HAB[c];return '<span class="chip" title="'+esc(h?h[2]:c)+'">'+esc(c)+(h?' · '+esc(h[1]):'')+'</span>'}).join("")+'</div>':'')+'</div>';
+  }
+  var fortes=rows.filter(function(r){return r.semaforo!=="poucos"}),poucos=rows.filter(function(r){return r.semaforo==="poucos"});
+  var hab=FC.analisarHab(rows).filter(function(h){return h.semaforo!=="poucos"});
+  box.innerHTML='<p class="muted">'+list.length+' folha'+(list.length>1?'s':'')+' · acertou de primeira '+Math.round(100-(n?e*100/n:0))+'% das contas. '+
+    'Dificuldade: errou 40% ou mais de primeira; atenção: de 20% a 40%. Só entra assunto com pelo menos 5 contas feitas.</p>'+
+    (fortes.length?fortes.map(card).join(""):'<p class="muted">Ainda não há contas suficientes em nenhum assunto neste período.</p>')+
+    (hab.length?'<details class="gap"><summary>Por habilidade da BNCC ('+hab.length+')</summary><div class="tablewrap"><table><thead><tr><th>Habilidade</th><th>Erros de primeira</th><th></th></tr></thead><tbody>'+hab.map(function(h){
+      var d=FC.HAB&&FC.HAB[h.cod];
+      return '<tr><td><b>'+esc(h.cod)+'</b>'+(d?'<br><span class="muted small-t" title="'+esc(d[2])+'">'+esc(d[1])+'</span>':'')+'</td><td>'+h.erros+' de '+h.n+' ('+Math.round(h.taxa)+'%)</td><td><span class="tag sem sem-'+h.semaforo+'">'+SEM_TXT[h.semaforo]+'</span></td></tr>'}).join("")+'</tbody></table></div>'+
+      '<p class="muted small-t">Cada conta conta em todas as habilidades do nível dela; por isso os números são aproximados quando um nível treina mais de uma habilidade.</p></details>':'')+
+    (poucos.length?'<details class="gap"><summary>Assuntos com poucos dados ('+poucos.length+')</summary><ul class="plain">'+poucos.map(function(r){var L=FC.LEVELS[r.level];return '<li>Nível '+esc(L.id)+' · '+esc(L.name)+' <span class="muted small-t">· '+r.erros+' de '+r.n+' contas erradas</span></li>'}).join("")+'</ul></details>':'');
+}
 /* Contas em que o aluno mais demora, nas últimas 20 folhas: média do tempo na conta contra o tempo esperado do nível. */
 /* Amigos do aluno: o adulto vê com quem ele é amigo e pode desfazer qualquer amizade. */
 async function loadFriends(id){
