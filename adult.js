@@ -119,7 +119,7 @@ async function dash(){
     var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,pct=Math.min(100,Math.round(100*Math.min(s.stamps,need)/need));
     var kind=FC.dayKind(s,today),done=todayDone(s,sheets);
     var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
-    return '<div class="cardwrap"><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
+    return '<div class="cardwrap"><button type="button" class="card-qr" data-qr="'+s.id+'" title="Mostrar o QR Code do aluno" aria-label="Mostrar o QR Code de '+esc(s.name)+'">'+FC.icon("qr")+'</button><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
       '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+
       '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
@@ -131,6 +131,9 @@ async function dash(){
   bindTop();FC.refreshInstall();
   $("#newStudent").onclick=function(){showForm(null)};
   $$(".card").forEach(function(c){c.onclick=function(){openStudent(c.getAttribute("data-id"))}});
+  $$("[data-qr]").forEach(function(b){b.onclick=function(){
+    var s=students.filter(function(x){return x.id===b.getAttribute("data-qr")})[0];if(s)showQr(s.name,linkFor(s.link_code));
+  }});
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
@@ -333,6 +336,16 @@ async function showForm(){
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
+}
+/* QR Code do link do aluno: o aluno aponta a câmera do celular e abre a página dele. */
+function showQr(name,link){
+  var svg="";
+  try{var qr=qrcode(0,"M");qr.addData(link);qr.make();svg=qr.createSvgTag({cellSize:6,margin:4,alt:"QR Code do link de "+name,title:"QR Code"})}
+  catch(e){svg=""}
+  FC.overlay('<h2>QR Code de '+esc(name)+'</h2>'+(svg?'<div class="qr-box">'+svg+'</div>':'<p class="msg bad">Não deu para gerar o QR Code. Use o link.</p>')+
+    '<p class="muted small-t">O aluno aponta a câmera do celular para o QR Code e abre a página dele (depois digita o PIN). Quem tiver este QR Code chega à página do aluno, então mostre só a quem deve usar.</p>'+
+    '<div class="linkrow"><input id="qrLnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="qrCp">Copiar link</button></div>',{button:"Fechar"});
+  $("#qrCp").onclick=function(){FC.copy(link,$("#qrLnk"))};
 }
 function openStudent(id){FC.tabState.pai="resumo";try{sessionStorage.setItem("fc_tab_pai","resumo")}catch(e){}detail(id)}
 function linkFor(code){return location.origin+location.pathname+"?aluno="+FC.fmtCode(code)}

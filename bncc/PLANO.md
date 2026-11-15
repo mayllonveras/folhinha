@@ -195,3 +195,5 @@ Decisão do professor: os pais **liberam** os álbuns no cadastro (grade de capa
 - Correção junto: no painel do aluno (adult.js) o laço do aviso de limite usava a variável `q`, que escondia a função `q()` e quebrava a página; passou a `qi`.
 - Testes: `testes/albuns.test.js`.
 - **Tela do programa enxuta (15/11/2026):** no cadastro e na edição, os álbuns não aparecem em grade no formulário: só um resumo (capas pequenas, nomes e contagem) e o botão **Ver álbuns**, que abre a tela com a grade de capas, "marcar todos", busca/filtro e **Detalhes**. A escolha só vale ao tocar em **Pronto** (mínimo 1 álbum); **Cancelar** descarta. Cache `folhinha-v39`.
+- **QR Code do aluno (15/11/2026):** no cartão do aluno, logo abaixo do botão que abre o link em outra aba, há um botão com o desenho de um QR Code; ao tocar, abre uma janela com o QR Code do link do aluno (e o link para copiar). Biblioteca `vendor/qrcode.js` (qrcode-generator 1.4.4, licença MIT), guardada no cache do app. Teste: `testes/qrcode.test.js`. Cache `folhinha-v40`.
+
