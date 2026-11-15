@@ -627,3 +627,32 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .welcome-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:48vh;overflow:auto}
 .welcome-grid .sticker .st-sub,.welcome-grid .sticker .st-no{display:none}
 .welcome-grid .sticker .st-name{font-size:.72rem}
+/* Álbuns liberados: grade de capas (cadastro dos pais) */
+.theme-filter{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.theme-filter input,.theme-filter select{flex:1 1 140px;min-width:0}
+.album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;margin-top:8px}
+.alb-opt{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center}
+.alb-opt[hidden]{display:none}
+.alb-opt input{position:absolute;opacity:0;pointer-events:none}
+.alb-opt:has(input:checked){border-color:var(--accent);background:var(--soft)}
+.alb-opt:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.alb-capa{position:relative;display:block;width:100%;cursor:pointer}
+.alb-capa img{display:block;width:100%;height:auto;max-height:150px;object-fit:contain;border-radius:8px}
+.alb-check{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:var(--paper);border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:transparent}
+.alb-opt input:checked+.alb-capa .alb-check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.alb-name{font-weight:600;font-size:.9rem;line-height:1.2;cursor:pointer}
+.alb-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.album.sample{grid-template-columns:repeat(3,1fr)}
+.card-done{margin-top:6px}
+/* Mesa e gaveta (tela da criança) */
+.desk-sec{margin-bottom:12px}
+.desk-row{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--paper);border-radius:12px;padding:6px 8px;margin-top:6px}
+.desk-row.on{border-color:var(--accent)}
+.desk-pick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.desk-pick .capa{width:40px;height:auto;flex:none;border-radius:6px}
+.desk-txt{display:flex;flex-direction:column;min-width:0}
+.desk-txt b{overflow-wrap:anywhere;line-height:1.2}
+.desk-txt small{color:var(--muted)}
+.pack-choice.on{border-color:var(--accent);background:var(--paper);box-shadow:0 0 0 2px var(--accent)}
+.pack-choice .pc-art .capa{width:100%;height:100%;object-fit:contain}
+
