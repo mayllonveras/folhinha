@@ -414,6 +414,71 @@ var DRAW={
       inner+='<rect x="'+(2+c*s)+'" y="'+(2+r*s)+'" width="'+s+'" height="'+s+'" fill="'+(on?(f.color||C.sun):"#fff")+'" stroke="'+C.line+'" stroke-width="1.2"/>'}
     return svg(W,H,inner,"fig-grid");
   },
+  /* fração (4º ano): f.d partes iguais, f.n pintadas (as primeiras); f.forma = "barra" ou "circulo". Cada parte tem class="fp" e data-on="1" quando pintada. */
+  fracao:function(f){
+    var inner="",i,on,K=INK,fill;
+    if(f.forma==="circulo"){
+      var cx=70,cy=70,r=60;
+      for(i=0;i<f.d;i++){
+        on=i<f.n;fill=on?C.sun:"#fff";
+        var a0=-Math.PI/2+i*2*Math.PI/f.d,a1=-Math.PI/2+(i+1)*2*Math.PI/f.d;
+        if(f.d===1)inner+='<circle class="fp" data-on="'+(on?1:0)+'" cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+fill+'" stroke="'+K+'" stroke-width="2.4"/>';
+        else inner+='<path class="fp" data-on="'+(on?1:0)+'" d="M'+cx+','+cy+' L'+(cx+r*Math.cos(a0)).toFixed(1)+','+(cy+r*Math.sin(a0)).toFixed(1)+' A'+r+','+r+' 0 0 1 '+(cx+r*Math.cos(a1)).toFixed(1)+','+(cy+r*Math.sin(a1)).toFixed(1)+' Z" fill="'+fill+'" stroke="'+K+'" stroke-width="2.4" stroke-linejoin="round"/>';
+      }
+      return svg(140,140,inner,"fig-fracao fig-fracao-c");
+    }
+    var W=240,w=W/f.d;
+    for(i=0;i<f.d;i++){on=i<f.n;inner+='<rect class="fp" data-on="'+(on?1:0)+'" x="'+(4+i*w).toFixed(1)+'" y="8" width="'+w.toFixed(1)+'" height="44" fill="'+(on?C.sun:"#fff")+'" stroke="'+K+'" stroke-width="2.4"/>'}
+    return svg(W+8,60,inner,"fig-fracao");
+  },
+  /* quadro de 100 (4º ano): f.n quadradinhos pintados, de 10 em 10 por fileira. Cada quadradinho tem class="q1" e data-on. */
+  quadro100:function(f){
+    var s=17,inner="",i,j;
+    for(i=0;i<10;i++)for(j=0;j<10;j++){var k=i*10+j,on=k<f.n;
+      inner+='<rect class="q1" data-on="'+(on?1:0)+'" x="'+(2+j*s)+'" y="'+(2+i*s)+'" width="'+s+'" height="'+s+'" fill="'+(on?C.sun:"#fff")+'" stroke="'+C.line+'" stroke-width="1.2"/>'}
+    inner+='<rect x="2" y="2" width="'+(10*s)+'" height="'+(10*s)+'" fill="none" stroke="'+INK+'" stroke-width="2.4"/>';
+    return svg(10*s+4,10*s+4,inner,"fig-q100");
+  },
+  /* ângulo (4º ano): f.g graus (de 20 a 160); o vértice fica à esquerda; f.reto marca o quadradinho do ângulo reto */
+  angulo:function(f){
+    var vx=100,vy=96,L=90,a=f.g*Math.PI/180,x2=vx+L*Math.cos(a),y2=vy-L*Math.sin(a),inner="";
+    inner+='<line x1="'+vx+'" y1="'+vy+'" x2="'+(vx+L)+'" y2="'+vy+'" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>'+
+      '<line x1="'+vx+'" y1="'+vy+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>';
+    if(f.g===90)inner+='<path d="M'+(vx+16)+','+vy+' L'+(vx+16)+','+(vy-16)+' L'+vx+','+(vy-16)+'" fill="none" stroke="'+C.coral+'" stroke-width="3"/>';
+    else{var r=24;inner+='<path d="M'+(vx+r)+','+vy+' A'+r+','+r+' 0 0 0 '+(vx+r*Math.cos(a)).toFixed(1)+','+(vy-r*Math.sin(a)).toFixed(1)+'" fill="none" stroke="'+C.coral+'" stroke-width="3"/>'}
+    inner+='<circle cx="'+vx+'" cy="'+vy+'" r="4.5" fill="'+INK+'"/>';
+    return svg(210,112,inner,"fig-angulo");
+  },
+  /* reta de 0 a 1 dividida em f.d partes iguais (4º ano), com o ponto A em f.k/f.d; os rótulos são só 0 e 1 */
+  retafr:function(f){
+    var x0=24,x1=336,i,inner='<line x1="'+(x0-10)+'" x2="'+(x1+10)+'" y1="60" y2="60" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>';
+    for(i=0;i<=f.d;i++){var x=x0+(x1-x0)*i/f.d,big=i===0||i===f.d;
+      inner+='<line class="tk" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(big?46:50)+'" y2="'+(big?74:70)+'" stroke="'+INK+'" stroke-width="'+(big?3.6:2.6)+'" stroke-linecap="round"/>'}
+    inner+='<text x="'+x0+'" y="98" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">0</text><text x="'+x1+'" y="98" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">1</text>';
+    var px=x0+(x1-x0)*f.k/f.d;
+    inner+='<circle class="pt2" cx="'+px.toFixed(1)+'" cy="60" r="8" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="2"/><text x="'+px.toFixed(1)+'" y="34" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">A</text>';
+    return svg(360,108,inner,"fig-line");
+  },
+  /* simetria de reflexão (4º ano): malha de 4 + 4 colunas com o eixo tracejado no meio; f.cells à esquerda e f.right à direita (colunas 0 a 3 de cada lado, linhas 0 a 4) */
+  espelho:function(f){
+    var s=24,half=4,rows=5,W=2*half*s+4,H=rows*s+4,inner="",i,j;
+    for(i=0;i<=2*half;i++)inner+='<line x1="'+(2+i*s)+'" x2="'+(2+i*s)+'" y1="2" y2="'+(2+rows*s)+'" stroke="'+C.line+'" stroke-width="1"/>';
+    for(j=0;j<=rows;j++)inner+='<line x1="2" x2="'+(2+2*half*s)+'" y1="'+(2+j*s)+'" y2="'+(2+j*s)+'" stroke="'+C.line+'" stroke-width="1"/>';
+    (f.cells||[]).forEach(function(c){inner+='<rect class="cel" data-lado="e" x="'+(2+c[0]*s)+'" y="'+(2+c[1]*s)+'" width="'+s+'" height="'+s+'" fill="'+C.sky+'" stroke="'+INK+'" stroke-width="1.6"/>'});
+    (f.right||[]).forEach(function(c){inner+='<rect class="cel" data-lado="d" x="'+(2+(half+c[0])*s)+'" y="'+(2+c[1]*s)+'" width="'+s+'" height="'+s+'" fill="'+C.sky+'" stroke="'+INK+'" stroke-width="1.6"/>'});
+    inner+='<line x1="'+(2+half*s)+'" x2="'+(2+half*s)+'" y1="0" y2="'+(H-2)+'" stroke="'+C.coral+'" stroke-width="3" stroke-dasharray="6 4"/>';
+    return svg(W,H,inner,"fig-espelho");
+  },
+  /* termômetro (4º ano): f.t graus de 0 a 45, marcas de 5 em 5 */
+  termo:function(f){
+    var y0=176,ph=162,top=45,inner="",t,yv=y0-ph*f.g/top;
+    inner+='<rect x="52" y="8" width="22" height="'+(y0-8)+'" rx="11" fill="#fff" stroke="'+INK+'" stroke-width="3"/><circle cx="63" cy="'+(y0+10)+'" r="15" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="3"/>'+
+      '<rect class="hg" data-g="'+f.g+'" x="58" y="'+yv.toFixed(1)+'" width="10" height="'+(y0+10-yv).toFixed(1)+'" fill="'+C.coral+'"/>';
+    for(t=0;t<=top;t+=5){var y=y0-ph*t/top;
+      inner+='<line x1="78" x2="90" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="'+INK+'" stroke-width="2"/><text x="96" y="'+(y+4).toFixed(1)+'" font-size="12" font-weight="700" fill="'+INK+'">'+t+'</text>'}
+    inner+='<text x="30" y="14" font-size="12" font-weight="800" fill="'+INK+'">°C</text>';
+    return svg(130,214,inner,"fig-termo");
+  },
   shape:function(f){return shapeFig(f.n,f.color)},
   /* sólidos geométricos */
   /* objeto em forma de cone: chapéu de festa (não existe emoji de cone inteiro) */

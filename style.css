@@ -170,7 +170,7 @@ details.adv[open] summary{margin-bottom:10px}
 .row .n{font-size:.75rem;color:var(--muted);width:1.6rem;flex:none;font-variant-numeric:tabular-nums}
 .row .q{font-family:var(--font-num);font-weight:500;font-size:1.35rem;white-space:pre-wrap}
 .ans{position:relative;display:inline-block}
-.ans input{font-family:var(--font-num);font-weight:600;font-size:1.35rem;width:5ch;text-align:center;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--ink);padding:2px 0;border-radius:0}
+.ans input{font-family:var(--font-num);font-weight:600;font-size:1.35rem;width:6ch;text-align:center;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--ink);padding:2px 0;border-radius:0}
 .ans input:focus{outline:none;border-bottom-color:var(--accent);background:var(--soft)}
 .row.ok .ans::after{content:"";position:absolute;inset:-7px -12px;border:2.5px solid var(--mark);border-radius:52% 48% 55% 45%/50% 55% 45% 50%;transform:rotate(-3deg);pointer-events:none}
 .row.ok .ans input{border-bottom-color:transparent}
@@ -556,6 +556,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-reparte .pratos{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
 .fig-reparte .prato{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:var(--surface);box-shadow:inset 0 0 0 6px var(--bg,transparent)}
 .figsvg.fig-line{max-width:420px}
+.figsvg.fig-fracao{max-width:260px}.figsvg.fig-fracao-c{max-width:170px}.figsvg.fig-q100{max-width:190px}.figsvg.fig-angulo{max-width:190px}.figsvg.fig-termo{max-width:120px}.figsvg.fig-espelho{max-width:240px}
 .figsvg.fig-grid{max-width:240px}
 .fig-emoji{display:flex;flex-direction:column;gap:6px}
 .fig-emoji.side{flex-direction:row;flex-wrap:wrap;gap:12px 14px;align-items:flex-start}
