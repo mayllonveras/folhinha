@@ -729,4 +729,22 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .miss-tag{display:inline-block;margin:0 0 6px;padding:2px 10px;border-radius:99px;background:#e0a21f;color:#3a2800;font-weight:700;font-size:.78rem}
 .paper.paused .mapa{visibility:hidden}
 @media (prefers-color-scheme:dark){.row.miss{background:#3b3216}.mapa-b.miss i{background:#3b3216;color:#ffd77a}}
+/* Folhas feitas e dificuldades (pais) */
+.inline-chk{display:flex;gap:8px;align-items:center;margin:6px 0 10px;font-size:.9rem}
+.errs{min-width:150px}
+.errlist{margin:6px 0 0;padding-left:16px;font-size:.84rem;line-height:1.35}
+.errlist s{color:var(--danger,#c93a3a)}
+.dif-tools{margin:6px 0 12px}
+.field.inline{display:inline-flex;flex-direction:row;align-items:center;gap:8px}
+.dif-card{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:10px 12px;margin:10px 0;background:var(--paper)}
+.dif-card p{margin:4px 0}
+.dif-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.dif-card.sem-vermelho{border-left-color:#c93a3a}.dif-card.sem-amarelo{border-left-color:#e0a21f}.dif-card.sem-verde{border-left-color:#2f9e6a}
+.tag.sem{font-weight:700}
+.dif-card.sem-vermelho .tag.sem,.tag.sem.sem-vermelho{background:#fde3e3;color:#8c1f1f}
+.dif-card.sem-amarelo .tag.sem,.tag.sem.sem-amarelo{background:#fff1cc;color:#6b4a00}
+.dif-card.sem-verde .tag.sem,.tag.sem.sem-verde{background:#dff3e8;color:#14562f}
+.hab-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.hab-chips .chip{font-size:.74rem;background:var(--soft);border-radius:99px;padding:3px 10px;color:var(--muted)}
+tr[hidden]{display:none}
 
