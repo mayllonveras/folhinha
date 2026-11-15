@@ -747,4 +747,14 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .hab-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .hab-chips .chip{font-size:.74rem;background:var(--soft);border-radius:99px;padding:3px 10px;color:var(--muted)}
 tr[hidden]{display:none}
+/* Folha com uma conta por vez */
+.items .row[hidden]{display:none}
+.review{text-align:center;padding:18px 8px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.review[hidden]{display:none}
+.review h2{margin:0}
+#revMiss{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.step-nav{display:flex;align-items:center;gap:8px}
+.step-nav .grow{flex:1}
+.step-nav .btn[hidden]{display:none}
+.mapa-b.cur i{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent);font-weight:800}
 

@@ -1,0 +1,22 @@
+/* Folha com uma conta por vez: tempo de cada conta = tempo em que ela está na tela. Rodar com: node testes/folha-uma-por-vez.test.js */
+const fs=require("fs"),path=require("path");
+const root=path.join(__dirname,"..");let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
+const rd=f=>fs.readFileSync(path.join(root,f),"utf8");
+const st=rd("student.js"),am=rd("admin.js"),css=rd("style.css"),mig=rd("migracoes/2026-11-15-folha-uma-por-vez.sql");
+ok(/function modoDaFolha\(\)\{return S\.me&&S\.me\.modo_folha===0\?"lista":"uma"\}/.test(st),"modo vem do banco; sem a migração o app usa uma conta por vez");
+ok(/function showQ\(i\)/.test(st)&&/function stepNext\(\)/.test(st)&&/function stepPrev\(\)/.test(st),"mostra uma conta por vez, com Próxima e Anterior");
+ok(/row\.hidden=\(it\.i!==i\)/.test(st)&&/\.items \.row\[hidden\]\{display:none\}/.test(css),"só a conta atual aparece");
+ok(/stopDwell\(\);cur\.q=i;/.test(st)&&/if\(i<n\)\{startDwell\(i\)/.test(st),"o relógio da conta começa ao mostrá-la e para ao sair dela");
+ok(/if\(!uma\)\{inp\.addEventListener\("focus"/.test(st)&&/if\(!uma\)\{btn\.addEventListener\("focus"/.test(st),"no modo uma por vez o tempo não depende do foco da caixa");
+ok(/if\(cur\.modo==="uma"\)stopDwell\(\)/.test(st)&&/startDwell\(cur\.q\)\}\)/.test(st),"com o app escondido o tempo da conta para, e volta ao reabrir");
+ok(/function noteFirstInput\(i\)/.test(st)&&/cur\.tfi\[i\]==null/.test(st)&&/ti:cur\.tfi\[i\.i\]==null\?null:cur\.tfi\[i\.i\]/.test(st),"guarda o tempo até começar a escrever, só na primeira visita");
+ok(/modo:cur\.modo\}\}\)/.test(st),"cada resposta leva o modo da folha");
+ok(/id="review"/.test(st)&&/Pronto para entregar\?/.test(st)&&/Ir para a conta/.test(st),"tela final com as contas que faltam");
+ok(/pendentes\(\)/.test(st)&&/Conferir correções/.test(st),"nas correções passam só as contas erradas");
+ok(/cur\.dwell\.reduce\(function\(a,b\)\{return a\+b\},0\)\/1000/.test(st),"tempo da folha no modo uma por vez é a soma das contas");
+ok(/modo:cur\.modo,q:cur\.q\|\|0,tfi:cur\.tfi\|\|\[\]/.test(st)&&/d\.modo&&d\.modo!==cur\.modo/.test(st),"rascunho guarda a conta atual e o modo");
+ok(/b\.classList\.toggle\("cur",cur\.modo==="uma"&&cur\.q===it\.i\)/.test(st)&&/\.mapa-b\.cur i/.test(css),"a bolinha da conta atual fica destacada");
+ok(/if\(!algo\)\{clearDraft\(\);return\}/.test(st),"folha sem nada escrito não deixa rascunho");
+ok(/modo_folha/.test(am)&&/"modo_folha":\[0,1\]/.test(mig)&&/'modo_folha', app_setting\('modo_folha', 1\)/.test(mig),"modo editável no /adm e devolvido pelo banco");
+ok(/ms_inicio int/.test(mig)&&/v_uso_modo/.test(mig)&&/sheet_log add column modo/.test(mig),"banco guarda modo e tempo até começar, e tem a visão para comparar os modos");
+console.log(falhas?"\n"+falhas+" falha(s)":"folha-uma-por-vez: tudo certo");process.exit(falhas?1:0);

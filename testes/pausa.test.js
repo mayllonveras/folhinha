@@ -25,7 +25,7 @@ ok(/startPause\("auto"\)/.test(st),"sair do app ou bloquear o celular pausa sozi
 ok(/classList\.add\("paused"\)/.test(st)&&/\.paper\.paused\{visibility:hidden\}/.test(css),"na pausa as contas ficam escondidas");
 ok(/fc_draft_/.test(st)&&/function restoreDraft\(/.test(st)&&/function saveDraft\(/.test(st),"rascunho da folha guardado no aparelho");
 ok(/clearDraft\(\);\n  FC\.tabState\.aluno="inicio"/.test(st),"rascunho apagado quando a folha é entregue");
-ok(/cur\.secs=Math\.min\(elapsedMs\(\)\/1000,14000\)/.test(st),"tempo enviado é o líquido (sem pausa) e nunca passa de 14000 s");
+ok(/:Math\.min\(elapsedMs\(\)\/1000,14000\)/.test(st)&&/14000\);/.test(st),"tempo enviado é o líquido (sem pausa) e nunca passa de 14000 s");
 ok(/folha_pausa/.test(st)&&/folha_retomada/.test(st)&&/devolvida/.test(st),"pausas registradas nos dados de uso");
 ok(/Fazer uma pausa/.test(st)&&/lvPause/.test(st),"voltar na folha oferece fazer uma pausa");
 // limite por quantidade
