@@ -27,14 +27,15 @@ async function flush(){
   try{await rpc("student_log_events",{p_token:S.token,p_events:batch,p_app:FC.VERSAO,p_screen:w,p_device:w<600?"celular":w<1024?"tablet":"computador",p_session:LOG.sess})}
   catch(e){/* o registro nunca atrapalha a criança: se falhar, esse lote se perde */}
 }
-document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);flush()}});
-window.addEventListener("pagehide",flush);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);if(cur&&$("#items"))startPause("auto");flush()}});
+window.addEventListener("pagehide",function(){saveDraft();flush()});
 
 /* Endereços da criança: #/inicio, #/album, #/trocas, #/amigos, #/progresso (abas), #/folha e #/resultado. Voltar durante a folha pergunta antes de sair. */
 var TABS=["inicio","album","trocas","amigos","progresso"];
 function homePath(){return "/"+(FC.tabState.aluno||"inicio")}
 function goHome(){if(FC.nav.up(homePath()))return Promise.resolve();return loadHome()}
 function leaveSheet(path){
+  saveDraft();
   if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
   clearInterval(timerId);cur=null;route(path);
 }
@@ -44,9 +45,10 @@ function route(path){
     var typed=cur.items.some(function(i){var el=$("#in"+i.i);return i.tries>0||(el&&el.value.trim()!=="")});
     if(!typed)return leaveSheet(path);
     FC.nav.forward();   // volta para a folha enquanto a criança decide
-    var ov=FC.overlay('<h2>Sair da folha?</h2><p class="muted">As respostas desta folha ainda não foram entregues e não ficam guardadas. Quer sair mesmo?</p>'+
-      '<div class="actions"><button class="btn ghost" id="lvGo">Sair da folha</button></div>',{button:"Continuar a folha"});
-    $("#lvGo",ov.el).onclick=function(){ov.close();FC.nav.after(function(){if(!FC.nav.up(path))leaveSheet(path);else if(cur){track("folha_abandono",{level:cur.level,sheet:cur.id,data:{saiu:"voltar"}});clearInterval(timerId);cur=null}})};
+    var ov=FC.overlay('<h2>Sair da folha?</h2><p class="muted">O que você escreveu fica guardado neste aparelho e a folha espera por você. O relógio só para se você fizer uma pausa.</p>'+
+      '<div class="actions"><button class="btn ghost" id="lvPause">Fazer uma pausa</button><button class="btn ghost" id="lvGo">Sair da folha</button></div>',{button:"Continuar a folha"});
+    $("#lvPause",ov.el).onclick=function(){ov.close();FC.nav.after(function(){startPause("manual")})};
+    $("#lvGo",ov.el).onclick=function(){ov.close();FC.nav.after(function(){saveDraft();if(!FC.nav.up(path))leaveSheet(path);else if(cur){track("folha_abandono",{level:cur.level,sheet:cur.id,data:{saiu:"voltar"}});clearInterval(timerId);cur=null}})};
     return;
   }
   var m=/^\/([a-z]+)$/.exec(path),tab=m&&TABS.indexOf(m[1])>=0?m[1]:null;
@@ -807,13 +809,82 @@ async function startSheet(){
 /* Tempo por conta: soma dos períodos em que a caixa de resposta daquela conta ficou em foco (só na 1ª tentativa). */
 function startDwell(i){if(!cur||cur.round>0)return;stopDwell();cur.active=i;cur.since=performance.now()}
 function stopDwell(){if(cur&&cur.active!=null){cur.dwell[cur.active]+=performance.now()-cur.since;cur.active=null}}
+/* ---------- pausa e rascunho da folha ----------
+   Pausa (botão ou sozinha, ao sair do app/bloquear o celular): esconde as contas e para o relógio, até o limite de pausa por folha
+   (parâmetro pausa_max_min, padrão 15 min); passou disso, o relógio volta a contar. O que foi escrito fica guardado neste aparelho (rascunho),
+   então dá para sair e continuar a mesma folha depois. */
+function capMs(){return ((S.me&&S.me.pausa_max_s)||900)*1000}
+function elapsedMs(){return FC.elapsedMs(cur,Date.now(),capMs())}
+function draftKey(){return "fc_draft_"+S.code}
+function loadDraft(){try{return JSON.parse(localStorage.getItem(draftKey())||"null")}catch(e){return null}}
+function clearDraft(){try{localStorage.removeItem(draftKey())}catch(e){}}
+function saveDraft(){
+  if(!cur||!$("#items"))return;
+  try{localStorage.setItem(draftKey(),JSON.stringify({sheet:cur.id,t0:cur.t0,pauseMs:cur.pauseMs||0,pauseAt:cur.pauseAt||null,pauses:cur.pauses||0,round:cur.round,secs:cur.secs,
+    items:cur.items.map(function(it){var inp=$("#in"+it.i);return{t:it.tries,ok:it.ok,f:it.first,fv:it.firstVal,vals:it.vals,val:inp?inp.value:"",d:Math.round(cur.dwell[it.i]||0)}})}))}catch(e){}
+}
+var draftTimer=null;
+function saveDraftSoon(){clearTimeout(draftTimer);draftTimer=setTimeout(saveDraft,500)}
+function startPause(origem){
+  if(!cur||cur.pauseAt||!$("#items"))return;
+  stopDwell();cur.pauseAt=Date.now();cur.pauses=(cur.pauses||0)+1;cur.pauseOrigem=origem;
+  showPauseScreen();saveDraft();
+  track("folha_pausa",{level:cur.level,sheet:cur.id,data:{origem:origem,n:cur.pauses}});
+}
+function endPause(){
+  if(!cur||!cur.pauseAt)return;
+  var now=Date.now(),dur=now-cur.pauseAt,credit=FC.pauseCredit(cur,now,capMs());
+  cur.pauseMs=(cur.pauseMs||0)+credit;cur.pauseAt=null;
+  track("folha_retomada",{level:cur.level,sheet:cur.id,data:{origem:cur.pauseOrigem||"manual",pausa_s:Math.round(dur/1000),descontada_s:Math.round(credit/1000)}});
+  hidePauseScreen();saveDraft();
+  for(var k=0;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);break}
+}
+function showPauseScreen(){
+  if($("#pauseScreen"))return;
+  var el=document.createElement("div");el.className="pause-screen";el.id="pauseScreen";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");
+  el.innerHTML='<div class="pause-card"><div class="pause-ic">'+FC.icon("pause")+'</div><h2>Pausa</h2>'+
+    '<p>O relógio está parado e as contas estão escondidas. Quando voltar, toque em Continuar.</p>'+
+    '<p class="muted small-t">O que você escreveu fica guardado neste aparelho.</p>'+
+    '<button type="button" class="btn reward block" id="pauseGo">Continuar a folha</button>'+
+    '<button type="button" class="link" id="pauseOut">Sair da folha</button></div>';
+  document.body.appendChild(el);
+  var pa=$(".paper");if(pa)pa.classList.add("paused");
+  $("#pauseGo").onclick=endPause;$("#pauseOut").onclick=exitSheet;
+  $("#pauseGo").focus();
+}
+function hidePauseScreen(){var el=$("#pauseScreen");if(el)el.remove();var pa=$(".paper");if(pa)pa.classList.remove("paused")}
+/* Sair da folha sem entregar: o rascunho fica guardado e a folha espera. */
+async function exitSheet(){
+  if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round(elapsedMs()/1000)}});
+  saveDraft();hidePauseScreen();clearInterval(timerId);cur=null;
+  try{await goHome()}catch(e){fail(e)}
+}
+/* Volta a folha ao ponto em que a criança parou (respostas, tentativas, relógio) e abre na tela de pausa. */
+function restoreDraft(){
+  var d=loadDraft();
+  if(d&&d.sheet!==cur.id)clearDraft();   // rascunho de outra folha (já entregue ou trocada)
+  if(!d||d.sheet!==cur.id||!d.items||d.items.length!==cur.items.length)return false;
+  cur.t0=d.t0;cur.pauseMs=d.pauseMs||0;cur.pauseAt=d.pauseAt||null;cur.pauses=d.pauses||0;cur.round=d.round||0;cur.secs=d.secs==null?null:d.secs;
+  cur.items.forEach(function(it,i){
+    var s=d.items[i],inp=$("#in"+i),row=$("#r"+i),choice=!!(it.extra&&it.extra.opts);
+    it.tries=s.t||0;it.ok=!!s.ok;it.first=!!s.f;it.firstVal=s.fv||"";it.vals=s.vals||[];cur.dwell[i]=s.d||0;
+    if(s.val!=null&&s.val!==""){inp.value=s.val;if(choice)$$("#r"+i+" .opt").forEach(function(o){o.classList.toggle("sel",o.getAttribute("data-k")===String(s.val))})}
+    if(it.ok){inp.readOnly=true;row.classList.add("ok");if(choice)$$("#r"+i+" .opt").forEach(function(o){o.disabled=true;o.classList.toggle("right",o.classList.contains("sel"))})}
+    else if(it.tries>0)row.classList.add("bad");
+  });
+  if(cur.secs!=null){$("#timer").textContent=FC.fmtTime(cur.secs);$("#btnSubmit").textContent="Conferir correções"}
+  setMsg("Você voltou! Sua folha continua de onde parou.");
+  if(!cur.pauseAt){cur.pauseAt=Date.now();cur.pauseOrigem="retorno";cur.pauses++}
+  showPauseScreen();
+  return true;
+}
 function renderSheet(){
   var L=FC.LEVELS[cur.level],d=new Date();
   FC.render('<div class="paper"><div class="sh-head">'+
     '<div><span class="k">Folha</span><span class="v">Nível '+L.id+'</span></div>'+
     '<div><span class="k">Aluno</span><span class="v">'+esc(S.me.name)+'</span></div>'+
     '<div><span class="k">Data</span><span class="v">'+FC.pad(d.getDate())+'/'+FC.pad(d.getMonth()+1)+'</span></div>'+
-    '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span></div></div>'+
+    '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span><button type="button" class="pause-mini" id="btnPause" aria-label="Fazer uma pausa">'+FC.icon("pause")+' Pausa</button></div></div>'+
     '<ol class="items" id="items">'+cur.items.map(function(it){
       return '<li class="row'+(FC.isRich(it)?' rich-row':'')+'" id="r'+it.i+'">'+FC.itemInner(it,it.i)+'</li>'}).join("")+'</ol>'+
     '<div class="sh-foot"><div class="msg" id="shMsg">'+esc(cur.intro)+'</div>'+
@@ -827,7 +898,7 @@ function renderSheet(){
           if(it.ok)return;
           inp.value=btn.getAttribute("data-k");
           $$("#r"+it.i+" .opt").forEach(function(o){o.classList.toggle("sel",o===btn)});
-          $("#r"+it.i).classList.remove("bad");
+          $("#r"+it.i).classList.remove("bad");saveDraftSoon();
           for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
         });
         btn.addEventListener("focus",function(){startDwell(it.i)});
@@ -835,7 +906,7 @@ function renderSheet(){
       });
       return;
     }
-    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad")});
+    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");saveDraftSoon()});
     inp.addEventListener("focus",function(){startDwell(it.i)});
     inp.addEventListener("blur",stopDwell);
     inp.addEventListener("keydown",function(e){
@@ -845,16 +916,15 @@ function renderSheet(){
     });
   });
   $("#btnSubmit").onclick=submit;
-  $("#btnExit").onclick=async function(){
-    if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
-    clearInterval(timerId);cur=null;try{await goHome()}catch(e){fail(e)}};
-  clearInterval(timerId);cur.t0=Date.now();
+  $("#btnExit").onclick=exitSheet;
+  $("#btnPause").onclick=function(){startPause("manual")};
+  clearInterval(timerId);cur.t0=Date.now();cur.pauseMs=0;cur.pauseAt=null;cur.pauses=0;
   timerId=setInterval(function(){
-    if(!cur||cur.secs!=null)return;
-    var s=(Date.now()-cur.t0)/1000;$("#timer").textContent=FC.fmtTime(s);
+    if(!cur||cur.secs!=null||!$("#timer"))return;
+    var s=elapsedMs()/1000;$("#timer").textContent=FC.fmtTime(s);
     $("#timerBox").classList.toggle("over",s>FC.LEVELS[cur.level].target);
   },250);
-  focusItem(0);
+  if(!restoreDraft())focusItem(0);
 }
 /* Leva o foco para a conta: a caixa de resposta, ou a primeira opção nos exercícios de escolha. */
 function focusItem(i){
@@ -865,7 +935,7 @@ function focusItem(i){
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
   if(!cur||busy)return;
-  if(cur.round===0){stopDwell();cur.secs=(Date.now()-cur.t0)/1000;clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
+  if(cur.round===0){stopDwell();cur.secs=Math.min(elapsedMs()/1000,14000);clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
   cur.round++;
   var wrong=0,focus=null;
   cur.items.forEach(function(it){
@@ -884,6 +954,7 @@ function submit(){
         tip.textContent=isChoice?"Dica: a resposta certa é a opção "+it.a+". Olhe com calma e tente entender o porquê.":"Dica: a resposta é "+it.a+". Escreva e tente entender o caminho.";row.appendChild(tip)}
     }
   });
+  saveDraft();
   if(wrong===0)return finish();
   setMsg("Faltam "+wrong+" para corrigir. Refaça só as contas em vermelho; as certas já foram marcadas.",true);
   $("#btnSubmit").textContent="Conferir correções";
@@ -905,12 +976,14 @@ async function send(payload,score){
   catch(e){
     if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
     if(String(e.message||"").indexOf("folha_invalida")>=0){
+      clearDraft();
       FC.render('<div class="panel center"><h1>Esta folha já foi entregue</h1><p class="muted">Ela foi entregue em outro aparelho, então esta cópia não vale nada. Volte ao início para ver a sua folha de hoje.</p><p><button class="btn" id="goHome">Ir ao início</button></p></div>');
       $("#goHome").onclick=async function(){try{await goHome()}catch(x){fail(x)}};return;
     }
     FC.render('<div class="panel center"><h1>Não consegui enviar</h1><p class="muted">'+esc(FC.err(e))+' Seu resultado está guardado nesta tela.</p><p><button class="btn" id="again">Enviar de novo</button></p></div>');
     $("#again").onclick=function(){send(payload,score)};return;
   }
+  clearDraft();
   FC.tabState.aluno="inicio";try{sessionStorage.setItem("fc_tab_aluno","inicio")}catch(e){}
   var L=FC.LEVELS[cur.level],secs=payload.p_secs,fixes=payload.p_corrections;
   var npct=res.normal_acertos||80;

@@ -217,3 +217,12 @@ Decisão do professor: cada tela, dos pais e da criança, passa a ter um endere�
 - **Folha em andamento:** voltar sem nada digitado sai direto; com resposta digitada pergunta "Sair da folha?" (as respostas não entregues não ficam guardadas). O resultado troca a entrada da folha: voltar do resultado leva ao início, não à folha entregue.
 - **Recarregar** reabre a mesma tela (pais e administração colocam a lista embaixo, para o voltar não sair do app); `#/folha` e `#/resultado` caem na tela inicial.
 - Implementação: `FC.nav` em core.js (at, up, seed, reset, janelas, fila de voltas pendentes) e as rotas de cada área. Testes: `testes/navegacao.test.js` (histórico falso) e conferência em 360 px nas três áreas. Sem mudança no banco. Cache `folhinha-v45`.
+
+## Pausa na folha (15/11/2026)
+
+Decisão do professor: a criança pode fazer uma **pausa** durante a folha (banheiro, água).
+- **Botão "Pausa"** ao lado do relógio e **pausa automática** quando a criança sai do app ou bloqueia o celular (ao voltar, ela vê a tela de pausa e toca em "Continuar a folha"). Na pausa as **contas ficam escondidas** e o **relógio para** (tempo da folha e tempo de cada conta).
+- **Limite por folha:** parâmetro `pausa_max_min` (padrão 15 min, editável no /adm, de 1 a 120); a pausa só é descontada até esse limite somando as pausas da folha, depois disso o relógio volta a contar (`FC.elapsedMs`, com teste). O tempo enviado (`p_secs`) é o tempo líquido, no máximo 14000 s.
+- **Rascunho no aparelho** (`fc_draft_CÓDIGO`): respostas, tentativas, relógio e pausas; sair da folha ou fechar o app guarda tudo e, ao reabrir a mesma folha (o banco devolve as mesmas contas), ela volta de onde parou, abrindo na tela de pausa. Apagado ao entregar. "Voltar" com resposta digitada oferece **Fazer uma pausa**, **Sair da folha** (o rascunho fica) ou **Continuar a folha**.
+- **Dados de uso:** eventos `folha_pausa` (origem manual, auto ou retorno) e `folha_retomada` (pausa em segundos e quanto foi descontado).
+- Migração `migracoes/2026-11-15-pausa-na-folha.sql` (**ainda não aplicada**; ensaiada numa transação desfeita): parâmetro `pausa_max_min` e `student_me` devolvendo `pausa_max_s`. Sem a migração o app usa 15 min. Testes: `testes/pausa.test.js`. Cache `folhinha-v46`.

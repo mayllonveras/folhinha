@@ -121,7 +121,7 @@ function bindEx(){
 
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
-  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2};
+  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausa_max_min:15};
 var GROUPS=[
   {t:"Carimbos e subida de nível",d:"O dia fecha quando o aluno faz a cota de folhas. Cumprindo o dia normal, ganha 1 carimbo.",f:[
     ["stamps_needed","Carimbos para subir de nível",1,10,"carimbos"],
@@ -137,6 +137,8 @@ var GROUPS=[
   {t:"Oferta de voltar",d:"Depois de um salto, se o aluno não ganha carimbo, o app oferece voltar ao nível anterior. Nunca é automático.",f:[
     ["dias_sem_carimbo_voltar","Dias de estudo sem carimbo para oferecer",1,10,"dias"],
     ["bloqueio_salto_dias","Dias sem poder saltar depois de voltar",0,60,"dias"]]},
+  {t:"Pausa na folha",d:"A criança pode pausar a folha (banheiro, água). Durante a pausa o relógio para e as contas ficam escondidas, mas só até esse limite por folha; depois dele o relógio volta a contar.",f:[
+    ["pausa_max_min","Pausa por folha que o relógio desconta",1,120,"minutos"]]},
   {t:"Álbuns de figurinhas",d:"Os pais liberam quantos álbuns quiserem. A criança mantém alguns na mesa (são os álbuns de onde ela escolhe a figurinha ao abrir um pacotinho) e os outros ficam na gaveta.",f:[
     ["limite_mesa","Álbuns na mesa ao mesmo tempo",1,5,"álbuns"]]},
   {t:"Ano escolar",d:"O ano de cada aluno é calculado a partir do ano informado pelos pais; a virada não muda o nível do aluno.",f:[

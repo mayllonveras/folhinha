@@ -703,4 +703,14 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 }
 .consent-chk{display:flex;gap:10px;align-items:flex-start;line-height:1.35}
 .consent-chk input{width:22px;height:22px;flex:none;margin-top:1px}
-
+/* Pausa da folha: tela cheia que esconde as contas */
+.paper.paused{visibility:hidden}
+.pause-screen{position:fixed;inset:0;z-index:60;background:var(--bg,#fff);display:grid;place-items:center;padding:20px}
+.pause-card{max-width:340px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.pause-card h2{margin:0}
+.pause-card p{margin:0}
+.pause-ic{width:84px;height:84px;border-radius:50%;background:var(--soft);display:grid;place-items:center;color:var(--primary)}
+.pause-ic svg.i{width:44px;height:44px;fill:currentColor;stroke:none}
+#btnPause svg.i{fill:currentColor;stroke:none;width:13px;height:13px}
+.pause-mini{margin-left:6px;display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface,var(--paper));color:var(--primary);font:600 .78rem var(--font-ui,inherit);cursor:pointer}
+.pause-mini:hover,.pause-mini:focus-visible{border-color:var(--primary)}
