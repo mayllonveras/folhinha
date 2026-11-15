@@ -226,3 +226,10 @@ Decisão do professor: a criança pode fazer uma **pausa** durante a folha (banh
 - **Rascunho no aparelho** (`fc_draft_CÓDIGO`): respostas, tentativas, relógio e pausas; sair da folha ou fechar o app guarda tudo e, ao reabrir a mesma folha (o banco devolve as mesmas contas), ela volta de onde parou, abrindo na tela de pausa. Apagado ao entregar. "Voltar" com resposta digitada oferece **Fazer uma pausa**, **Sair da folha** (o rascunho fica) ou **Continuar a folha**.
 - **Dados de uso:** eventos `folha_pausa` (origem manual, auto ou retorno) e `folha_retomada` (duração da pausa e se foi devolvida).
 - Migração `migracoes/2026-11-15-pausa-na-folha.sql` (**ainda não aplicada**; ensaiada numa transação desfeita): parâmetro `pausas_max` e `student_me` devolvendo `pausas_max`. Sem a migração o app usa 2 pausas. Testes: `testes/pausa.test.js`. Cache `folhinha-v46`.
+
+## Conta em branco e barra de bolinhas na folha (15/11/2026)
+
+Problema (relato do professor): a criança esqueceu uma conta e, ao entregar, não achou qual era. Antes, conta em branco era tratada como **errada** (vermelha, "Faltam N para corrigir") e gastava a primeira tentativa, sujando a taxa de acerto de primeira.
+- **Barra de bolinhas fixa no topo da folha:** uma bolinha numerada por conta; verde = respondida, vazia = ainda sem resposta, amarela = falta responder, vermelha = precisa corrigir; tocar leva à conta. Uma linha de ~57 px (bolinhas de 26 px em 360 px e 22 px em 320 px, com área de toque de 42 px de altura).
+- **Ao entregar com conta em branco:** não vale como tentativa, o relógio não para e a rodada não fecha; as contas em branco ficam em amarelo com "Falta responder" (ou "Falta corrigir", se já tinha errado), a mensagem diz o número ("Falta a conta 5" / "Faltam as contas 5 e 9"), a tela rola e o foco vai para a primeira. O vermelho fica só para conta errada. Evento `folha_conta_em_branco` nos dados de uso.
+- Sem mudança no banco. Testes: `testes/folha-em-branco.test.js`. Cache `folhinha-v47`.

@@ -843,7 +843,7 @@ function endPause(){
   var curta=dur<10000&&cur.pauseOrigem!=="retorno";   // a tela apagando ou um toque sem querer: não gasta uma pausa
   if(curta&&cur.pauses>0)cur.pauses--;
   track("folha_retomada",{level:cur.level,sheet:cur.id,data:{origem:cur.pauseOrigem||"manual",pausa_s:Math.round(dur/1000),devolvida:curta}});
-  hidePauseScreen();updatePauseBtn();saveDraft();
+  hidePauseScreen();updatePauseBtn();updateMapa();saveDraft();
   for(var k=0;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);break}
 }
 function showPauseScreen(){
@@ -892,6 +892,24 @@ function restoreDraft(){
   showPauseScreen();updatePauseBtn();
   return true;
 }
+/* Mapa de contas: uma bolinha por conta, fixa no topo. Verde = respondida, amarela = falta responder (depois de tentar entregar),
+   vermelha = precisa corrigir, vazia = ainda não respondida. Tocar leva à conta. */
+function rowBlank(it){var inp=$("#in"+it.i);return !it.ok&&(!inp||inp.value.trim()==="")}
+function updateMapa(){
+  if(!cur||!$("#mapa"))return;
+  cur.items.forEach(function(it){
+    var b=$('#mapa [data-i="'+it.i+'"]'),row=$("#r"+it.i);if(!b||!row)return;
+    var blank=rowBlank(it),miss=row.classList.contains("miss"),bad=row.classList.contains("bad")&&blank;
+    b.classList.toggle("on",!blank);b.classList.toggle("miss",blank&&miss);b.classList.toggle("bad",bad&&!miss);
+    b.setAttribute("aria-label","Conta "+(it.i+1)+": "+(it.ok?"certa":!blank?"respondida":miss?"falta responder":bad?"precisa corrigir":"ainda sem resposta"));
+  });
+}
+function goItem(i){
+  var row=$("#r"+i);if(!row)return;
+  row.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(function(){focusItem(i)},250);
+}
+function clearMiss(i){var row=$("#r"+i);if(!row)return;row.classList.remove("miss");var tg=row.querySelector(".miss-tag");if(tg)tg.remove()}
 function renderSheet(){
   var L=FC.LEVELS[cur.level],d=new Date();
   FC.render('<div class="paper"><div class="sh-head">'+
@@ -899,6 +917,8 @@ function renderSheet(){
     '<div><span class="k">Aluno</span><span class="v">'+esc(S.me.name)+'</span></div>'+
     '<div><span class="k">Data</span><span class="v">'+FC.pad(d.getDate())+'/'+FC.pad(d.getMonth()+1)+'</span></div>'+
     '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span><button type="button" class="pause-mini" id="btnPause" aria-label="Fazer uma pausa">'+FC.icon("pause")+' Pausa <b id="pauseLeft"></b></button></div></div>'+
+    '<div class="mapa" id="mapa" role="group" aria-label="Contas da folha">'+cur.items.map(function(it){
+      return '<button type="button" class="mapa-b" data-i="'+it.i+'"><i>'+(it.i+1)+'</i></button>'}).join("")+'</div>'+
     '<ol class="items" id="items">'+cur.items.map(function(it){
       return '<li class="row'+(FC.isRich(it)?' rich-row':'')+'" id="r'+it.i+'">'+FC.itemInner(it,it.i)+'</li>'}).join("")+'</ol>'+
     '<div class="sh-foot"><div class="msg" id="shMsg">'+esc(cur.intro)+'</div>'+
@@ -912,7 +932,7 @@ function renderSheet(){
           if(it.ok)return;
           inp.value=btn.getAttribute("data-k");
           $$("#r"+it.i+" .opt").forEach(function(o){o.classList.toggle("sel",o===btn)});
-          $("#r"+it.i).classList.remove("bad");saveDraftSoon();
+          $("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();
           for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
         });
         btn.addEventListener("focus",function(){startDwell(it.i)});
@@ -920,7 +940,7 @@ function renderSheet(){
       });
       return;
     }
-    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");saveDraftSoon()});
+    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon()});
     inp.addEventListener("focus",function(){startDwell(it.i)});
     inp.addEventListener("blur",stopDwell);
     inp.addEventListener("keydown",function(e){
@@ -930,6 +950,7 @@ function renderSheet(){
     });
   });
   $("#btnSubmit").onclick=submit;
+  $$("#mapa [data-i]").forEach(function(b){b.onclick=function(){goItem(Number(b.getAttribute("data-i")))}});
   $("#btnExit").onclick=exitSheet;
   $("#btnPause").onclick=function(){startPause("manual")};updatePauseBtn();
   clearInterval(timerId);cur.t0=Date.now();cur.pauseMs=0;cur.pauseAt=null;cur.pauses=0;
@@ -939,6 +960,7 @@ function renderSheet(){
     $("#timerBox").classList.toggle("over",s>FC.LEVELS[cur.level].target);
   },250);
   if(!restoreDraft())focusItem(0);
+  updateMapa();
 }
 /* Leva o foco para a conta: a caixa de resposta, ou a primeira opção nos exercícios de escolha. */
 function focusItem(i){
@@ -949,6 +971,21 @@ function focusItem(i){
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
   if(!cur||busy)return;
+  /* Conta sem resposta não é erro e não gasta tentativa: avisa qual falta, destaca e leva até ela, sem parar o relógio. */
+  var blanks=cur.items.filter(rowBlank);
+  if(blanks.length){
+    blanks.forEach(function(it){
+      var row=$("#r"+it.i),prevBad=row.classList.contains("bad");
+      row.classList.add("miss");
+      if(!row.querySelector(".miss-tag")){var tg=document.createElement("div");tg.className="miss-tag";tg.textContent=prevBad?"Falta corrigir":"Falta responder";row.insertBefore(tg,row.firstChild)}
+    });
+    var nums=blanks.map(function(it){return it.i+1}),lista=nums.length>1?nums.slice(0,-1).join(", ")+" e "+nums[nums.length-1]:String(nums[0]);
+    var corrigir=blanks.every(function(it){return $("#r"+it.i).classList.contains("bad")});
+    setMsg(nums.length>1?"Faltam as contas "+lista+". Elas estão marcadas em amarelo.":"Falta a conta "+lista+". Ela está marcada em amarelo.",true);
+    updateMapa();goItem(blanks[0].i);
+    track("folha_conta_em_branco",{level:cur.level,sheet:cur.id,data:{contas:nums}});
+    return;
+  }
   if(cur.round===0){stopDwell();cur.secs=Math.min(elapsedMs()/1000,14000);clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
   cur.round++;
   var wrong=0,focus=null;
@@ -968,7 +1005,7 @@ function submit(){
         tip.textContent=isChoice?"Dica: a resposta certa é a opção "+it.a+". Olhe com calma e tente entender o porquê.":"Dica: a resposta é "+it.a+". Escreva e tente entender o caminho.";row.appendChild(tip)}
     }
   });
-  saveDraft();
+  updateMapa();saveDraft();
   if(wrong===0)return finish();
   setMsg("Faltam "+wrong+" para corrigir. Refaça só as contas em vermelho; as certas já foram marcadas.",true);
   $("#btnSubmit").textContent="Conferir correções";
