@@ -116,8 +116,8 @@ async function dash(){
   U.profile=prof||{name:"",role:"pai"};
   var today=FC.today(),cards=students.map(function(s){
     var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,pct=Math.min(100,Math.round(100*Math.min(s.stamps,need)/need));
-    var isStudy=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date,done=todayDone(s,sheets);
-    var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):isStudy?"Hoje: "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
+    var kind=FC.dayKind(s,today),done=todayDone(s,sheets);
+    var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
     return '<div class="cardwrap"><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
       '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+
@@ -139,9 +139,13 @@ async function dash(){
 
 /* ---------- formulário do programa (cadastro e edição) ---------- */
 /* Tempo aproximado de estudo por dia: de (folhas × tempo do dia de ouro) a (folhas × meta do nível), em minutos. */
-function studyTimeText(levelIdx,perDay){
+function studyMinutes(levelIdx,perDay){
   var L=FC.LEVELS[levelIdx]||FC.LEVELS[0],fast=((PUB&&PUB.ouro_tempo)||80)/100;
-  var lo=Math.max(1,Math.round(perDay*L.target*fast/60)),hi=Math.max(lo,Math.round(perDay*L.target/60));
+  var lo=Math.max(1,Math.round(perDay*L.target*fast/60));
+  return{L:L,lo:lo,hi:Math.max(lo,Math.round(perDay*L.target/60))};
+}
+function studyTimeText(levelIdx,perDay){
+  var m=studyMinutes(levelIdx,perDay),L=m.L,lo=m.lo,hi=m.hi;
   return 'Tempo aproximado: '+(lo===hi?'<b>cerca de '+lo+' minuto'+(lo===1?'':'s')+'</b>':'de <b>'+lo+' a '+hi+' minutos</b>')+' de estudo por dia, no nível '+L.id+' (meta de '+FC.fmtTime(L.target)+' por folha). Muda conforme o nível dele.';
 }
 /* Nível escolhido no formulário: o do campo "Avançado" ou, se ficou em "Início do ano", o primeiro nível do ano escolhido. -1 = ainda sem ano. */
@@ -150,10 +154,38 @@ function chosenLevel(){
   if(lv.value!=="")return Number(lv.value);
   return ano&&ano.value!==""?FC.primeiroNivelDoAno(Number(ano.value)):-1;
 }
+/* Dias da semana por extenso: "de segunda a sexta", "no fim de semana" ou a lista. */
+function diasTxt(a){
+  var k=a.slice().sort(function(x,y){return x-y}),j=k.join();
+  if(j==="1,2,3,4,5")return "de segunda a sexta";
+  if(j==="0,6")return "no fim de semana";
+  if(k.length===7)return "todos os dias";
+  return k.map(function(i){return FC.DOW[i]}).join(", ");
+}
+/* Linha-resumo da tela normal: o que o padrão (ou a escolha da seção Avançado) significa na prática. */
+function resumoHtml(lv,per,sd,fd){
+  var m=studyMinutes(Math.max(0,lv),per);
+  return 'Estuda <b>'+diasTxt(sd)+'</b>, <b>'+per+' folhas</b> por dia (cerca de '+(m.lo===m.hi?m.lo+' min':m.lo+' a '+m.hi+' min')+'). '+
+    (fd.length?'<b>'+(fd.slice().sort(function(x,y){return x-y}).join()==="0,6"?"Fim de semana livre":"Dias livres: "+fd.slice().sort(function(x,y){return x-y}).map(function(i){return FC.DOW[i]}).join(", "))+'</b>: joga se quiser, sem perder a sequência. ':'Sem dias livres. ')+
+    '<button type="button" class="linkbtn" id="pMudar">Mudar</button>';
+}
+function checkedVals(name){return FC.$$('input[name="'+name+'"]:checked').map(function(c){return Number(c.value)})}
+function refreshProgramInfo(){
+  var h=FC.$("#pTime"),per=FC.$("#pPer"),lv=chosenLevel(),r=FC.$("#pResumo");
+  if(!per)return;
+  if(h&&lv>=0)h.innerHTML=studyTimeText(lv,Number(per.value));
+  if(r){
+    r.innerHTML=resumoHtml(lv,Number(per.value),checkedVals("days"),checkedVals("free"));
+    var b=FC.$("#pMudar");if(b)b.onclick=function(){var d=FC.$("#pAdv");d.open=true;d.scrollIntoView({block:"start",behavior:"smooth"})};
+  }
+}
 document.addEventListener("change",function(e){
-  var t=e.target;if(!t||(t.id!=="pPer"&&t.id!=="pLevel"&&t.id!=="pAno"))return;
-  var h=FC.$("#pTime"),per=FC.$("#pPer"),lv=chosenLevel();
-  if(h&&per&&lv>=0)h.innerHTML=studyTimeText(lv,Number(per.value));
+  var t=e.target;if(!t)return;
+  /* um dia é de estudo OU livre: marcar em uma lista desmarca na outra */
+  if((t.name==="days"||t.name==="free")&&t.checked){
+    var o=FC.$('input[name="'+(t.name==="days"?"free":"days")+'"][value="'+t.value+'"]');if(o)o.checked=false;
+  }
+  if(t.id==="pPer"||t.id==="pLevel"||t.id==="pAno"||t.name==="days"||t.name==="free")refreshProgramInfo();
 });
 function programFields(s){
   var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["dinossauros"]};
@@ -163,7 +195,9 @@ function programFields(s){
     lv+='<option value="'+i+'"'+(s&&i===v.level_idx?" selected":"")+'>'+l.id+" · "+esc(l.name)+'</option>';
   });
   lv+="</optgroup>";
+  var fr=(v.free_days||(s?[]:[0,6])).filter(function(d){return v.study_days.indexOf(d)<0});
   var days=FC.DOW.map(function(d,i){return '<label class="chk"><input type="checkbox" name="days" value="'+i+'"'+(v.study_days.indexOf(i)>=0?" checked":"")+'><span>'+d+'</span></label>'}).join("");
+  var free=FC.DOW.map(function(d,i){return '<label class="chk"><input type="checkbox" name="free" value="'+i+'"'+(fr.indexOf(i)>=0?" checked":"")+'><span>'+d+'</span></label>'}).join("");
   var chosen=v.sticker_themes||[v.sticker_theme||"dinossauros"];
   var anoNow=s?FC.anoAluno(s,FC.today(),PUB)||s.ano_escolar:null,ao='<option value=""'+(anoNow?"":" selected")+' disabled>Escolha o ano</option>',anosOk=FC.anosComGrade();
   for(var a=1;a<=9;a++)if(anosOk.indexOf(a)>=0||anoNow===a)ao+='<option value="'+a+'"'+(anoNow===a?" selected":"")+'>'+a+'º ano</option>';
@@ -172,18 +206,25 @@ function programFields(s){
   [[0,"Só o conteúdo do ano dele"],[1,"Até 1 ano à frente"],[2,"Até 2 anos à frente"],[3,"Até 3 anos à frente"],[99,"Sem limite"]].forEach(function(o){
     to+='<option value="'+o[0]+'"'+(tt===String(o[0])?" selected":"")+'>'+o[1]+'</option>'});
   var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
+  var lv0=s?v.level_idx:Math.max(0,FC.primeiroNivelDoAno(anosOk[0]));
+  /* Tela normal: só o essencial. O resto vai para a seção "Avançado", já com o padrão certo. */
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
-    '<div class="two"><label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
-    '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label></div>'+
-    '<details class="adv"><summary>Avançado: nível do aluno</summary><label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label></details>'+
-    '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small><small id="pTime">'+studyTimeText(s?v.level_idx:Math.max(0,FC.primeiroNivelDoAno(anosOk[0])),v.sheets_per_day)+'</small></label></div>'+
-    '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
-    '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
+    '<label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
+    '<p class="resumo" id="pResumo">'+resumoHtml(lv0,v.sheets_per_day,v.study_days,fr)+'</p>'+
+    '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick compact">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCapa(t.id)+'</label>'+
         '<label class="to-txt" for="th_'+t.id+'"><b>'+esc(t.name)+'</b><small>'+esc(t.desc)+'</small></label><button type="button" class="btn ghost small" data-view="'+t.id+'">Ver</button></div>'}).join("")+'</div>'+
       '<small id="pThemeHint">Marque 1 ou 2 álbuns. A criança ganha pacotinhos nos dias de estudo e escolhe de qual álbum quer cada figurinha surpresa.</small></fieldset>'+
-    rulesBox();
+    '<details class="adv" id="pAdv"><summary>Avançado: nível, limite, dias e folhas por dia</summary><div class="adv-body">'+
+      '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
+      '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
+      '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
+      '<label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small></label></div>'+
+      '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
+      '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
+      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não perde a sequência. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
+    '</div></details>'+
+    '<details class="adv"><summary>Ver como o aluno avança</summary>'+rulesBox()+'</details>';
 }
 function rulesBox(){
   var P=PUB||{},n=P.normal_acertos||80,need=P.stamps_needed||5,sj=P.salto_por_semana!=null?P.salto_por_semana:2;
@@ -206,7 +247,7 @@ function bindProgram(){
   })});
   function upd(){
     var n=$$('input[name="days"]:checked').length;
-    $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias por semana.":"Mínimo: "+MIN_DAYS+" dias por semana.";
+    $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana.":"Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: "+MIN_DAYS+" dias por semana.";
     $("#pDaysHint").className=n<MIN_DAYS?"bad":"";
   }
   $$("[data-view]").forEach(function(btn){btn.onclick=function(){
@@ -215,7 +256,7 @@ function bindProgram(){
     FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p>'+FC.rarityLegend(th.id)+'<div class="album">'+cells+'</div>',{wide:true});
   }});
   $$('input[name="days"]').forEach(function(c){c.onchange=upd});
-  upd();
+  upd();refreshProgramInfo();
 }
 function readProgram(){
   var days=$$('input[name="days"]:checked').map(function(c){return Number(c.value)}),name=$("#pName").value.trim();
@@ -230,7 +271,7 @@ function readProgram(){
   if(anoV==="")return{error:"Escolha o ano escolar."};
   var lvl=chosenLevel();
   if(lvl<0)return{error:"A grade ainda não tem o "+anoV+"º ano. Escolha outro ano."};
-  return{v:{name:name,level_idx:lvl,start_date:$("#pStart").value,study_days:days,
+  return{v:{name:name,level_idx:lvl,start_date:$("#pStart").value,study_days:days,free_days:checkedVals("free").filter(function(d){return days.indexOf(d)<0}),
     sheets_per_day:Number($("#pPer").value),sticker_themes:themes,sticker_theme:themes[0],
     ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV)}};
 }
@@ -245,7 +286,7 @@ async function showForm(){
     if(r.error){$("#fMsg").textContent=r.error;return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos});
+      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
@@ -343,7 +384,7 @@ async function detail(id){
     '<p class="muted">Nenhuma conta em reforço agora.</p>')+
     '<p class="muted small-t gap">'+"Estas contas voltam nas próximas folhas, inclusive no nível seguinte, até ele acertar 2 vezes seguidas."+'</p></div>';
 
-  var isStudyToday=s.study_days.indexOf(FC.dow(today))>=0&&today>=s.start_date;
+  var todayKind=FC.dayKind(s,today),isStudyToday=todayKind!=="rest";
   var todaySheets=sheets.filter(function(x){return x.study_day===today}),tdOk=0,tdTot=0;
   todaySheets.forEach(function(x){tdOk+=x.first_ok;tdTot+=x.total});
   var tdPct=tdTot?Math.round(100*tdOk/tdTot):null;
@@ -352,7 +393,7 @@ async function detail(id){
     '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div></div>'+
     '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
-      (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?'ainda sem folhas hoje':'hoje é descanso')+'</small>')+'</div></div>';
+      (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div></div>';
   var resumo=notices+stats+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+

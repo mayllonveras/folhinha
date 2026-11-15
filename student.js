@@ -98,11 +98,11 @@ function home(){
     var n2=FC.nextStudy(today,m.study_days,m.start_date,false);
     status="Meta de hoje cumprida: <b>"+m.done_today+" de "+m.quota+"</b> folhas."+(n2?" Próxima folha: <b>"+FC.dayLabel(n2)+"</b>.":"");
   }else{
-    canStart=true;status="Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas."+(m.today_total>0?" Acertos de primeira hoje: <b>"+m.today_ok+" de "+m.today_total+"</b> ("+Math.round(100*m.today_ok/m.today_total)+"%).":"");
+    canStart=true;status=(m.free_day?"Hoje é <b>dia livre</b>: jogue se quiser, sem perder sua sequência. ":"")+"Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas."+(m.today_total>0?" Acertos de primeira hoje: <b>"+m.today_ok+" de "+m.today_total+"</b> ("+Math.round(100*m.today_ok/m.today_total)+"%).":"");
   }
   var need=m.stamps_needed||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
   var hero;
-  if(canStart)hero='<section class="hero"><span class="eyebrow">Hoje · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
+  if(canStart)hero='<section class="hero"><span class="eyebrow">Hoje'+(m.free_day?" · dia livre":"")+' · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
   else hero='<section class="hero"><span class="eyebrow">Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
@@ -744,7 +744,7 @@ async function send(payload,score){
   if(got>0){
     var why=[];
     if(pk.carimbo)why.push("1 pelo carimbo do dia");
-    if(pk.perseveranca)why.push("1 pela perseverança (dia fechado)");
+    if(pk.perseveranca)why.push(res.free_day?"1 por fechar o dia livre":"1 pela perseverança (dia fechado)");
     if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
       FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);

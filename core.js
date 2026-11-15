@@ -285,6 +285,13 @@ FC.nextMarco=function(st){
   if(st<14)return{at:14,packs:5};
   return{at:(Math.floor(st/30)+1)*30,packs:5};
 };
+/* Tipo do dia para um aluno: "study" (dia de estudo: cota e sequência), "free" (dia livre: joga se quiser, sem perder a sequência) ou "rest". */
+FC.dayKind=function(s,day){
+  if(day<s.start_date)return "rest";
+  var d=FC.dow(day);
+  if(s.study_days.indexOf(d)>=0)return "study";
+  return (s.free_days||[]).indexOf(d)>=0?"free":"rest";
+};
 /* Sequência que vale hoje para um aluno (linha de students). Mesma regra de public._streak_view:
    só contam dias de estudo, e faltar a um deles zera. */
 FC.streakNow=function(s,today){
