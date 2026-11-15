@@ -323,9 +323,45 @@ var DRAW={
     }
     return svg(240,170,inner,"fig-planif");
   },
+  /* régua de 0 a 10 cm com os milímetros marcados (3º ano): f.objs = [{k, mm}] encostados no zero; 1 mm = 2,8 unidades */
+  regua2:function(f){
+    var sc=2.8,x0=10,oh=22,gap=8,rows=f.objs.length,y0=rows*(oh+gap)+8,W=x0*2+280,H=y0+50,inner="",i;
+    f.objs.forEach(function(o,r){
+      var y=4+r*(oh+gap),w=+(o.mm*sc).toFixed(1),fill={lapis:"#FFD36B",fita:"#7EE0BE",clipe:"#CFD8E8",borracha:"#F7A8C4"}[o.k],yy=o.k==="clipe"?y+5:y,hh=o.k==="clipe"?oh-10:oh;
+      inner+='<rect class="obj" x="'+x0+'" y="'+yy+'" width="'+w+'" height="'+hh+'" rx="'+(o.k==="lapis"?2:o.k==="clipe"?5:6)+'" fill="'+fill+'" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="lapis")inner+='<polygon points="'+(x0+w-12)+','+y+' '+(x0+w)+','+(y+oh/2)+' '+(x0+w-12)+','+(y+oh)+'" fill="#E8B56B" stroke="'+INK+'" stroke-width="1.8" stroke-linejoin="round"/><rect x="'+x0+'" y="'+y+'" width="9" height="'+oh+'" fill="#F2503F" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="borracha")inner+='<rect x="'+(x0+w*.55)+'" y="'+y+'" width="'+(w*.45)+'" height="'+oh+'" rx="6" fill="#8FB0FF" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="fita")for(i=1;i*10<w-4;i++)inner+='<line x1="'+(x0+i*10)+'" x2="'+(x0+i*10)+'" y1="'+(y+4)+'" y2="'+(y+oh-4)+'" stroke="'+INK+'" stroke-width="1.2" opacity=".5"/>';
+    });
+    inner+='<rect x="'+x0+'" y="'+y0+'" width="280" height="40" fill="#F7E9B4" stroke="'+INK+'" stroke-width="1.8"/>';
+    for(i=0;i<=100;i++){var x=+(x0+i*sc).toFixed(1),len=i%10===0?15:i%5===0?10:6;
+      inner+='<line x1="'+x+'" x2="'+x+'" y1="'+y0+'" y2="'+(y0+len)+'" stroke="'+INK+'" stroke-width="'+(i%10===0?1.4:.8)+'"/>';
+      if(i%10===0)inner+='<text x="'+x+'" y="'+(y0+31)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+INK+'">'+(i/10)+'</text>'}
+    inner+='<text x="'+(x0+280)+'" y="'+(y0+38)+'" text-anchor="end" font-size="8" fill="'+INK+'">cm</text>';
+    return svg(W,H,inner,"fig-regua2");
+  },
+  /* roleta de partes iguais (3º ano): f.parts = nomes das cores, uma por parte; a seta fica no alto */
+  roleta:function(f){
+    var ROL={azul:"#2457D6",amarelo:"#FFB92B",rosa:"#F27AB0",roxo:"#7B5FD1",vermelho:"#D93B3B",verde:"#1CA97B"},n=f.parts.length,cx=72,cy=76,r=60,inner="",i;
+    f.parts.forEach(function(c,i){var a0=-Math.PI/2+i*2*Math.PI/n,a1=-Math.PI/2+(i+1)*2*Math.PI/n,x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+      inner+='<path class="sl" data-c="'+c+'" d="M'+cx+','+cy+' L'+x0.toFixed(1)+','+y0.toFixed(1)+' A'+r+','+r+' 0 0 1 '+x1.toFixed(1)+','+y1.toFixed(1)+' Z" fill="'+ROL[c]+'" stroke="'+INK+'" stroke-width="2.2" stroke-linejoin="round"/>'});
+    inner+='<circle cx="'+cx+'" cy="'+cy+'" r="5" fill="'+INK+'"/><polygon points="'+(cx-9)+',2 '+(cx+9)+',2 '+cx+',20" fill="'+INK+'"/>';
+    return svg(144,142,inner,"fig-roleta");
+  },
+  /* dado comum (face com f.n pontos) e moeda (cara e coroa), do 3º ano */
+  dado:function(f){
+    var P={1:[[50,50]],2:[[30,30],[70,70]],3:[[28,28],[50,50],[72,72]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],6:[[30,26],[70,26],[30,50],[70,50],[30,74],[70,74]]}[f.n||6],inner='<rect x="6" y="6" width="88" height="88" rx="16" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+    P.forEach(function(q){inner+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="8" fill="'+INK+'"/>'});
+    return svg(100,100,inner,"fig-dado");
+  },
+  moeda:function(){
+    var c=function(x,t){return '<circle cx="'+x+'" cy="40" r="34" fill="#EBD08A" stroke="'+INK+'" stroke-width="3"/><circle cx="'+x+'" cy="40" r="26" fill="none" stroke="'+INK+'" stroke-width="1.6"/><text x="'+x+'" y="45" text-anchor="middle" font-size="13" font-weight="800" fill="'+INK+'">'+t+'</text>'};
+    return svg(170,80,c(40,"cara")+c(128,"coroa"),"fig-moeda2");
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;
+    if(f.step){top=Math.ceil(max/f.step)*f.step;stepY=f.step}   /* escala de 5 em 5 ou de 10 em 10 (3º ano) */
     var W=60+n*50,H=170,x0=38,y0=134,ph=104,inner="",t;
     if(f.title)inner+='<text x="'+(W/2)+'" y="14" text-anchor="middle" font-size="12" font-weight="700" fill="'+INK+'">'+esc(f.title)+'</text>';
     for(t=0;t<=top;t+=stepY){var y=y0-ph*t/top;

@@ -520,6 +520,10 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-quad{max-width:290px}
 .figsvg.fig-malha2{max-width:340px}
 .figsvg.fig-planif{max-width:260px}
+.figsvg.fig-regua2{max-width:340px}
+.figsvg.fig-roleta{max-width:150px}
+.figsvg.fig-dado{max-width:90px}
+.figsvg.fig-moeda2{max-width:170px}
 .fig-arr{display:flex;flex-direction:column;gap:2px;font-size:1.25rem;line-height:1.15;max-width:300px}
 .fig-arr .arr-r{display:flex;gap:2px}
 .fig-arr i{font-style:normal}
@@ -571,7 +575,10 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg.fig-bolas,.figsvg.fig-barras,.figsvg.fig-potes{max-width:300px}
 .fig-tab{border-collapse:collapse;min-width:220px}
 .fig-tab caption{font-weight:700;text-align:left;margin-bottom:6px}
-.fig-tab th,.fig-tab td{border:1px solid var(--line);padding:6px 14px;text-align:left}
+.fig-tab th,.fig-tab td{border:1px solid var(--line);padding:5px 7px;text-align:left}
+.fig-tab{max-width:100%}
+.fig-tab thead th{font-size:.78rem;text-transform:none;letter-spacing:0}
+.fig-tab tbody th{text-transform:none;letter-spacing:0;font-size:.8rem}
 .fig-tab th{background:color-mix(in srgb,var(--line) 30%,transparent);font-size:.85rem}
 .fig-scatter{position:relative;width:100%;max-width:300px;aspect-ratio:3/2;container-type:inline-size;border:2px solid var(--line);border-radius:14px;background:var(--surface)}
 .fig-scatter span{position:absolute;transform:translate(-50%,-50%);font-size:9cqw;line-height:1}

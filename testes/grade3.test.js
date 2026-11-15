@@ -430,6 +430,100 @@ const OBJ25=[["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["bolas",1
  console.log("nível 33:",JSON.stringify(tp),"posição da certa",pos.slice(1,4).map(x=>(100*x/tp.qual).toFixed(0)+"%").join(" "),"sim",(100*simSim/tp.sim).toFixed(0)+"%");
  if(Math.abs(tp.qual/N-.625)>.04)falha(33,"proporção");for(let k=1;k<=3;k++)if(Math.abs(pos[k]/tp.qual-1/3)>.04)falha(33,"posição da certa não é uniforme");if(Math.abs(simSim/tp.sim-.5)>.05)falha(33,"sim e não em partes iguais")}
 
+/* ---- Níveis 34 a 42: medidas, dinheiro, acaso e dados ---- */
+const NOMEOB={"o lápis":"lapis","a fita":"fita","o clipe":"clipe","a borracha":"borracha"};
+{const its=draw(G.g3n34),tp={medir:0,cm_mm:0,comparar:0};
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="medir"){const f=p.extra.fig,html=FC.fig(f),ob=[...html.matchAll(/class="obj" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g)];
+   if(f.t!=="regua2"||ob.length!==1||+ob[0][1]!==10||Math.abs(+ob[0][2]-f.objs[0].mm*2.8)>.06||p.post!=="mm"||p.a!==f.objs[0].mm||p.a<15||p.a>98||!Number.isInteger(p.a))falha(34,"medir: "+JSON.stringify(f.objs)+" → "+p.a);
+   const m=p.pre.match(/^Quanto mede (o lápis|a fita|o clipe|a borracha)\?$/);if(!m||NOMEOB[m[1]]!==f.objs[0].k)falha(34,"objeto da pergunta: "+p.pre);
+   if(cnt(html,"obj")!==1||(html.match(/<line/g)||[]).length<101)falha(34,"régua sem os 101 risquinhos")}
+  else if(i.tipo==="cm_mm"){const m=p.pre.match(/^(O lápis|A fita|O clipe|A borracha) mede (\d) cm e (\d) mm\. Quantos milímetros (ele|ela) mede\?$/);if(!m||p.a!==m[2]*10+ +m[3]||p.post!=="mm"||m[4]!==(/^A /.test(m[1])?"ela":"ele"))falha(34,"cm e mm: "+p.pre+" → "+p.a)}
+  else{const m=p.pre.match(/^Qual é maior: (\d+) (cm|mm) ou (\d+) (cm|mm)\?$/),op=p.extra.opts;if(!m||m[2]===m[4]){falha(34,"comparar: "+p.pre);continue}
+   const v=(n,u)=>u==="cm"?n*10:+n,a=v(m[1],m[2]),b=v(m[3],m[4]),mx=a>b?m[1]+" "+m[2]:m[3]+" "+m[4];if(Math.abs(a-b)<3||op[p.a-1]!==mx||op.length!==2)falha(34,"comparar: "+p.pre+" → "+op[p.a-1])}}
+ console.log("nível 34:",JSON.stringify(tp));if(Math.abs(tp.medir/N-.5)>.04||Math.abs(tp.cm_mm/N-.25)>.04)falha(34,"proporção")}
+{const its=draw(G.g3n35),tp={unidade:0,instrumento:0,depende:0};
+ const U={"a formiga":"milímetro","um grão de arroz":"milímetro","uma sala de aula":"metro","o corredor da escola":"metro","o pátio da escola":"metro","uma quadra de esportes":"metro","uma rua":"quilômetro","uma estrada entre duas cidades":"quilômetro"};
+ const I={"o tempo que dura o recreio":"relógio","o comprimento da lousa":"fita métrica","o comprimento de um lápis":"régua","a quantidade de suco que cabe numa jarra":"copo medidor","a massa de uma melancia":"balança"};
+ for(const p of its){const i=p._info,op=p.extra.opts;tp[i.tipo]++;
+  if(i.tipo==="unidade"){const m=p.pre.match(/^Qual unidade é melhor para medir o comprimento (do|da|de) (.+)\?$/);if(!m){falha(35,"pergunta: "+p.pre);continue}
+   const obj=m[1]==="do"?"o "+m[2]:m[1]==="da"?"a "+m[2]:m[2];if(!obj||op[p.a-1]!==U[obj]||op.length!==3||new Set(op).size!==3||["milímetro","metro","quilômetro"].some(x=>!op.includes(x)))falha(35,"unidade: "+p.pre+" → "+op[p.a-1])}
+  else if(i.tipo==="instrumento"){const m=p.pre.match(/^Que instrumento usamos para medir (.+)\?$/);if(!m||I[m[1]]!==op[p.a-1]||op.length!==3||new Set(op).size!==3)falha(35,"instrumento: "+p.pre+" → "+op[p.a-1]);
+   if(["régua","fita métrica"].includes(I[m[1]])&&op.includes("régua")&&op.includes("fita métrica"))falha(35,"régua e fita métrica juntas: "+op)}
+  else{const D={"Medimos o mesmo corredor com passos grandes e com passos pequenos. Com qual passo o número de passos é maior?":"pequenos","Medimos a mesma mesa em palmos e em metros. Em qual unidade o número é maior?":"palmos","Enchemos a mesma jarra com um copo grande e com um copo pequeno. Com qual copo usamos mais copos?":"pequeno"};
+   if(D[p.pre]!==op[p.a-1]||op.length!==2)falha(35,"depende: "+p.pre+" → "+op[p.a-1])}}
+ console.log("nível 35:",JSON.stringify(tp));if(Math.abs(tp.unidade/N-.375)>.04||Math.abs(tp.instrumento/N-.375)>.04)falha(35,"proporção")}
+{const its=draw(G.g3n36),tp={unidade:0,soma:0,comparar:0};
+ const M={"uma pessoa":"quilograma","um saco de arroz":"quilograma","uma melancia":"quilograma","uma moeda":"grama","um clipe":"grama","uma folha de papel":"grama","um comprimido de remédio":"miligrama","um grão de areia":"miligrama",
+  "uma piscina":"litro","uma caixa-d'água":"litro","um balde":"litro","uma colher de remédio":"mililitro","uma colher de chá":"mililitro","um frasco de colírio":"mililitro","uma xícara de café":"mililitro"};
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="unidade"){const m=p.pre.match(/^Qual unidade é melhor para medir a (massa|capacidade) de (.+)\?$/),op=p.extra.opts,U={massa:["quilograma","grama","miligrama"],capacidade:["litro","mililitro"]};
+   if(!m||M[m[2]]!==op[p.a-1]||op.length!==U[m[1]].length||U[m[1]].some(x=>!op.includes(x))||!U[m[1]].includes(M[m[2]]))falha(36,"unidade: "+p.pre+" → "+op[p.a-1])}
+  else if(i.tipo==="soma"){const m=p.pre.match(/^(?:Um pacote de arroz|Uma garrafa|Um pacote de farinha|Um copo) tem (\d+) (quilogramas|litros|gramas|mililitros)(?: de suco)? e (?:outro|outra) tem (\d+) \2\. Quantos \2 há (?:nos dois|nas duas)\?$/);
+   const m2=m||p.pre.match(/^(?:Um pacote de arroz|Uma garrafa|Um pacote de farinha|Um copo) tem (\d+) (quilogramas|litros|gramas|mililitros)(?: de suco)? e (?:outro|outra) tem (\d+) \2\. Quantos \2 há (?:nos dois|nas duas)\?$/);
+   if(!m2){falha(36,"soma: "+p.pre);continue}const a=+m2[1],b=+m2[3],pq=["gramas","mililitros"].includes(m2[2]);if(p.a!==a+b||(pq?(a%100||b%100||a+b>1000||a<100):(a<2||b<2||a>9||b>9)))falha(36,"soma: "+p.pre+" → "+p.a)}
+  else{const m=p.pre.match(/^(Qual tem mais água|Qual tem menos água|Qual é mais pesado|Qual é mais leve): (\d+) (\S+) ou (\d+) \3\?$/),op=p.extra.opts;if(!m){falha(36,"comparar: "+p.pre);continue}
+   const x=+m[2],y=+m[4],mais=/tem mais|mais pesado/.test(m[1]),r=(mais?Math.max(x,y):Math.min(x,y))+" "+m[3];if(x===y||op[p.a-1]!==r||op.length!==2||/água/.test(m[1])!==["litros","mililitros"].includes(m[3]))falha(36,"comparar: "+p.pre+" → "+op[p.a-1]);
+   if(x===1||y===1)falha(36,"singular não tratado: "+p.pre)}}
+ console.log("nível 36:",JSON.stringify(tp));if(Math.abs(tp.unidade/N-.375)>.04||Math.abs(tp.soma/N-.375)>.04)falha(36,"proporção")}
+{const its=draw(G.g3n37),tp={mais:0,menos:0,mesma:0};
+ const area=f=>f.shapes[0].cells.length,conexaCells=c=>{const set=new Set(c.map(x=>x.join(","))),vis=new Set([c[0].join(",")]),st=[c[0]];while(st.length){const q=st.pop();[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const k=(q[0]+d[0])+","+(q[1]+d[1]);if(set.has(k)&&!vis.has(k)){vis.add(k);st.push([q[0]+d[0],q[1]+d[1]])}})}return vis.size===c.length};
+ for(const p of its){const i=p._info,op=p.extra.opts;tp[i.tipo]++;
+  if(i.tipo==="mesma"){const f=p.extra.fig,[A,B]=f.shapes,html=FC.fig(f);if(p.pre!=="As duas figuras ocupam o mesmo espaço?"||op.length!==2||op[p.a-1]!==(A.cells.length===B.cells.length?"sim":"não"))falha(37,"mesma área: "+A.cells.length+" vs "+B.cells.length+" → "+op[p.a-1]);
+   if(cnt(html,"cel")!==A.cells.length+B.cells.length)falha(37,"quadradinhos desenhados");if(i.igual&&A.cells.length!==B.cells.length||!i.igual&&Math.abs(A.cells.length-B.cells.length)<1||!i.igual&&Math.abs(A.cells.length-B.cells.length)>3)falha(37,"diferença de área: "+A.cells.length+" "+B.cells.length);
+   if(A.cells.length<4||B.cells.length<4||A.cells.length>12||B.cells.length>12)falha(37,"área fora de 4 a 12")}
+  else{const as=op.map(o=>area(o.fig)),mais=i.tipo==="mais",alvo=mais?Math.max(...as):Math.min(...as);if(p.pre!=="Qual figura ocupa "+(mais?"mais":"menos")+" espaço?"||as[p.a-1]!==alvo||as.filter(x=>x===alvo).length!==1||op.length<2||op.length>3)falha(37,"áreas: "+as+" → "+p.a);
+   const ord=[...as].sort((a,b)=>a-b);for(let k=1;k<ord.length;k++)if(ord[k]-ord[k-1]<2)falha(37,"áreas muito próximas: "+as);op.forEach(o=>{const c=o.fig.shapes[0].cells;if(!conexaCells(c)||cnt(FC.fig(o.fig),"cel")!==c.length||c.some(q=>q[0]<0||q[0]>4||q[1]<0||q[1]>4)||c.length<4||c.length>12)falha(37,"figura mal formada")})}}
+ console.log("nível 37:",JSON.stringify(tp));if(Math.abs(tp.mais/N-.5)>.04||Math.abs(tp.menos/N-.25)>.04)falha(37,"proporção")}
+{const its=draw(G.g3n38),tp={ler:0,relacao:0,escolher:0};const hm=(h,m)=>h+":"+String(m).padStart(2,"0");
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="ler"){const f=p.extra.fig,op=p.extra.opts,good=hm(f.h,f.m);if(f.t!=="clock"||f.h<1||f.h>12||f.m%5||op[p.a-1]!==good||op.length!==3||new Set(op).size!==3||op.filter(o=>o===good).length!==1||p.pre!=="Que horas são?")falha(38,"ler: "+good+" → "+op)}
+  else if(i.tipo==="relacao"){const R={"Quantos minutos tem 1 hora?":60,"Quantos segundos tem 1 minuto?":60,"Quantos minutos tem meia hora?":30,"Quantos minutos têm 2 horas?":120};if(R[p.pre]!==p.a)falha(38,"relação: "+p.pre+" → "+p.a)}
+  else{const m=p.pre.match(/^Qual relógio marca (\d+):(\d\d)\?$/),op=p.extra.opts;if(!m){falha(38,"pergunta: "+p.pre);continue}const alvo=hm(+m[1],+m[2]),leitura=op.map(o=>hm(o.fig.h,o.fig.m));
+   if(leitura[p.a-1]!==alvo||leitura.filter(x=>x===alvo).length!==1||new Set(leitura).size!==3||op.length!==3||+m[2]%5)falha(38,"escolher: "+p.pre+" "+leitura+" → "+p.a)}}
+ console.log("nível 38:",JSON.stringify(tp));if(Math.abs(tp.ler/N-.5)>.04||Math.abs(tp.relacao/N-.25)>.04)falha(38,"proporção")}
+{const its=draw(G.g3n39),tp={duracao:0,fim:0,inicio:0};const T=t=>{const x=t.split(":");return +x[0]*60+ +x[1]};const dt=(txt)=>{const m=txt.match(/^(\d+) horas?$/);return m?+m[1]*60:+txt.match(/^(\d+) minutos$/)[1]};
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="duracao"){const m=p.pre.match(/^(?:A aula|O recreio|O filme|O jogo|A festa|O lanche|A visita) começou às (\d+:\d\d) e terminou às (\d+:\d\d)\. Quantos minutos durou\?$/);if(!m){falha(39,"pergunta: "+p.pre);continue}
+   const a=T(m[1]),b=T(m[2]);if(p.a!==b-a||p.a<15||p.a>180||p.a%15||a%15||b%15||a<360||b>1320)falha(39,"duração: "+p.pre+" → "+p.a)}
+  else if(i.tipo==="fim"){const m=p.pre.match(/^(?:A aula|O recreio|O filme|O jogo|A festa|O lanche|A visita) começou às (\d+:\d\d) e durou (.+)\. A que horas terminou\?$/),op=p.extra.opts;if(!m){falha(39,"pergunta: "+p.pre);continue}
+   const a=T(m[1]),d=dt(m[2]),f=a+d,ts=op.map(T);if(op[p.a-1]!==Math.floor(f/60)+":"+String(f%60).padStart(2,"0")||ts.some(x=>x<360||x>1320||x%15)||new Set(op).size!==3||op.length!==3||f>1320||a<360)falha(39,"fim: "+p.pre+" → "+op[p.a-1]);
+   if(/\b1 horas\b/.test(p.pre)||(d===60&&!/ 1 hora[.,]/.test(p.pre))||(d!==60&&d%60===0&&!/ \d+ horas[.,]/.test(p.pre)))falha(39,"singular/plural: "+p.pre)}
+  else{const m=p.pre.match(/^(?:A aula|O recreio|O filme|O jogo|A festa|O lanche|A visita) terminou às (\d+:\d\d), depois de (.+)\. A que horas começou\?$/),op=p.extra.opts;if(!m){falha(39,"pergunta: "+p.pre);continue}
+   const f=T(m[1]),d=dt(m[2]),a=f-d,ts=op.map(T);if(op[p.a-1]!==Math.floor(a/60)+":"+String(a%60).padStart(2,"0")||ts.some(x=>x<360||x>1320||x%15)||new Set(op).size!==3||op.length!==3||a<360||f>1320)falha(39,"início: "+p.pre+" → "+op[p.a-1])}}
+ console.log("nível 39:",JSON.stringify(tp));if(Math.abs(tp.duracao/N-.375)>.04||Math.abs(tp.fim/N-.375)>.04)falha(39,"proporção")}
+{const its=draw(G.g3n40),tp={total:0,troco:0,centavos_troco:0,centavos_vezes:0};
+ for(const p of its){const i=p._info,w=p.pre.trim().split(/ +/).length;tp[i.tipo]++;if(w>22)falha(40,"enunciado com "+w+" palavras: "+p.pre);let m;
+  if(i.tipo==="total"){const ns=(p.pre.match(/\d+/g)||[]).map(Number),m2=p.pre.match(/^(Um|Uma) (\S+) custa/);if(!m2||![2,3].includes(ns.length)||p.a!==ns.reduce((a,b)=>a+b,0)||p.post!=="reais"||p.a>200)falha(40,"total: "+p.pre+" → "+p.a);
+   const ART={caderno:"Um",caneta:"Uma",livro:"Um",borracha:"Uma",mochila:"Uma",bola:"Uma",camiseta:"Uma",boné:"Um"};if(ART[m2&&m2[2]]!==(m2&&m2[1]))falha(40,"concordância: "+p.pre);
+   const arts=[...p.pre.matchAll(/(?:^|, | e )(Um|Uma|um|uma) (\S+) custa/g)];arts.forEach(a=>{if(ART[a[2]].toLowerCase()!==a[1].toLowerCase())falha(40,"concordância: "+p.pre)});if(new Set(arts.map(a=>a[2])).size!==arts.length)falha(40,"bem repetido: "+p.pre)}
+  else if(i.tipo==="troco"){m=p.pre.match(/^(\S+) pagou (\d+) reais por uma compra de (\d+) reais\. Quanto (ela|ele) recebeu de troco\?$/);const nome=m&&FC.exh.NAMES.find(n=>n[0]===m[1]);if(!m||!nome||![5,10,20,50].includes(+m[2])||+m[3]>=+m[2]||p.a!==m[2]-m[3]||p.a<1||m[4]!==(nome[1]==="f"?"ela":"ele")||p.post!=="reais")falha(40,"troco: "+p.pre+" → "+p.a)}
+  else if(i.tipo==="centavos_troco"){m=p.pre.match(/^(Um|Uma) (\S+) custa (\d+) centavos\. Com 1 real, qual é o troco, em centavos\?$/);const D={chiclete:"Um",bala:"Uma",pirulito:"Um",bombom:"Um"};if(!m||D[m[2]]!==m[1]||+m[3]%5||+m[3]<5||+m[3]>95||p.a!==100-m[3]||p.post!=="centavos")falha(40,"troco em centavos: "+p.pre+" → "+p.a)}
+  else{m=p.pre.match(/^Quantos centavos custam (\d+) (\S+)s de (\d+) centavos\?$/);if(!m||!["chiclete","bala","pirulito","bombom"].includes(m[2])||+m[3]%5||p.a!==m[1]*m[3]||p.a>100||+m[1]<2||p.post!=="centavos")falha(40,"centavos: "+p.pre+" → "+p.a)}}
+ console.log("nível 40:",JSON.stringify(tp));if(Math.abs(tp.total/N-.375)>.04||Math.abs(tp.troco/N-.375)>.04)falha(40,"proporção")}
+{const its=draw(G.g3n41),tp={resultados:0,mais:0,menos:0},COR={azul:1,amarelo:1,rosa:1,roxo:1,vermelho:1,verde:1};
+ for(const p of its){const i=p._info;tp[i.tipo]++;
+  if(i.tipo==="resultados"){const f=p.extra.fig;if(i.k==="dado"){if(f.t!=="dado"||p.a!==6||!/dado comum/.test(p.pre))falha(41,"dado")}else if(i.k==="moeda"){if(f.t!=="moeda"||p.a!==2||!/moeda/.test(p.pre))falha(41,"moeda")}
+   else{const html=FC.fig(f),n=cnt(html,"sl");if(f.t!=="roleta"||p.a!==new Set(f.parts).size||p.a!==f.parts.length||n!==f.parts.length||p.a<3||p.a>5||f.parts.length!==new Set(f.parts).size)falha(41,"roleta: "+f.parts+" → "+p.a);if(f.parts.includes("vermelho")&&f.parts.includes("verde"))falha(41,"vermelho e verde juntos")}}
+  else{const f=p.extra.fig,op=p.extra.opts,cont={};f.parts.forEach(c=>cont[c]=(cont[c]||0)+1);const mais=i.tipo==="mais",cs=Object.keys(cont),ex=mais?Math.max(...Object.values(cont)):Math.min(...Object.values(cont));
+   const cert=cs.filter(c=>cont[c]===ex);if(f.t!=="roleta"||f.parts.length<6||f.parts.length>8||cs.length<3||cs.length>5||cert.length!==1||op[p.a-1]!==cert[0]||p.pre!=="Em qual cor a seta tem "+(mais?"mais":"menos")+" chance de parar?")falha(41,"roleta: "+JSON.stringify(cont)+" → "+op[p.a-1]);
+   if(op.some(o=>!(o in cont))||new Set(op).size!==op.length||op.length<3||op.length>4)falha(41,"opções: "+op+" "+cs);if(cs.includes("vermelho")&&cs.includes("verde"))falha(41,"vermelho e verde juntos");if(!mais&&ex<1)falha(41,"menos chance sem partes");if(cnt(FC.fig(f),"sl")!==f.parts.length)falha(41,"fatias desenhadas")}}
+ console.log("nível 41:",JSON.stringify(tp));if(Math.abs(tp.resultados/N-.375)>.04||Math.abs(tp.mais/N-.375)>.04)falha(41,"proporção")}
+{const its=draw(G.g3n42),tp={1:0,2:0,3:0};let tab=0;
+ for(const p of its){const f=p.extra.fig,t=p._info.tipo;tp[t]++;let m;
+  if(f.t==="tabela2"){tab++;if(f.rows.length!==3||f.cols.length!==4||f.v.some(r=>r.length!==4||r.some(x=>x<1||x>30)))falha(42,"tabela fora do formato");if((FC.fig(f).match(/<td>/g)||[]).length!==12)falha(42,"células da tabela");
+   if(t===1){m=p.pre.match(/^Quantas crianças da (Turma [ABC]) escolheram (\S+)\?$/);if(!m||p.a!==f.v[f.rows.indexOf(m[1])][f.cols.indexOf(m[2])])falha(42,"célula: "+p.pre+" → "+p.a)}
+   else if(t===2){m=p.pre.match(/^Qual opção a (Turma [ABC]) (mais|menos) escolheu\?$/);const row=f.v[f.rows.indexOf(m[1])],ex=m[2]==="mais"?Math.max(...row):Math.min(...row);if(row.filter(x=>x===ex).length!==1||p.extra.opts[p.a-1]!==f.cols[row.indexOf(ex)]||p.extra.opts.length!==4)falha(42,"extremo: "+p.pre)}
+   else if((m=p.pre.match(/^Quantas crianças ao todo escolheram (\S+)\?$/))){const c=f.cols.indexOf(m[1]);if(p.a!==f.v[0][c]+f.v[1][c]+f.v[2][c])falha(42,"soma: "+p.pre+" → "+p.a)}
+   else if((m=p.pre.match(/^Quantas crianças a mais da (Turma [ABC]) do que da (Turma [ABC]) escolheram (\S+)\?$/))){const c=f.cols.indexOf(m[3]),a=f.v[f.rows.indexOf(m[1])][c],b=f.v[f.rows.indexOf(m[2])][c];if(a<=b||p.a!==a-b)falha(42,"diferença: "+p.pre+" → "+p.a)}else falha(42,"pergunta: "+p.pre)}
+  else{if(f.t!=="bars"||f.labels.length<4||f.labels.length>5||![5,10].includes(f.step)||f.values.some(x=>x%f.step||x<5||x>50))falha(42,"gráfico fora do formato: "+JSON.stringify(f));
+   const html=FC.fig(f);const rot=[...html.matchAll(/text-anchor="end" font-size="10" fill="[^"]*">(\d+)</g)].map(x=>+x[1]).sort((a,b)=>a-b);if(rot.length<2||rot[1]-rot[0]!==f.step)falha(42,"escala do gráfico: "+rot);
+   if(t===1){m=p.pre.match(/^Quantas crianças escolheram (\S+)\?$/);if(!m||p.a!==f.values[f.labels.indexOf(m[1])])falha(42,"barra: "+p.pre+" → "+p.a)}
+   else if(t===2){m=p.pre.match(/^Qual opção teve (mais|menos) votos\?$/);const ex=m[1]==="mais"?Math.max(...f.values):Math.min(...f.values);if(f.values.filter(x=>x===ex).length!==1||p.extra.opts[p.a-1]!==f.labels[f.values.indexOf(ex)])falha(42,"extremo do gráfico: "+p.pre)}
+   else if((m=p.pre.match(/^Quantas crianças a mais escolheram (\S+) do que (\S+)\?$/))){const a=f.values[f.labels.indexOf(m[1])],b=f.values[f.labels.indexOf(m[2])];if(a<=b||p.a!==a-b)falha(42,"diferença: "+p.pre+" → "+p.a)}
+   else if((m=p.pre.match(/^Qual é o dobro dos votos de (\S+)\?$/))){if(p.a!==2*f.values[f.labels.indexOf(m[1])])falha(42,"dobro: "+p.pre+" → "+p.a)}else falha(42,"pergunta: "+p.pre)}}
+ console.log("nível 42:",JSON.stringify(tp),"tabela",(100*tab/N).toFixed(0)+"%");if(Math.abs(tab/N-2/3)>.04)falha(42,"tabela x gráfico");if(Math.abs(tp[1]/N-.375)>.04||Math.abs(tp[3]/N-.25)>.04)falha(42,"proporções")}
+
 /* ---- Folhas reais: 8 contas do nível + 2 de revisão, sem repetição e dentro dos limites ---- */
 for(const g of FC.G3){
   let rep=0,estouro=0,tam=0;

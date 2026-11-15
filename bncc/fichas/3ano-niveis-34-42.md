@@ -35,7 +35,7 @@ testes que recalculam a resposta, números de quatro algarismos com espaço fino
 
 - **Habilidade:** EF03MA20 (estimar e medir capacidade e massa, com as unidades mais usuais: litro, mililitro, quilograma, grama e miligrama).
 - **Três tipos de conta**, entre as 8 do nível (3 + 3 + 2):
-  1. **Qual unidade?:** "Qual unidade é melhor para medir a massa de **um comprimido de remédio**?" → **miligrama** (3 opções da mesma grandeza). Objetos: capacidade (garrafa, piscina, colher de remédio, copo) e massa (pessoa, pacote de arroz, moeda, comprimido).
+  1. **Qual unidade?:** "Qual unidade é melhor para medir a massa de **um comprimido de remédio**?" → **miligrama** (3 opções na massa: quilograma, grama e miligrama; 2 opções na capacidade: litro e mililitro). Objetos: capacidade (garrafa, piscina, colher de remédio, copo) e massa (pessoa, pacote de arroz, moeda, comprimido).
   2. **Somar com a mesma unidade:** "Um pacote de arroz tem **5 quilogramas** e outro tem **2 quilogramas**. Quantos quilogramas há nos dois?" → 7 (digitada; só litros, quilogramas e gramas e mililitros até 900 sem passar de 1000; nunca converter).
   3. **Comparar:** "Qual é mais pesado: **300 g** ou **800 g**?" ou "Qual tem mais água: **2 litros** ou **5 litros**?" → 2 opções, na mesma unidade.
 - **Sem conversão entre unidades** (1 kg = 1000 g fica para o 4º ano); o miligrama só como unidade a reconhecer.
@@ -51,7 +51,7 @@ testes que recalculam a resposta, números de quatro algarismos com espaço fino
 - **Três tipos de conta**, entre as 8 do nível (4 + 2 + 2):
   1. **Qual ocupa mais espaço?:** 2 ou 3 figuras com áreas **bem diferentes** (de pelo menos 2 quadradinhos); "Qual figura ocupa **mais** espaço?" → a de maior área.
   2. **Qual ocupa menos espaço?:** o mesmo, com "menos".
-  3. **A mesma área?:** duas figuras de formas diferentes; "As duas figuras ocupam o **mesmo** espaço?" → sim ou não, em partes iguais (nas de "sim", mesmo número de quadradinhos arrumados de outro jeito).
+  3. **A mesma área?:** duas figuras de formas diferentes; "As duas figuras ocupam o **mesmo** espaço?" → sim ou não, em partes iguais (nas de "sim", mesmo número de quadradinhos arrumados de outro jeito; nas de "não", a diferença é de 1 ou 2 quadradinhos).
 - **Resposta:** escolha.
 - **Contas diferentes:** centenas.
 - **Meta de tempo:** 110 s.
@@ -100,8 +100,8 @@ testes que recalculam a resposta, números de quatro algarismos com espaço fino
 - **Habilidade:** EF03MA25 (em eventos aleatórios familiares, identificar todos os resultados possíveis e estimar os que têm maiores ou menores chances).
 - **Figuras novas:** um **dado** (a face e a lista das faces), uma **moeda** (cara e coroa) e uma **roleta** (círculo dividido em partes iguais, cada uma de uma cor).
 - **Três tipos de conta**, entre as 8 do nível (3 + 3 + 2):
-  1. **Quantos resultados são possíveis?:** "Ao lançar **um dado comum**, quantos resultados são possíveis?" → 6; "...**uma moeda**" → 2; "Esta **roleta** tem partes iguais. Quantas cores podem sair?" → de 3 a 6 cores (digitada).
-  2. **Qual tem mais chance?:** uma **roleta** de 6 a 8 partes com cores diferentes em quantidades diferentes; "Em qual cor a seta tem **mais chance** de parar?" → a cor com mais partes (só uma cor com o máximo).
+  1. **Quantos resultados são possíveis?:** "Ao lançar **um dado comum**, quantos resultados são possíveis?" → 6; "...**uma moeda**" → 2; "Esta **roleta** tem partes iguais. Quantas cores podem sair?" → de 3 a 5 cores (digitada; nunca vermelho e verde na mesma roleta, por causa de quem não distingue essas cores).
+  2. **Qual tem mais chance?:** uma **roleta** de 6 a 8 partes com 3 a 5 cores em quantidades diferentes (nunca vermelho e verde juntos); "Em qual cor a seta tem **mais chance** de parar?" → a cor com mais partes (só uma cor com o máximo).
   3. **Qual tem menos chance?:** o mesmo, com "menos chance" (só uma cor com o mínimo).
 - **Resposta:** digitada (tipo 1) e escolha (tipos 2 e 3).
 - **Contas diferentes:** centenas.
