@@ -30,3 +30,11 @@ A imagem de fundo é gerada sem logo e sem o nome, com uma área calma na parte 
 
 ## Margem de segurança
 Deixar ao redor da logo pelo menos a metade da altura do ícone de espaço livre.
+
+## Capas e pacotes dos álbuns
+Cada álbum tem `stickers/capas/<id>.webp` (capa em retrato, 640 px de largura) e `stickers/pacotes/<id>.webp` (pacote com fundo transparente, 520 px de altura). O `<id>` é o mesmo do tema: bandeiras, dinossauros, pets, ameacados, espaco. O teste `testes/capas.test.js` exige as duas imagens para todo álbum novo.
+
+Receita para um álbum novo:
+1. Gerar a arte (capa 3:4 e pacote 1:1) em desenho animado, sem borda branca nos personagens, com uma área calma na parte de baixo (14% na capa, 18% no pacote), sem logo e sem o nome Folhinha VIP.
+2. Sobrepor `marca/logo-escuro.png` na área calma, com largura de cerca de 55% da capa e 55% do pacote. Em fundo claro (como o céu das Bandeiras) usar `marca/logo-claro.png`.
+3. Converter para WebP e, no pacote, deixar o fundo branco transparente.
