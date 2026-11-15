@@ -64,7 +64,7 @@ ok(JSON.stringify(A.deskOf(m))==='["a"]',"limite vindo do banco (1 na mesa)");
 ok(A.deskLimit({})===2,"limite padrão 2");
 ok(/p_desk:desk/.test(src)&&/student_set_desk/.test(src),"boas-vindas e troca de mesa chamam o banco");
 ok(src.indexOf("if(desk)gift();else pickDesk();")>=0&&src.indexOf("ok.onclick=function(){desk=sel.slice();gift()}")>=0,"primeiro acesso: escolhe a mesa e só depois mostra o pacote de boas-vindas");
-const pk=src.slice(src.indexOf("function pickDesk()"),src.indexOf("function gift()"));
+const pk=src.slice(src.indexOf("function pickDesk()"),src.indexOf("/* 2) só depois"));
 ok(pk.indexOf("pacote de boas-vindas")<0&&pk.indexOf("figurinhas")<0,"a tela de escolher a mesa não fala do pacote nem das figurinhas");
 ok(/5 figurinhas de cada álbum/.test(src),"boas-vindas: 5 figurinhas de cada álbum da mesa");
 ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura do pacotinho");
