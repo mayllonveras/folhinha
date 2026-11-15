@@ -176,6 +176,14 @@ FC.makeItems=function(levelIdx,keep,opts){
     if(lims(p).some(function(l){return (cnt[l[0]]||0)>=l[1]})&&capTries++<200)continue;
     seen[k]=1;conta(p);items.push(p);
   }
+  /* Se os limites e as tentativas acabaram e ainda faltam contas (nível de poucas combinações, ou revisão que ocupa vagas dos mesmos grupos),
+     tenta de novo sem os limites, mas ainda sem repetir conta: repetir só como último recurso. */
+  tries=0;
+  while(items.length<10&&tries++<400){
+    var p2=FC.LEVELS[levelIdx].gen(),k2=itemKey(p2);
+    if(seen[k2])continue;
+    seen[k2]=1;items.push(p2);
+  }
   while(items.length<10)items.push(FC.LEVELS[levelIdx].gen());
   return items;
 };
