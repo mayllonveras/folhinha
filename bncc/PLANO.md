@@ -166,3 +166,11 @@ e os testes, e por fim a grade é ligada ao app (níveis 119 em diante, migraç�
 
 Decisão do professor: o cadastro dos pais **não pede mais o nível**. Os pais escolhem só o ano escolar (obrigatório, e só os anos que a grade já tem) e a criança começa no **primeiro nível desse ano**; se dominar o conteúdo, avança mais rápido pelos dias de ouro e saltos. O campo "Nível em que ele está" ficou numa seção recolhida **"Avançado"**: no cadastro vem em "Início do ano escolhido (recomendado)"; na edição mostra o nível atual, e mudar zera os carimbos, como antes. Sem migração: o banco continua recebendo `level_idx`. Ajudantes em `core.js`: `FC.primeiroNivelDoAno(ano)` e `FC.anosComGrade()`; testes em `testes/nivelinicial.test.js`.
 O teste de nivelamento (decisão 9) deixa de ser necessário na entrada e fica como opcional para depois.
+
+## Dias livres e cadastro enxuto (15/11/2026)
+
+Decisão do professor: os dias da semana passam a ter **três tipos**. **Dia de estudo** (padrão segunda a sexta): cota de folhas e sequência de perseverança, como antes. **Dia livre** (padrão sábado e domingo): a criança pode jogar, com a **mesma cota** do dia de estudo, mas não precisa; faltar não perde a sequência nem conta como "dia sem carimbo". **Descanso**: o resto, sem jogo.
+No dia livre, o carimbo, o salto (conta nos 2 por semana) e os pacotinhos funcionam normalmente: fechar a cota dá o pacotinho do dia fechado e o do carimbo, mas **não soma na sequência nem paga marco**.
+Banco: coluna `students.free_days` (padrão `{0,6}`; um dia de estudo nunca é livre) e as funções `student_open_sheet`, `student_me`, `student_submit_sheet` e `create_student` (parâmetro `p_free`), em `migracoes/2026-11-15-dias-livres.sql` (**ainda não aplicada**).
+Tela dos pais: a tela normal ficou com **nome, ano escolar, uma linha-resumo do padrão (com "Mudar") e os álbuns, em lista compacta**. Foram para a seção recolhida **"Avançado"**: nível inicial, limite de avanço, data de início, folhas por dia, dias de estudo e dias livres. A caixa de regras ficou recolhida em "Ver como o aluno avança".
+Testes: `testes/dialivre.test.js` (tipo do dia e sequência); a migração foi conferida num PostgreSQL local com folhas reais (dia livre, dia de estudo, descanso, criação e regra de sobreposição).
