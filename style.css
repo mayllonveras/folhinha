@@ -132,6 +132,9 @@ th{font-weight:500;color:var(--muted);border-top:0;font-size:.75rem;text-transfo
 .tag.ok{background:color-mix(in srgb,var(--ok-fill) 18%,transparent);color:var(--ok)} .tag.bad{background:color-mix(in srgb,var(--danger-fill) 16%,transparent);color:var(--danger)}
 details summary{cursor:pointer;color:var(--muted);font-size:.95rem}
 details .form{margin-top:12px}
+details.adv{padding:10px 12px;border:1px dashed var(--line);border-radius:10px}
+details.adv select{box-sizing:border-box;min-width:0;max-width:100%}
+details.adv[open] summary{margin-bottom:10px}
 .sheetview{margin-top:16px;border-top:2px solid var(--ink);padding-top:14px}
 .sv{margin:12px 0 0;padding:0 0 0 1.4rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 28px}
 .sv li{min-width:0}

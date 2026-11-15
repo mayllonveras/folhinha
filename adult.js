@@ -144,34 +144,40 @@ function studyTimeText(levelIdx,perDay){
   var lo=Math.max(1,Math.round(perDay*L.target*fast/60)),hi=Math.max(lo,Math.round(perDay*L.target/60));
   return 'Tempo aproximado: '+(lo===hi?'<b>cerca de '+lo+' minuto'+(lo===1?'':'s')+'</b>':'de <b>'+lo+' a '+hi+' minutos</b>')+' de estudo por dia, no nível '+L.id+' (meta de '+FC.fmtTime(L.target)+' por folha). Muda conforme o nível dele.';
 }
+/* Nível escolhido no formulário: o do campo "Avançado" ou, se ficou em "Início do ano", o primeiro nível do ano escolhido. -1 = ainda sem ano. */
+function chosenLevel(){
+  var lv=FC.$("#pLevel"),ano=FC.$("#pAno");if(!lv)return -1;
+  if(lv.value!=="")return Number(lv.value);
+  return ano&&ano.value!==""?FC.primeiroNivelDoAno(Number(ano.value)):-1;
+}
 document.addEventListener("change",function(e){
-  var t=e.target;if(!t||(t.id!=="pPer"&&t.id!=="pLevel"))return;
-  var h=FC.$("#pTime"),per=FC.$("#pPer"),lv=FC.$("#pLevel");
-  if(h&&per&&lv)h.innerHTML=studyTimeText(Number(lv.value),Number(per.value));
+  var t=e.target;if(!t||(t.id!=="pPer"&&t.id!=="pLevel"&&t.id!=="pAno"))return;
+  var h=FC.$("#pTime"),per=FC.$("#pPer"),lv=chosenLevel();
+  if(h&&per&&lv>=0)h.innerHTML=studyTimeText(lv,Number(per.value));
 });
 function programFields(s){
   var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["dinossauros"]};
-  var lv="",lastG=null;
+  var lv=s?"":'<option value="" selected>Início do ano escolhido (recomendado)</option>',lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
-    lv+='<option value="'+i+'"'+(i===v.level_idx?" selected":"")+'>'+l.id+" · "+esc(l.name)+'</option>';
+    lv+='<option value="'+i+'"'+(s&&i===v.level_idx?" selected":"")+'>'+l.id+" · "+esc(l.name)+'</option>';
   });
   lv+="</optgroup>";
   var days=FC.DOW.map(function(d,i){return '<label class="chk"><input type="checkbox" name="days" value="'+i+'"'+(v.study_days.indexOf(i)>=0?" checked":"")+'><span>'+d+'</span></label>'}).join("");
   var chosen=v.sticker_themes||[v.sticker_theme||"dinossauros"];
-  var anoNow=s?FC.anoAluno(s,FC.today(),PUB)||s.ano_escolar:null,ao='<option value="">Não informar</option>';
-  for(var a=1;a<=9;a++)ao+='<option value="'+a+'"'+(anoNow===a?" selected":"")+'>'+a+'º ano</option>';
+  var anoNow=s?FC.anoAluno(s,FC.today(),PUB)||s.ano_escolar:null,ao='<option value=""'+(anoNow?"":" selected")+' disabled>Escolha o ano</option>',anosOk=FC.anosComGrade();
+  for(var a=1;a<=9;a++)if(anosOk.indexOf(a)>=0||anoNow===a)ao+='<option value="'+a+'"'+(anoNow===a?" selected":"")+'>'+a+'º ano</option>';
   var pad=(PUB&&PUB.teto_anos_padrao!=null)?PUB.teto_anos_padrao:1,tt=v.teto_anos==null?"":String(v.teto_anos);
   var to='<option value=""'+(tt===""?" selected":"")+'>Padrão: até '+pad+' ano'+(pad===1?"":"s")+' à frente</option>';
   [[0,"Só o conteúdo do ano dele"],[1,"Até 1 ano à frente"],[2,"Até 2 anos à frente"],[3,"Até 3 anos à frente"],[99,"Sem limite"]].forEach(function(o){
     to+='<option value="'+o[0]+'"'+(tt===String(o[0])?" selected":"")+'>'+o[1]+'</option>'});
   var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
-    '<div class="two"><label class="field">Ano escolar<select id="pAno">'+ao+'</select><small>O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.</small></label>'+
+    '<div class="two"><label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
     '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label></div>'+
-    '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>Escolha o nível em que ele resolve as folhas com facilidade, sem ajuda.</small></label>'+
+    '<details class="adv"><summary>Avançado: nível do aluno</summary><label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label></details>'+
     '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small><small id="pTime">'+studyTimeText(v.level_idx,v.sheets_per_day)+'</small></label></div>'+
+    '<label class="field">Folhas por dia de estudo<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small><small id="pTime">'+studyTimeText(s?v.level_idx:Math.max(0,FC.primeiroNivelDoAno(anosOk[0])),v.sheets_per_day)+'</small></label></div>'+
     '<fieldset class="field"><legend>Dias da semana de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
     '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick">'+FC.THEMES.map(function(t){
       return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCapa(t.id)+'</label>'+
@@ -221,7 +227,10 @@ function readProgram(){
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
   if(themes.length>MAX_THEMES)return{error:"Escolha no máximo "+MAX_THEMES+" álbuns para a criança."};
   var anoV=$("#pAno").value,tetoV=$("#pTeto").value;
-  return{v:{name:name,level_idx:Number($("#pLevel").value),start_date:$("#pStart").value,study_days:days,
+  if(anoV==="")return{error:"Escolha o ano escolar."};
+  var lvl=chosenLevel();
+  if(lvl<0)return{error:"A grade ainda não tem o "+anoV+"º ano. Escolha outro ano."};
+  return{v:{name:name,level_idx:lvl,start_date:$("#pStart").value,study_days:days,
     sheets_per_day:Number($("#pPer").value),sticker_themes:themes,sticker_theme:themes[0],
     ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV)}};
 }
