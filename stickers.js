@@ -54,20 +54,34 @@ FC.stickerInfo=function(themeId,slot){
   if(t.kind==="flag"){var c=t.items[slot];return{name:c[1],sub:c[2],art:'<img class="flag" src="flags/'+c[0]+'.svg" alt="Bandeira: '+FC.esc(c[1])+'" loading="lazy">'}}
   return{name:t.nameOf(slot),sub:t.subOf?t.subOf(slot):"",art:t.art(slot)};
 };
+/* Cenário do fundo da carta: muda com o tipo da figurinha (período do dinossauro, bioma do animal, tipo de astro, continente...).
+   Os desenhos estão no style.css (classes sc-NOME). Álbum novo: acrescente o ramo dele aqui e as classes lá. */
+FC.sceneOf=function(themeId,slot){
+  var t=FC.theme(themeId),s;
+  if(themeId==="dinossauros"){s=(FC.DINOS&&FC.DINOS[slot]&&FC.DINOS[slot][1])||"";return s==="Triássico"?"triassico":s==="Jurássico"?"jurassico":"cretaceo"}
+  if(themeId==="pets")return slot<26?"gato":"cachorro";
+  if(themeId==="ameacados")return slot<12?"floresta":slot<24?"savana":slot<36?"oceano":slot<48?"lagoa":"gelo";
+  if(themeId==="espaco"){s=t.subOf?t.subOf(slot):"";return /^Estrela/.test(s)?"estrela":/^(Planeta|Lua|Asteroide|Cometa)/.test(s)?"sistema":"nebulosa"}
+  if(themeId==="bandeiras"){s=(t.items&&t.items[slot]&&t.items[slot][2])||"";
+    return /Sul/.test(s)?"am-sul":/Norte|Central/.test(s)?"am-norte":/^Europa/.test(s)?"europa":/África/.test(s)?"africa":/Oceania/.test(s)?"oceania":"asia"}
+  return "";
+};
 /* Cartão de uma figurinha. opts.dim deixa a figurinha apagada (visão do adulto para as que ainda não foram ganhas). */
 FC.stickerHtml=function(themeId,slot,opts){
   var it=FC.stickerInfo(themeId,slot),hue=(slot*37+20)%360,tier=FC.tierOf(themeId,slot);
   var flip=!(opts&&(opts.big||opts.noflip))&&FC.theme(themeId).backOf;   // figurinha com verso: ao tocar, vira
-  return '<div class="sticker'+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+(tier!=="comum"?" tier-"+tier:"")+(flip?" flippable":"")+'" style="--sh:'+hue+'" title="'+FC.esc(it.name)+'"'+
+  var sc=FC.sceneOf(themeId,slot);
+  return '<div class="sticker'+(sc?" sc sc-"+sc:"")+(opts&&opts.dim?" dim":"")+(opts&&opts.big?" big":"")+(tier!=="comum"?" tier-"+tier:"")+(flip?" flippable":"")+'" style="--sh:'+hue+';--ang:'+((slot*47)%360)+'deg" title="'+FC.esc(it.name)+'"'+
     (flip?' data-theme="'+themeId+'" data-slot="'+slot+'" role="button" tabindex="0" aria-label="'+FC.esc(it.name)+': tocar para ver o verso"':'')+'>'+
-    '<div class="st-art">'+it.art+'</div>'+(tier!=="comum"?'<div class="st-tier">'+FC.tierName(tier)+'</div>':'')+'<div class="st-name'+(it.name.length>10?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div>'+(opts&&opts.from?'<button type="button" class="st-trade" data-from="'+FC.esc(opts.from)+'" aria-label="Veio de uma troca com '+FC.esc(opts.from)+'. Toque para ver quem deu.">'+FC.icon("swap")+'</button>':'')+(opts&&opts.badge?'<span class="st-x" aria-label="'+opts.badge+(opts.badge>1?' repetidas':' repetida')+'">+'+opts.badge+'</span>':'')+'</div>';
+    '<div class="st-art">'+it.art+'</div>'+(tier!=="comum"?'<div class="st-tier">'+FC.tierName(tier)+'</div>':'')+'<div class="st-plate"><div class="st-name'+(it.name.length>10?" long":"")+'">'+FC.esc(it.name)+'</div>'+(it.sub?'<div class="st-sub">'+FC.esc(it.sub)+'</div>':'')+'<div class="st-no">nº '+(slot+1)+'</div></div>'+(opts&&opts.from?'<button type="button" class="st-trade" data-from="'+FC.esc(opts.from)+'" aria-label="Veio de uma troca com '+FC.esc(opts.from)+'. Toque para ver quem deu.">'+FC.icon("swap")+'</button>':'')+(opts&&opts.badge?'<span class="st-x" aria-label="'+opts.badge+(opts.badge>1?' repetidas':' repetida')+'">+'+opts.badge+'</span>':'')+'</div>';
 };
 /* Verso da figurinha: o cartão cresce no meio da tela, vira sozinho e mostra os detalhes. Tocar nele vira de novo. */
 FC.flipCard=function(themeId,slot){
   var t=FC.theme(themeId);if(!t.backOf)return;
   var it=FC.stickerInfo(themeId,slot),b=t.backOf(slot),tier=FC.tierOf(themeId,slot),hue=(slot*37+20)%360;
   var facts=b.facts.map(function(f){return '<div class="fb-row"><span class="fb-ic" aria-hidden="true">'+f[0]+'</span><div><small>'+FC.esc(f[1])+'</small><span>'+FC.esc(f[2])+'</span></div></div>'}).join("");
-  var back='<div class="fc-back" style="--sh:'+hue+'"><div class="fb-head"><b class="fb-name">'+FC.esc(it.name)+'</b>'+(it.sub?'<span class="fb-sub">'+FC.esc(it.sub)+'</span>':'')+
+  var sc=FC.sceneOf(themeId,slot);
+  var back='<div class="fc-back'+(sc?" sc sc-"+sc:"")+'" style="--sh:'+hue+';--ang:'+((slot*47)%360)+'deg"><div class="fb-head"><b class="fb-name">'+FC.esc(it.name)+'</b>'+(it.sub?'<span class="fb-sub">'+FC.esc(it.sub)+'</span>':'')+
     (tier!=="comum"?'<span class="fb-tier tier-'+tier+'">'+FC.tierName(tier)+'</span>':'')+'</div>'+
     '<div class="fb-facts">'+facts+'</div>'+
     (b.fun?'<div class="fb-fun"><b>⭐ Você sabia?</b><p>'+FC.esc(b.fun)+'</p></div>':'')+
