@@ -174,3 +174,11 @@ No dia livre, o carimbo, o salto (conta nos 2 por semana) e os pacotinhos funcio
 Banco: coluna `students.free_days` (padrão `{0,6}`; um dia de estudo nunca é livre) e as funções `student_open_sheet`, `student_me`, `student_submit_sheet` e `create_student` (parâmetro `p_free`), em `migracoes/2026-11-15-dias-livres.sql` (**aplicada no banco em 15/11/2026**, conferida antes num ensaio com transação desfeita; `student_me` e `student_submit_sheet` partem das funções que estavam no banco, com os carimbos por nível).
 Tela dos pais: a tela normal ficou com **nome, ano escolar, uma linha-resumo do padrão (com "Mudar") e os álbuns, em lista compacta**. Foram para a seção recolhida **"Avançado"**: nível inicial, limite de avanço, data de início, folhas por dia, dias de estudo e dias livres. A caixa de regras ficou recolhida em "Ver como o aluno avança".
 Testes: `testes/dialivre.test.js` (tipo do dia e sequência); a migração foi conferida num PostgreSQL local com folhas reais (dia livre, dia de estudo, descanso, criação e regra de sobreposição).
+
+## Pacote de boas-vindas (15/11/2026)
+
+Decisão do professor: na **primeira vez que a criança entra** no jogo (não no cadastro pelos pais), ela ganha um **pacote de boas-vindas com 10 figurinhas**.
+- Todas do **mesmo álbum** (a criança escolhe uma vez, se tiver dois), **sem repetidas** e com **pelo menos 1 rara** (a primeira sorteada é rara; as outras seguem a raridade normal, 5% ultra e 25% rara, e caem para comum se faltar figurinha da raridade). Na média saem cerca de 3 raras e 0,4 ultra por pacote.
+- Tela: "Bem-vindo, NOME!", escolha do álbum, abertura das 10 em sequência (com a animação e o confete de cada raridade) e resumo no fim. Se a criança fechar antes de abrir, o pacote continua esperando.
+- Banco: `students.welcome_at` (nulo = ainda não recebeu; quem já existe fica como "já recebeu"), `awards.source` aceita `boas_vindas`, função `student_welcome(token, álbum)` (só funciona uma vez) e `student_me` devolve `welcome_pending`. Migração: `migracoes/2026-11-15-pacote-boas-vindas.sql` (**ainda não aplicada**).
+- Painel dos pais: "N no pacote de boas-vindas" na lista de pacotinhos ganhos.

@@ -336,11 +336,11 @@ async function detail(id){
   var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
 
   /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
-  var by={carimbo:0,perseveranca:0,marco:0};
+  var by={carimbo:0,perseveranca:0,marco:0,boas_vindas:0};
   awards.forEach(function(a){if(a.source&&by[a.source]!=null)by[a.source]++});
   var packsHtml='<div class="panel"><div class="eyebrow gap">Pacotinhos ganhos</div><ul class="plain">'+
-    '<li><b>'+by.carimbo+'</b> pelo carimbo do dia</li><li><b>'+by.perseveranca+'</b> pela perseverança (dia fechado)</li><li><b>'+by.marco+'</b> pelos marcos de sequência</li></ul>'+
-    '<p class="muted small-t">Total: <b>'+(by.carimbo+by.perseveranca+by.marco)+'</b>. Melhor sequência: <b>'+s.best_streak+'</b> dia'+(s.best_streak===1?"":"s")+'.</p></div>';
+    '<li><b>'+by.carimbo+'</b> pelo carimbo do dia</li><li><b>'+by.perseveranca+'</b> pela perseverança (dia fechado)</li><li><b>'+by.marco+'</b> pelos marcos de sequência</li>'+(by.boas_vindas?'<li><b>'+by.boas_vindas+'</b> no pacote de boas-vindas</li>':'')+'</ul>'+
+    '<p class="muted small-t">Total: <b>'+(by.carimbo+by.perseveranca+by.marco+by.boas_vindas)+'</b>. Melhor sequência: <b>'+s.best_streak+'</b> dia'+(s.best_streak===1?"":"s")+'.</p></div>';
 
   /* faltas */
   var doneBy={};sheets.forEach(function(x){doneBy[x.study_day]=(doneBy[x.study_day]||0)+1});

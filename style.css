@@ -622,3 +622,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg{color:var(--ink)}
 .adm-extools{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:10px 0 4px}
 .adm-dump{width:100%;font-family:var(--font-num);font-size:.8rem;margin-top:8px}
+
+/* resumo do pacote de boas-vindas: 10 figurinhas em 3 colunas, sem os detalhes */
+.welcome-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:48vh;overflow:auto}
+.welcome-grid .sticker .st-sub,.welcome-grid .sticker .st-no{display:none}
+.welcome-grid .sticker .st-name{font-size:.72rem}

@@ -81,6 +81,7 @@ function pinScreen(mode,first,msg){
 async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
   home();
+  if(S.me.welcome_pending)showWelcome();
 }
 function home(){
   FC.setKeys(null);cur=null;clearInterval(timerId);
@@ -516,6 +517,50 @@ async function openPack(theme){
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
   refreshPacks();   // a contagem e o álbum já aparecem certos por trás, sem precisar recarregar a página
   showAward(res);
+}
+/* Pacote de boas-vindas: na primeira entrada a criança ganha 10 figurinhas de uma vez, todas do mesmo álbum (sem repetidas, com pelo menos 1 rara).
+   Ela escolhe o álbum uma vez (se tiver dois) e as 10 abrem em sequência; no fim aparece o resumo. Se fechar antes de abrir, o pacote continua esperando. */
+function showWelcome(){
+  var m=S.me,ids=themesOf(m),busy=false;
+  var pick=ids.length>1?'<p class="muted">De qual álbum você quer as 10 figurinhas?</p><div class="pack-choices">'+ids.map(function(id){
+      var th=FC.theme(id);return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b></button>';
+    }).join("")+'</div>':'<button class="btn reward block" data-t="'+ids[0]+'">Abrir agora</button>';
+  var ov=FC.overlay('<div class="pack-reveal"><div class="pack-closed">'+FC.themePack(ids[0])+'</div></div><h2>Bem-vindo, '+esc(m.name)+'!</h2>'+
+    '<p>Você ganhou um <b>pacote de boas-vindas</b> com <b>10 figurinhas</b>!</p>'+pick,{button:"Agora não"});
+  $$("[data-t]",ov.el).forEach(function(b){b.onclick=function(){if(busy)return;busy=true;go(b.getAttribute("data-t"))}});
+  async function go(theme){
+    var res;
+    try{res=await rpc("student_welcome",{p_token:S.token,p_theme:theme})}
+    catch(e){busy=false;if(/ja_recebeu/.test(String(e&&e.message||e))){ov.close();try{await loadHome()}catch(x){}return}FC.toast(FC.err(e),true);return}
+    m.welcome_pending=false;
+    m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:res.theme,slot:x.slot,end:FC.today()}}));
+    refreshPacks();
+    step(res,0);
+  }
+  function step(res,i){
+    if(!ov.el.isConnected)return;
+    var th=FC.theme(res.theme),card=ov.el.querySelector(".ov-card"),n=res.stickers.length;
+    if(i>=n){
+      var cells="";res.stickers.slice().sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(th.id,x.slot,{noflip:true})});
+      card.innerHTML='<h2>Suas 10 figurinhas!</h2><div class="album welcome-grid">'+cells+'</div><p class="muted gap">Você já tem <b>'+gotOf(S.me,th.id).length+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+
+        '. Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
+      card.querySelector("#wEnd").onclick=ov.close;FC.confetti({gold:true,n:70});return;
+    }
+    var st=res.stickers[i],tier=st.tier||"comum";
+    var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
+    var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
+    card.innerHTML='<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,st.slot,{big:true})+'</div></div>'+
+      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Figurinha '+(i+1)+' de '+n+'</p>'+
+      '<div class="actions ov-actions"><button class="btn" id="wNext" style="visibility:hidden">'+(i+1<n?"Próxima":"Ver todas")+'</button></div>';
+    var nb=card.querySelector("#wNext");nb.onclick=function(){step(res,i+1)};
+    setTimeout(function(){
+      if(!ov.el.isConnected)return;
+      FC.sfx.pack();var el=ov.el.querySelector("#packReveal");if(el)el.classList.add("opened");
+      if(tier==="comum"){FC.confetti();return}
+      setTimeout(function(){if(!ov.el.isConnected)return;FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64})},350);
+    },800);
+    setTimeout(function(){if(ov.el.isConnected){nb.style.visibility="";nb.focus()}},1700);
+  }
 }
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
 function showAward(aw){
