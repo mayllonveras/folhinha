@@ -460,22 +460,77 @@ function dupsOf(m){
   return out;
 }
 function isFull(m,id){return gotOf(m,id).length>=FC.ALBUM_SIZE}
+/* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai o pacotinho); gaveta = o resto que ainda não está completo. */
+function deskLimit(m){return m.desk_limit||2}
+function deskOf(m){
+  var lib=themesOf(m);
+  var d=(m.desk_themes||lib.slice(0,deskLimit(m))).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
+  return d;
+}
+function drawerOf(m){var d=deskOf(m);return themesOf(m).filter(function(x){return d.indexOf(x)<0&&!isFull(m,x)})}
+function doneAlbums(m){return themesOf(m).filter(function(x){return isFull(m,x)})}
+function deskRow(m,x,act){
+  var th=FC.theme(x),n=gotOf(m,x).length;
+  return '<div class="desk-row'+(x===S.albumTheme?" on":"")+'"><button type="button" class="desk-pick" data-album="'+x+'">'+FC.themeCapa(x)+'<span class="desk-txt"><b>'+esc(th.name)+'</b><small>'+n+' de '+FC.ALBUM_SIZE+'</small></span></button>'+
+    (act?'<button type="button" class="btn ghost small" data-move="'+x+'" data-to="'+act[0]+'">'+act[1]+'</button>':'')+'</div>';
+}
+/* Troca mesa e gaveta (a criança pode a qualquer momento, menos no meio da abertura de um pacotinho). */
+async function setDesk(list){
+  if(S.opening)return false;
+  try{var r=await rpc("student_set_desk",{p_token:S.token,p_desk:list});S.me.desk_themes=r.desk;if(r.limit)S.me.desk_limit=r.limit;return true}
+  catch(e){FC.toast(FC.err(e),true);return false}
+}
+function afterDesk(){refreshPacks()}
+async function moveAlbum(id,to){
+  var m=S.me,d=deskOf(m),lim=deskLimit(m);
+  if(to==="gaveta"){
+    if(d.length<=1){FC.toast("Deixe pelo menos um álbum na mesa.",true);return}
+    if(await setDesk(d.filter(function(x){return x!==id})))afterDesk();return;
+  }
+  if(d.length<lim){if(await setDesk(d.concat([id])))afterDesk();return}
+  /* mesa cheia: a criança escolhe qual álbum vai para a gaveta */
+  var ov=FC.overlay('<h2>A mesa está cheia</h2><p class="muted">A mesa cabe '+lim+' álbum'+(lim>1?'s':'')+'. Qual álbum vai para a gaveta para dar lugar ao <b>'+esc(FC.theme(id).name)+'</b>?</p><div class="pack-choices">'+d.map(function(x){
+    return '<button class="pack-choice" data-out="'+x+'"><span class="pc-art">'+FC.themeCapa(x)+'</span><b>'+esc(FC.theme(x).name)+'</b></button>'}).join("")+'</div>',{button:"Cancelar"});
+  $$("[data-out]",ov.el).forEach(function(b){b.onclick=async function(){
+    var out=b.getAttribute("data-out");ov.close();
+    if(await setDesk(d.filter(function(x){return x!==out}).concat([id])))afterDesk();
+  }});
+}
 function packPanel(m){
-  var n=m.pending_packs||0;if(n<1)return "";
+  var n=m.pending_packs||0;
+  var open=deskOf(m);
+  if(m.albums_done&&themesOf(m).every(function(x){return isFull(m,x)}))
+    return '<section class="panel packbox"><div class="grow"><b>Você completou todos os álbuns! 🎉</b><div class="muted small-t">'+(n?'Seus '+n+' pacotinho'+(n>1?'s ficam':' fica')+' guardado'+(n>1?'s':'')+'. ':'')+'Peça aos seus pais para liberarem um álbum novo e você volta a ganhar figurinhas.</div></div></section>';
+  if(n<1)return "";
+  if(!open.length&&drawerOf(m).length)
+    return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+      '<div class="muted small-t">Sua mesa está vazia. Coloque um álbum da gaveta na mesa para abrir.</div></div><button class="btn reward" data-pack>Arrumar a mesa</button></section>';
   return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
-    '<div class="muted small-t">'+(themesOf(m).length>1?'Escolha de qual álbum você quer a figurinha.':'Toque para descobrir a figurinha.')+'</div></div>'+
+    '<div class="muted small-t">'+(open.length>1?'Escolha de qual álbum da mesa você quer a figurinha.':'Toque para descobrir a figurinha.')+'</div></div>'+
     '<button class="btn reward" data-pack>Abrir pacotinho</button></section>';
 }
 /* Aba Álbum: com mais de um álbum, a criança escolhe qual ver pelas etiquetas. */
 function albumPane(m){
-  var ids=themesOf(m),id=ids.indexOf(S.albumTheme)>=0?S.albumTheme:ids[0];S.albumTheme=id;
-  var th=FC.theme(id),got=gotOf(m,id);
+  var ids=themesOf(m),id=ids.indexOf(S.albumTheme)>=0?S.albumTheme:(deskOf(m)[0]||ids[0]);S.albumTheme=id;
+  var th=FC.theme(id),got=gotOf(m,id),lim=deskLimit(m),useDesk=ids.length>lim;
   function chip(x){return '<button type="button" class="chip-btn'+(x===id?" on":"")+'" data-album="'+x+'">'+(isFull(m,x)?"✔ ":"")+esc(FC.theme(x).name)+'</button>'}
-  var going=ids.filter(function(x){return !isFull(m,x)}),full=ids.filter(function(x){return isFull(m,x)});
-  var tabs=ids.length>1?'<div class="album-tabs">'+going.map(chip).join("")+'</div>'+(full.length?'<div class="album-tabs"><span class="muted small-t">Completos:</span>'+full.map(chip).join("")+'</div>':""):"";
+  var tabs="";
+  if(useDesk){
+    var d=deskOf(m),g=drawerOf(m),fu=doneAlbums(m);
+    tabs='<div class="desk-sec"><div class="eyebrow">Na mesa ('+d.length+' de '+lim+')</div>'+
+        (d.length?d.map(function(x){return deskRow(m,x,["gaveta","Guardar"])}).join(""):'<p class="muted small-t">A mesa está vazia. Coloque um álbum da gaveta aqui.</p>')+
+        (d.length<lim&&g.length?'<p class="tier-msg small-t">Tem lugar na mesa! Escolha um álbum da gaveta.</p>':'')+'</div>'+
+      '<div class="desk-sec"><div class="eyebrow">Na gaveta ('+g.length+')</div>'+
+        (g.length?g.map(function(x){return deskRow(m,x,["mesa","Pôr na mesa"])}).join(""):'<p class="muted small-t">Nenhum álbum na gaveta.</p>')+'</div>'+
+      (fu.length?'<div class="desk-sec"><div class="eyebrow">Completos ('+fu.length+')</div>'+fu.map(function(x){return deskRow(m,x,null)}).join("")+'</div>':"");
+  }else if(ids.length>1){
+    var going=ids.filter(function(x){return !isFull(m,x)}),full=ids.filter(function(x){return isFull(m,x)});
+    tabs='<div class="album-tabs">'+going.map(chip).join("")+'</div>'+(full.length?'<div class="album-tabs"><span class="muted small-t">Completos:</span>'+full.map(chip).join("")+'</div>':"");
+  }
+  var onDesk=deskOf(m).indexOf(id)>=0;
   return packPanel(m)+'<section class="panel" id="albumBox">'+tabs+'<div class="album-head">'+FC.themeCapa(id)+'<div class="grow"><div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
-    '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div></div></div>'+
-    '<p class="muted small-t gap">'+(got.length>=FC.ALBUM_SIZE?'Álbum completo! Parabéns! As repetidas ficam na aba Trocas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
+    '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+(useDesk&&!isFull(m,id)?'<div class="muted small-t">'+(onDesk?"Está na mesa":"Está na gaveta")+'</div>':"")+'</div></div>'+
+    '<p class="muted small-t gap">'+(got.length>=FC.ALBUM_SIZE?'Álbum completo! Parabéns! As repetidas ficam na aba Trocas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê cada figurinha depois de ganhá-la.')+'</p>'+
     '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
 /* Atualiza na tela, na hora, o aviso de pacotinhos (Início) e o álbum (Álbum) com os dados atuais de S.me. */
@@ -491,29 +546,41 @@ function refreshPacks(){
   bindPack();
 }
 function bindPack(){$$("[data-pack]").forEach(function(b){b.onclick=openPackFlow})}
-function bindAlbum(){$$("[data-album]").forEach(function(b){b.onclick=function(){
-  S.albumTheme=b.getAttribute("data-album");
-  var pane=$('.pane[data-pane="album"]');pane.innerHTML=albumPane(S.me);bindPack();bindAlbum();
-}})}
+function bindAlbum(){
+  $$("[data-album]").forEach(function(b){b.onclick=function(){
+    S.albumTheme=b.getAttribute("data-album");
+    var pane=$('.pane[data-pane="album"]');pane.innerHTML=albumPane(S.me);bindPack();bindAlbum();
+  }});
+  $$("[data-move]").forEach(function(b){b.onclick=function(){moveAlbum(b.getAttribute("data-move"),b.getAttribute("data-to"))}});
+}
 /* Ganhou pacotinho: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
-  var ids=themesOf(m);
-  var open=ids.filter(function(id){return !isFull(m,id)});
-  if(!open.length){FC.toast("Seus álbuns já estão completos!");return}
+  var open=deskOf(m);
+  if(!open.length){
+    if(drawerOf(m).length){   // mesa vazia: leva a criança para arrumar a mesa
+      var tab=$$('[data-tab="album"]')[0];
+      if(tab)tab.click();
+      FC.toast("Coloque um álbum na mesa para abrir o pacotinho.");return;
+    }
+    FC.toast("Seus álbuns já estão completos!");return;
+  }
   if(open.length===1)return openPack(open[0]);
-  var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum você quer?</p>'+
-    '<div class="pack-choices">'+ids.map(function(id){
-      var th=FC.theme(id),n=gotOf(m,id).length,full=n>=FC.ALBUM_SIZE;
-      return '<button class="pack-choice" data-t="'+id+'"'+(full?" disabled":"")+'><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Álbum completo!":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
+  var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum da mesa você quer?</p>'+
+    '<div class="pack-choices">'+open.map(function(id){
+      var th=FC.theme(id),n=gotOf(m,id).length;
+      return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b><small>'+n+' de '+FC.ALBUM_SIZE+'</small></button>';
     }).join("")+'</div>',{button:"Agora não"});
   $$(".pack-choice",ov.el).forEach(function(b){b.onclick=function(){ov.close();openPack(b.getAttribute("data-t"))}});
 }
 async function openPack(theme){
   var m=S.me,res;
+  if(S.opening)return;S.opening=true;
   try{res=await rpc("student_open_pack",{p_token:S.token,p_theme:theme})}
-  catch(e){FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
+  catch(e){S.opening=false;FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
+  S.opening=false;
   m.pending_packs=res.pending;
+  if(res.desk)m.desk_themes=res.desk;if(res.albums_done!=null)m.albums_done=res.albums_done;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
   refreshPacks();   // a contagem e o álbum já aparecem certos por trás, sem precisar recarregar a página
   showAward(res);
@@ -521,36 +588,63 @@ async function openPack(theme){
 /* Pacote de boas-vindas: na primeira entrada a criança ganha 10 figurinhas de uma vez, todas do mesmo álbum (sem repetidas, com pelo menos 1 rara).
    Ela escolhe o álbum uma vez (se tiver dois) e as 10 abrem em sequência; no fim aparece o resumo. Se fechar antes de abrir, o pacote continua esperando. */
 function showWelcome(){
-  var m=S.me,ids=themesOf(m),busy=false;
-  var pick=ids.length>1?'<p class="muted">De qual álbum você quer as 10 figurinhas?</p><div class="pack-choices">'+ids.map(function(id){
-      var th=FC.theme(id);return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b></button>';
-    }).join("")+'</div>':'<button class="btn reward block" data-t="'+ids[0]+'">Abrir agora</button>';
-  var ov=FC.overlay('<div class="pack-reveal"><div class="pack-closed">'+FC.themePack(ids[0])+'</div></div><h2>Bem-vindo, '+esc(m.name)+'!</h2>'+
-    '<p>Você ganhou um <b>pacote de boas-vindas</b> com <b>10 figurinhas</b>!</p>'+pick,{button:"Agora não"});
-  $$("[data-t]",ov.el).forEach(function(b){b.onclick=function(){if(busy)return;busy=true;go(b.getAttribute("data-t"))}});
-  async function go(theme){
+  var m=S.me,lib=themesOf(m),lim=deskLimit(m),busy=false,desk=lib.length>lim?null:lib;
+  var ov=FC.overlay('<div id="wTop"></div><div id="wBody"></div>',{button:"Agora não"});
+  function top(h){ov.el.querySelector("#wTop").innerHTML=h}
+  function body(h){ov.el.querySelector("#wBody").innerHTML=h}
+  /* 1) com mais álbuns liberados do que cabem na mesa, a criança escolhe primeiro com quais começa */
+  function pickDesk(){
+    var sel=[];
+    top('<h2>Bem-vindo, '+esc(m.name)+'!</h2>');
+    body('<p class="muted">Seus pais liberaram '+lib.length+' álbuns. Primeiro escolha até '+lim+' para começar na <b>mesa</b>; os outros esperam na <b>gaveta</b> e você troca quando quiser.</p>'+
+      '<div class="pack-choices">'+lib.map(function(id){return '<button type="button" class="pack-choice" data-d="'+id+'" aria-pressed="false"><span class="pc-art">'+FC.themeCapa(id)+'</span><b>'+esc(FC.theme(id).name)+'</b></button>'}).join("")+'</div>'+
+      '<div class="actions"><button class="btn" id="wDesk" disabled>Continuar</button></div>');
+    var ok=ov.el.querySelector("#wDesk");
+    $$("[data-d]",ov.el).forEach(function(b){b.onclick=function(){
+      var id=b.getAttribute("data-d"),k=sel.indexOf(id);
+      if(k>=0)sel.splice(k,1);else if(sel.length<lim)sel.push(id);else{FC.toast("A mesa cabe "+lim+" álbum"+(lim>1?"s":"")+". Desmarque um para trocar.",true)}
+      $$("[data-d]",ov.el).forEach(function(c){var on=sel.indexOf(c.getAttribute("data-d"))>=0;c.classList.toggle("on",on);c.setAttribute("aria-pressed",on?"true":"false")});
+      ok.disabled=!sel.length;
+    }});
+    ok.onclick=function(){desk=sel.slice();gift()};
+  }
+  /* 2) só depois da mesa escolhida aparece o pacote de boas-vindas: 5 figurinhas de cada álbum da mesa (10, se for um só) */
+  function gift(){
+    var nomes=desk.map(function(id){return '<b>'+esc(FC.theme(id).name)+'</b>'}).join(" e ");
+    top('<div class="pack-reveal"><div class="pack-closed">'+FC.themePack(desk[0])+'</div></div><h2>'+(lib.length>lim?'Sua mesa está pronta!':'Bem-vindo, '+esc(m.name)+'!')+'</h2>'+
+      '<p>Você ganhou um <b>pacote de boas-vindas</b>!</p>');
+    body('<p class="muted">'+(desk.length>1?'Vêm <b>5 figurinhas de cada álbum</b> da sua mesa: '+nomes+'.':'Vêm <b>10 figurinhas</b> do álbum '+nomes+'.')+'</p>'+
+      '<button class="btn reward block" id="wOpen">Abrir agora</button>');
+    ov.el.querySelector("#wOpen").onclick=function(){if(busy)return;busy=true;go()};
+  }
+  if(desk)gift();else pickDesk();
+  async function go(){
     var res;
-    try{res=await rpc("student_welcome",{p_token:S.token,p_theme:theme})}
+    try{res=await rpc("student_welcome",{p_token:S.token,p_desk:desk})}
     catch(e){busy=false;if(/ja_recebeu/.test(String(e&&e.message||e))){ov.close();try{await loadHome()}catch(x){}return}FC.toast(FC.err(e),true);return}
     m.welcome_pending=false;
-    m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:res.theme,slot:x.slot,end:FC.today()}}));
+    if(res.desk)m.desk_themes=res.desk;
+    m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:x.theme,slot:x.slot,end:FC.today()}}));
     refreshPacks();
     step(res,0);
   }
   function step(res,i){
     if(!ov.el.isConnected)return;
-    var th=FC.theme(res.theme),card=ov.el.querySelector(".ov-card"),n=res.stickers.length;
+    var card=ov.el.querySelector(".ov-card"),n=res.stickers.length;
     if(i>=n){
-      var cells="";res.stickers.slice().sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(th.id,x.slot,{noflip:true})});
-      card.innerHTML='<h2>Suas 10 figurinhas!</h2><div class="album welcome-grid">'+cells+'</div><p class="muted gap">Você já tem <b>'+gotOf(S.me,th.id).length+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+
-        '. Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
+      var temas=[];res.stickers.forEach(function(x){if(temas.indexOf(x.theme)<0)temas.push(x.theme)});
+      var blocos=temas.map(function(id){
+        var cells="";res.stickers.filter(function(x){return x.theme===id}).sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(id,x.slot,{noflip:true})});
+        return '<h3 class="gap">'+esc(FC.theme(id).name)+'</h3><div class="album welcome-grid" style="max-height:none;overflow:visible">'+cells+'</div><p class="muted small-t">Você já tem <b>'+gotOf(S.me,id).length+' de '+FC.ALBUM_SIZE+'</b> neste álbum.</p>';
+      }).join("");
+      card.innerHTML='<h2>Suas '+n+' figurinhas!</h2>'+blocos+'<p class="muted gap">Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
       card.querySelector("#wEnd").onclick=ov.close;FC.confetti({gold:true,n:70});return;
     }
-    var st=res.stickers[i],tier=st.tier||"comum";
+    var st=res.stickers[i],th=FC.theme(st.theme),tier=st.tier||"comum";
     var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
     var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
     card.innerHTML='<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,st.slot,{big:true})+'</div></div>'+
-      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Figurinha '+(i+1)+' de '+n+'</p>'+
+      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">'+esc(th.name)+' · figurinha '+(i+1)+' de '+n+'</p>'+
       '<div class="actions ov-actions"><button class="btn" id="wNext" style="visibility:hidden">'+(i+1<n?"Próxima":"Ver todas")+'</button></div>';
     var nb=card.querySelector("#wNext");nb.onclick=function(){step(res,i+1)};
     setTimeout(function(){
@@ -562,6 +656,12 @@ function showWelcome(){
     setTimeout(function(){if(ov.el.isConnected){nb.style.visibility="";nb.focus()}},1700);
   }
 }
+/* Álbum que acabou de ficar completo: sai da mesa sozinho. Avisa a criança do que fazer agora. */
+function completedMsg(m,id){
+  var th=FC.theme(id),all=themesOf(m).every(function(x){return isFull(m,x)});
+  return '<p class="tier-msg">🎉 Você completou o álbum '+esc(th.name)+'! Ele saiu da mesa e foi para os completos.'+
+    (all?' Você completou TODOS os seus álbuns! Peça aos seus pais para liberarem um álbum novo.':drawerOf(m).length?' Na aba Álbum, escolha outro álbum da gaveta para colocar na mesa.':'')+'</p>';
+}
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
 function showAward(aw){
   var m=S.me;
@@ -570,7 +670,7 @@ function showAward(aw){
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   var ov=FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(!rep_&&n>=FC.ALBUM_SIZE?completedMsg(m,aw.theme):'')+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   /* O botão (Colar no álbum / Guardar nas repetidas) só aparece quando a figurinha termina de aparecer.
      Até lá, nem o clique fora da janela nem o Esc fecham a janela. */
   var acts=ov.el.querySelector(".ov-actions"),ready=false;
@@ -793,7 +893,7 @@ async function send(payload,score){
     if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
       FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);
-      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Seus pacotinhos estão esperando na tela inicial. Toque em <b>Abrir pacotinho</b> quando quiser'+(themesOf(S.me).length>1?' e escolha de qual álbum quer a figurinha':'')+'.</p>',
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Seus pacotinhos estão esperando na tela inicial. Toque em <b>Abrir pacotinho</b> quando quiser'+(deskOf(S.me).length>1?' e escolha de qual álbum da mesa quer a figurinha':'')+'.</p>',
         {button:"Entendi"});
     },res.advanced?3600:2300);
   }

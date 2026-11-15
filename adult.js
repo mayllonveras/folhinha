@@ -13,7 +13,8 @@ function anoLine(s,L,today){
   return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"")+h;
 }
 /* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
-var MIN_SHEETS=3,MIN_DAYS=3,MAX_THEMES=2;
+var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
+function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 FC.adultApp=async function(){
@@ -121,7 +122,8 @@ async function dash(){
     return '<div class="cardwrap"><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
       '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
       '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+
-      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div></button></div>';
+      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
+      (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button></div>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
@@ -211,10 +213,16 @@ function programFields(s){
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
     '<label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
     '<p class="resumo" id="pResumo">'+resumoHtml(lv0,v.sheets_per_day,v.study_days,fr)+'</p>'+
-    '<fieldset class="field"><legend>Álbuns disponíveis para a criança</legend><div class="theme-pick compact">'+FC.THEMES.map(function(t){
-      return '<div class="theme-opt"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'><label class="to-art" for="th_'+t.id+'">'+FC.themeCapa(t.id)+'</label>'+
-        '<label class="to-txt" for="th_'+t.id+'"><b>'+esc(t.name)+'</b><small>'+esc(t.desc)+'</small></label><button type="button" class="btn ghost small" data-view="'+t.id+'">Ver</button></div>'}).join("")+'</div>'+
-      '<small id="pThemeHint">Marque 1 ou 2 álbuns. A criança ganha pacotinhos nos dias de estudo e escolhe de qual álbum quer cada figurinha surpresa.</small></fieldset>'+
+    '<fieldset class="field" id="pThemes"><legend>Álbuns liberados para a criança</legend>'+
+      '<small>Marque quantos quiser, pelo menos 1. A criança escolhe quais ficam na mesa (até '+deskLimit()+' por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</small>'+
+      (FC.THEMES.length>THEME_SEARCH_FROM?'<div class="theme-filter"><input type="search" id="thQ" placeholder="Buscar álbum" aria-label="Buscar álbum"><select id="thCat" aria-label="Categoria"><option value="">Todas as categorias</option>'+
+        FC.THEMES.map(function(t){return FC.catOf(t.id)}).filter(function(c,i,a){return a.indexOf(c)===i}).map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>':"")+
+      '<div class="album-grid" id="thGrid">'+FC.THEMES.map(function(t){
+        return '<div class="alb-opt" data-name="'+esc(t.name.toLowerCase())+'" data-cat="'+esc(FC.catOf(t.id))+'"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'+
+          '<label class="alb-capa" for="th_'+t.id+'">'+FC.themeCapa(t.id)+'<span class="alb-check" aria-hidden="true">✓</span></label>'+
+          '<label class="alb-name" for="th_'+t.id+'">'+esc(t.name)+'</label><button type="button" class="btn ghost small" data-view="'+t.id+'">Detalhes</button></div>'}).join("")+'</div>'+
+      '<div class="alb-tools"><button type="button" class="btn ghost small" id="thAll">Marcar todos</button><button type="button" class="btn ghost small" id="thNone">Desmarcar todos</button></div>'+
+      '<small id="pThemeHint"></small></fieldset>'+
     '<details class="adv" id="pAdv"><summary>Avançado: nível, limite, dias e folhas por dia</summary><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
@@ -240,20 +248,33 @@ function rulesBox(){
     '<li>Dias de estudo seguidos com a cota fechada dão pacotinhos extras aos <b>3, 7 e 14 dias</b> (2, 3 e 5 pacotinhos) e depois <b>a cada 30 dias</b> (5 pacotinhos). Faltar a um dia de estudo zera a sequência.</li></ul></div>';
 }
 function bindProgram(){
-  $$('input[name="themes"]').forEach(function(c){c.addEventListener("change",function(){
-    var on=$$('input[name="themes"]:checked'),h=$("#pThemeHint");
-    if(on.length>MAX_THEMES){c.checked=false;if(h){h.textContent="Só dá para escolher "+MAX_THEMES+" álbuns por criança. Desmarque um para trocar.";h.className="bad"}}
-    else if(h){h.textContent="Marque 1 ou 2 álbuns. A criança ganha pacotinhos nos dias de estudo e escolhe de qual álbum quer cada figurinha surpresa.";h.className=""}
-  })});
+  function themeHint(){
+    var n=$$('input[name="themes"]:checked').length,h=$("#pThemeHint");if(!h)return;
+    h.textContent=n===0?"Marque pelo menos 1 álbum.":n+(n>1?" álbuns liberados":" álbum liberado")+(n>deskLimit()?": a criança escolhe "+deskLimit()+" para começar na mesa.":".");
+    h.className=n===0?"bad":"";
+  }
+  $$('input[name="themes"]').forEach(function(c){c.addEventListener("change",themeHint)});
+  function shown(){return $$("#thGrid .alb-opt").filter(function(o){return !o.hidden})}
+  function setAll(on){shown().forEach(function(o){o.querySelector("input").checked=on});themeHint()}
+  if($("#thAll")){$("#thAll").onclick=function(){setAll(true)};$("#thNone").onclick=function(){setAll(false)}}
+  function filt(){
+    var q=($("#thQ")?$("#thQ").value:"").trim().toLowerCase(),c=$("#thCat")?$("#thCat").value:"";
+    $$("#thGrid .alb-opt").forEach(function(o){o.hidden=!!((q&&o.getAttribute("data-name").indexOf(q)<0)||(c&&o.getAttribute("data-cat")!==c))});
+  }
+  if($("#thQ")){$("#thQ").oninput=filt;$("#thCat").onchange=filt}
+  themeHint();
   function upd(){
     var n=$$('input[name="days"]:checked').length;
     $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana.":"Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: "+MIN_DAYS+" dias por semana.";
     $("#pDaysHint").className=n<MIN_DAYS?"bad":"";
   }
+  /* Detalhes do álbum: descrição, o que aparece nas cartas e uma amostra fixa de cartas comuns. Nunca mostra o álbum inteiro nem as raras. */
   $$("[data-view]").forEach(function(btn){btn.onclick=function(){
-    var th=FC.theme(btn.getAttribute("data-view")),cells="";
-    for(var i=0;i<FC.ALBUM_SIZE;i++)cells+=FC.stickerHtml(th.id,i);
-    FC.overlay('<h2>'+esc(th.name)+'</h2><p class="muted">'+esc(th.desc)+' A criança só vê cada figurinha quando a ganha.</p>'+FC.rarityLegend(th.id)+'<div class="album">'+cells+'</div>',{wide:true});
+    var th=FC.theme(btn.getAttribute("data-view")),cells=FC.sampleSlots(th.id).map(function(sl){return FC.stickerHtml(th.id,sl)}).join("");
+    FC.overlay('<h2>'+esc(th.name)+'</h2><div class="album-head">'+FC.themeCapa(th.id)+'<p class="grow">'+esc(th.desc)+'</p></div>'+
+      '<h3 class="gap">O que aparece em cada carta</h3><ul class="plain">'+FC.cardFields(th.id).map(function(f){return '<li>'+esc(f)+'</li>'}).join("")+'</ul>'+
+      '<h3 class="gap">Algumas cartas de exemplo</h3><div class="album sample">'+cells+'</div>'+
+      '<p class="muted small-t gap">O álbum tem '+FC.ALBUM_SIZE+' figurinhas. Estas são só uma amostra: a criança descobre as outras, inclusive as raras, ao ganhar os pacotinhos.</p>',{wide:true});
   }});
   $$('input[name="days"]').forEach(function(c){c.onchange=upd});
   upd();refreshProgramInfo();
@@ -266,7 +287,6 @@ function readProgram(){
   if(!$("#pStart").value)return{error:"Informe a data de início."};
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
-  if(themes.length>MAX_THEMES)return{error:"Escolha no máximo "+MAX_THEMES+" álbuns para a criança."};
   var anoV=$("#pAno").value,tetoV=$("#pTeto").value;
   if(anoV==="")return{error:"Escolha o ano escolar."};
   var lvl=chosenLevel();
@@ -326,12 +346,17 @@ async function detail(id){
   var sk=FC.streakNow(s,today);
   var themeIds=s.sticker_themes&&s.sticker_themes.length?s.sticker_themes:[s.sticker_theme];
   var packsWaiting=awards.filter(function(a){return a.kind==="pacote"}).length;
-  var rewardPanel='<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
+  /* Os pais veem só a capa de cada álbum liberado e as figurinhas que a criança já conquistou: nunca as que ainda faltam
+     (a criança pode pegar o celular do adulto e descobrir figurinhas antes de ganhar). */
+  var doneNotice=s.albums_done_at?'<div class="panel offer"><b>'+esc(s.name)+' completou todos os álbuns!</b><p class="small-t">Ele não vai mais receber figurinhas, porque todos os álbuns liberados estão completos. Quer liberar outro álbum?</p><div class="actions"><button class="btn small" data-more="1">Liberar mais álbuns</button></div></div>':"";
+  var rewardPanel=doneNotice+'<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
     (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
-    '<p class="muted small-t">As figurinhas apagadas ainda não foram ganhas: a criança só vê as que conquistou. Toque em uma figurinha para ver o verso.</p>'+
+    '<p class="muted small-t">Aqui aparecem só as figurinhas que a criança já conquistou. Toque em uma figurinha para ver o verso.</p>'+
     themeIds.map(function(id,i){
       var th=FC.theme(id),seen={},got=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}});
-      return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+'</summary>'+FC.rarityLegend(id)+FC.albumHtml(id,got,{adult:true})+'</details>';
+      return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+(got.length>=FC.ALBUM_SIZE?' ✔':'')+'</summary>'+
+        '<div class="album-head gap">'+FC.themeCapa(id)+'<p class="grow muted small-t">'+esc(th.desc)+'</p></div>'+
+        (got.length?'<div class="gap">'+FC.albumHtml(id,got,{adult:true,only:true})+'</div>':'<p class="muted small-t gap">A criança ainda não conquistou nenhuma figurinha deste álbum.</p>')+'</details>';
     }).join("")+'</div>';
   var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
 
@@ -369,7 +394,7 @@ async function detail(id){
   /* perto do limite: faltam poucos níveis (até 3) dentro do limite atual; sugere liberar mais um ano (o professor decide) */
   if(anoNow&&!atTeto){
     var maxAno=anoNow+tetoVal,firstBeyond=-1;
-    for(var q=0;q<FC.LEVELS.length;q++)if(FC.LEVELS[q].ano>maxAno){firstBeyond=q;break}
+    for(var qi=0;qi<FC.LEVELS.length;qi++)if(FC.LEVELS[qi].ano>maxAno){firstBeyond=qi;break}
     var left=firstBeyond>=0?firstBeyond-1-s.level_idx:-1;
     if(firstBeyond>=0&&left>=0&&left<=3)notices+='<div class="panel offer"><b>O aluno está chegando ao limite do plano</b><p class="small-t">'+(left===0?'Falta só terminar o nível '+L.id+' para chegar':'Faltam '+left+' nível'+(left===1?'':'s')+' depois deste para ele chegar')+' ao limite definido (até '+tetoVal+' ano'+(tetoVal===1?"":"s")+' à frente do '+FC.ordAno(anoNow)+'). Se ele está indo bem, você pode liberar mais um ano à frente (até '+(tetoVal+1)+'), e ele continua avançando sem parar. Quando chegar ao limite, ele faz folhas de revisão.</p><div class="actions"><button class="btn small" id="liberar">Liberar mais 1 ano</button></div></div>';
   }
@@ -394,7 +419,7 @@ async function detail(id){
     '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
       (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div></div>';
-  var resumo=notices+stats+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
+  var resumo=doneNotice+notices+stats+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
@@ -425,6 +450,10 @@ async function detail(id){
     if(r.error){lib.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Limite liberado: mais 1 ano à frente.");detail(id);
   };
+  $$("[data-more]").forEach(function(b){b.onclick=function(){
+    FC.tabState.pai="programa";try{sessionStorage.setItem("fc_tab_pai","programa")}catch(e){}
+    detail(id).then(function(){var el=$("#pThemes");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})});
+  }});
   var anoOk=$("#anoOk");
   if(anoOk)anoOk.onclick=async function(){
     anoOk.disabled=true;

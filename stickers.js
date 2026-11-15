@@ -8,8 +8,24 @@ FC.ALBUM_SIZE=52;
 var BANDEIRAS=[["br","Brasil","América do Sul"],["ar","Argentina","América do Sul"],["uy","Uruguai","América do Sul"],["py","Paraguai","América do Sul"],["cl","Chile","América do Sul"],["bo","Bolívia","América do Sul"],["pe","Peru","América do Sul"],["co","Colômbia","América do Sul"],["ve","Venezuela","América do Sul"],["ec","Equador","América do Sul"],["mx","México","América do Norte"],["us","Estados Unidos","América do Norte"],["ca","Canadá","América do Norte"],["cu","Cuba","América Central"],["jm","Jamaica","América Central"],["pt","Portugal","Europa"],["es","Espanha","Europa"],["fr","França","Europa"],["it","Itália","Europa"],["de","Alemanha","Europa"],["gb","Reino Unido","Europa"],["ie","Irlanda","Europa"],["nl","Países Baixos","Europa"],["be","Bélgica","Europa"],["ch","Suíça","Europa"],["se","Suécia","Europa"],["no","Noruega","Europa"],["dk","Dinamarca","Europa"],["fi","Finlândia","Europa"],["gr","Grécia","Europa"],["ru","Rússia","Europa e Ásia"],["pl","Polônia","Europa"],["ua","Ucrânia","Europa"],["tr","Turquia","Ásia e Europa"],["jp","Japão","Ásia"],["cn","China","Ásia"],["kr","Coreia do Sul","Ásia"],["in","Índia","Ásia"],["id","Indonésia","Ásia"],["th","Tailândia","Ásia"],["vn","Vietnã","Ásia"],["il","Israel","Ásia"],["sa","Arábia Saudita","Ásia"],["eg","Egito","África"],["za","África do Sul","África"],["ng","Nigéria","África"],["ma","Marrocos","África"],["ke","Quênia","África"],["ao","Angola","África"],["mz","Moçambique","África"],["au","Austrália","Oceania"],["nz","Nova Zelândia","Oceania"]];
 
 FC.THEMES=[
-  {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS}
+  {id:"bandeiras",name:"Bandeiras do mundo",desc:"As bandeiras de 52 países bem conhecidos, com o continente de cada um.",kind:"flag",items:BANDEIRAS,fields:["Bandeira","Nome do país","Continente"]}
 ];
+/* Categoria de cada álbum (para filtrar quando houver muitos) e dados que a tela dos pais mostra em "Detalhes".
+   Álbum novo: acrescente a categoria aqui e registre o id na tabela albums do banco. */
+FC.CATS={dinossauros:"Animais",pets:"Animais",ameacados:"Animais",bandeiras:"Geografia",espaco:"Ciência"};
+FC.catOf=function(id){return FC.CATS[id]||"Outros"};
+/* Amostra FIXA de 4 a 6 cartas comuns (espalhadas pelo álbum): serve para os pais entenderem o álbum sem ver as raras nem o álbum todo. */
+FC.sampleSlots=function(id){
+  var c=[],i;for(i=0;i<FC.ALBUM_SIZE;i++)if(FC.tierOf(id,i)==="comum")c.push(i);
+  var n=Math.min(6,c.length),out=[];for(i=0;i<n;i++)out.push(c[Math.floor(i*c.length/n)]);
+  return out;
+};
+/* O que aparece em cada carta (frente e verso), sem revelar nenhuma figurinha. */
+FC.cardFields=function(id){
+  var t=FC.theme(id);if(t.fields)return t.fields;
+  var out=["Nome"];if(t.backOf){t.backOf(0).facts.forEach(function(f){out.push(f[1])});if(t.backOf(0).fun)out.push("Você sabia?")}
+  return out;
+};
 /* Imagem de capa de um tema (para escolher o álbum). O tema pode indicar qual figurinha usar em "cover". */
 FC.themeCover=function(id){
   var t=FC.theme(id);return FC.stickerInfo(id,t.cover||0).art;
@@ -91,7 +107,8 @@ FC.albumHtml=function(themeId,earned,opts){
   var have={};earned.forEach(function(e){have[e.slot]=e});
   var cells="";
   for(var i=0;i<FC.ALBUM_SIZE;i++){
-    cells+=have[i]?FC.stickerHtml(themeId,i,have[i].from?{from:have[i].from}:null):(opts.adult?FC.stickerHtml(themeId,i,{dim:true}):FC.lockedHtml(i));
+    if(have[i])cells+=FC.stickerHtml(themeId,i,have[i].from?{from:have[i].from}:null);
+    else if(!opts.only)cells+=opts.adult?FC.stickerHtml(themeId,i,{dim:true}):FC.lockedHtml(i);   // opts.only: tela dos pais mostra só as já conquistadas
   }
   return '<div class="album">'+cells+'</div>';
 };
