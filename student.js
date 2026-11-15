@@ -27,7 +27,8 @@ async function flush(){
   try{await rpc("student_log_events",{p_token:S.token,p_events:batch,p_app:FC.VERSAO,p_screen:w,p_device:w<600?"celular":w<1024?"tablet":"computador",p_session:LOG.sess})}
   catch(e){/* o registro nunca atrapalha a criança: se falhar, esse lote se perde */}
 }
-document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);if(cur&&$("#items"))startPause("auto");flush()}});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);if(cur&&$("#items")){startPause("auto");if(cur.modo==="uma")stopDwell()}flush()}
+  else if(cur&&cur.modo==="uma"&&$("#items")&&!cur.pauseAt&&cur.q<cur.items.length)startDwell(cur.q)});
 window.addEventListener("pagehide",function(){saveDraft();flush()});
 
 /* Endereços da criança: #/inicio, #/album, #/trocas, #/amigos, #/progresso (abas), #/folha e #/resultado. Voltar durante a folha pergunta antes de sair. */
@@ -802,9 +803,9 @@ async function startSheet(){
   }
   prep=null;
   r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal="";it.vals=[]});
-  cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro,dwell:r.items.map(function(){return 0}),active:null,since:0};
+  cur={id:r.id,level:r.level,items:r.items,modo:modoDaFolha(),q:0,tfi:[],t0:Date.now(),secs:null,round:0,intro:r.intro,dwell:r.items.map(function(){return 0}),active:null,since:0};
   renderSheet();FC.nav.at("/folha");
-  track("folha_inicio",{level:cur.level,sheet:cur.id,data:{itens:cur.items.length}});
+  track("folha_inicio",{level:cur.level,sheet:cur.id,data:{itens:cur.items.length,modo:cur.modo}});
 }
 /* Tempo por conta: soma dos períodos em que a caixa de resposta daquela conta ficou em foco (só na 1ª tentativa). */
 function startDwell(i){if(!cur||cur.round>0)return;stopDwell();cur.active=i;cur.since=performance.now()}
@@ -820,8 +821,11 @@ function loadDraft(){try{return JSON.parse(localStorage.getItem(draftKey())||"nu
 function clearDraft(){try{localStorage.removeItem(draftKey())}catch(e){}}
 function saveDraft(){
   if(!cur||!$("#items"))return;
+  /* folha em que ainda não se escreveu nada não precisa de rascunho: ao voltar, começa limpa, sem tela de retorno */
+  var algo=cur.round>0||cur.items.some(function(it){var inp=$("#in"+it.i);return it.tries>0||(inp&&inp.value!=="")});
+  if(!algo){clearDraft();return}
   try{localStorage.setItem(draftKey(),JSON.stringify({sheet:cur.id,t0:cur.t0,pauseMs:cur.pauseMs||0,pauseAt:cur.pauseAt||null,pauses:cur.pauses||0,round:cur.round,secs:cur.secs,
-    items:cur.items.map(function(it){var inp=$("#in"+it.i);return{t:it.tries,ok:it.ok,f:it.first,fv:it.firstVal,vals:it.vals,val:inp?inp.value:"",d:Math.round(cur.dwell[it.i]||0)}})}))}catch(e){}
+    modo:cur.modo,q:cur.q||0,tfi:cur.tfi||[],items:cur.items.map(function(it){var inp=$("#in"+it.i);return{t:it.tries,ok:it.ok,f:it.first,fv:it.firstVal,vals:it.vals,val:inp?inp.value:"",d:Math.round(cur.dwell[it.i]||0)}})}))}catch(e){}
 }
 var draftTimer=null;
 function saveDraftSoon(){clearTimeout(draftTimer);draftTimer=setTimeout(saveDraft,500)}
@@ -844,6 +848,7 @@ function endPause(){
   if(curta&&cur.pauses>0)cur.pauses--;
   track("folha_retomada",{level:cur.level,sheet:cur.id,data:{origem:cur.pauseOrigem||"manual",pausa_s:Math.round(dur/1000),devolvida:curta}});
   hidePauseScreen();updatePauseBtn();updateMapa();saveDraft();
+  if(cur.modo==="uma"){showQ(cur.q);return}
   for(var k=0;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);break}
 }
 function showPauseScreen(){
@@ -878,6 +883,8 @@ function restoreDraft(){
   var d=loadDraft();
   if(d&&d.sheet!==cur.id)clearDraft();   // rascunho de outra folha (já entregue ou trocada)
   if(!d||d.sheet!==cur.id||!d.items||d.items.length!==cur.items.length)return false;
+  if(d.modo&&d.modo!==cur.modo)return false;   // rascunho de outro modo de folha: não serve
+  cur.q=d.q||0;cur.tfi=d.tfi||[];
   cur.t0=d.t0;cur.pauseMs=d.pauseMs||0;cur.pauseAt=d.pauseAt||null;cur.pauses=d.pauses||0;cur.round=d.round||0;cur.secs=d.secs==null?null:d.secs;
   cur.items.forEach(function(it,i){
     var s=d.items[i],inp=$("#in"+i),row=$("#r"+i),choice=!!(it.extra&&it.extra.opts);
@@ -889,6 +896,7 @@ function restoreDraft(){
   if(cur.secs!=null){$("#timer").textContent=FC.fmtTime(cur.secs);$("#btnSubmit").textContent="Conferir correções"}
   setMsg("Você voltou! Sua folha continua de onde parou.");
   if(!cur.pauseAt){cur.pauseAt=Date.now();cur.pauseOrigem="retorno"}   // voltar à folha abre na tela de pausa, sem gastar outra pausa
+  if(cur.modo==="uma"){var n=cur.items.length;cur.items.forEach(function(it){var row=$("#r"+it.i);if(row)row.hidden=(it.i!==cur.q)});var rv=$("#review");if(rv)rv.hidden=(cur.q!==n);if(cur.q===n)updateReview();var nx=$("#btnNext");if(nx)nx.hidden=(cur.q===n&&cur.round===0)}
   showPauseScreen();updatePauseBtn();
   return true;
 }
@@ -900,18 +908,66 @@ function updateMapa(){
   cur.items.forEach(function(it){
     var b=$('#mapa [data-i="'+it.i+'"]'),row=$("#r"+it.i);if(!b||!row)return;
     var blank=rowBlank(it),miss=row.classList.contains("miss"),bad=row.classList.contains("bad")&&blank;
-    b.classList.toggle("on",!blank);b.classList.toggle("miss",blank&&miss);b.classList.toggle("bad",bad&&!miss);
+    b.classList.toggle("cur",cur.modo==="uma"&&cur.q===it.i);b.classList.toggle("on",!blank);b.classList.toggle("miss",blank&&miss);b.classList.toggle("bad",bad&&!miss);
     b.setAttribute("aria-label","Conta "+(it.i+1)+": "+(it.ok?"certa":!blank?"respondida":miss?"falta responder":bad?"precisa corrigir":"ainda sem resposta"));
   });
 }
 function goItem(i){
+  if(cur&&cur.modo==="uma")return showQ(i);
   var row=$("#r"+i);if(!row)return;
   row.scrollIntoView({behavior:"smooth",block:"center"});
   setTimeout(function(){focusItem(i)},250);
 }
 function clearMiss(i){var row=$("#r"+i);if(!row)return;row.classList.remove("miss");var tg=row.querySelector(".miss-tag");if(tg)tg.remove()}
+/* ---------- uma conta por vez ----------
+   Modo "uma" (parâmetro modo_folha do /adm): só a conta atual aparece e o tempo dela é o tempo em que ela está na tela (sem pausa, com o app aberto).
+   As bolinhas do topo levam a qualquer conta; depois da última vem a tela "Pronto para entregar?". Nas correções só passam as contas erradas.
+   Modo "lista": todas as contas na tela, como antes. */
+function modoDaFolha(){return S.me&&S.me.modo_folha===0?"lista":"uma"}
+function dwellNow(i){return (cur.dwell[i]||0)+(cur.active===i?performance.now()-cur.since:0)}
+/* tempo até começar a escrever, só na primeira visita à conta e só na primeira rodada */
+function noteFirstInput(i){if(cur&&cur.modo==="uma"&&cur.round===0&&cur.tfi[i]==null)cur.tfi[i]=Math.round(dwellNow(i))}
+function pendentes(){return cur.items.filter(function(it){return !it.ok})}
+function showQ(i){
+  if(!cur||cur.modo!=="uma")return;
+  var n=cur.items.length;if(i<0)i=0;if(i>n)i=n;
+  stopDwell();cur.q=i;
+  cur.items.forEach(function(it){var row=$("#r"+it.i);if(row)row.hidden=(it.i!==i)});
+  var rv=$("#review");if(rv)rv.hidden=(i!==n);
+  if(i===n)updateReview();
+  var corr=cur.round>0,pend=pendentes().map(function(x){return x.i}),pos=pend.indexOf(i);
+  var prev=$("#btnPrev"),next=$("#btnNext");
+  if(prev){prev.hidden=corr?(pos<=0):(i===0)}
+  if(next){
+    next.hidden=(i===n)&&!corr;
+    next.textContent=corr?(pos>=pend.length-1||pos<0?"Conferir correções":"Próxima"):(i>=n-1?"Revisar":"Próxima");
+  }
+  updateMapa();saveDraftSoon();window.scrollTo(0,0);
+  if(i<n){startDwell(i);setTimeout(function(){if(cur&&cur.q===i&&!cur.pauseAt)focusItem(i)},30)}
+}
+function stepNext(){
+  if(!cur||cur.modo!=="uma")return;
+  if(cur.round>0){
+    var pend=pendentes().map(function(x){return x.i}),pos=pend.indexOf(cur.q);
+    if(pos<0||pos>=pend.length-1)return submit();
+    return showQ(pend[pos+1]);
+  }
+  showQ(cur.q+1);
+}
+function stepPrev(){
+  if(!cur||cur.modo!=="uma")return;
+  if(cur.round>0){var pend=pendentes().map(function(x){return x.i}),pos=pend.indexOf(cur.q);if(pos>0)showQ(pend[pos-1]);return}
+  showQ(cur.q-1);
+}
+function updateReview(){
+  var miss=cur.items.filter(rowBlank);
+  var m=$("#revMsg"),box=$("#revMiss");if(!m||!box)return;
+  m.textContent=miss.length?(miss.length>1?"Faltam "+miss.length+" contas sem resposta:":"Falta 1 conta sem resposta:"):"Todas as contas têm resposta. Pode entregar!";
+  box.innerHTML=miss.map(function(it){return '<button type="button" class="btn ghost small rev-go" data-i="'+it.i+'">Ir para a conta '+(it.i+1)+'</button>'}).join("");
+  $$("#revMiss [data-i]").forEach(function(b){b.onclick=function(){showQ(Number(b.getAttribute("data-i")))}});
+}
 function renderSheet(){
-  var L=FC.LEVELS[cur.level],d=new Date();
+  var L=FC.LEVELS[cur.level],d=new Date(),uma=cur.modo==="uma";
   FC.render('<div class="paper"><div class="sh-head">'+
     '<div><span class="k">Folha</span><span class="v">Nível '+L.id+'</span></div>'+
     '<div><span class="k">Aluno</span><span class="v">'+esc(S.me.name)+'</span></div>'+
@@ -921,8 +977,11 @@ function renderSheet(){
       return '<button type="button" class="mapa-b" data-i="'+it.i+'"><i>'+(it.i+1)+'</i></button>'}).join("")+'</div>'+
     '<ol class="items" id="items">'+cur.items.map(function(it){
       return '<li class="row'+(FC.isRich(it)?' rich-row':'')+'" id="r'+it.i+'">'+FC.itemInner(it,it.i)+'</li>'}).join("")+'</ol>'+
+    (uma?'<div class="review" id="review" hidden><h2>Pronto para entregar?</h2><p id="revMsg" class="muted"></p><div id="revMiss"></div>'+
+      '<button class="btn reward block" id="btnSubmit">Entregar folha</button></div>':"")+
     '<div class="sh-foot"><div class="msg" id="shMsg">'+esc(cur.intro)+'</div>'+
-    '<div class="actions"><button class="btn ghost small" id="btnExit">Sair da folha</button><button class="btn" id="btnSubmit">Entregar folha</button></div></div></div>');
+    (uma?'<div class="actions step-nav"><button class="btn ghost small" id="btnExit">Sair da folha</button><span class="grow"></span><button class="btn ghost" id="btnPrev">Anterior</button><button class="btn" id="btnNext">Próxima</button></div>'
+        :'<div class="actions"><button class="btn ghost small" id="btnExit">Sair da folha</button><button class="btn" id="btnSubmit">Entregar folha</button></div>')+'</div></div>');
   cur.items.forEach(function(it){
     var inp=$("#in"+it.i);
     if(it.extra&&it.extra.opts){
@@ -932,24 +991,27 @@ function renderSheet(){
           if(it.ok)return;
           inp.value=btn.getAttribute("data-k");
           $$("#r"+it.i+" .opt").forEach(function(o){o.classList.toggle("sel",o===btn)});
-          $("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();
+          $("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();noteFirstInput(it.i);
+          if(uma)return;
           for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
         });
-        btn.addEventListener("focus",function(){startDwell(it.i)});
-        btn.addEventListener("blur",stopDwell);
+        if(!uma){btn.addEventListener("focus",function(){startDwell(it.i)});
+        btn.addEventListener("blur",stopDwell)}
       });
       return;
     }
-    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon()});
-    inp.addEventListener("focus",function(){startDwell(it.i)});
-    inp.addEventListener("blur",stopDwell);
+    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();noteFirstInput(it.i)});
+    if(!uma){inp.addEventListener("focus",function(){startDwell(it.i)});
+    inp.addEventListener("blur",stopDwell)}
     inp.addEventListener("keydown",function(e){
       if(e.key!=="Enter")return;e.preventDefault();
+      if(uma)return stepNext();
       for(var k=it.i+1;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);return}
       submit();
     });
   });
   $("#btnSubmit").onclick=submit;
+  if(uma){$("#btnNext").onclick=stepNext;$("#btnPrev").onclick=stepPrev}
   $$("#mapa [data-i]").forEach(function(b){b.onclick=function(){goItem(Number(b.getAttribute("data-i")))}});
   $("#btnExit").onclick=exitSheet;
   $("#btnPause").onclick=function(){startPause("manual")};updatePauseBtn();
@@ -959,7 +1021,7 @@ function renderSheet(){
     var s=elapsedMs()/1000;$("#timer").textContent=FC.fmtTime(s);
     $("#timerBox").classList.toggle("over",s>FC.LEVELS[cur.level].target);
   },250);
-  if(!restoreDraft())focusItem(0);
+  if(!restoreDraft()){if(uma)showQ(0);else focusItem(0)}
   updateMapa();
 }
 /* Leva o foco para a conta: a caixa de resposta, ou a primeira opção nos exercícios de escolha. */
@@ -986,7 +1048,7 @@ function submit(){
     track("folha_conta_em_branco",{level:cur.level,sheet:cur.id,data:{contas:nums}});
     return;
   }
-  if(cur.round===0){stopDwell();cur.secs=Math.min(elapsedMs()/1000,14000);clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
+  if(cur.round===0){stopDwell();cur.secs=cur.modo==='uma'?Math.min(Math.max(3,cur.dwell.reduce(function(a,b){return a+b},0)/1000),elapsedMs()/1000,14000):Math.min(elapsedMs()/1000,14000);clearInterval(timerId);$("#timer").textContent=FC.fmtTime(cur.secs)}
   cur.round++;
   var wrong=0,focus=null;
   cur.items.forEach(function(it){
@@ -1009,14 +1071,14 @@ function submit(){
   if(wrong===0)return finish();
   setMsg("Faltam "+wrong+" para corrigir. Refaça só as contas em vermelho; as certas já foram marcadas.",true);
   $("#btnSubmit").textContent="Conferir correções";
-  focusItem(focus);
+  if(cur.modo==="uma")showQ(focus);else focusItem(focus);
 }
 
 async function finish(){
   clearInterval(timerId);
   var items=cur.items,score=items.filter(function(i){return i.first}).length;
   var payload={p_token:S.token,p_sheet:cur.id,p_first_ok:score,p_secs:Math.round(cur.secs*10)/10,
-    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries,ms:Math.round(cur.dwell[i.i]||0),vals:i.vals}}),
+    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries,ms:Math.round(cur.dwell[i.i]||0),vals:i.vals,ti:cur.tfi[i.i]==null?null:cur.tfi[i.i],modo:cur.modo}}),
     p_corrections:items.filter(function(i){return i.tries>1}).length};
   await send(payload,score);
 }

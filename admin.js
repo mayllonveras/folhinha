@@ -121,7 +121,7 @@ function bindEx(){
 
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
-  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2};
+  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2,modo_folha:1};
 var GROUPS=[
   {t:"Carimbos e subida de nível",d:"O dia fecha quando o aluno faz a cota de folhas. Cumprindo o dia normal, ganha 1 carimbo.",f:[
     ["stamps_needed","Carimbos para subir de nível",1,10,"carimbos"],
@@ -139,6 +139,8 @@ var GROUPS=[
     ["bloqueio_salto_dias","Dias sem poder saltar depois de voltar",0,60,"dias"]]},
   {t:"Pausa na folha",d:"A criança pode pausar a folha (banheiro, água). Durante a pausa o relógio para e as contas ficam escondidas, sem limite de tempo; o que se limita é a quantidade de pausas por folha (0 desliga a pausa). Pausa de menos de 10 segundos, como a tela do celular apagando, não conta.",f:[
     ["pausas_max","Pausas por folha",0,10,"pausas"]]},
+  {t:"Modo da folha",d:"1 = uma conta por vez na tela (o tempo de cada conta é o tempo em que ela está visível, bem mais confiável); 0 = todas as contas na tela, como era antes. Cada folha guarda o modo em que foi feita, para comparar acertos e tempos.",f:[
+    ["modo_folha","Modo da folha (0 ou 1)",0,1,""]]},
   {t:"Álbuns de figurinhas",d:"Os pais liberam quantos álbuns quiserem. A criança mantém alguns na mesa (são os álbuns de onde ela escolhe a figurinha ao abrir um pacotinho) e os outros ficam na gaveta.",f:[
     ["limite_mesa","Álbuns na mesa ao mesmo tempo",1,5,"álbuns"]]},
   {t:"Ano escolar",d:"O ano de cada aluno é calculado a partir do ano informado pelos pais; a virada não muda o nível do aluno.",f:[
