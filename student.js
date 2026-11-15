@@ -30,7 +30,35 @@ async function flush(){
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);flush()}});
 window.addEventListener("pagehide",flush);
 
+/* Endereços da criança: #/inicio, #/album, #/trocas, #/amigos, #/progresso (abas), #/folha e #/resultado. Voltar durante a folha pergunta antes de sair. */
+var TABS=["inicio","album","trocas","amigos","progresso"];
+function homePath(){return "/"+(FC.tabState.aluno||"inicio")}
+function goHome(){if(FC.nav.up(homePath()))return Promise.resolve();return loadHome()}
+function leaveSheet(path){
+  if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
+  clearInterval(timerId);cur=null;route(path);
+}
+function route(path){
+  if(!S.token)return;
+  if(cur&&cur.secs==null){   // folha em andamento: o botão voltar não pode jogar fora o que a criança escreveu sem perguntar
+    var typed=cur.items.some(function(i){var el=$("#in"+i.i);return i.tries>0||(el&&el.value.trim()!=="")});
+    if(!typed)return leaveSheet(path);
+    FC.nav.forward();   // volta para a folha enquanto a criança decide
+    var ov=FC.overlay('<h2>Sair da folha?</h2><p class="muted">As respostas desta folha ainda não foram entregues e não ficam guardadas. Quer sair mesmo?</p>'+
+      '<div class="actions"><button class="btn ghost" id="lvGo">Sair da folha</button></div>',{button:"Continuar a folha"});
+    $("#lvGo",ov.el).onclick=function(){ov.close();FC.nav.after(function(){if(!FC.nav.up(path))leaveSheet(path);else if(cur){track("folha_abandono",{level:cur.level,sheet:cur.id,data:{saiu:"voltar"}});clearInterval(timerId);cur=null}})};
+    return;
+  }
+  var m=/^\/([a-z]+)$/.exec(path),tab=m&&TABS.indexOf(m[1])>=0?m[1]:null;
+  if(!tab){tab=FC.tabState.aluno||"inicio";FC.nav.at("/"+tab,true)}   // "/folha" ou "/resultado" ao avançar ou recarregar, ou endereço desconhecido: tela inicial
+  FC.tabState.aluno=tab;try{sessionStorage.setItem("fc_tab_aluno",tab)}catch(e){}
+  if(FC.$('.shell[data-scope="aluno"]'))return FC.gotoTab(tab,true);
+  loadHome().catch(fail);
+}
 FC.studentApp=async function(code){
+  FC.nav.handler=route;
+  var p0=/^\/([a-z]+)$/.exec(FC.nav.path());
+  if(p0&&TABS.indexOf(p0[1])>=0){FC.tabState.aluno=p0[1];try{sessionStorage.setItem("fc_tab_aluno",p0[1])}catch(e){}}
   S.code=code;FC.setKeys(null);FC.studentManifest(code);
   FC.render('<p class="loading">Carregando…</p>');
   var info;
@@ -56,6 +84,7 @@ function fail(e){
 
 /* ---------- PIN ---------- */
 function pinScreen(mode,first,msg){
+  FC.nav.reset();
   FC.setKeys(null);
   var create=mode==="create";
   var title=create?(first!=null?"Digite o PIN de novo":"Crie o seu PIN"):"Digite o seu PIN";
@@ -149,7 +178,8 @@ function home(){
     {id:"trocas",label:"Trocas",icon:"swap",html:tradesPane()},
     {id:"amigos",label:"Amigos",icon:"friends",html:'<div id="frBox"><p class="loading">Carregando…</p></div>'},
     {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
-  FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true});FC.refreshInstall();
+  FC.nav.at("/"+FC.tabState.aluno);
+  FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true},function(id){return "/"+id});FC.refreshInstall();
   $("#logout").onclick=logout;
   function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
   sndLabel();
@@ -771,7 +801,7 @@ async function startSheet(){
   prep=null;
   r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal="";it.vals=[]});
   cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro,dwell:r.items.map(function(){return 0}),active:null,since:0};
-  renderSheet();
+  renderSheet();FC.nav.at("/folha");
   track("folha_inicio",{level:cur.level,sheet:cur.id,data:{itens:cur.items.length}});
 }
 /* Tempo por conta: soma dos períodos em que a caixa de resposta daquela conta ficou em foco (só na 1ª tentativa). */
@@ -817,7 +847,7 @@ function renderSheet(){
   $("#btnSubmit").onclick=submit;
   $("#btnExit").onclick=async function(){
     if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
-    clearInterval(timerId);cur=null;try{await loadHome()}catch(e){fail(e)}};
+    clearInterval(timerId);cur=null;try{await goHome()}catch(e){fail(e)}};
   clearInterval(timerId);cur.t0=Date.now();
   timerId=setInterval(function(){
     if(!cur||cur.secs!=null)return;
@@ -876,7 +906,7 @@ async function send(payload,score){
     if(FC.isSessionErr(e)){setTok(null);return pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}
     if(String(e.message||"").indexOf("folha_invalida")>=0){
       FC.render('<div class="panel center"><h1>Esta folha já foi entregue</h1><p class="muted">Ela foi entregue em outro aparelho, então esta cópia não vale nada. Volte ao início para ver a sua folha de hoje.</p><p><button class="btn" id="goHome">Ir ao início</button></p></div>');
-      $("#goHome").onclick=async function(){try{await loadHome()}catch(x){fail(x)}};return;
+      $("#goHome").onclick=async function(){try{await goHome()}catch(x){fail(x)}};return;
     }
     FC.render('<div class="panel center"><h1>Não consegui enviar</h1><p class="muted">'+esc(FC.err(e))+' Seu resultado está guardado nesta tela.</p><p><button class="btn" id="again">Enviar de novo</button></p></div>');
     $("#again").onclick=function(){send(payload,score)};return;
@@ -900,6 +930,7 @@ async function send(payload,score){
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
   for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&!res.advanced&&i>=shown-(res.gained||1)&&i<shown)?" pop":"")+'">✓</span>';
   var seal=res.day_closed?(res.tier==="salto"?"Salto!":res.tier==="ouro"?"Ouro!":res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
+  FC.nav.at("/resultado",true);   // a folha vira o resultado: voltar leva para a tela inicial, não para a folha entregue
   FC.render('<div class="res panel">'+
     '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.day_closed&&res.stamp?"":" no")+'">'+seal+'</div>'+
     '<div class="grow"><h2>'+(res.tier==="salto"?"Salto de nível":res.tier==="ouro"?"Dia de ouro":res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
@@ -927,6 +958,6 @@ async function send(payload,score){
   setTimeout(trAnnounce,2500);   // entre uma folha e outra a criança pode receber o aviso de troca
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}
-  $("#resHome").onclick=async function(){try{await loadHome()}catch(e){fail(e)}};
+  $("#resHome").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
 }
 })();

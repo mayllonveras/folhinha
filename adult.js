@@ -17,7 +17,27 @@ var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns apare
 function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
+/* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado e #/aluno/ID/ABA. */
+var PAI_TABS=["resumo","album","historico","programa","acesso"];
+function route(path){
+  if(!U.user)return;
+  var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+))?$/.exec(path);
+  if(path==="/novo")return showForm();
+  if(m){
+    var tab=m[2];
+    if(PAI_TABS.indexOf(tab)>=0){FC.tabState.pai=tab;try{sessionStorage.setItem("fc_tab_pai",tab)}catch(e){}}
+    if(U.detail===m[1]&&FC.$('.shell[data-scope="pai"]'))return FC.gotoTab(FC.tabState.pai,true);
+    return detail(m[1]);
+  }
+  dash();   // "/", "/cadastrado" e qualquer endereço desconhecido
+}
+function start(){
+  var p=FC.nav.path();
+  if(p!=="/")FC.nav.seed("/");   // entrou por um endereço de dentro do app: o voltar leva para a lista
+  route(p);
+}
 FC.adultApp=async function(){
+  FC.nav.handler=route;
   sb.auth.onAuthStateChange(function(ev){
     if(ev==="SIGNED_OUT"){U.user=null;showAuth("login")}
     if(ev==="PASSWORD_RECOVERY")showNewPassword();
@@ -25,7 +45,7 @@ FC.adultApp=async function(){
   var recovery=/type=recovery/.test(location.hash);
   var r=await sb.auth.getSession();
   if(recovery&&r.data.session){U.user=r.data.session.user;return showNewPassword()}
-  if(r.data.session){U.user=r.data.session.user;return dash()}
+  if(r.data.session){U.user=r.data.session.user;return start()}
   showAuth("login");
 };
 
@@ -42,6 +62,7 @@ function errScreen(e,retry){
 
 /* ---------- entrar / cadastrar ---------- */
 function showAuth(tab,msg,ok){
+  FC.nav.reset();
   U.profile=null;
   FC.render(topbar()+'<div class="panel authbox"><div class="tabs"><button class="tab'+(tab==="login"?" on":"")+'" data-t="login">Entrar</button>'+
     '<button class="tab'+(tab==="reg"?" on":"")+'" data-t="reg">Cadastrar</button></div>'+
@@ -87,6 +108,7 @@ function showAuth(tab,msg,ok){
   };
 }
 function showNewPassword(msg){
+  FC.nav.reset();
   FC.render(topbar("Nova senha")+'<div class="panel authbox"><form id="npForm" class="form"><h1>Crie uma nova senha</h1>'+
     '<label class="field">Nova senha<input id="np" type="password" autocomplete="new-password" required><small>Mínimo de 8 caracteres</small></label>'+
     '<p class="msg bad" id="npMsg" role="alert">'+esc(msg||"")+'</p><button class="btn" type="submit">Salvar senha</button></form></div>');
@@ -128,6 +150,7 @@ async function dash(){
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
+  U.detail=null;FC.nav.at("/");
   bindTop();FC.refreshInstall();
   $("#newStudent").onclick=function(){showForm(null)};
   $$(".card").forEach(function(c){c.onclick=function(){openStudent(c.getAttribute("data-id"))}});
@@ -330,7 +353,8 @@ async function showForm(){
   await ensurePub();
   FC.render(topbar("Novo aluno")+'<div class="panel"><form id="stForm" class="form" novalidate><h1>Cadastrar aluno</h1>'+programFields(null)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="fBtn">Cadastrar e gerar link</button><button class="btn ghost" type="button" id="fBack">Voltar</button></div></form></div>');
-  bindTop();bindProgram();$("#fBack").onclick=dash;
+  FC.nav.at("/novo");
+  bindTop();bindProgram();$("#fBack").onclick=function(){if(!FC.nav.up("/"))dash()};
   $("#stForm").onsubmit=async function(e){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
@@ -391,7 +415,8 @@ function created(name,code,id){
     '<p class="muted small-t">Guarde o link: é a porta de entrada do aluno. Se o link vazar, gere outro na página do aluno.</p>'+
     '<div class="actions"><button class="btn" id="go">Abrir página do aluno</button><button class="btn ghost" id="all">Ver todos os alunos</button></div></div>');
   bindTop();$("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
-  $("#go").onclick=function(){openStudent(id)};$("#all").onclick=dash;
+  FC.nav.at("/cadastrado",true);   // troca a entrada do formulário: voltar não reabre o formulário já enviado
+  $("#go").onclick=function(){openStudent(id)};$("#all").onclick=function(){if(!FC.nav.up("/"))dash()};
 }
 
 /* ---------- página do aluno ---------- */
@@ -510,9 +535,10 @@ async function detail(id){
     {id:"historico",label:"Histórico",icon:"history",html:historico},
     {id:"programa",label:"Programa",icon:"program",html:programa},
     {id:"acesso",label:"Acesso",icon:"key",html:acesso}]}));
-  FC.bindTabs("pai");
+  U.detail=id;FC.nav.at("/aluno/"+id+"/"+FC.tabState.pai);
+  FC.bindTabs("pai",null,function(tab){return "/aluno/"+id+"/"+tab});
   bindTop();bindProgram();
-  $("#back").onclick=dash;
+  $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
   var lib=$("#liberar");
   if(lib)lib.onclick=async function(){
     lib.disabled=true;
@@ -552,7 +578,7 @@ async function detail(id){
   if(del)FC.confirmClick(del,"Toque de novo: isso não tem volta",async function(){
     var r=await sb.rpc("delete_student",{p_student:id});
     if(r.error)return FC.toast(FC.err(r.error),true);
-    FC.toast("Aluno apagado.");dash();
+    FC.toast("Aluno apagado.");if(!FC.nav.up("/"))dash();
   });
   $("#edForm").onsubmit=async function(e){
     e.preventDefault();var r=readProgram();
