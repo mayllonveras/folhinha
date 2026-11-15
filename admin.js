@@ -15,7 +15,18 @@ function bar(email){
 }
 function bindBar(){var b=$("#logout");if(b)b.onclick=async function(){await sb.auth.signOut();login()}}
 
+/* Endereços da administração: #/ (alunos), #/contas, #/parametros, #/exercicios. */
+var TABS_ADM=["alunos","contas","parametros","exercicios"],ADMU=null;
+function admPath(tab){return tab==="alunos"?"/":"/"+tab}
+function admRoute(path){
+  var t=path==="/"?"alunos":path.slice(1);
+  TAB=TABS_ADM.indexOf(t)>=0?t:"alunos";
+  if(ADMU&&DATA)show(ADMU);
+}
 FC.adminApp=async function(){
+  FC.nav.handler=admRoute;
+  admRoute(FC.nav.path());
+  if(FC.nav.path()!=="/")FC.nav.seed("/");
   document.title="Administração · Folhinha VIP";
   var m=document.createElement("meta");m.name="robots";m.content="noindex,nofollow";document.head.appendChild(m);
   var r=await sb.auth.getSession();
@@ -24,6 +35,7 @@ FC.adminApp=async function(){
 };
 
 function login(msg){
+  FC.nav.reset();
   FC.render(bar()+'<div class="panel authbox"><form id="admForm" class="form" novalidate><h1>Administração</h1>'+
     '<label class="field">E-mail<input id="aEmail" type="email" autocomplete="email" required></label>'+
     '<label class="field">Senha<input id="aPass" type="password" autocomplete="current-password" required></label>'+
@@ -40,6 +52,7 @@ function login(msg){
 }
 
 async function load(user){
+  ADMU=user;
   FC.render(bar(user.email)+'<p class="loading">Carregando…</p>');bindBar();
   var r=await sb.rpc("admin_overview");
   if(r.error){
@@ -221,6 +234,7 @@ function accountsTable(){
 }
 
 function show(user){
+  FC.nav.at(admPath(TAB));
   var t=DATA.totals;
   FC.render(bar(user.email)+'<div class="section-head"><h1>Visão geral</h1><div class="actions"><button class="btn ghost small" id="reload">Atualizar</button></div></div>'+
     '<div class="adm-stats">'+stat(t.accounts,"contas de adultos")+stat(t.students,"alunos")+stat(t.sheets_done,"folhas feitas")+stat(t.sheets_7d,"folhas nos últimos 7 dias")+

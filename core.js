@@ -97,7 +97,7 @@ FC.fmtCode=function(c){
   return c;
 };
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v44";
+FC.VERSAO="folhinha-v45";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
@@ -271,14 +271,83 @@ FC.packSvg=function(){
     '<path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/>'+
     '<path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg>';
 };
+/* ---------- navegação pelo histórico do navegador ----------
+   Cada tela tem um endereço próprio depois do "#" (por exemplo ?aluno=ab12#/album ou #/aluno/ID/programa), então o botão voltar volta
+   para a tela anterior em vez de sair do app. Janelas (FC.overlay) também entram no histórico: voltar fecha a janela.
+   Só endereços "#/..." são nossos; o "#access_token..." da recuperação de senha do Supabase não é mexido.
+   FC.nav.at(caminho): marca a tela atual com esse caminho (empurra no histórico, ou só confere se já é o atual).
+   FC.nav.up(caminho): botão "voltar" dentro do app; volta no histórico se a tela anterior for essa, senão devolve false (quem chamou desenha a tela).
+   FC.nav.handler(caminho): cada app (pais, aluno, administração) registra aqui como desenhar a tela de um caminho (voltar, avançar e recarregar). */
+FC.nav=(function(){
+  var N={idx:0,paths:["/"],q:[],busy:false,skipNext:false,fresh:true,handler:null,ovs:[],tm:null};
+  function cur(){var h=location.hash;return h.indexOf("#/")===0?h.slice(1):"/"}
+  function url(p){return location.pathname+location.search+(p==="/"?"":"#"+p)}
+  function flush(){while(N.q.length&&!N.busy)N.q.shift()()}
+  function run(fn){if(N.busy)N.q.push(fn);else fn()}
+  /* volta uma entrada do histórico e espera o aviso do navegador; o que for pedido enquanto isso fica na fila */
+  function popOne(skipDispatch){
+    N.busy=true;N.skipNext=!!skipDispatch;
+    clearTimeout(N.tm);N.tm=setTimeout(function(){if(N.busy){N.busy=false;N.skipNext=false;flush()}},600);   // sem histórico para voltar: não trava
+    history.back();
+  }
+  N.path=cur;
+  N.at=function(p,replace){
+    run(function(){
+      if(cur()===p){N.fresh=false;N.paths[N.idx]=p;return}
+      if(replace||N.fresh){N.fresh=false;history.replaceState({i:N.idx},"",url(p));N.paths[N.idx]=p}
+      else{N.idx++;N.paths.length=N.idx;N.paths[N.idx]=p;history.pushState({i:N.idx},"",url(p))}
+    });
+  };
+  /* primeira tela depois de entrar por um endereço de dentro do app (link salvo ou recarregar): põe a tela inicial embaixo, para o voltar não sair do app */
+  N.seed=function(home){
+    var p=cur();N.fresh=false;
+    if(p===home)return;
+    history.replaceState({i:0},"",url(home));N.paths=[home];N.idx=0;
+    N.idx=1;N.paths[1]=p;history.pushState({i:1},"",url(p));
+  };
+  N.up=function(p){
+    if(N.ovs.length||N.idx<1||N.paths[N.idx-1]!==p)return false;
+    run(function(){popOne(false)});return true;
+  };
+  N.forward=function(){run(function(){N.busy=true;N.skipNext=true;clearTimeout(N.tm);N.tm=setTimeout(function(){if(N.busy){N.busy=false;N.skipNext=false;flush()}},600);history.forward()})};
+  N.after=function(fn){run(fn)};   // roda depois que o navegador terminar uma volta pendente
+  /* telas sem endereço (entrar, PIN): limpa o endereço e o próximo N.at só troca a entrada atual */
+  N.reset=function(){run(function(){if(cur()!=="/")history.replaceState({i:N.idx},"",url("/"));N.paths[N.idx]="/";N.fresh=true})};
+  /* janelas */
+  N.openOverlay=function(o){
+    N.ovs.push(o);
+    run(function(){N.idx++;N.paths.length=N.idx;N.paths[N.idx]=cur();history.pushState({i:N.idx,ov:o.id},"",location.href)});
+  };
+  N.closedOverlay=function(o){
+    var k=N.ovs.indexOf(o);if(k>=0)N.ovs.splice(k,1);
+    run(function(){if(history.state&&history.state.ov===o.id)popOne(true)});
+  };
+  window.addEventListener("popstate",function(e){
+    var st=e.state;N.idx=(st&&typeof st.i==="number")?st.i:0;
+    if(N.busy){
+      var skip=N.skipNext;N.busy=false;N.skipNext=false;clearTimeout(N.tm);
+      if(!skip&&N.handler)N.handler(cur());
+      flush();return;
+    }
+    if(N.ovs.length){N.ovs[N.ovs.length-1].closeByBack();return}      // voltar com janela aberta: fecha a janela de cima
+    if(st&&st.ov){popOne(true);return}                                 // entrada de uma janela que já não existe: pula
+    if(N.handler)N.handler(cur());
+  });
+  return N;
+})();
 /* Aviso no meio da tela (usado ao ganhar figurinha, no verso da figurinha e na galeria do adulto). */
+FC._ovSeq=0;
 FC.overlay=function(html,opts){
   opts=opts||{};
   var ov=document.createElement("div");ov.className="overlay";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
   ov.innerHTML='<div class="ov-card'+(opts.wide?" wide":"")+(opts.cls?" "+opts.cls:"")+'">'+html+'<div class="actions ov-actions"><button class="btn" id="ovClose">'+(opts.button||"Fechar")+'</button></div></div>';
   document.body.appendChild(ov);
+  var hist={id:++FC._ovSeq,closeByBack:function(){close(true)}};
+  FC.nav.openOverlay(hist);
   function key(e){if(e.key!=="Escape")return;var all=document.querySelectorAll(".overlay");if(all[all.length-1]===ov)close()}   // Esc fecha só a janela de cima
-  function close(){if(!ov.parentNode)return;ov.remove();document.removeEventListener("keydown",key);if(opts.onClose)opts.onClose()}
+  function close(byBack){if(!ov.parentNode)return;ov.remove();document.removeEventListener("keydown",key);
+    if(byBack===true){var k=FC.nav.ovs.indexOf(hist);if(k>=0)FC.nav.ovs.splice(k,1)}else FC.nav.closedOverlay(hist);   // fechou pelo voltar: a entrada do histórico já saiu
+    if(opts.onClose)opts.onClose()}
   document.addEventListener("keydown",key);
   ov.addEventListener("click",function(e){if(e.target===ov)close()});
   var btn=ov.querySelector("#ovClose");btn.onclick=close;btn.focus();
@@ -353,7 +422,7 @@ FC.tabsShell=function(o){
   return '<div class="shell" data-scope="'+o.scope+'">'+o.head+'<nav class="navtop" role="tablist" aria-label="Seções">'+top+'</nav><div class="panes">'+panes+'</div><nav class="navbottom" aria-label="Menu">'+bottom+'</nav></div>';
 };
 /* Liga os botões das abas. Chame depois de FC.render. onChange(id) é opcional. */
-FC.bindTabs=function(scope,onChange){
+FC.bindTabs=function(scope,onChange,pathFor){
   var root=FC.$('.shell[data-scope="'+scope+'"]');if(!root)return;
   document.body.classList.add("has-nav");
   function go(id,noScroll){
@@ -366,7 +435,7 @@ FC.bindTabs=function(scope,onChange){
     if(!noScroll)window.scrollTo(0,0);
     if(onChange)onChange(id);
   }
-  FC.$$("[data-tab]",root).forEach(function(b){b.onclick=function(){go(b.getAttribute("data-tab"))}});
+  FC.$$("[data-tab]",root).forEach(function(b){b.onclick=function(){var id=b.getAttribute("data-tab");go(id);if(pathFor)FC.nav.at(pathFor(id))}});
   FC.gotoTab=go;
 };
 
