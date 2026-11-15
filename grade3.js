@@ -531,16 +531,17 @@ var DIV="÷";
 var OIT2=[["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["bolas",1],["lápis",0]];
 function cap(t){return t.charAt(0).toUpperCase()+t.slice(1)}
 
-/* Nível 25 — Repartir em partes iguais (EF03MA08): repartição com figura (4), medida com figura (2) e por texto (2). */
+/* Nível 25 — Repartir em partes iguais (EF03MA08): repartição com figura (4), medida com figura (2) e por texto (2).
+   Com figura o dividendo vai até 30 (objetos em fileiras de 5, fáceis de contar); só no texto vai até 50. */
 function gRepartir(){
   var r=Math.random(),it,o,d,q,n;
   if(r<.5){
-    do{d=rnd(2,5);q=rnd(2,10);n=d*q}while(n>50);o=pick(X.OBJ);
-    it=typed("Divida igualmente "+(o.f?"as ":"os ")+n+" "+o.pl+" em "+d+" pratos. "+qs3(o.f)+o.pl+" ficam em cada prato?",q,{t:"reparte",e:o.e,n:n,g:d});
+    do{d=rnd(2,5);q=rnd(2,10);n=d*q}while(n>30);o=pick(X.OBJ);
+    it=typed("Divida igualmente "+(o.f?"as ":"os ")+n+" "+o.pl+" em "+d+" pratos. "+qs3(o.f)+o.pl+" ficam em cada prato?",q,{t:"reparte",e:o.e,n:n,g:d,per:5});
     it.key="rep25|"+o.e+"|"+d+"|"+q;it.limits=[["n25:t1",4]];it._info={tipo:"reparte",n:n,d:d,q:q};
   }else if(r<.75){
-    var k,m;do{k=rnd(2,5);m=rnd(2,10);n=k*m}while(n>50);o=pick(X.OBJ);
-    it=typed("Há "+n+" "+o.pl+". Cada prato recebe "+k+". Quantos pratos são necessários?",m,{t:"reparte",e:o.e,n:n,g:0});
+    var k,m;do{k=rnd(2,5);m=rnd(2,10);n=k*m}while(n>30);o=pick(X.OBJ);
+    it=typed("Há "+n+" "+o.pl+". Cada prato recebe "+k+". Quantos pratos são necessários?",m,{t:"reparte",e:o.e,n:n,g:0,per:5});
     it.key="med25|"+o.e+"|"+k+"|"+m;it.limits=[["n25:t2",2]];it._info={tipo:"medida",n:n,k:k,m:m};
   }else{
     do{d=rnd(2,5);q=rnd(2,10);n=d*q}while(n>50);var ob=pick(OIT2);
@@ -559,14 +560,15 @@ function gDivInv(){
   return it;
 }
 
-/* Nível 27 — Divisão com resto (EF03MA08): o quociente (3), o resto (3) e a verificação (2). */
+/* Nível 27 — Divisão com resto (EF03MA08): o quociente (3), o resto (3) e a verificação (2).
+   Primeiro contato com o resto: divisor de 2 a 5, quociente de 2 a 8, dividendo até 40; a figura só aparece até 30 objetos. */
 var RECIP27=[["pacotes","pacote",0],["caixas","caixa",1],["sacos","saco",0]];
 function gResto(){
   var d,q,rr,n,t=0;
-  do{d=rnd(2,9);q=rnd(2,9);rr=rnd(1,d-1);n=d*q+rr}while((n>80||n<7)&&t++<200);
+  do{d=rnd(2,5);q=rnd(2,8);rr=rnd(1,d-1);n=d*q+rr}while((n>40||n<5)&&t++<200);
   var r=Math.random(),o=pick(X.OBJ),rc=pick(RECIP27),it;
   if(r<.375){
-    it=typed("Com "+n+" "+o.pl+", "+(rc[2]?"quantas ":"quantos ")+rc[0]+" de "+d+" "+o.pl+" dá para encher?",q,{t:"reparte",e:o.e,n:n,g:0});it.limits=[["n27:t1",3]];it._info={tipo:"quociente",n:n,d:d,q:q,r:rr};
+    it=typed("Com "+n+" "+o.pl+", "+(rc[2]?"quantas ":"quantos ")+rc[0]+" de "+d+" "+o.pl+" dá para encher?",q,n<=30?{t:"reparte",e:o.e,n:n,g:0,per:5}:null);it.limits=[["n27:t1",3]];it._info={tipo:"quociente",n:n,d:d,q:q,r:rr};
   }else if(r<.75){
     it=typed("Com "+n+" "+o.pl+", enchendo "+rc[0]+" de "+d+", "+qs3(o.f).toLowerCase()+o.pl+" sobram?",rr);it.limits=[["n27:t2",3]];it._info={tipo:"resto",n:n,d:d,q:q,r:rr};
   }else{

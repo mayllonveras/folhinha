@@ -16,7 +16,7 @@ Nos níveis de divisão **o resto só aparece no nível 27** (e nos problemas qu
   1. **Repartição com figura:** os objetos soltos numa bandeja e os pratos vazios (a mesma figura do 2º ano). "Divida igualmente as **12** 🍪 em **3** pratos. Quantos ficam em cada prato?" → 4.
   2. **Medida (quantos cabem):** com a mesma figura: "Há **20** 🍎. Cada prato recebe **4**. Quantos pratos são necessários?" → 5 (a figura mostra só os objetos soltos, e a criança conta de quantos em quantos).
   3. **Por texto:** "Reparta **18** figurinhas igualmente entre **3** amigos. Quantas figurinhas cada um recebe?" → 6.
-- **Números:** divisor de **2 a 5**, quociente de **2 a 10**, dividendo até 50; sempre exata.
+- **Números:** divisor de **2 a 5**, quociente de **2 a 10**; sempre exata. **Com figura, o dividendo vai até 30** e os objetos ficam em **fileiras de 5**, para a contagem ser fácil; **só no texto (tipo 3) o dividendo vai até 50**.
 - **Resposta:** digitada.
 - **Contas diferentes:** 4 divisores × 9 quocientes × 3 tipos × objetos.
 - **Meta de tempo:** 110 s.
@@ -43,11 +43,11 @@ Nos níveis de divisão **o resto só aparece no nível 27** (e nos problemas qu
   1. **O quociente:** "Com **14** balas, quantos pacotes de **4** balas dá para encher?" → 3 (figura: as 14 balas soltas).
   2. **O resto:** "Com **14** balas, enchendo pacotes de **4**, quantas balas sobram?" → 2.
   3. **A verificação:** "**14 ÷ 4** dá **3** e sobram **2**. Quanto vale **4 × 3 + 2**?" → 14.
-- **Números:** divisor de **2 a 9**, quociente de **2 a 9**, **resto de 1 a divisor − 1**; dividendo de 7 a 80.
+- **Números:** é o primeiro contato com o resto, por isso só **divisor de 2 a 5**, **quociente de 2 a 8** e **resto de 1 a divisor − 1**; dividendo de 5 a 40. A figura (objetos em fileiras de 5) só aparece até **30 objetos**; acima disso a conta sai só em texto. Os divisores de 6 a 9 com resto ficam para os problemas do nível 29.
 - **Resposta:** digitada.
 - **Contas diferentes:** milhares.
 - **Meta de tempo:** 120 s.
-- **Testes específicos:** o quociente e o resto são recalculados (`dividendo = divisor × quociente + resto`, com `0 < resto < divisor`); a verificação recompõe o dividendo; a figura mostra exatamente o dividendo; nunca resto zero.
+- **Testes específicos:** o quociente e o resto são recalculados (`dividendo = divisor × quociente + resto`, com `0 < resto < divisor`); a verificação recompõe o dividendo; a figura (quando há) mostra exatamente o dividendo, em fileiras de 5, e nunca passa de 30 objetos; nunca resto zero.
 
 ## Nível 28 — Metade, terça, quarta, quinta e décima partes
 

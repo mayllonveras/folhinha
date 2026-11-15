@@ -230,7 +230,8 @@ var DRAW={
   /* repartir em partes iguais (2º ano): f.n objetos soltos numa bandeja e f.g pratos vazios */
   reparte:function(f){
     var o="",p="",i;
-    for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
+    if(f.per){for(i=0;i<f.n;i++){if(i%f.per===0)o+='<span class="b-r">';o+="<i>"+f.e+"</i>";if(i%f.per===f.per-1||i===f.n-1)o+="</span>"}}   /* objetos em fileiras de f.per (3º ano: de 5 em 5) */
+    else for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
     for(i=0;i<f.g;i++)p+='<span class="prato"></span>';
     return '<div class="fig-reparte" aria-hidden="true"><div class="bandeja">'+o+'</div><div class="pratos">'+p+"</div></div>";
   },

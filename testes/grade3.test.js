@@ -324,15 +324,17 @@ for(const [nivel,k] of [[19,6],[20,7],[21,8],[22,9]]){
 
 /* ---- Níveis 25 a 33: divisão e geometria ---- */
 const bandeja=(f)=>{const html=FC.fig(f),band=html.split('class="bandeja"')[1].split('class="pratos"')[0];return {soltos:(band.match(/<i>/g)||[]).length,pratos:(html.match(/class="prato"/g)||[]).length}};
+const fileirasDe5=(p,nivel)=>{const html=FC.fig(p.extra.fig),band=html.split('class="bandeja"')[1].split('class="pratos"')[0],linhas=band.split('class="b-r"').slice(1).map(c=>(c.match(/<i>/g)||[]).length);
+ if(linhas.length!==Math.ceil(p.extra.fig.n/5)||linhas.some((x,i)=>i<linhas.length-1?x!==5:x<1||x>5))falha(nivel,"fileiras de 5: "+linhas)};
 const OBJ25=[["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["bolas",1],["lápis",0]];
 {const its=draw(G.g3n25),tp={reparte:0,medida:0,texto:0};
  for(const p of its){const i=p._info;tp[i.tipo]++;let m;
   if(i.tipo==="reparte"){m=p.pre.match(/^Divida igualmente (as|os) (\d+) (\S+) em (\d+) pratos\. (Quantas|Quantos) (\S+) ficam em cada prato\?$/);
    if(!m||m[3]!==m[6]){falha(25,"pergunta: "+p.pre);continue}const f=p.extra.fig,o=OBJN.find(o=>o.pl===m[3]),b=bandeja(f);
    if(f.t!=="reparte"||f.e!==o.e||b.soltos!==+m[2]||b.pratos!==+m[4]||+m[2]%+m[4]||p.a!==m[2]/m[4]||m[1]!==(o.f?"as":"os")||m[5]!==(o.f?"Quantas":"Quantos"))falha(25,"repartição: "+p.pre+" → "+p.a+" "+JSON.stringify(b));
-   if(+m[4]<2||+m[4]>5||p.a<2||p.a>10||+m[2]>50)falha(25,"números fora do esperado: "+p.pre)}
+   if(+m[4]<2||+m[4]>5||p.a<2||p.a>10||+m[2]>30)falha(25,"números fora do esperado (figura até 30): "+p.pre);fileirasDe5(p,25)}
   else if(i.tipo==="medida"){m=p.pre.match(/^Há (\d+) (\S+)\. Cada prato recebe (\d+)\. Quantos pratos são necessários\?$/);
-   if(!m){falha(25,"pergunta: "+p.pre);continue}const f=p.extra.fig,b=bandeja(f);if(b.soltos!==+m[1]||b.pratos!==0||+m[1]%+m[3]||p.a!==m[1]/m[3]||+m[3]<2||+m[3]>5||p.a<2||p.a>10)falha(25,"medida: "+p.pre+" → "+p.a)}
+   if(!m){falha(25,"pergunta: "+p.pre);continue}const f=p.extra.fig,b=bandeja(f);if(b.soltos!==+m[1]||b.pratos!==0||+m[1]%+m[3]||p.a!==m[1]/m[3]||+m[3]<2||+m[3]>5||p.a<2||p.a>10||+m[1]>30)falha(25,"medida: "+p.pre+" → "+p.a);fileirasDe5(p,25)}
   else{m=p.pre.match(/^Reparta (\d+) (\S+) igualmente entre (\d+) amigos\. (Quantas|Quantos) (\S+) cada um recebe\?$/);
    const ob=m&&OBJ25.find(o=>o[0]===m[2]);if(!m||m[2]!==m[5]||!ob||m[4]!==(ob[1]?"Quantas":"Quantos")||+m[1]%+m[3]||p.a!==m[1]/m[3]||+m[3]<2||+m[3]>5)falha(25,"texto: "+p.pre+" → "+p.a)}}
  console.log("nível 25:",JSON.stringify(tp));if(Math.abs(tp.reparte/N-.5)>.04||Math.abs(tp.medida/N-.25)>.04)falha(25,"proporção")}
@@ -347,9 +349,10 @@ const OBJ25=[["figurinhas",1],["balas",1],["livros",0],["adesivos",0],["bolas",1
  console.log("nível 26: folhas com o mesmo fato",ruim);if(ruim)falha(26,ruim+" folhas com fatos repetidos")}
 {const its=draw(G.g3n27),tp={quociente:0,resto:0,verificacao:0};
  for(const p of its){const i=p._info;tp[i.tipo]++;let m;const {n,d,q,r}=i;
-  if(n!==d*q+r||r<1||r>=d||d<2||d>9||q<2||q>9||n<7||n>80)falha(27,"números: "+JSON.stringify(i));
-  if(i.tipo==="quociente"){m=p.pre.match(/^Com (\d+) (\S+), (quantos|quantas) (\S+) de (\d+) \2 dá para encher\?$/);const o=m&&OBJN.find(o=>o.pl===m[2]),b=m&&bandeja(p.extra.fig);
-   if(!m||!o||+m[1]!==n||+m[5]!==d||p.a!==Math.floor(n/d)||b.soltos!==n||b.pratos!==0||p.extra.fig.e!==o.e)falha(27,"quociente: "+p.pre+" → "+p.a);
+  if(n!==d*q+r||r<1||r>=d||d<2||d>5||q<2||q>8||n<5||n>40)falha(27,"números: "+JSON.stringify(i));
+  if(i.tipo==="quociente"){m=p.pre.match(/^Com (\d+) (\S+), (quantos|quantas) (\S+) de (\d+) \2 dá para encher\?$/);const o=m&&OBJN.find(o=>o.pl===m[2]);
+   if(!m||!o||+m[1]!==n||+m[5]!==d||p.a!==Math.floor(n/d))falha(27,"quociente: "+p.pre+" → "+p.a);
+   if(n<=30){const b=bandeja(p.extra.fig);if(b.soltos!==n||b.pratos!==0||p.extra.fig.e!==o.e)falha(27,"figura do quociente: "+p.pre);fileirasDe5(p,27)}else if(p.extra)falha(27,"figura com mais de 30 objetos: "+p.pre);
    if(m&&m[3]!==({pacotes:"quantos",caixas:"quantas",sacos:"quantos"}[m[4]]))falha(27,"concordância: "+p.pre)}
   else if(i.tipo==="resto"){m=p.pre.match(/^Com (\d+) (\S+), enchendo (\S+) de (\d+), (quantas|quantos) (\S+) sobram\?$/);const o=m&&OBJN.find(o=>o.pl===m[2]);
    if(!m||!o||m[2]!==m[6]||+m[1]!==n||+m[4]!==d||p.a!==n%d||m[5]!==(o.f?"quantas":"quantos"))falha(27,"resto: "+p.pre+" → "+p.a)}

@@ -533,6 +533,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-reparte{max-width:300px}
 .fig-reparte .bandeja{display:flex;flex-wrap:wrap;gap:2px;font-size:1.3rem;line-height:1.2;padding:6px 8px;border:2px solid var(--line);border-radius:12px;background:var(--surface)}
 .fig-reparte .bandeja i{font-style:normal}
+.fig-reparte .b-r{display:flex;gap:2px;width:100%}
 .fig-reparte .pratos{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
 .fig-reparte .prato{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:var(--surface);box-shadow:inset 0 0 0 6px var(--bg,transparent)}
 .figsvg.fig-line{max-width:420px}
