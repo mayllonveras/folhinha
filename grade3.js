@@ -649,13 +649,13 @@ var APAR=[["o cubo","seis quadrados","cubo"],["o bloco retangular","seis retâng
 function gPlanif(){
   var r=Math.random(),it;
   if(r<.5){
-    var s=pick(SOL31);it=choice("Qual sólido tem esta planificação?",s[1],opcoes31(s[1]),{t:"planif",n:s[0]});it.key="pl31|"+s[0];it.limits=[["n31:t1",4]];it._info={tipo:"nome",n:s[0],certa:s[1]};
+    var s=pick(SOL31);it=choice("Qual sólido tem esta planificação?",s[1],opcoes31(s[1]),{t:"planif",n:s[0]});it.key="pl31|"+s[0];it.limits=[["n31:t1",5]];it._info={tipo:"nome",n:s[0],certa:s[1]};
   }else if(r<.75){
-    var f=pick(FACES31);it=typed("Quantas faces tem "+f[0]+"?",f[1]);it.limits=[["n31:t2",2]];it._info={tipo:"faces",n:f[2]};
+    var f=pick(FACES31);it=typed("Quantas faces tem "+f[0]+"?",f[1]);it.limits=[["n31:t2",3]];it._info={tipo:"faces",n:f[2]};
   }else{
     var a=pick(APAR),erradas=APAR.filter(function(x){return x!==a&&!(a[2]==="cubo"&&x[2]==="bloco retangular")&&!(a[2]==="bloco retangular"&&x[2]==="cubo")});
     var ws=embaralhar(erradas).slice(0,2).map(function(x){return x[1]});
-    it=choice("Na planificação d"+(a[0].charAt(0)==="o"?"o ":"a ")+a[0].replace(/^(o|a) /,"")+" aparecem…",a[1],ws,null);it.key="ap31|"+a[2];it.limits=[["n31:t3",2]];it._info={tipo:"aparecem",n:a[2]};
+    it=choice("Na planificação d"+(a[0].charAt(0)==="o"?"o ":"a ")+a[0].replace(/^(o|a) /,"")+" aparecem…",a[1],ws,null);it.key="ap31|"+a[2];it.limits=[["n31:t3",3]];it._info={tipo:"aparecem",n:a[2]};
   }
   return it;
 }
@@ -994,4 +994,32 @@ FC.G3=[
 ];
 FC.G3BY={};FC.G3.forEach(function(e){FC.G3BY[e.id]=e});
 FC.extenso=extenso;
+
+/* ===================== O 3º ano na grade do app: FC.LEVELS (a trilha é uma só: os níveis do 3º ano seguem os 76 dos dois primeiros anos) ===================== */
+/* Os números das fichas (1 a 42) são do 3º ano; no app o aluno vê a numeração corrida, de 77 a 118. */
+var BASE3=FC.LEVELS.length;                          /* 76 */
+var BLOCOS3=[[7,"Números até 9999"],[15,"Adição e subtração até 9999"],[24,"Multiplicação e tabuadas"],[30,"Divisão e problemas"],[33,"Sólidos, figuras e congruência"],[40,"Medidas, horas e dinheiro"],[42,"Chances, tabelas e gráficos"]];
+var DICAS3={1:"Leia e escreva números até 9999, inclusive por extenso.",2:"Cada cubo grande vale 1000, cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo, a ordem em que ele está e o que o zero faz.",
+  4:"Decomponha o número, como 3 456 = 3 000 + 400 + 50 + 6.",5:"Compare números de quatro algarismos: maior, menor, ordem e sinais.",6:"Leia os números na reta, ache o ponto certo e veja quanto falta de um ponto ao outro.",
+  7:"Descubra a regra da sequência, complete-a e ache o número errado.",8:"Quanto falta para 100 e para 1000? Faça de cabeça.",9:"Somas de três algarismos com \"vai um\", como 358 + 267.",10:"Subtrações de três algarismos com \"empresta\", como 502 − 247.",
+  11:"Somas e subtrações até 999, misturadas.",12:"Somas e subtrações com quatro algarismos, como 6 000 − 2 348.",13:"Problemas de juntar, acrescentar, separar, retirar, comparar e completar, até 999.",14:"Os mesmos problemas, com números até 9999.",
+  15:"Igualdades: os dois lados valem o mesmo, como 7 + 5 = 6 + ?",16:"As tabuadas do 2, 3, 4 e 5, de memória e rápido.",17:"Multiplicar por 10 é colocar um zero no fim do número.",18:"Fileiras e colunas: 3 fileiras de 5 é 3 × 5.",
+  19:"A tabuada do 6 é o dobro da tabuada do 3.",20:"Para não esquecer: 56 = 7 × 8 (5, 6, 7, 8).",21:"A tabuada do 8 é o dobro do dobro do dobro: 8 × 3 = 3 × 2 × 2 × 2.",22:"Na tabuada do 9, os algarismos do resultado somam 9.",
+  23:"Todas as tabuadas, até 10 × 10, misturadas.",24:"Problemas com grupos iguais, fileiras, compras e multiplicação por 10.",25:"Divida em partes iguais: quantos ficam em cada prato e quantos pratos são necessários.",
+  26:"Para dividir, pense na tabuada: 21 ÷ 3 é 3 vezes quanto dá 21? O sinal ÷ lê-se \"dividido por\".",27:"Quantos grupos dá para formar e quantos sobram.",28:"A metade, a terça, a quarta, a quinta e a décima parte de um número.",
+  29:"Problemas de dividir em partes iguais, de ver quantos cabem e de ver quantos sobram.",30:"Leia o problema e escolha a operação certa: somar, tirar, multiplicar ou dividir.",31:"Qual sólido se forma com esta planificação? Quantas faces tem?",
+  32:"Trapézio e paralelogramo: lados paralelos, ângulos retos e vértices.",33:"Figuras congruentes têm o mesmo tamanho e a mesma forma, mesmo giradas.",34:"1 centímetro tem 10 milímetros.",35:"Qual unidade e qual instrumento usar para cada medida?",
+  36:"Litro, mililitro, quilograma, grama e miligrama: qual unidade usar e quem é mais pesado.",37:"Qual figura ocupa mais espaço na malha?",38:"1 hora tem 60 minutos e 1 minuto tem 60 segundos.",39:"Quanto tempo passou? Quando começou e quando terminou?",
+  40:"Total da compra e troco, em reais e em centavos.",41:"Quantos resultados são possíveis? Qual tem mais chance?",42:"Leia tabelas e gráficos, compare e calcule."};
+/* Texto de abertura (aparece no começo da folha). */
+var INTROS3={1:"Lembrete: \"mil\" sozinho vale 1000. Depois do mil usamos \"e\" quando sobra uma centena inteira ou menos de 100 (mil e cem, dois mil e cinco) e vírgula nos outros casos (mil, cento e dez).",
+  27:"Lembrete: o resto é o que sobra quando não dá mais para formar grupos iguais. Ele é sempre menor que o número que divide.",
+  31:"Lembrete: a planificação é o sólido aberto sobre a mesa; as dobras viram as arestas.",
+  33:"Lembrete: figuras congruentes podem estar giradas, mas nunca viradas como no espelho."};
+FC.G3.forEach(function(e){
+  var grupo=BLOCOS3.filter(function(b){return e.nivel<=b[0]})[0][1];
+  var l={group:grupo,id:String(BASE3+e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS3[e.nivel],target:e.meta,gen:e.gen,ano:3,hab:e.hab};
+  if(INTROS3[e.nivel])l.intro=INTROS3[e.nivel];
+  FC.LEVELS.push(l);
+});
 })();

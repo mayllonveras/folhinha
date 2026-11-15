@@ -1,35 +1,35 @@
 /* Testes da grade ligada ao app (FC.LEVELS). Rodar com: node testes/grade.test.js
-   Confere os 76 níveis (35 do 1º ano e 41 do 2º), as metas de tempo contra a migração do banco, e que cada nível monta folhas completas e sem repetição
+   Confere os 118 níveis (35 do 1º ano, 41 do 2º e 42 do 3º), as metas de tempo contra a migração do banco, e que cada nível monta folhas completas e sem repetição
    (com as 2 contas de revisão dos níveis anteriores). */
 global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
 global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
 global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};global.localStorage={};
 global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
-require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');
+require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');
 const FC=global.FC,fs=require('fs');
 let falhas=0;const falha=m=>{falhas++;if(falhas<30)console.log("  FALHA",m)};
 const L=FC.LEVELS;
-if(L.length!==76)falha("a grade deveria ter 76 níveis (35 + 41), tem "+L.length);
+if(L.length!==118)falha("a grade deveria ter 118 níveis (35 + 41 + 42), tem "+L.length);
 L.forEach((l,i)=>{
   if(l.id!==String(i+1))falha("id do nível "+i+" é "+l.id);
   if(!l.group||!l.name||!l.hint)falha("nível "+l.id+" sem grupo, nome ou dica");
   if(!(l.target>=60&&l.target<=180))falha("meta do nível "+l.id+": "+l.target);
   if(typeof l.gen!=="function")falha("nível "+l.id+" sem gerador");
-  if(l.ano!==(i<35?1:2))falha("nível "+l.id+" com ano "+l.ano);
+  if(l.ano!==(i<35?1:i<76?2:3))falha("nível "+l.id+" com ano "+l.ano);
   if(!l.hab||!l.hab.length||!l.hab.every(h=>new RegExp("^EF0"+l.ano+"MA\\d\\d$").test(h)))falha("nível "+l.id+" sem habilidades do "+l.ano+"º ano: "+l.hab);
   if(/^Nível/.test(l.name))falha("nome com prefixo: "+l.name);
 });
 // os blocos ficam na ordem e juntos
 const grupos=L.map(l=>l.group);for(let i=1;i<grupos.length;i++)if(grupos[i]!==grupos[i-1]&&grupos.indexOf(grupos[i])<i)falha("grupo "+grupos[i]+" aparece em dois pedaços");
 if(!L[15].intro||!/mão esquerda/.test(L[15].intro))falha("o nível 16 precisa do lembrete das mãos");
-for(const [id,re] of [[64,/mão esquerda/],[65,/para cima/],[68,/zero da régua/]])if(!L[id-1].intro||!re.test(L[id-1].intro))falha("o nível "+id+" precisa do seu lembrete");
-// metas iguais às das migrações do banco (1º ano: 35 níveis; 2º ano: 41 níveis acrescentados)
+for(const [id,re] of [[64,/mão esquerda/],[65,/para cima/],[68,/zero da régua/],[77,/mil.*sozinho|sozinho.*1000/],[103,/resto/],[107,/planificação/],[109,/congruentes/]])if(!L[id-1].intro||!re.test(L[id-1].intro))falha("o nível "+id+" precisa do seu lembrete");
+// metas iguais às das migrações do banco (1º ano: 35 níveis; 2º ano: 41 acrescentados; 3º ano: 42 acrescentados)
 const linhas=[];
-for(const f of ['2026-11-14-grade-1ano.sql','2026-11-14-grade-2ano.sql']){
+for(const f of ['2026-11-14-grade-1ano.sql','2026-11-14-grade-2ano.sql','2026-11-15-grade-3ano.sql']){
   const sql=fs.readFileSync(__dirname+'/../migracoes/'+f,'utf8');
   linhas.push(...[...sql.matchAll(/\((\d+), '(\d+)', (\d+), (\d+)\)/g)].map(m=>({idx:+m[1],code:m[2],target:+m[3],ano:+m[4]})));
 }
-if(linhas.length!==76)falha("as migrações têm "+linhas.length+" níveis");
+if(linhas.length!==118)falha("as migrações têm "+linhas.length+" níveis");
 linhas.forEach((r,i)=>{if(r.idx!==i)falha("idx fora de ordem na migração: "+r.idx);const l=L[r.idx];if(!l||l.id!==r.code||l.target!==r.target||l.ano!==r.ano)falha("migração diverge no nível "+r.code+": "+JSON.stringify(r)+" x "+(l&&l.id+","+l.target+","+l.ano))});
 // cada nível monta folhas completas e sem repetição, sozinho e com revisão
 const visual=p=>p.key||(p.pre+"|"+(p.post||"")+"|"+JSON.stringify(p.extra||"",(k,v)=>k==="color"||k==="k"?undefined:v));

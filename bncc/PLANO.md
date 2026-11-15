@@ -139,10 +139,17 @@ e as habilidades da BNCC (`hab`), que aparecem na tela dos pais junto do ano do 
 (idx 35 a 75, ano 2), sem tocar em alunos nem em níveis existentes; as funções de avanço já leem a tabela, então o último nível passa a ser o 76. Testada numa transação desfeita
 (76 níveis, meta do nível 76 = 130 s, 5 carimbos pelo padrão). `testes/grade.test.js` confere as metas contra as duas migrações.
 
-## 3º ano (em andamento)
+## 3º ano (grade, fichas, geradores e ligação ao app prontos; falta aplicar a migração)
 
-Proposta de grade com 42 níveis em `GRADE-3ANO.md`, no mesmo processo dos anos anteriores: o professor aprova a ordem, as fichas são escritas e revisadas bloco por bloco, depois vêm os geradores
-e os testes, e por fim a grade é ligada ao app (níveis 77 em diante, migração que só acrescenta linhas em `levels`).
+Grade com 42 níveis em `GRADE-3ANO.md`; as 42 fichas (`fichas/3ano-niveis-*.md`) foram revisadas bloco por bloco, com as decisões do professor registradas em cada arquivo.
+Os geradores estão em `grade3.js` (testes em `testes/grade3.test.js`, com folhas reais de 8 contas do nível e 2 de revisão). Ajustes pedidos pelo professor durante a revisão:
+o nível 25 (repartir) só usa figura até 30 objetos, em fileiras de 5, e o nível 27 (resto) só usa divisor de 2 a 5.
+
+**Ligação ao app (15/11/2026):** a trilha é uma só. Os níveis do 3º ano seguem os 76 dos dois primeiros anos e o aluno vê a numeração corrida, **77 a 118** (os números 1 a 42 das fichas são internos).
+`FC.LEVELS` ganha os 42 níveis no fim de `grade3.js`, com blocos, dicas, lembretes de abertura (extenso, resto, planificações e congruência) e as habilidades da BNCC.
+A migração `migracoes/2026-11-15-grade-3ano.sql` **só acrescenta** 42 linhas em `levels` (idx 76 a 117, ano 3), sem tocar em alunos nem em níveis existentes; as funções de avanço já leem a tabela,
+então o último nível passa a ser o 118. Testada numa transação desfeita (118 níveis, 42 do 3º ano, meta do nível 118 = 160 s, 5 carimbos pelo padrão).
+`testes/grade.test.js` confere as metas contra as três migrações.
 
 ## Pontos em aberto
 
