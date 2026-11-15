@@ -472,8 +472,8 @@ function albumPane(m){
   function chip(x){return '<button type="button" class="chip-btn'+(x===id?" on":"")+'" data-album="'+x+'">'+(isFull(m,x)?"✔ ":"")+esc(FC.theme(x).name)+'</button>'}
   var going=ids.filter(function(x){return !isFull(m,x)}),full=ids.filter(function(x){return isFull(m,x)});
   var tabs=ids.length>1?'<div class="album-tabs">'+going.map(chip).join("")+'</div>'+(full.length?'<div class="album-tabs"><span class="muted small-t">Completos:</span>'+full.map(chip).join("")+'</div>':""):"";
-  return packPanel(m)+'<section class="panel" id="albumBox">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
-    '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+  return packPanel(m)+'<section class="panel" id="albumBox">'+tabs+'<div class="album-head">'+FC.themeCapa(id)+'<div class="grow"><div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
+    '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div></div></div>'+
     '<p class="muted small-t gap">'+(got.length>=FC.ALBUM_SIZE?'Álbum completo! Parabéns! As repetidas ficam na aba Trocas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. Você só vê qual é a figurinha quando abrir!')+'</p>'+
     '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
 }
@@ -504,7 +504,7 @@ function openPackFlow(){
   var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum você quer?</p>'+
     '<div class="pack-choices">'+ids.map(function(id){
       var th=FC.theme(id),n=gotOf(m,id).length,full=n>=FC.ALBUM_SIZE;
-      return '<button class="pack-choice" data-t="'+id+'"'+(full?" disabled":"")+'><span class="pc-art">'+FC.themeCover(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Álbum completo!":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
+      return '<button class="pack-choice" data-t="'+id+'"'+(full?" disabled":"")+'><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b><small>'+(full?"Álbum completo!":n+" de "+FC.ALBUM_SIZE)+'</small></button>';
     }).join("")+'</div>',{button:"Agora não"});
   $$(".pack-choice",ov.el).forEach(function(b){b.onclick=function(){ov.close();openPack(b.getAttribute("data-t"))}});
 }
@@ -524,7 +524,7 @@ function showAward(aw){
   var rep_=!!aw.repeated;
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
-  var ov=FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.packSvg()+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
+  var ov=FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
     '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   /* O botão (Colar no álbum / Guardar nas repetidas) só aparece quando a figurinha termina de aparecer.
      Até lá, nem o clique fora da janela nem o Esc fecham a janela. */

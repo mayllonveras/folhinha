@@ -14,6 +14,15 @@ FC.THEMES=[
 FC.themeCover=function(id){
   var t=FC.theme(id);return FC.stickerInfo(id,t.cover||0).art;
 };
+/* Capa e pacote de cada álbum (imagens em stickers/capas e stickers/pacotes, uma por tema). Sem a imagem, usa o desenho genérico. */
+FC.themeCapa=function(id){
+  var t=FC.theme(id);
+  return '<img class="capa" src="stickers/capas/'+id+'.webp" alt="Capa do álbum '+FC.esc(t.name)+'" loading="lazy">';
+};
+FC.themePack=function(id){
+  var t=FC.theme(id);
+  return '<img class="pack-img" src="stickers/pacotes/'+id+'.webp" alt="Pacotinho do álbum '+FC.esc(t.name)+'" onerror="this.outerHTML=FC.packSvg()">';
+};
 FC.tierOf=function(themeId,slot){var t=FC.theme(themeId);return (t.rarity&&t.rarity[slot])||"comum"};
 FC.tierName=function(tier){return tier==="ultra"?"Ultrarrara":tier==="rara"?"Rara":"Comum"};
 /* Quais figurinhas são raras, para o painel dos adultos. */
