@@ -701,4 +701,6 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
   .sticker .st-plate{color:#1d2433}.sticker .st-plate .st-no{color:rgba(29,36,51,.62)}
   .sticker.tier-rara{border-color:#eaf1ff}.sticker.tier-ultra{border-color:#fff1a8}
 }
+.consent-chk{display:flex;gap:10px;align-items:flex-start;line-height:1.35}
+.consent-chk input{width:22px;height:22px;flex:none;margin-top:1px}
 

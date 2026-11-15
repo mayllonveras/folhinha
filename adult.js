@@ -221,6 +221,9 @@ function programFields(s){
       '<div class="actions"><button type="button" class="btn ghost" id="thOpen">Ver álbuns</button></div>'+
       '<small id="pThemeHint"></small>'+
       '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
+    '<fieldset class="field consent" id="pConsentBox"><legend>Dados de estudo</legend>'+
+      '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s&&s.consent_at?" checked":"")+'><span>Autorizo guardar os dados de estudo do aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
+      '<small>Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e a autorização pode ser retirada a qualquer momento nesta tela.'+(s&&s.consent_at?' Autorizado em '+esc(new Date(s.consent_at).toLocaleDateString("pt-BR"))+'.':'')+'</small></fieldset>'+
     '<details class="adv" id="pAdv"><summary>Avançado: nível, limite, dias e folhas por dia</summary><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
@@ -313,13 +316,14 @@ function readProgram(){
   if(!$("#pStart").value)return{error:"Informe a data de início."};
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
+  var consent=!!($("#pConsent")&&$("#pConsent").checked);
   var anoV=$("#pAno").value,tetoV=$("#pTeto").value;
   if(anoV==="")return{error:"Escolha o ano escolar."};
   var lvl=chosenLevel();
   if(lvl<0)return{error:"A grade ainda não tem o "+anoV+"º ano. Escolha outro ano."};
   return{v:{name:name,level_idx:lvl,start_date:$("#pStart").value,study_days:days,free_days:checkedVals("free").filter(function(d){return days.indexOf(d)<0}),
     sheets_per_day:Number($("#pPer").value),sticker_themes:themes,sticker_theme:themes[0],
-    ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV)}};
+    ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV),consent:consent}};
 }
 
 async function showForm(){
@@ -330,9 +334,10 @@ async function showForm(){
   $("#stForm").onsubmit=async function(e){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
+    if(!r.v.consent){$("#fMsg").textContent="Para cadastrar, marque a autorização dos dados de estudo.";return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days});
+      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days,p_consent:true});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     created(r.v.name,res.data.link_code,res.data.id);
   };
@@ -553,6 +558,8 @@ async function detail(id){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
     var patch=r.v;if(patch.level_idx!==s.level_idx){patch.stamps=0;patch.reached_by_jump=false;patch.dry_days=0}
+    var cons=patch.consent;delete patch.consent;   // autorização dos dados de estudo: grava a data (o banco carimba) ou retira
+    if(cons&&!s.consent_at)patch.consent_at=new Date().toISOString();else if(!cons&&s.consent_at)patch.consent_at=null;
     $("#fBtn").disabled=true;
     var res=await sb.from("students").update(patch).eq("id",id);
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}

@@ -10,6 +10,26 @@ function getTok(){try{return localStorage.getItem(tokKey())}catch(e){return null
 function setTok(t){try{if(t)localStorage.setItem(tokKey(),t);else localStorage.removeItem(tokKey())}catch(e){}}
 async function rpc(name,args){var r=await sb.rpc(name,args);if(r.error)throw r.error;return r.data}
 
+/* ---------- registro de uso (para melhorar o sistema) ----------
+   Eventos vão em lotes para student_log_events. O banco só guarda se o responsável autorizou no cadastro (students.consent_at). */
+var LOG={q:[],timer:null,sess:Math.random().toString(36).slice(2,12)+Date.now().toString(36)};
+function track(kind,o){
+  if(!S.token)return;
+  var e={kind:kind,at:Date.now()};
+  if(o){if(o.level!=null)e.level_idx=o.level;if(o.sheet)e.sheet_id=o.sheet;if(o.data)e.data=o.data}
+  LOG.q.push(e);
+  if(LOG.q.length>=20)flush();else if(!LOG.timer)LOG.timer=setTimeout(flush,15000);
+}
+async function flush(){
+  clearTimeout(LOG.timer);LOG.timer=null;
+  if(!LOG.q.length||!S.token)return;
+  var w=window.innerWidth,batch=LOG.q.splice(0,50);
+  try{await rpc("student_log_events",{p_token:S.token,p_events:batch,p_app:FC.VERSAO,p_screen:w,p_device:w<600?"celular":w<1024?"tablet":"computador",p_session:LOG.sess})}
+  catch(e){/* o registro nunca atrapalha a criança: se falhar, esse lote se perde */}
+}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){track("app_oculto",cur&&cur.secs==null?{level:cur.level,sheet:cur.id}:null);flush()}});
+window.addEventListener("pagehide",flush);
+
 FC.studentApp=async function(code){
   S.code=code;FC.setKeys(null);FC.studentManifest(code);
   FC.render('<p class="loading">Carregando…</p>');
@@ -23,7 +43,7 @@ FC.studentApp=async function(code){
   var t=getTok();
   if(t){
     S.token=t;
-    try{await loadHome();return}
+    try{await loadHome();track("app_aberto",{data:{como:"retorno"}});return}
     catch(e){if(!FC.isSessionErr(e))return fail(e);setTok(null);S.token=null}
   }
   pinScreen(info.has_pin?"login":"create",null);
@@ -60,7 +80,7 @@ function pinScreen(mode,first,msg){
     try{
       var r=create?await rpc("student_set_pin",{p_code:S.code,p_pin:pin}):await rpc("student_login",{p_code:S.code,p_pin:pin});
       busy=false;
-      if(r.ok){setTok(r.token);S.token=r.token;S.info.has_pin=true;await loadHome();return}
+      if(r.ok){setTok(r.token);S.token=r.token;S.info.has_pin=true;await loadHome();track("app_aberto",{data:{como:create?"pin_criado":"login"}});return}
       if(r.error==="sem_pin"){pinScreen("create",null);return}
       if(r.error==="pin_ja_definido"){pinScreen("login",null,"Este link já tem PIN. Digite o seu PIN.");return}
       if(r.error==="bloqueado"){
@@ -129,7 +149,7 @@ function home(){
     {id:"trocas",label:"Trocas",icon:"swap",html:tradesPane()},
     {id:"amigos",label:"Amigos",icon:"friends",html:'<div id="frBox"><p class="loading">Carregando…</p></div>'},
     {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
-  FC.bindTabs("aluno");FC.refreshInstall();
+  FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true});FC.refreshInstall();
   $("#logout").onclick=logout;
   function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
   sndLabel();
@@ -477,7 +497,7 @@ function deskRow(m,x,act){
 /* Troca mesa e gaveta (a criança pode a qualquer momento, menos no meio da abertura de um pacotinho). */
 async function setDesk(list){
   if(S.opening)return false;
-  try{var r=await rpc("student_set_desk",{p_token:S.token,p_desk:list});S.me.desk_themes=r.desk;if(r.limit)S.me.desk_limit=r.limit;return true}
+  try{var r=await rpc("student_set_desk",{p_token:S.token,p_desk:list});S.me.desk_themes=r.desk;if(r.limit)S.me.desk_limit=r.limit;track("mesa_trocada",{data:{mesa:r.desk}});return true}
   catch(e){FC.toast(FC.err(e),true);return false}
 }
 function afterDesk(){refreshPacks()}
@@ -580,6 +600,7 @@ async function openPack(theme){
   catch(e){S.opening=false;FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
   S.opening=false;
   m.pending_packs=res.pending;
+  track("pacote_aberto",{data:{album:res.theme,raridade:res.tier,repetida:!!res.repeated}});
   if(res.desk)m.desk_themes=res.desk;if(res.albums_done!=null)m.albums_done=res.albums_done;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
   refreshPacks();   // a contagem e o álbum já aparecem certos por trás, sem precisar recarregar a página
@@ -622,7 +643,7 @@ function showWelcome(){
     var res;
     try{res=await rpc("student_welcome",{p_token:S.token,p_desk:desk})}
     catch(e){busy=false;if(/ja_recebeu/.test(String(e&&e.message||e))){ov.close();try{await loadHome()}catch(x){}return}FC.toast(FC.err(e),true);return}
-    m.welcome_pending=false;
+    m.welcome_pending=false;track("boas_vindas",{data:{mesa:res.desk,figurinhas:res.stickers.length}});
     if(res.desk)m.desk_themes=res.desk;
     m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:x.theme,slot:x.slot,end:FC.today()}}));
     refreshPacks();
@@ -690,6 +711,7 @@ function showAward(aw){
   },800);
 }
 async function logout(){
+  track("sair");await flush();
   try{await rpc("student_logout",{p_token:S.token})}catch(e){}
   trStop();S.fr=null;setTok(null);S.token=null;prep=null;pinScreen("login",null);
 }
@@ -747,9 +769,10 @@ async function startSheet(){
     FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return;
   }
   prep=null;
-  r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal=""});
+  r.items.forEach(function(it,i){it.i=i;it.tries=0;it.ok=false;it.first=false;it.firstVal="";it.vals=[]});
   cur={id:r.id,level:r.level,items:r.items,t0:Date.now(),secs:null,round:0,intro:r.intro,dwell:r.items.map(function(){return 0}),active:null,since:0};
   renderSheet();
+  track("folha_inicio",{level:cur.level,sheet:cur.id,data:{itens:cur.items.length}});
 }
 /* Tempo por conta: soma dos períodos em que a caixa de resposta daquela conta ficou em foco (só na 1ª tentativa). */
 function startDwell(i){if(!cur||cur.round>0)return;stopDwell();cur.active=i;cur.since=performance.now()}
@@ -792,7 +815,9 @@ function renderSheet(){
     });
   });
   $("#btnSubmit").onclick=submit;
-  $("#btnExit").onclick=async function(){clearInterval(timerId);cur=null;try{await loadHome()}catch(e){fail(e)}};
+  $("#btnExit").onclick=async function(){
+    if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
+    clearInterval(timerId);cur=null;try{await loadHome()}catch(e){fail(e)}};
   clearInterval(timerId);cur.t0=Date.now();
   timerId=setInterval(function(){
     if(!cur||cur.secs!=null)return;
@@ -818,6 +843,7 @@ function submit(){
     var inp=$("#in"+it.i),row=$("#r"+it.i),v=inp.value.trim(),good=v!==""&&Number(v)===it.a,isChoice=!!(it.extra&&it.extra.opts);
     it.tries++;
     if(it.tries===1){it.first=good;it.firstVal=v}
+    if(it.vals.length<6)it.vals.push(v);
     if(good){
       it.ok=true;inp.readOnly=true;row.classList.remove("bad");row.classList.add("ok");var tp=row.querySelector(".tip");if(tp)tp.remove();
       if(isChoice)$$("#r"+it.i+" .opt").forEach(function(o){o.disabled=true;o.classList.toggle("right",o.classList.contains("sel"))});
@@ -838,7 +864,7 @@ async function finish(){
   clearInterval(timerId);
   var items=cur.items,score=items.filter(function(i){return i.first}).length;
   var payload={p_token:S.token,p_sheet:cur.id,p_first_ok:score,p_secs:Math.round(cur.secs*10)/10,
-    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries,ms:Math.round(cur.dwell[i.i]||0)}}),
+    p_answers:items.map(function(i){return{v:i.firstVal,ok:i.first,tries:i.tries,ms:Math.round(cur.dwell[i.i]||0),vals:i.vals}}),
     p_corrections:items.filter(function(i){return i.tries>1}).length};
   await send(payload,score);
 }

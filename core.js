@@ -96,6 +96,8 @@ FC.fmtCode=function(c){
   if(c.length===8)return (c.slice(0,4)+"-"+c.slice(4)).toUpperCase();
   return c;
 };
+/* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
+FC.VERSAO="folhinha-v44";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
