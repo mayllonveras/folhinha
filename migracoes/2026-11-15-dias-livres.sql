@@ -4,6 +4,7 @@
 --    Faltar a um dia livre não zera a sequência e não conta como "dia sem carimbo". Fechar a cota num dia livre dá o pacotinho do dia fechado e o do carimbo,
 --    mas não soma na sequência nem paga marco.
 --  * Mudam: student_open_sheet, student_me (free_days, free_day), student_submit_sheet (free_day) e create_student (p_free).
+-- student_me e student_submit_sheet partem das definições que estão no banco (com os carimbos por nível, level_stamps), não das versões antigas dos arquivos.
 -- Alunos já cadastrados passam a ter sábado e domingo livres (menos os dias que já são de estudo deles). Aplicar ANTES de publicar o site novo.
 begin;
 
@@ -70,10 +71,11 @@ CREATE OR REPLACE FUNCTION public.student_me(p_token text, p_day date)
  SET search_path TO 'public', 'extensions'
 AS $function$
 declare sid uuid; s students%rowtype; quota int := 0; is_free boolean := false; done_today int; t_ok int; t_total int; packs int; stks jsonb; recent jsonb; stk int;
-  need int := app_setting('stamps_needed', 5)::int;
+  need int;
 begin
   sid := public._student_from_token(p_token);
   select * into s from students where id = sid;
+  need := public.level_stamps(s.level_idx);
   if p_day >= s.start_date then
     if extract(dow from p_day)::int = any(s.study_days) then quota := s.sheets_per_day;
     elsif extract(dow from p_day)::int = any(s.free_days) then quota := s.sheets_per_day; is_free := true; end if;
@@ -112,7 +114,7 @@ declare sid uuid; sh sheets%rowtype; s students%rowtype; tgt int; st boolean := 
   n int; ok_count int := 0; i int; good boolean; pr jsonb; an jsonb; pre_t text; post_t text; sig_t text;
   done_n int; day_ok int; day_total int; day_secs numeric; day_closed boolean := false; day_pct numeric := 0; avg_secs numeric := 0; why text := null;
   prev_d date; new_streak int := 0; marco_n int := 0; pk_c int := 0; pk_p int := 0; pk_m int := 0; stk int; stk_best int;
-  need int := app_setting('stamps_needed', 5)::int;
+  need int;
   v_tier text := null; v_gained int := 0; at_teto boolean := false; blocked boolean := false; first_day boolean;
   is_free boolean; ano_now int; max_ano int; next_ano int; jumps_week int; new_rbj boolean; new_dry int;
 begin
@@ -141,6 +143,7 @@ begin
   delete from weak_items where student_id = sid and streak_ok >= 2;
   select * into s from students where id = sid for update;
   is_free := not (extract(dow from sh.study_day)::int = any(s.study_days)) and extract(dow from sh.study_day)::int = any(s.free_days);
+  need := public.level_stamps(s.level_idx);
   select max(idx) into last_level from levels;
   tgt := level_target(sh.level_idx);
   pts := calc_points(ok_count, p_secs, tgt);
