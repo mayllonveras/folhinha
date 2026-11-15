@@ -810,11 +810,11 @@ async function startSheet(){
 function startDwell(i){if(!cur||cur.round>0)return;stopDwell();cur.active=i;cur.since=performance.now()}
 function stopDwell(){if(cur&&cur.active!=null){cur.dwell[cur.active]+=performance.now()-cur.since;cur.active=null}}
 /* ---------- pausa e rascunho da folha ----------
-   Pausa (botão ou sozinha, ao sair do app/bloquear o celular): esconde as contas e para o relógio, até o limite de pausa por folha
-   (parâmetro pausa_max_min, padrão 15 min); passou disso, o relógio volta a contar. O que foi escrito fica guardado neste aparelho (rascunho),
-   então dá para sair e continuar a mesma folha depois. */
-function capMs(){return ((S.me&&S.me.pausa_max_s)||900)*1000}
-function elapsedMs(){return FC.elapsedMs(cur,Date.now(),capMs())}
+   Pausa (botão ou sozinha, ao sair do app/bloquear o celular): esconde as contas e para o relógio, sem limite de tempo; o que limita é a
+   quantidade de pausas por folha (parâmetro pausas_max, padrão 2; pausa de menos de 10 s, como a tela apagando, não conta).
+   O que foi escrito fica guardado neste aparelho (rascunho), então dá para sair e continuar a mesma folha depois. */
+function maxPausas(){var n=S.me&&S.me.pausas_max;return n==null?2:n}
+function elapsedMs(){return FC.elapsedMs(cur,Date.now())}
 function draftKey(){return "fc_draft_"+S.code}
 function loadDraft(){try{return JSON.parse(localStorage.getItem(draftKey())||"null")}catch(e){return null}}
 function clearDraft(){try{localStorage.removeItem(draftKey())}catch(e){}}
@@ -825,18 +825,25 @@ function saveDraft(){
 }
 var draftTimer=null;
 function saveDraftSoon(){clearTimeout(draftTimer);draftTimer=setTimeout(saveDraft,500)}
+function pausasLeft(){return Math.max(0,maxPausas()-((cur&&cur.pauses)||0))}
 function startPause(origem){
   if(!cur||cur.pauseAt||!$("#items"))return;
+  if(pausasLeft()<1){   // acabaram as pausas desta folha: o botão avisa e a pausa automática não acontece
+    if(origem==="manual")FC.toast("Você já usou as "+maxPausas()+" pausas desta folha.",true);
+    return;
+  }
   stopDwell();cur.pauseAt=Date.now();cur.pauses=(cur.pauses||0)+1;cur.pauseOrigem=origem;
   showPauseScreen();saveDraft();
   track("folha_pausa",{level:cur.level,sheet:cur.id,data:{origem:origem,n:cur.pauses}});
 }
 function endPause(){
   if(!cur||!cur.pauseAt)return;
-  var now=Date.now(),dur=now-cur.pauseAt,credit=FC.pauseCredit(cur,now,capMs());
-  cur.pauseMs=(cur.pauseMs||0)+credit;cur.pauseAt=null;
-  track("folha_retomada",{level:cur.level,sheet:cur.id,data:{origem:cur.pauseOrigem||"manual",pausa_s:Math.round(dur/1000),descontada_s:Math.round(credit/1000)}});
-  hidePauseScreen();saveDraft();
+  var now=Date.now(),dur=now-cur.pauseAt;
+  cur.pauseMs=(cur.pauseMs||0)+dur;cur.pauseAt=null;
+  var curta=dur<10000&&cur.pauseOrigem!=="retorno";   // a tela apagando ou um toque sem querer: não gasta uma pausa
+  if(curta&&cur.pauses>0)cur.pauses--;
+  track("folha_retomada",{level:cur.level,sheet:cur.id,data:{origem:cur.pauseOrigem||"manual",pausa_s:Math.round(dur/1000),devolvida:curta}});
+  hidePauseScreen();updatePauseBtn();saveDraft();
   for(var k=0;k<cur.items.length;k++)if(!cur.items[k].ok){focusItem(k);break}
 }
 function showPauseScreen(){
@@ -844,13 +851,20 @@ function showPauseScreen(){
   var el=document.createElement("div");el.className="pause-screen";el.id="pauseScreen";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");
   el.innerHTML='<div class="pause-card"><div class="pause-ic">'+FC.icon("pause")+'</div><h2>Pausa</h2>'+
     '<p>O relógio está parado e as contas estão escondidas. Quando voltar, toque em Continuar.</p>'+
-    '<p class="muted small-t">O que você escreveu fica guardado neste aparelho.</p>'+
+    '<p class="muted small-t">'+(pausasLeft()>0?'Você ainda tem '+pausasLeft()+' pausa'+(pausasLeft()>1?'s':'')+' nesta folha. ':'Esta foi a sua última pausa desta folha. ')+'O que você escreveu fica guardado neste aparelho.</p>'+
     '<button type="button" class="btn reward block" id="pauseGo">Continuar a folha</button>'+
     '<button type="button" class="link" id="pauseOut">Sair da folha</button></div>';
   document.body.appendChild(el);
   var pa=$(".paper");if(pa)pa.classList.add("paused");
   $("#pauseGo").onclick=endPause;$("#pauseOut").onclick=exitSheet;
   $("#pauseGo").focus();
+}
+function updatePauseBtn(){
+  var b=$("#btnPause");if(!b||!cur)return;
+  var left=pausasLeft();
+  b.hidden=maxPausas()<1;b.classList.toggle("used",left<1);
+  b.setAttribute("aria-label",left<1?"As pausas desta folha acabaram":"Fazer uma pausa. Restam "+left);
+  var n=$("#pauseLeft");if(n)n.textContent=left<1?"":String(left);
 }
 function hidePauseScreen(){var el=$("#pauseScreen");if(el)el.remove();var pa=$(".paper");if(pa)pa.classList.remove("paused")}
 /* Sair da folha sem entregar: o rascunho fica guardado e a folha espera. */
@@ -874,8 +888,8 @@ function restoreDraft(){
   });
   if(cur.secs!=null){$("#timer").textContent=FC.fmtTime(cur.secs);$("#btnSubmit").textContent="Conferir correções"}
   setMsg("Você voltou! Sua folha continua de onde parou.");
-  if(!cur.pauseAt){cur.pauseAt=Date.now();cur.pauseOrigem="retorno";cur.pauses++}
-  showPauseScreen();
+  if(!cur.pauseAt){cur.pauseAt=Date.now();cur.pauseOrigem="retorno"}   // voltar à folha abre na tela de pausa, sem gastar outra pausa
+  showPauseScreen();updatePauseBtn();
   return true;
 }
 function renderSheet(){
@@ -884,7 +898,7 @@ function renderSheet(){
     '<div><span class="k">Folha</span><span class="v">Nível '+L.id+'</span></div>'+
     '<div><span class="k">Aluno</span><span class="v">'+esc(S.me.name)+'</span></div>'+
     '<div><span class="k">Data</span><span class="v">'+FC.pad(d.getDate())+'/'+FC.pad(d.getMonth()+1)+'</span></div>'+
-    '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span><button type="button" class="pause-mini" id="btnPause" aria-label="Fazer uma pausa">'+FC.icon("pause")+' Pausa</button></div></div>'+
+    '<div class="timer" id="timerBox"><span class="k">Tempo / meta '+FC.fmtTime(L.target)+'</span><span class="v" id="timer">00:00</span><button type="button" class="pause-mini" id="btnPause" aria-label="Fazer uma pausa">'+FC.icon("pause")+' Pausa <b id="pauseLeft"></b></button></div></div>'+
     '<ol class="items" id="items">'+cur.items.map(function(it){
       return '<li class="row'+(FC.isRich(it)?' rich-row':'')+'" id="r'+it.i+'">'+FC.itemInner(it,it.i)+'</li>'}).join("")+'</ol>'+
     '<div class="sh-foot"><div class="msg" id="shMsg">'+esc(cur.intro)+'</div>'+
@@ -917,7 +931,7 @@ function renderSheet(){
   });
   $("#btnSubmit").onclick=submit;
   $("#btnExit").onclick=exitSheet;
-  $("#btnPause").onclick=function(){startPause("manual")};
+  $("#btnPause").onclick=function(){startPause("manual")};updatePauseBtn();
   clearInterval(timerId);cur.t0=Date.now();cur.pauseMs=0;cur.pauseAt=null;cur.pauses=0;
   timerId=setInterval(function(){
     if(!cur||cur.secs!=null||!$("#timer"))return;

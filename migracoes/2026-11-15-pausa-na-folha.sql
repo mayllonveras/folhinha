@@ -1,9 +1,9 @@
--- Pausa na folha: parâmetro pausa_max_min (padrão 15), o máximo de minutos de pausa por folha que o relógio desconta; passou disso o relógio volta a contar.
---  * app_settings.pausa_max_min = 15, editável no /adm (admin_set_settings aceita de 1 a 120).
---  * student_me devolve pausa_max_s para a tela da criança.
--- Parte das definições que estão no banco (pg_get_functiondef). Sem a migração o app usa 15 minutos.
+-- Pausa na folha: parâmetro pausas_max (padrão 2), o máximo de pausas por folha. A pausa não tem limite de tempo: o relógio fica parado enquanto durar.
+--  * app_settings.pausas_max = 2, editável no /adm (admin_set_settings aceita de 0 a 10; 0 desliga a pausa).
+--  * student_me devolve pausas_max para a tela da criança.
+-- Parte das definições que estão no banco (pg_get_functiondef). Sem a migração o app usa 2 pausas.
 begin;
-insert into public.app_settings(key, value) values ('pausa_max_min', 15) on conflict (key) do nothing;
+insert into public.app_settings(key, value) values ('pausas_max', 2) on conflict (key) do nothing;
 
 CREATE OR REPLACE FUNCTION public.student_me(p_token text, p_day date)
  RETURNS jsonb
@@ -37,7 +37,7 @@ begin
     'quota', quota, 'done_today', done_today, 'today_ok', t_ok, 'today_total', t_total,
     'today_stamp', exists(select 1 from sheets where student_id=sid and study_day=p_day and stamp),
     'streak', stk, 'best_streak', s.best_streak, 'next_marco', public._next_marco(stk),
-    'reward_system', 'figurinhas', 'sticker_theme', s.sticker_themes[1], 'sticker_themes', to_jsonb(s.sticker_themes), 'desk_themes', to_jsonb(s.desk_themes), 'albums_done', (s.albums_done_at is not null), 'desk_limit', app_setting('limite_mesa', 2)::int, 'pausa_max_s', (app_setting('pausa_max_min', 15) * 60)::int,
+    'reward_system', 'figurinhas', 'sticker_theme', s.sticker_themes[1], 'sticker_themes', to_jsonb(s.sticker_themes), 'desk_themes', to_jsonb(s.desk_themes), 'albums_done', (s.albums_done_at is not null), 'desk_limit', app_setting('limite_mesa', 2)::int, 'pausas_max', app_setting('pausas_max', 2)::int,
     'pending_packs', packs, 'stickers', stks, 'recent', recent,
     'normal_acertos', app_setting('normal_acertos', 80)::int, 'ouro_acertos', app_setting('ouro_acertos', 95)::int,
     'ouro_tempo', app_setting('ouro_tempo', 80)::int, 'ouro_carimbos', app_setting('ouro_carimbos', 2)::int,
@@ -53,7 +53,7 @@ AS $function$
 declare
   limits constant jsonb := '{"stamps_needed":[1,10],"normal_acertos":[50,100],"ouro_acertos":[50,100],"ouro_tempo":[10,100],
     "ouro_carimbos":[1,10],"salto_acertos":[50,100],"salto_tempo":[10,100],"salto_por_semana":[0,14],
-    "dias_sem_carimbo_voltar":[1,10],"bloqueio_salto_dias":[0,60],"teto_anos_padrao":[0,9],"virada_mes":[1,12],"virada_dia":[1,28],"limite_mesa":[1,5],"pausa_max_min":[1,120]}';
+    "dias_sem_carimbo_voltar":[1,10],"bloqueio_salto_dias":[0,60],"teto_anos_padrao":[0,9],"virada_mes":[1,12],"virada_dia":[1,28],"limite_mesa":[1,5],"pausas_max":[0,10]}';
   k text; v jsonb; num numeric; lo numeric; hi numeric;
 begin
   if not public.is_admin() then raise exception 'sem_permissao' using errcode = '42501'; end if;

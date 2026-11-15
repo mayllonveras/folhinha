@@ -714,3 +714,6 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 #btnPause svg.i{fill:currentColor;stroke:none;width:13px;height:13px}
 .pause-mini{margin-left:6px;display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface,var(--paper));color:var(--primary);font:600 .78rem var(--font-ui,inherit);cursor:pointer}
 .pause-mini:hover,.pause-mini:focus-visible{border-color:var(--primary)}
+.pause-mini[hidden]{display:none}
+.pause-mini.used{opacity:.55}
+.pause-mini b{font-weight:700}
