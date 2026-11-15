@@ -151,6 +151,11 @@ A migração `migracoes/2026-11-15-grade-3ano.sql` **só acrescenta** 42 linhas 
 então o último nível passa a ser o 118. Testada numa transação desfeita (118 níveis, 42 do 3º ano, meta do nível 118 = 160 s, 5 carimbos pelo padrão).
 `testes/grade.test.js` confere as metas contra as três migrações.
 
+## 4º ano (em andamento)
+
+Proposta de grade com 40 níveis em `GRADE-4ANO.md`, no mesmo processo dos anos anteriores: o professor aprova a ordem, as fichas são escritas e revisadas bloco por bloco, depois vêm os geradores
+e os testes, e por fim a grade é ligada ao app (níveis 119 em diante, migração que só acrescenta linhas em `levels`).
+
 ## Pontos em aberto
 
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
