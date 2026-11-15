@@ -1,0 +1,20 @@
+/* QR Code do link do aluno: biblioteca carrega, gera para um link real e a tela dos pais tem o botão. Rodar com: node testes/qrcode.test.js */
+const fs=require("fs"),path=require("path"),vm=require("vm");
+const root=path.join(__dirname,"..");let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
+const ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(root,"vendor","qrcode.js"),"utf8")+";this.qrcode=qrcode",ctx);
+const link="https://folhinha.vercel.app/?aluno=ab12-cd34";
+const qr=ctx.qrcode(0,"M");qr.addData(link);qr.make();
+ok(qr.getModuleCount()>=21,"gera a matriz do QR Code ("+qr.getModuleCount()+" módulos)");
+const svg=qr.createSvgTag({cellSize:6,margin:4});
+ok(/^<svg/.test(svg)&&/<\/svg>$/.test(svg.trim()),"gera o desenho em SVG");
+const idx=fs.readFileSync(path.join(root,"index.html"),"utf8"),sw=fs.readFileSync(path.join(root,"sw.js"),"utf8"),ad=fs.readFileSync(path.join(root,"adult.js"),"utf8");
+ok(/vendor\/qrcode\.js/.test(idx),"index.html carrega a biblioteca");
+ok(/vendor\/qrcode\.js/.test(sw),"service worker guarda a biblioteca (funciona sem internet)");
+ok(/id="i-qr"/.test(idx),"ícone do QR Code existe");
+ok(/data-qr=/.test(ad)&&/function showQr\(/.test(ad),"cartão do aluno tem o botão do QR Code e a tela que o mostra");
+ok(/card-open[\s\S]{0,40}$/.test("card-open")&&ad.indexOf('class="card-qr"')>ad.indexOf('<div class="cardwrap">')&&ad.indexOf('class="card-qr"')<ad.indexOf('class="card-open"'),"botão do QR Code no cartão, junto do que abre em nova aba");
+ok(/navigator\.share\(/.test(ad)&&/id="qrShare"/.test(ad),"botão Compartilhar usa o compartilhamento do celular");
+ok(/wa\.me\//.test(ad)&&/mailto:/.test(ad),"sem compartilhamento nativo, há WhatsApp e e-mail");
+ok(/files:\[file\]/.test(ad)&&/image\/png/.test(ad),"compartilha também a figura do QR Code quando o aparelho aceita");
+ok(/id="i-share"/.test(idx),"ícone de compartilhar existe");
+console.log(falhas?"\n"+falhas+" falha(s)":"qrcode: tudo certo");process.exit(falhas?1:0);

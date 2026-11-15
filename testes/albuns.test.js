@@ -80,5 +80,5 @@ ok(mig.indexOf("'dinossauros','bandeiras','ameacados','pets','espaco')")<0,"crea
 FC.THEMES.forEach(t=>ok(mig.indexOf("('"+t.id+"',")>=0,"álbum "+t.id+" registrado na tabela albums"));
 
 /* 6. Cache do service worker subiu */
-ok(/folhinha-v39/.test(fs.readFileSync(path.join(root,"sw.js"),"utf8")),"sw.js em folhinha-v39");
+ok(+(/folhinha-v(\d+)/.exec(fs.readFileSync(path.join(root,"sw.js"),"utf8"))||[0,0])[1]>=39,"sw.js com cache novo (v39 ou mais)");
 console.log(falhas?"\n"+falhas+" falha(s)":"albuns: tudo certo");process.exit(falhas?1:0);
