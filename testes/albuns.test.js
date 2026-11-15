@@ -63,11 +63,15 @@ m=mk(["a","b","c"],undefined,[],{desk_limit:1});
 ok(JSON.stringify(A.deskOf(m))==='["a"]',"limite vindo do banco (1 na mesa)");
 ok(A.deskLimit({})===2,"limite padrão 2");
 ok(/p_desk:desk/.test(src)&&/student_set_desk/.test(src),"boas-vindas e troca de mesa chamam o banco");
+ok(src.indexOf("if(desk)gift();else pickDesk();")>=0&&src.indexOf("ok.onclick=function(){desk=sel.slice();gift()}")>=0,"primeiro acesso: escolhe a mesa e só depois mostra o pacote de boas-vindas");
+const pk=src.slice(src.indexOf("function pickDesk()"),src.indexOf("function gift()"));
+ok(pk.indexOf("pacote de boas-vindas")<0&&pk.indexOf("figurinhas")<0,"a tela de escolher a mesa não fala do pacote nem das figurinhas");
+ok(/5 figurinhas de cada álbum/.test(src),"boas-vindas: 5 figurinhas de cada álbum da mesa");
 ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura do pacotinho");
 
 /* 5. Migração: pontos essenciais */
 const mig=fs.readFileSync(path.join(root,"migracoes","2026-11-15-mesa-gaveta.sql"),"utf8");
-["create table public.albums","desk_themes","albums_done_at","students_albums_rules","student_set_desk","album_fora_da_mesa","sem_album","limite_mesa","_check_albums(t.requester)","drop function public.student_welcome(text, text)"].forEach(k=>ok(mig.indexOf(k)>=0,"migração tem: "+k));
+["create table public.albums","desk_themes","albums_done_at","students_albums_rules","student_set_desk","album_fora_da_mesa","sem_album","limite_mesa","_check_albums(t.requester)","drop function public.student_welcome(text, text)","student_welcome(p_token text, p_desk text[]","per := case when cardinality(dsk) = 1 then 10 else 5 end"].forEach(k=>ok(mig.indexOf(k)>=0,"migração tem: "+k));
 ok(mig.indexOf("'dinossauros','bandeiras','ameacados','pets','espaco')")<0,"create_student não tem mais a lista fixa de 5 temas");
 FC.THEMES.forEach(t=>ok(mig.indexOf("('"+t.id+"',")>=0,"álbum "+t.id+" registrado na tabela albums"));
 

@@ -589,13 +589,14 @@ async function openPack(theme){
    Ela escolhe o álbum uma vez (se tiver dois) e as 10 abrem em sequência; no fim aparece o resumo. Se fechar antes de abrir, o pacote continua esperando. */
 function showWelcome(){
   var m=S.me,lib=themesOf(m),lim=deskLimit(m),busy=false,desk=lib.length>lim?null:lib;
-  var ov=FC.overlay('<div class="pack-reveal"><div class="pack-closed">'+FC.themePack(lib[0])+'</div></div><h2>Bem-vindo, '+esc(m.name)+'!</h2>'+
-    '<p>Você ganhou um <b>pacote de boas-vindas</b> com <b>10 figurinhas</b>!</p><div id="wBody"></div>',{button:"Agora não"});
-  function body(h){var b=ov.el.querySelector("#wBody");b.innerHTML=h}
-  /* 1) com mais álbuns liberados do que cabem na mesa, a criança escolhe com quais começa */
+  var ov=FC.overlay('<div id="wTop"></div><div id="wBody"></div>',{button:"Agora não"});
+  function top(h){ov.el.querySelector("#wTop").innerHTML=h}
+  function body(h){ov.el.querySelector("#wBody").innerHTML=h}
+  /* 1) com mais álbuns liberados do que cabem na mesa, a criança escolhe primeiro com quais começa */
   function pickDesk(){
     var sel=[];
-    body('<p class="muted">Seus pais liberaram '+lib.length+' álbuns. Escolha até '+lim+' para começar na <b>mesa</b>; os outros esperam na <b>gaveta</b> e você troca quando quiser.</p>'+
+    top('<h2>Bem-vindo, '+esc(m.name)+'!</h2>');
+    body('<p class="muted">Seus pais liberaram '+lib.length+' álbuns. Primeiro escolha até '+lim+' para começar na <b>mesa</b>; os outros esperam na <b>gaveta</b> e você troca quando quiser.</p>'+
       '<div class="pack-choices">'+lib.map(function(id){return '<button type="button" class="pack-choice" data-d="'+id+'" aria-pressed="false"><span class="pc-art">'+FC.themeCapa(id)+'</span><b>'+esc(FC.theme(id).name)+'</b></button>'}).join("")+'</div>'+
       '<div class="actions"><button class="btn" id="wDesk" disabled>Continuar</button></div>');
     var ok=ov.el.querySelector("#wDesk");
@@ -605,40 +606,45 @@ function showWelcome(){
       $$("[data-d]",ov.el).forEach(function(c){var on=sel.indexOf(c.getAttribute("data-d"))>=0;c.classList.toggle("on",on);c.setAttribute("aria-pressed",on?"true":"false")});
       ok.disabled=!sel.length;
     }});
-    ok.onclick=function(){desk=sel.slice();pickAlbum()};
+    ok.onclick=function(){desk=sel.slice();gift()};
   }
-  /* 2) de qual álbum da mesa saem as 10 figurinhas (com um só na mesa, abre direto) */
-  function pickAlbum(){
-    body(desk.length>1?'<p class="muted">De qual álbum da mesa você quer as 10 figurinhas?</p><div class="pack-choices">'+desk.map(function(id){
-        return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(FC.theme(id).name)+'</b></button>'}).join("")+'</div>'
-      :'<button class="btn reward block" data-t="'+desk[0]+'">Abrir agora</button>');
-    $$("[data-t]",ov.el).forEach(function(b){b.onclick=function(){if(busy)return;busy=true;go(b.getAttribute("data-t"))}});
+  /* 2) só depois da mesa escolhida aparece o pacote de boas-vindas: 5 figurinhas de cada álbum da mesa (10, se for um só) */
+  function gift(){
+    var nomes=desk.map(function(id){return '<b>'+esc(FC.theme(id).name)+'</b>'}).join(" e ");
+    top('<div class="pack-reveal"><div class="pack-closed">'+FC.themePack(desk[0])+'</div></div><h2>'+(lib.length>lim?'Sua mesa está pronta!':'Bem-vindo, '+esc(m.name)+'!')+'</h2>'+
+      '<p>Você ganhou um <b>pacote de boas-vindas</b>!</p>');
+    body('<p class="muted">'+(desk.length>1?'Vêm <b>5 figurinhas de cada álbum</b> da sua mesa: '+nomes+'.':'Vêm <b>10 figurinhas</b> do álbum '+nomes+'.')+'</p>'+
+      '<button class="btn reward block" id="wOpen">Abrir agora</button>');
+    ov.el.querySelector("#wOpen").onclick=function(){if(busy)return;busy=true;go()};
   }
-  if(desk)pickAlbum();else pickDesk();
-  async function go(theme){
+  if(desk)gift();else pickDesk();
+  async function go(){
     var res;
-    try{res=await rpc("student_welcome",{p_token:S.token,p_theme:theme,p_desk:desk})}
+    try{res=await rpc("student_welcome",{p_token:S.token,p_desk:desk})}
     catch(e){busy=false;if(/ja_recebeu/.test(String(e&&e.message||e))){ov.close();try{await loadHome()}catch(x){}return}FC.toast(FC.err(e),true);return}
     m.welcome_pending=false;
     if(res.desk)m.desk_themes=res.desk;
-    m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:res.theme,slot:x.slot,end:FC.today()}}));
+    m.stickers=(m.stickers||[]).concat(res.stickers.map(function(x){return{theme:x.theme,slot:x.slot,end:FC.today()}}));
     refreshPacks();
     step(res,0);
   }
   function step(res,i){
     if(!ov.el.isConnected)return;
-    var th=FC.theme(res.theme),card=ov.el.querySelector(".ov-card"),n=res.stickers.length;
+    var card=ov.el.querySelector(".ov-card"),n=res.stickers.length;
     if(i>=n){
-      var cells="";res.stickers.slice().sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(th.id,x.slot,{noflip:true})});
-      card.innerHTML='<h2>Suas 10 figurinhas!</h2><div class="album welcome-grid">'+cells+'</div><p class="muted gap">Você já tem <b>'+gotOf(S.me,th.id).length+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+
-        '. Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
+      var temas=[];res.stickers.forEach(function(x){if(temas.indexOf(x.theme)<0)temas.push(x.theme)});
+      var blocos=temas.map(function(id){
+        var cells="";res.stickers.filter(function(x){return x.theme===id}).sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(id,x.slot,{noflip:true})});
+        return '<h3 class="gap">'+esc(FC.theme(id).name)+'</h3><div class="album welcome-grid" style="max-height:none;overflow:visible">'+cells+'</div><p class="muted small-t">Você já tem <b>'+gotOf(S.me,id).length+' de '+FC.ALBUM_SIZE+'</b> neste álbum.</p>';
+      }).join("");
+      card.innerHTML='<h2>Suas '+n+' figurinhas!</h2>'+blocos+'<p class="muted gap">Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
       card.querySelector("#wEnd").onclick=ov.close;FC.confetti({gold:true,n:70});return;
     }
-    var st=res.stickers[i],tier=st.tier||"comum";
+    var st=res.stickers[i],th=FC.theme(st.theme),tier=st.tier||"comum";
     var titulo=tier==="ultra"?"Figurinha ULTRARRARA!":tier==="rara"?"Figurinha RARA!":"Figurinha nova!";
     var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
     card.innerHTML='<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,st.slot,{big:true})+'</div></div>'+
-      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Figurinha '+(i+1)+' de '+n+'</p>'+
+      '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">'+esc(th.name)+' · figurinha '+(i+1)+' de '+n+'</p>'+
       '<div class="actions ov-actions"><button class="btn" id="wNext" style="visibility:hidden">'+(i+1<n?"Próxima":"Ver todas")+'</button></div>';
     var nb=card.querySelector("#wNext");nb.onclick=function(){step(res,i+1)};
     setTimeout(function(){

@@ -7,7 +7,8 @@
 --    põe álbum recém-liberado na mesa se houver vaga e liga/desliga o aviso.
 --  * _check_albums(aluno): tira da mesa o álbum completo e liga/desliga o aviso (chamada ao abrir pacote, boas-vindas e troca aceita).
 --  * student_set_desk(token, lista): a criança troca mesa e gaveta quando quiser.
---  * student_open_pack só abre pacotinho de álbum que está na mesa; student_welcome recebe também a mesa escolhida (uma chamada só).
+--  * student_open_pack só abre pacotinho de álbum que está na mesa; student_welcome(token, mesa) escolhe a mesa e entrega o pacote de boas-vindas numa chamada só:
+--    5 figurinhas de cada álbum da mesa (10 do álbum, se for um só), sem repetidas e com pelo menos 1 rara por álbum.
 --  * student_me devolve desk_themes e albums_done_at; create_student valida pelo registro e exige 1 álbum no mínimo.
 -- Parte das definições que estão no banco (pg_get_functiondef). Aplicar ANTES de publicar o site novo.
 begin;
@@ -156,15 +157,15 @@ begin
 end $function$;
 
 drop function public.student_welcome(text, text);
-CREATE OR REPLACE FUNCTION public.student_welcome(p_token text, p_theme text, p_desk text[] DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.student_welcome(p_token text, p_desk text[] DEFAULT NULL)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
-declare sid uuid; s students%rowtype; i int; sl int; want text; real_t text; r numeric; got int[] := '{}'; picks jsonb := '[]'::jsonb;
+declare sid uuid; s students%rowtype; i int; sl int; want text; real_t text; r numeric; got int[]; picks jsonb := '[]'::jsonb;
   p_ultra numeric := app_setting('prob_ultra', 5)::numeric; p_rara numeric := app_setting('prob_rara', 25)::numeric;
-  today date := current_date; lim int := coalesce(app_setting('limite_mesa', 2)::int, 2); dsk text[]; tt text;
+  today date := current_date; lim int := coalesce(app_setting('limite_mesa', 2)::int, 2); dsk text[]; tt text; per int; seqn int := 0;
 begin
   sid := public._student_from_token(p_token);
   select * into s from students where id = sid for update;
@@ -180,48 +181,52 @@ begin
     if cardinality(dsk) < 1 then raise exception 'mesa_vazia'; end if;
     if cardinality(dsk) > lim then raise exception 'mesa_cheia'; end if;
   end if;
-  if p_theme is null or p_theme <> all(dsk) then raise exception 'album_invalido'; end if;
-  for i in 1..10 loop
-    if i = 1 then want := 'rara';      -- pelo menos 1 rara garantida
-    else
-      r := random() * 100;
-      want := case when r < p_ultra then 'ultra' when r < p_ultra + p_rara then 'rara' else 'comum' end;
-    end if;
-    real_t := want;
-    select g into sl from generate_series(0,51) x(g)
-     where coalesce((select sr.tier from sticker_rarity sr where sr.theme = p_theme and sr.slot = x.g), 'comum') = want
-       and x.g <> all(got)
-       and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = p_theme and a.slot = x.g)
-     order by random() limit 1;
-    if sl is null then   -- sem figurinha livre dessa raridade: cai para comum e, por fim, para qualquer uma que falte
-      real_t := 'comum';
+  -- 5 figurinhas de cada álbum da mesa (com um álbum só na mesa, 10 dele)
+  per := case when cardinality(dsk) = 1 then 10 else 5 end;
+  foreach tt in array dsk loop
+    got := '{}';
+    for i in 1..per loop
+      if i = 1 then want := 'rara';      -- pelo menos 1 rara garantida por álbum
+      else
+        r := random() * 100;
+        want := case when r < p_ultra then 'ultra' when r < p_ultra + p_rara then 'rara' else 'comum' end;
+      end if;
+      real_t := want; sl := null;
       select g into sl from generate_series(0,51) x(g)
-       where coalesce((select sr.tier from sticker_rarity sr where sr.theme = p_theme and sr.slot = x.g), 'comum') = 'comum'
+       where coalesce((select sr.tier from sticker_rarity sr where sr.theme = tt and sr.slot = x.g), 'comum') = want
          and x.g <> all(got)
-         and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = p_theme and a.slot = x.g)
+         and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = tt and a.slot = x.g)
        order by random() limit 1;
-    end if;
-    if sl is null then
-      select g into sl from generate_series(0,51) x(g)
-       where x.g <> all(got)
-         and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = p_theme and a.slot = x.g)
-       order by random() limit 1;
-      real_t := coalesce((select sr.tier from sticker_rarity sr where sr.theme = p_theme and sr.slot = sl), 'comum');
-    end if;
-    exit when sl is null;   -- álbum já tem quase tudo: entrega só as que faltam
-    got := got || sl;
-    insert into awards(student_id, kind, theme, slot, period_mode, period_start, period_end, earned_day, source, seq)
-      values (sid, 'figurinha', p_theme, sl, 'diario', today, today, today, 'boas_vindas', i);
-    picks := picks || jsonb_build_object('slot', sl, 'tier', real_t);
+      if sl is null then   -- sem figurinha livre dessa raridade: cai para comum e, por fim, para qualquer uma que falte
+        real_t := 'comum';
+        select g into sl from generate_series(0,51) x(g)
+         where coalesce((select sr.tier from sticker_rarity sr where sr.theme = tt and sr.slot = x.g), 'comum') = 'comum'
+           and x.g <> all(got)
+           and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = tt and a.slot = x.g)
+         order by random() limit 1;
+      end if;
+      if sl is null then
+        select g into sl from generate_series(0,51) x(g)
+         where x.g <> all(got)
+           and not exists (select 1 from awards a where a.student_id = sid and a.kind = 'figurinha' and a.theme = tt and a.slot = x.g)
+         order by random() limit 1;
+        real_t := coalesce((select sr.tier from sticker_rarity sr where sr.theme = tt and sr.slot = sl), 'comum');
+      end if;
+      exit when sl is null;   -- álbum já tem quase tudo: entrega só as que faltam
+      got := got || sl; seqn := seqn + 1;
+      insert into awards(student_id, kind, theme, slot, period_mode, period_start, period_end, earned_day, source, seq)
+        values (sid, 'figurinha', tt, sl, 'diario', today, today, today, 'boas_vindas', seqn);
+      picks := picks || jsonb_build_object('theme', tt, 'slot', sl, 'tier', real_t);
+    end loop;
   end loop;
   update students set welcome_at = now(), desk_themes = dsk where id = sid;
   perform public._check_albums(sid);
   -- ordem de abertura embaralhada: a rara não vem sempre primeiro
-  return jsonb_build_object('theme', p_theme, 'desk', (select to_jsonb(desk_themes) from students where id = sid),
+  return jsonb_build_object('desk', (select to_jsonb(desk_themes) from students where id = sid),
     'stickers', (select coalesce(jsonb_agg(e order by random()), '[]'::jsonb) from jsonb_array_elements(picks) e));
 end $function$;
-revoke all on function public.student_welcome(text, text, text[]) from public;
-grant execute on function public.student_welcome(text, text, text[]) to anon, authenticated;
+revoke all on function public.student_welcome(text, text[]) from public;
+grant execute on function public.student_welcome(text, text[]) to anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.student_me(p_token text, p_day date)
  RETURNS jsonb
