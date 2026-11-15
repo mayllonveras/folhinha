@@ -214,15 +214,10 @@ function programFields(s){
     '<label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
     '<p class="resumo" id="pResumo">'+resumoHtml(lv0,v.sheets_per_day,v.study_days,fr)+'</p>'+
     '<fieldset class="field" id="pThemes"><legend>Álbuns liberados para a criança</legend>'+
-      '<small>Marque quantos quiser, pelo menos 1. A criança escolhe quais ficam na mesa (até '+deskLimit()+' por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</small>'+
-      (FC.THEMES.length>THEME_SEARCH_FROM?'<div class="theme-filter"><input type="search" id="thQ" placeholder="Buscar álbum" aria-label="Buscar álbum"><select id="thCat" aria-label="Categoria"><option value="">Todas as categorias</option>'+
-        FC.THEMES.map(function(t){return FC.catOf(t.id)}).filter(function(c,i,a){return a.indexOf(c)===i}).map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>':"")+
-      '<div class="album-grid" id="thGrid">'+FC.THEMES.map(function(t){
-        return '<div class="alb-opt" data-name="'+esc(t.name.toLowerCase())+'" data-cat="'+esc(FC.catOf(t.id))+'"><input type="checkbox" name="themes" value="'+t.id+'" id="th_'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'+
-          '<label class="alb-capa" for="th_'+t.id+'">'+FC.themeCapa(t.id)+'<span class="alb-check" aria-hidden="true">✓</span></label>'+
-          '<label class="alb-name" for="th_'+t.id+'">'+esc(t.name)+'</label><button type="button" class="btn ghost small" data-view="'+t.id+'">Detalhes</button></div>'}).join("")+'</div>'+
-      '<div class="alb-tools"><button type="button" class="btn ghost small" id="thAll">Marcar todos</button><button type="button" class="btn ghost small" id="thNone">Desmarcar todos</button></div>'+
-      '<small id="pThemeHint"></small></fieldset>'+
+      '<div class="alb-sum" id="pThemeSum"></div>'+
+      '<div class="actions"><button type="button" class="btn ghost" id="thOpen">Ver álbuns</button></div>'+
+      '<small id="pThemeHint"></small>'+
+      '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
     '<details class="adv" id="pAdv"><summary>Avançado: nível, limite, dias e folhas por dia</summary><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
@@ -247,35 +242,63 @@ function rulesBox(){
     '<li>Fechar <b>todas as folhas do dia</b>, com ou sem carimbo, vale mais <b>1 pacotinho</b> (perseverança). A cota precisa fechar no mesmo dia.</li>'+
     '<li>Dias de estudo seguidos com a cota fechada dão pacotinhos extras aos <b>3, 7 e 14 dias</b> (2, 3 e 5 pacotinhos) e depois <b>a cada 30 dias</b> (5 pacotinhos). Faltar a um dia de estudo zera a sequência.</li></ul></div>';
 }
-function bindProgram(){
-  function themeHint(){
-    var n=$$('input[name="themes"]:checked').length,h=$("#pThemeHint");if(!h)return;
-    h.textContent=n===0?"Marque pelo menos 1 álbum.":n+(n>1?" álbuns liberados":" álbum liberado")+(n>deskLimit()?": a criança escolhe "+deskLimit()+" para começar na mesa.":".");
-    h.className=n===0?"bad":"";
-  }
-  $$('input[name="themes"]').forEach(function(c){c.addEventListener("change",themeHint)});
-  function shown(){return $$("#thGrid .alb-opt").filter(function(o){return !o.hidden})}
-  function setAll(on){shown().forEach(function(o){o.querySelector("input").checked=on});themeHint()}
-  if($("#thAll")){$("#thAll").onclick=function(){setAll(true)};$("#thNone").onclick=function(){setAll(false)}}
+/* Resumo dos álbuns liberados na tela do programa (a escolha fica na tela "Ver álbuns", para não poluir o formulário). */
+function themeSummary(){
+  var on=$$('#thStore input[name="themes"]:checked').map(function(c){return c.value}),box=$("#pThemeSum"),h=$("#pThemeHint");
+  if(!box)return;
+  box.innerHTML=on.length?'<div class="alb-thumbs">'+on.slice(0,6).map(function(id){return FC.themeCapa(id)}).join("")+(on.length>6?'<span class="muted">+'+(on.length-6)+'</span>':"")+'</div>'+
+      '<p class="small-t"><b>'+on.length+(on.length>1?" álbuns liberados":" álbum liberado")+'</b>: '+on.map(function(id){return esc(FC.theme(id).name)}).join(", ")+'.</p>':'<p class="small-t bad">Nenhum álbum liberado.</p>';
+  if(h){h.textContent=on.length===0?"Marque pelo menos 1 álbum.":on.length>deskLimit()?"A criança escolhe "+deskLimit()+" para começar na mesa; os outros esperam na gaveta.":"";h.className=on.length===0?"bad":""}
+}
+/* Detalhes do álbum: descrição, o que aparece nas cartas e uma amostra fixa de cartas comuns. Nunca mostra o álbum inteiro nem as raras. */
+function albumDetail(id){
+  var th=FC.theme(id),cells=FC.sampleSlots(th.id).map(function(sl){return FC.stickerHtml(th.id,sl)}).join("");
+  FC.overlay('<h2>'+esc(th.name)+'</h2><div class="album-head">'+FC.themeCapa(th.id)+'<p class="grow">'+esc(th.desc)+'</p></div>'+
+    '<h3 class="gap">O que aparece em cada carta</h3><ul class="plain">'+FC.cardFields(th.id).map(function(f){return '<li>'+esc(f)+'</li>'}).join("")+'</ul>'+
+    '<h3 class="gap">Algumas cartas de exemplo</h3><div class="album sample">'+cells+'</div>'+
+    '<p class="muted small-t gap">O álbum tem '+FC.ALBUM_SIZE+' figurinhas. Estas são só uma amostra: a criança descobre as outras, inclusive as raras, ao ganhar os pacotinhos.</p>',{wide:true});
+}
+/* Tela "Ver álbuns": grade de capas para marcar os álbuns liberados (quantos quiser, pelo menos 1). Só vale ao tocar em Pronto. */
+function openAlbums(){
+  var cur=$$('#thStore input[name="themes"]:checked').map(function(c){return c.value});
+  var ov=FC.overlay('<h2>Álbuns da criança</h2><p class="muted small-t">Marque os álbuns que a criança poderá conquistar, quantos quiser (pelo menos 1). Ela escolhe quais ficam na mesa (até '+deskLimit()+' por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</p>'+
+    (FC.THEMES.length>THEME_SEARCH_FROM?'<div class="theme-filter"><input type="search" id="thQ" placeholder="Buscar álbum" aria-label="Buscar álbum"><select id="thCat" aria-label="Categoria"><option value="">Todas as categorias</option>'+
+      FC.THEMES.map(function(t){return FC.catOf(t.id)}).filter(function(c,i,a){return a.indexOf(c)===i}).map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>':"")+
+    '<div class="album-grid" id="thGrid">'+FC.THEMES.map(function(t){
+      return '<div class="alb-opt" data-name="'+esc(t.name.toLowerCase())+'" data-cat="'+esc(FC.catOf(t.id))+'"><input type="checkbox" class="thx" value="'+t.id+'" id="thx_'+t.id+'"'+(cur.indexOf(t.id)>=0?" checked":"")+'>'+
+        '<label class="alb-capa" for="thx_'+t.id+'">'+FC.themeCapa(t.id)+'<span class="alb-check" aria-hidden="true">✓</span></label>'+
+        '<label class="alb-name" for="thx_'+t.id+'">'+esc(t.name)+'</label><button type="button" class="btn ghost small" data-view="'+t.id+'">Detalhes</button></div>'}).join("")+'</div>'+
+    '<div class="alb-tools"><button type="button" class="btn ghost small" id="thAll">Marcar todos</button><button type="button" class="btn ghost small" id="thNone">Desmarcar todos</button></div>'+
+    '<p class="small-t" id="thxHint"></p><div class="actions"><button type="button" class="btn" id="thDone">Pronto</button></div>',{wide:true,button:"Cancelar"});
+  var el=ov.el;
+  function marked(){return $$("input.thx:checked",el)}
+  function hint(){var n=marked().length,h=$("#thxHint",el);h.textContent=n===0?"Marque pelo menos 1 álbum.":n+(n>1?" álbuns marcados.":" álbum marcado.");h.className="small-t"+(n===0?" bad":"")}
+  $$("input.thx",el).forEach(function(c){c.addEventListener("change",hint)});
+  function shown(){return $$("#thGrid .alb-opt",el).filter(function(o){return !o.hidden})}
+  function setAll(on){shown().forEach(function(o){o.querySelector("input").checked=on});hint()}
+  $("#thAll",el).onclick=function(){setAll(true)};$("#thNone",el).onclick=function(){setAll(false)};
   function filt(){
-    var q=($("#thQ")?$("#thQ").value:"").trim().toLowerCase(),c=$("#thCat")?$("#thCat").value:"";
-    $$("#thGrid .alb-opt").forEach(function(o){o.hidden=!!((q&&o.getAttribute("data-name").indexOf(q)<0)||(c&&o.getAttribute("data-cat")!==c))});
+    var s=($("#thQ",el)?$("#thQ",el).value:"").trim().toLowerCase(),c=$("#thCat",el)?$("#thCat",el).value:"";
+    $$("#thGrid .alb-opt",el).forEach(function(o){o.hidden=!!((s&&o.getAttribute("data-name").indexOf(s)<0)||(c&&o.getAttribute("data-cat")!==c))});
   }
-  if($("#thQ")){$("#thQ").oninput=filt;$("#thCat").onchange=filt}
-  themeHint();
+  if($("#thQ",el)){$("#thQ",el).oninput=filt;$("#thCat",el).onchange=filt}
+  $$("[data-view]",el).forEach(function(b){b.onclick=function(){albumDetail(b.getAttribute("data-view"))}});
+  $("#thDone",el).onclick=function(){
+    var ids=marked().map(function(c){return c.value});
+    if(!ids.length){hint();return}
+    $$('#thStore input[name="themes"]').forEach(function(c){c.checked=ids.indexOf(c.value)>=0});
+    themeSummary();ov.close();
+  };
+  hint();
+}
+function bindProgram(){
+  themeSummary();
+  if($("#thOpen"))$("#thOpen").onclick=openAlbums;
   function upd(){
     var n=$$('input[name="days"]:checked').length;
     $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana.":"Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: "+MIN_DAYS+" dias por semana.";
     $("#pDaysHint").className=n<MIN_DAYS?"bad":"";
   }
-  /* Detalhes do álbum: descrição, o que aparece nas cartas e uma amostra fixa de cartas comuns. Nunca mostra o álbum inteiro nem as raras. */
-  $$("[data-view]").forEach(function(btn){btn.onclick=function(){
-    var th=FC.theme(btn.getAttribute("data-view")),cells=FC.sampleSlots(th.id).map(function(sl){return FC.stickerHtml(th.id,sl)}).join("");
-    FC.overlay('<h2>'+esc(th.name)+'</h2><div class="album-head">'+FC.themeCapa(th.id)+'<p class="grow">'+esc(th.desc)+'</p></div>'+
-      '<h3 class="gap">O que aparece em cada carta</h3><ul class="plain">'+FC.cardFields(th.id).map(function(f){return '<li>'+esc(f)+'</li>'}).join("")+'</ul>'+
-      '<h3 class="gap">Algumas cartas de exemplo</h3><div class="album sample">'+cells+'</div>'+
-      '<p class="muted small-t gap">O álbum tem '+FC.ALBUM_SIZE+' figurinhas. Estas são só uma amostra: a criança descobre as outras, inclusive as raras, ao ganhar os pacotinhos.</p>',{wide:true});
-  }});
   $$('input[name="days"]').forEach(function(c){c.onchange=upd});
   upd();refreshProgramInfo();
 }

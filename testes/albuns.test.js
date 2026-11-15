@@ -40,6 +40,10 @@ ok(!/for\(var i=0;i<FC\.ALBUM_SIZE;i\+\+\)cells\+=FC\.stickerHtml\(th\.id,i\)/.t
 ok(/sampleSlots/.test(adult),"Detalhes usa a amostra");
 ok(/themes\.length\)return\{error/.test(adult),"cadastro exige pelo menos 1 álbum");
 ok(/albums_done_at/.test(adult),"aviso de álbuns completos nos pais");
+ok(/id="thOpen">Ver álbuns</.test(adult),"tela do programa tem o botão Ver álbuns");
+const fm=adult.slice(adult.indexOf("function programFields("),adult.indexOf("function rulesBox("));
+ok(fm.indexOf("album-grid")<0&&fm.indexOf("alb-opt")<0,"a grade de capas não aparece direto no formulário (só na tela Ver álbuns)");
+ok(/function openAlbums\(/.test(adult)&&/id="thDone">Pronto</.test(adult),"tela Ver álbuns tem a grade e o botão Pronto");
 
 /* 4. Regras da mesa e da gaveta (funções puras da tela da criança, extraídas do arquivo) */
 const src=fs.readFileSync(path.join(root,"student.js"),"utf8");
@@ -76,5 +80,5 @@ ok(mig.indexOf("'dinossauros','bandeiras','ameacados','pets','espaco')")<0,"crea
 FC.THEMES.forEach(t=>ok(mig.indexOf("('"+t.id+"',")>=0,"álbum "+t.id+" registrado na tabela albums"));
 
 /* 6. Cache do service worker subiu */
-ok(/folhinha-v38/.test(fs.readFileSync(path.join(root,"sw.js"),"utf8")),"sw.js em folhinha-v38");
+ok(/folhinha-v39/.test(fs.readFileSync(path.join(root,"sw.js"),"utf8")),"sw.js em folhinha-v39");
 console.log(falhas?"\n"+falhas+" falha(s)":"albuns: tudo certo");process.exit(falhas?1:0);
