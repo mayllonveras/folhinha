@@ -151,10 +151,28 @@ A migração `migracoes/2026-11-15-grade-3ano.sql` **só acrescenta** 42 linhas 
 então o último nível passa a ser o 118. Testada numa transação desfeita (118 níveis, 42 do 3º ano, meta do nível 118 = 160 s, 5 carimbos pelo padrão).
 `testes/grade.test.js` confere as metas contra as três migrações.
 
-## 4º ano (em andamento)
+## 4º ano (grade, geradores e ligação ao app prontos; falta aplicar a migração)
 
-Proposta de grade com 40 níveis em `GRADE-4ANO.md`, no mesmo processo dos anos anteriores: o professor aprova a ordem, as fichas são escritas e revisadas bloco por bloco, depois vêm os geradores
-e os testes, e por fim a grade é ligada ao app (níveis 119 em diante, migração que só acrescenta linhas em `levels`).
+Grade final com **46 níveis** em `GRADE-4ANO.md`, em 9 blocos (números até 99 999, adição e subtração, multiplicação, divisão, igualdades e problemas, frações e decimais,
+ângulos, sólidos e simetria, medidas e dinheiro, acaso e dados). Os geradores estão em `grade4.js` (testes em `testes/grade4.test.js`, com a resposta de cada conta recalculada).
+
+**Por que 46 e não 40 (decisão do professor, 15/11/2026):** a conta pesada do 4º ano não cabe em folhas de 10 contas rápidas. Três mudanças em relação à proposta de 40 níveis:
+degraus menores nos blocos de multiplicação e divisão (a multiplicação por um algarismo virou 4 níveis e a por dois algarismos, 2; a divisão ganhou degraus por quantidade de algarismos),
+teto de tamanho nas contas (multiplicação até 3 algarismos × 1, e 4 algarismos × 2 a 5; divisão com dividendo de até 4 algarismos e divisor de 2 a 5; resposta sempre até 99 999) e metas
+de tempo maiores só nos níveis pesados (150 a 180 s). Todas as folhas continuam com 10 contas (8 do nível e 2 de revisão); o aluno estima antes de calcular no nível 8.
+
+**Decisões das cinco perguntas da proposta (adotadas as sugestões):** extenso até 99 999 só no nível 1; a conta não é "armada" na tela (a dica sugere o papel); frações só unitárias
+(1/2, 1/3, 1/4, 1/5, 1/10), com figura e reta, e décimos e centésimos no quadro de 100, sem somar nem multiplicar; divisão por dois algarismos sempre exata (divisor de 10 a 30); temperatura de 0 a 45 °C, só de 5 em 5 no termômetro, sem negativos.
+A resposta digitada é sempre inteira, então os decimais viram "quantos décimos", "quantos centésimos" e "quantos centavos" (a escolha de opções mostra o decimal escrito, como 0,23 e R$ 3,50).
+
+**Peças novas** (`exercicios.js`): figura de fração (barra e círculo), quadro de 100, ângulo, termômetro, reta de 0 a 1 dividida em partes e malha com eixo de simetria. A caixa de resposta ficou um pouco mais larga (6 algarismos).
+
+**Ligação ao app:** a trilha é uma só. Os níveis do 4º ano seguem os 118 dos três primeiros anos e o aluno vê a numeração corrida, **119 a 164** (os números 1 a 46 das fichas são internos).
+`FC.LEVELS` ganha os 46 níveis no fim de `grade4.js`, com blocos, dicas, lembretes de abertura (extenso, resto, frações, décimos, sólidos, ângulos e simetria) e as 26 habilidades da BNCC
+(`habilidades.js` ganhou os textos das habilidades do 4º ano para a tela dos pais). Ficam de fora EF04MA24 e EF04MA28 (atividades de casa ou de sala). A migração
+`migracoes/2026-11-15-grade-4ano.sql` **só acrescenta** 46 linhas em `levels` (idx 118 a 163, ano 4), sem tocar em alunos nem em níveis existentes; as funções de avanço já leem a tabela,
+então o último nível passa a ser o 164. Testada numa transação desfeita (164 níveis, 46 do 4º ano, meta do nível 164 = 160 s, 5 carimbos pelo padrão). `testes/grade.test.js` confere as metas contra as quatro migrações.
+O cadastro com "4º ano" já começa no nível 119 (`primeiroNivelDoAno(4)`).
 
 ## Pontos em aberto
 

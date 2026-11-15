@@ -1,4 +1,6 @@
-# Proposta de grade do 4º ano (40 níveis) — para revisão do professor
+# Grade do 4º ano (46 níveis, implementada em `grade4.js`)
+
+> **Estado:** implementada em 15/11/2026. A proposta original tinha 40 níveis; ficaram **46**, com degraus menores nas contas pesadas (ver a seção abaixo e `PLANO.md`). A tabela original segue como referência de conteúdo.
 
 Base: inventário `inventario-anos-iniciais.csv` (28 habilidades do 4º ano: 26 treináveis, grupos A e B; ficam de fora **EF04MA24** (registrar temperaturas diárias e fazer gráficos) e
 **EF04MA28** (realizar pesquisa), grupo C, que são atividades de casa ou de sala) e as decisões já tomadas: grade **refeita do zero**, cada nível nasce de uma **ficha** revisada
@@ -90,3 +92,17 @@ A multiplicação vem antes da divisão (a divisão usa a tabuada e a multiplica
 3. **Frações e decimais (níveis 25 a 28):** só as frações unitárias que a BNCC pede (1/2, 1/3, 1/4, 1/5, 1/10 e 1/100), com figura, e os décimos e centésimos, sem somar nem multiplicar (isso é do 5º ano). **Sugiro** manter.
 4. **Dividir por dois algarismos (nível 19):** a BNCC fala em "divisor de no máximo dois algarismos". **Sugiro** começar com divisores de 10 a 30 e quociente de até dois algarismos, sempre exatos, com a estimativa como estratégia ("96 ÷ 12: 12 × 8 = 96"); o resto com divisor de dois algarismos fica para o 5º ano.
 5. **Temperatura (nível 37):** **sugiro** só temperaturas de 0 a 45 °C, sem números negativos, que são do 6º ano.
+
+## Grade implementada (46 níveis, numeração do app entre parênteses)
+
+| Bloco | Níveis (ficha → app) |
+|---|---|
+| Números até 99 999 | 1 Ler e escrever (119) · 2 Valor posicional e decomposição (120) · 3 Comparar e ordenar (121) · 4 Arredondar (122) |
+| Adição e subtração | 5 Somas com 4 algarismos (123) · 6 Subtrações com 4 algarismos (124) · 7 Somas e subtrações até 99 999 (125) · 8 Estimar (126) · 9 Problemas (127) · 10 Operações inversas (128) |
+| Multiplicação | 11 Propriedades (129) · 12 Por 10, 100 e 1000 (130) · 13 Dezenas e centenas inteiras (131) · 14 Por um algarismo, sem reagrupar (132) · 15 2 algarismos × 1 (133) · 16 3 algarismos × 1 (134) · 17 4 algarismos × 2 a 5 (135) · 18 Por 11 a 19 (136) · 19 Por dois algarismos (137) · 20 Problemas (138) · 21 Combinações (139) |
+| Divisão, múltiplos e restos | 22 Sem resto (140) · 23 Com resto (141) · 24 Quatro algarismos (142) · 25 Por dois algarismos (143) · 26 Problemas (144) · 27 Múltiplos e restos (145) |
+| Igualdades e problemas | 28 Igualdades (146) · 29 Número desconhecido (147) · 30 Problemas com as quatro operações (148) |
+| Frações e decimais | 31 Frações unitárias (149) · 32 Frações na reta (150) · 33 Décimos e centésimos (151) · 34 Decimais e dinheiro (152) |
+| Ângulos, sólidos e simetria | 35 Localização na malha (153) · 36 Prismas e pirâmides (154) · 37 Ângulos (155) · 38 Simetria (156) |
+| Medidas, tempo e dinheiro | 39 Perímetro e comprimento (157) · 40 Área na malha (158) · 41 Massa e capacidade (159) · 42 Tempo (160) · 43 Temperatura (161) · 44 Dinheiro: troco, desconto e parcelas (162) |
+| Acaso, tabelas e gráficos | 45 Chances (163) · 46 Tabelas e gráficos (164) |

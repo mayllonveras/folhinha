@@ -338,10 +338,135 @@ FC.HAB={
 "Ler, interpretar e comparar dados apresentados em tabelas de dupla entrada, gráficos de barras…",
 "Ler, interpretar e comparar dados apresentados em tabelas de dupla entrada, gráficos de barras ou colunas, envolvendo resultados de pesquisas significativas, utilizando termos como maior e menor frequência, apropriando-se desse tipo de linguagem para compreender aspectos da realidade sociocultural significativos."
 ],
+"EF04MA01":[
+"Números",
+"Ler, escrever e ordenar números naturais até a ordem de dezenas de milhar.",
+"Ler, escrever e ordenar números naturais até a ordem de dezenas de milhar."
+],
+"EF04MA02":[
+"Números",
+"Mostrar, por decomposição e composição, que todo número natural pode ser escrito por meio…",
+"Mostrar, por decomposição e composição, que todo número natural pode ser escrito por meio de adições e multiplicações por potências de dez, para compreender o sistema de numeração decimal e desenvolver estratégias de cálculo."
+],
+"EF04MA03":[
+"Números",
+"Resolver e elaborar problemas com números naturais envolvendo adição e subtração…",
+"Resolver e elaborar problemas com números naturais envolvendo adição e subtração, utilizando estratégias diversas, como cálculo, cálculo mental e algoritmos, além de fazer estimativas do resultado."
+],
+"EF04MA04":[
+"Números",
+"Utilizar as relações entre adição e subtração, bem como entre multiplicação e divisão…",
+"Utilizar as relações entre adição e subtração, bem como entre multiplicação e divisão, para ampliar as estratégias de cálculo."
+],
+"EF04MA05":[
+"Números",
+"Utilizar as propriedades das operações para desenvolver estratégias de cálculo.",
+"Utilizar as propriedades das operações para desenvolver estratégias de cálculo."
+],
+"EF04MA06":[
+"Números",
+"Resolver e elaborar problemas envolvendo diferentes significados da multiplicação (adição…",
+"Resolver e elaborar problemas envolvendo diferentes significados da multiplicação (adição de parcelas iguais, organização retangular e proporcionalidade), utilizando estratégias diversas, como cálculo por estimativa, cálculo mental e algoritmos."
+],
+"EF04MA07":[
+"Números",
+"Resolver e elaborar problemas de divisão cujo divisor tenha no máximo dois algarismos…",
+"Resolver e elaborar problemas de divisão cujo divisor tenha no máximo dois algarismos, envolvendo os significados de repartição equitativa e de medida, utilizando estratégias diversas, como cálculo por estimativa, cálculo mental e algoritmos."
+],
+"EF04MA08":[
+"Números",
+"Resolver, com o suporte de imagem e/ou material manipulável, problemas simples de…",
+"Resolver, com o suporte de imagem e/ou material manipulável, problemas simples de contagem, como a determinação do número de agrupamentos possíveis ao se combinar cada elemento de uma coleção com todos os elementos de outra, utilizando estratégias e formas de registro pessoais."
+],
+"EF04MA09":[
+"Números",
+"Reconhecer as frações unitárias mais usuais (1/2, 1/3, 1/4, 1/5, 1/10 e 1/100) como…",
+"Reconhecer as frações unitárias mais usuais (1/2, 1/3, 1/4, 1/5, 1/10 e 1/100) como unidades de medida menores do que uma unidade, utilizando a reta numérica como recurso."
+],
+"EF04MA10":[
+"Números",
+"Reconhecer que as regras do sistema de numeração decimal podem ser estendidas para a…",
+"Reconhecer que as regras do sistema de numeração decimal podem ser estendidas para a representação decimal de um número racional e relacionar décimos e centésimos com a representação do sistema monetário brasileiro."
+],
+"EF04MA11":[
+"Álgebra",
+"Identificar regularidades em sequências numéricas compostas por múltiplos de um número…",
+"Identificar regularidades em sequências numéricas compostas por múltiplos de um número natural."
+],
+"EF04MA12":[
+"Álgebra",
+"Reconhecer, por meio de investigações, que há grupos de números naturais para os quais as…",
+"Reconhecer, por meio de investigações, que há grupos de números naturais para os quais as divisões por um determinado número resultam em restos iguais, identificando regularidades."
+],
+"EF04MA13":[
+"Álgebra",
+"Reconhecer, por meio de investigações, utilizando a calculadora quando necessário, as…",
+"Reconhecer, por meio de investigações, utilizando a calculadora quando necessário, as relações inversas entre as operações de adição e de subtração e de multiplicação e de divisão, para aplicá-las na resolução de problemas."
+],
+"EF04MA14":[
+"Álgebra",
+"Reconhecer e mostrar, por meio de exemplos, que a relação de igualdade existente entre…",
+"Reconhecer e mostrar, por meio de exemplos, que a relação de igualdade existente entre dois termos permanece quando se adiciona ou se subtrai um mesmo número a cada um desses termos."
+],
+"EF04MA15":[
+"Álgebra",
+"Determinar o número desconhecido que torna verdadeira uma igualdade que envolve as…",
+"Determinar o número desconhecido que torna verdadeira uma igualdade que envolve as operações fundamentais com números naturais."
+],
+"EF04MA16":[
+"Geometria",
+"Descrever deslocamentos e localização de pessoas e de objetos no espaço, por meio de…",
+"Descrever deslocamentos e localização de pessoas e de objetos no espaço, por meio de malhas quadriculadas e representações como desenhos, mapas, planta baixa e croquis, empregando termos como direita e esquerda, mudanças de direção e sentido, intersecção, transversais, paralelas e perpendiculares."
+],
+"EF04MA17":[
+"Geometria",
+"Associar prismas e pirâmides a suas planificações e analisar, nomear e comparar seus…",
+"Associar prismas e pirâmides a suas planificações e analisar, nomear e comparar seus atributos, estabelecendo relações entre as representações planas e espaciais."
+],
+"EF04MA18":[
+"Geometria",
+"Reconhecer ângulos retos e não retos em figuras poligonais com o uso de dobraduras…",
+"Reconhecer ângulos retos e não retos em figuras poligonais com o uso de dobraduras, esquadros ou softwares de geometria."
+],
+"EF04MA19":[
+"Geometria",
+"Reconhecer simetria de reflexão em figuras e em pares de figuras geométricas planas e…",
+"Reconhecer simetria de reflexão em figuras e em pares de figuras geométricas planas e utilizá-la na construção de figuras congruentes, com o uso de malhas quadriculadas e de softwares de geometria."
+],
+"EF04MA20":[
+"Grandezas e medidas",
+"Medir e estimar comprimentos (incluindo perímetros), massas e capacidades, utilizando…",
+"Medir e estimar comprimentos (incluindo perímetros), massas e capacidades, utilizando unidades de medida padronizadas mais usuais, valorizando e respeitando a cultura local."
+],
 "EF04MA21":[
 "Grandezas e medidas",
 "Medir, comparar e estimar área de figuras planas desenhadas em malha quadriculada, pela…",
 "Medir, comparar e estimar área de figuras planas desenhadas em malha quadriculada, pela contagem dos quadradinhos ou de metades de quadradinho, reconhecendo que duas figuras com formatos diferentes podem ter a mesma medida de área."
+],
+"EF04MA22":[
+"Grandezas e medidas",
+"Ler e registrar medidas e intervalos de tempo em horas, minutos e segundos em situações…",
+"Ler e registrar medidas e intervalos de tempo em horas, minutos e segundos em situações relacionadas ao seu cotidiano, como informar os horários de início e término de realização de uma tarefa e sua duração."
+],
+"EF04MA23":[
+"Grandezas e medidas",
+"Reconhecer temperatura como grandeza e o grau Celsius como unidade de medida a ela…",
+"Reconhecer temperatura como grandeza e o grau Celsius como unidade de medida a ela associada e utilizá-lo em comparações de temperaturas em diferentes regiões do Brasil ou no exterior ou, ainda, em discussões que envolvam problemas relacionados ao aquecimento global."
+],
+"EF04MA25":[
+"Grandezas e medidas",
+"Resolver e elaborar problemas que envolvam situações de compra e venda e formas de…",
+"Resolver e elaborar problemas que envolvam situações de compra e venda e formas de pagamento, utilizando termos como troco e desconto, enfatizando o consumo ético, consciente e responsável."
+],
+"EF04MA26":[
+"Probabilidade e estatística",
+"Identificar, entre eventos aleatórios cotidianos, aqueles que têm maior chance de…",
+"Identificar, entre eventos aleatórios cotidianos, aqueles que têm maior chance de ocorrência, reconhecendo características de resultados mais prováveis, sem utilizar frações."
+],
+"EF04MA27":[
+"Probabilidade e estatística",
+"Analisar dados apresentados em tabelas simples ou de dupla entrada e em gráficos de…",
+"Analisar dados apresentados em tabelas simples ou de dupla entrada e em gráficos de colunas ou pictóricos, com base em informações das diferentes áreas do conhecimento, e produzir texto com a síntese de sua análise."
 ]
 };
 })();
