@@ -96,8 +96,12 @@ FC.fmtCode=function(c){
   if(c.length===8)return (c.slice(0,4)+"-"+c.slice(4)).toUpperCase();
   return c;
 };
+/* Tempo da folha com pausa: o relógio fica parado durante a pausa, sem limite de duração (o que limita é a quantidade de pausas por folha).
+   o = {t0, pauseMs (pausas já terminadas), pauseAt (início da pausa em andamento, ou null)}. */
+FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
+FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v45";
+FC.VERSAO="folhinha-v46";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){

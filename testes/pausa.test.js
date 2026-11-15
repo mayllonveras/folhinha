@@ -1,0 +1,38 @@
+/* Pausa na folha: o relógio para durante a pausa (sem limite de tempo); o limite é a quantidade de pausas por folha. Rodar com: node testes/pausa.test.js */
+const fs=require("fs"),path=require("path"),vm=require("vm");
+const root=path.join(__dirname,"..");
+global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
+global.document={addEventListener(){},querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
+global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};global.localStorage={};
+global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
+global.history={state:null,pushState(){},replaceState(){},back(){},forward(){}};
+vm.runInThisContext(fs.readFileSync(path.join(root,"core.js"),"utf8"),{filename:"core.js"});
+const FC=global.FC;let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
+const MIN=60000,H=60*MIN;
+let o={t0:0,pauseMs:0,pauseAt:null};
+ok(FC.elapsedMs(o,5*MIN)===5*MIN,"sem pausa o tempo corre");
+o={t0:0,pauseMs:0,pauseAt:2*MIN};
+ok(FC.elapsedMs(o,3*MIN)===2*MIN&&FC.elapsedMs(o,6*MIN)===2*MIN,"durante a pausa o relógio fica parado");
+ok(FC.elapsedMs(o,2*MIN+3*H)===2*MIN,"a pausa não tem limite de tempo: 3 horas parado continua parado (a criança pode ter ido fazer outra coisa)");
+o={t0:0,pauseMs:4*MIN,pauseAt:null};
+ok(FC.elapsedMs(o,10*MIN)===6*MIN,"pausa terminada desconta o tempo parado");
+o={t0:0,pauseMs:40*MIN,pauseAt:null};
+ok(FC.elapsedMs(o,50*MIN)===10*MIN,"pausa longa terminada desconta tudo (40 min)");
+ok(FC.elapsedMs({t0:100,pauseMs:0,pauseAt:50},120)===0,"nunca negativo");
+const st=fs.readFileSync(path.join(root,"student.js"),"utf8"),am=fs.readFileSync(path.join(root,"admin.js"),"utf8"),mig=fs.readFileSync(path.join(root,"migracoes","2026-11-15-pausa-na-folha.sql"),"utf8"),css=fs.readFileSync(path.join(root,"style.css"),"utf8");
+ok(/id="btnPause"/.test(st)&&/function startPause\(/.test(st)&&/function endPause\(/.test(st),"botão de pausa, pausar e continuar");
+ok(/startPause\("auto"\)/.test(st),"sair do app ou bloquear o celular pausa sozinho");
+ok(/classList\.add\("paused"\)/.test(st)&&/\.paper\.paused\{visibility:hidden\}/.test(css),"na pausa as contas ficam escondidas");
+ok(/fc_draft_/.test(st)&&/function restoreDraft\(/.test(st)&&/function saveDraft\(/.test(st),"rascunho da folha guardado no aparelho");
+ok(/clearDraft\(\);\n  FC\.tabState\.aluno="inicio"/.test(st),"rascunho apagado quando a folha é entregue");
+ok(/cur\.secs=Math\.min\(elapsedMs\(\)\/1000,14000\)/.test(st),"tempo enviado é o líquido (sem pausa) e nunca passa de 14000 s");
+ok(/folha_pausa/.test(st)&&/folha_retomada/.test(st)&&/devolvida/.test(st),"pausas registradas nos dados de uso");
+ok(/Fazer uma pausa/.test(st)&&/lvPause/.test(st),"voltar na folha oferece fazer uma pausa");
+// limite por quantidade
+ok(/function maxPausas\(\)\{var n=S\.me&&S\.me\.pausas_max;return n==null\?2:n\}/.test(st),"sem a migração o app usa 2 pausas por folha");
+ok(/if\(pausasLeft\(\)<1\)/.test(st)&&/já usou as/.test(st),"acabaram as pausas: o botão avisa e a pausa automática não acontece");
+ok(/dur<10000/.test(st),"pausa de menos de 10 s devolve a pausa (tela apagando não gasta)");
+ok(/pausas_max/.test(am)&&/pausas_max/.test(mig)&&/"pausas_max":\[0,10\]/.test(mig),"quantidade de pausas editável no /adm (0 a 10) e devolvida pelo banco");
+ok(mig.indexOf("pausa_max_min")<0&&st.indexOf("pausa_max_s")<0&&am.indexOf("pausa_max_min")<0,"nada sobrou do limite por tempo");
+ok(!/\.pause-mini\{[^}]*\}/.test(css)||/\.pause-mini\[hidden\]\{display:none\}/.test(css),"botão some quando a pausa está desligada (0)");
+console.log(falhas?"\n"+falhas+" falha(s)":"pausa: tudo certo");process.exit(falhas?1:0);
