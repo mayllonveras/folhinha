@@ -3,7 +3,7 @@
 (function(){
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
-function catalogo(){return (FC.EX||[]).concat(FC.G1||[],FC.G2||[])}
+function catalogo(){return (FC.EX||[]).concat(FC.G1||[],FC.G2||[],FC.G3||[])}
 function porId(id){return catalogo().filter(function(e){return e.id===id})[0]}
 var DATA=null,SET=null,SETERR=null,LEV=null,TAB="alunos",FILTER="";
 

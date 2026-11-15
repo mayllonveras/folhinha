@@ -31,6 +31,8 @@ function typed(pre,a,fig,post){var it={pre:pre,post:post||"",a:a,_calc:a};if(fig
 
 /* ================== FIGURAS ================== */
 var uid=0;
+/* Número com espaço fino de milhar (3º ano): 3456 → "3 456". */
+function milh(v){return String(v).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202F")}
 /* INK: cor do texto do tema (escuro no tema claro, claro no tema escuro); o SVG herda de .figsvg{color:var(--ink)} */
 var INK="currentColor";
 var C={blue:"#2457D6",sky:"#8FB0FF",sun:"#FFB92B",coral:"#F2503F",mint:"#1CA97B",ink:"#14213D",soft:"#E6EDF9",line:"#9DB0CC"};
@@ -183,7 +185,16 @@ var DRAW={
   },
   /* placas de 100, barras de 10 e quadradinhos de 1 (material dourado, 2º ano): f.h placas, f.d barras, f.o quadradinhos */
   placas:function(f){
-    var inner="",pw=44,gap=4,per=6,y=4,i,j,x,py,d;
+    var milhar=f.m!==undefined,inner="",pw=milhar?36:44,gap=4,per=milhar?7:6,y=4,i,j,x,py,d;
+    if(milhar){                                      /* cubos de 1000 (3º ano), em perspectiva */
+      for(i=0;i<f.m;i++){
+        var cx=18+i*32;
+        inner+='<polygon class="cb" points="'+cx+','+y+' '+(cx+14)+','+(y+7)+' '+cx+','+(y+14)+' '+(cx-14)+','+(y+7)+'" fill="#D9CCFF" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>'+
+          '<polygon points="'+(cx-14)+','+(y+7)+' '+cx+','+(y+14)+' '+cx+','+(y+30)+' '+(cx-14)+','+(y+23)+'" fill="#A58BF0" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>'+
+          '<polygon points="'+(cx+14)+','+(y+7)+' '+cx+','+(y+14)+' '+cx+','+(y+30)+' '+(cx+14)+','+(y+23)+'" fill="#7B5FD1" stroke="'+INK+'" stroke-width="1.6" stroke-linejoin="round"/>';
+      }
+      if(f.m>0)y+=38;
+    }
     for(i=0;i<f.h;i++){
       x=4+(i%per)*(pw+gap);py=y+Math.floor(i/per)*(pw+gap);
       inner+='<rect class="pl" x="'+x+'" y="'+py+'" width="'+pw+'" height="'+pw+'" fill="#7EE0BE" stroke="'+INK+'" stroke-width="1.6"/>';
@@ -219,7 +230,8 @@ var DRAW={
   /* repartir em partes iguais (2º ano): f.n objetos soltos numa bandeja e f.g pratos vazios */
   reparte:function(f){
     var o="",p="",i;
-    for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
+    if(f.per){for(i=0;i<f.n;i++){if(i%f.per===0)o+='<span class="b-r">';o+="<i>"+f.e+"</i>";if(i%f.per===f.per-1||i===f.n-1)o+="</span>"}}   /* objetos em fileiras de f.per (3º ano: de 5 em 5) */
+    else for(i=0;i<f.n;i++)o+="<i>"+f.e+"</i>";
     for(i=0;i<f.g;i++)p+='<span class="prato"></span>';
     return '<div class="fig-reparte" aria-hidden="true"><div class="bandeja">'+o+'</div><div class="pratos">'+p+"</div></div>";
   },
@@ -270,9 +282,86 @@ var DRAW={
     return '<table class="fig-tab"><caption>'+esc(f.title)+'</caption><thead><tr><th></th>'+f.cols.map(function(c){return '<th>'+esc(c)+'</th>'}).join("")+'</tr></thead><tbody>'+
       f.rows.map(function(r,i){return '<tr><th>'+esc(r)+'</th>'+f.v[i].map(function(x){return '<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>';
   },
+  /* arranjo retangular (3º ano): f.r fileiras de f.c objetos (f.e) */
+  arranjo:function(f){
+    var h="",i,j;
+    for(i=0;i<f.r;i++){h+='<span class="arr-r">';for(j=0;j<f.c;j++)h+='<i>'+f.e+'</i>';h+='</span>'}
+    return '<div class="fig-arr" aria-hidden="true">'+h+'</div>';
+  },
+  /* figuras de quadradinhos numa malha (3º ano): f.shapes = [{cells:[[x,y],...], color}] em caixas de 5 x 5; f.labels escreve A, B... embaixo */
+  malha2:function(f){
+    var cs=20,box=5*cs,gap=10,k=f.shapes.length,W=k*box+(k-1)*gap+4,H=box+4+(f.labels?18:0),inner="",i,j,s;
+    f.shapes.forEach(function(sh,n){
+      var ox=2+n*(box+gap);
+      for(i=0;i<=5;i++)inner+='<line x1="'+(ox+i*cs)+'" x2="'+(ox+i*cs)+'" y1="2" y2="'+(2+box)+'" stroke="'+C.line+'" stroke-width="1"/><line x1="'+ox+'" x2="'+(ox+box)+'" y1="'+(2+i*cs)+'" y2="'+(2+i*cs)+'" stroke="'+C.line+'" stroke-width="1"/>';
+      sh.cells.forEach(function(c){inner+='<rect class="cel" x="'+(ox+c[0]*cs)+'" y="'+(2+c[1]*cs)+'" width="'+cs+'" height="'+cs+'" fill="'+(sh.color||C.sky)+'" stroke="'+INK+'" stroke-width="1.6"/>'});
+      if(f.labels)inner+='<text x="'+(ox+box/2)+'" y="'+(box+17)+'" text-anchor="middle" font-size="14" font-weight="800" fill="'+INK+'">'+"ABCD".charAt(n)+'</text>';
+    });
+    return svg(W,H,inner,"fig-malha2").replace("<svg ",'<svg style="max-width:'+(k===1?150:270)+'px" ');
+  },
+  /* planificações (3º ano): f.n = cubo-a | cubo-b | bloco | piramide | cilindro | cone; cada face tem class="fc" e data-k (sq, rc, tr, ci, se) */
+  planif:function(f){
+    var inner="",F=function(k,d){return '<'+d+' class="fc" data-k="'+k+'" '},st=' fill="#DCE7FF" stroke="'+INK+'" stroke-width="2" stroke-linejoin="round"/>',rect=function(x,y,w,h,k){return '<rect class="fc" data-k="'+k+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'"'+st};
+    var i,s=34;
+    if(f.n==="cubo-a"||f.n==="cubo-b"){
+      var pos=f.n==="cubo-a"?[[1,0],[0,1],[1,1],[2,1],[3,1],[1,2]]:[[0,0],[0,1],[1,1],[2,1],[3,1],[2,2]];
+      pos.forEach(function(q){inner+=rect(42+q[0]*s,28+q[1]*s,s,s,"sq")});
+    }else if(f.n==="bloco"){
+      var L=52,Wd=34,Hh=30,x0=24,y0=26+Wd;
+      inner+=rect(x0,y0-Wd,L,Wd,"rc")+rect(x0,y0,L,Hh,"rc")+rect(x0+L,y0,Wd,Hh,"rc")+rect(x0+L+Wd,y0,L,Hh,"rc")+rect(x0+2*L+Wd,y0,Wd,Hh,"rc")+rect(x0,y0+Hh,L,Wd,"rc");
+    }else if(f.n==="piramide"){
+      var b=36,cx=110,cy=80;
+      inner+=rect(cx-b/2,cy-b/2,b,b,"sq");
+      [[cx-b/2,cy-b/2,cx+b/2,cy-b/2,cx,cy-b/2-38],[cx-b/2,cy+b/2,cx+b/2,cy+b/2,cx,cy+b/2+38],[cx-b/2,cy-b/2,cx-b/2,cy+b/2,cx-b/2-38,cy],[cx+b/2,cy-b/2,cx+b/2,cy+b/2,cx+b/2+38,cy]].forEach(function(t){
+        inner+='<polygon class="fc" data-k="tr" points="'+t[0]+','+t[1]+' '+t[2]+','+t[3]+' '+t[4]+','+t[5]+'"'+st});
+    }else if(f.n==="cilindro"){
+      var rw=104,rh=44,x1=58,y1=58;
+      inner+=rect(x1,y1,rw,rh,"rc")+'<circle class="fc" data-k="ci" cx="'+(x1+26)+'" cy="'+(y1-16)+'" r="16"'+st+'<circle class="fc" data-k="ci" cx="'+(x1+rw-26)+'" cy="'+(y1+rh+16)+'" r="16"'+st;
+    }else{
+      var R=62,a=Math.PI*2/3,cx2=70,cy2=40,x2=cx2+R*Math.cos(Math.PI/2-a/2),y2=cy2+R*Math.sin(Math.PI/2-a/2),x3=cx2+R*Math.cos(Math.PI/2+a/2),y3=cy2+R*Math.sin(Math.PI/2+a/2);
+      inner+='<path class="fc" data-k="se" d="M'+cx2+','+cy2+' L'+x2.toFixed(1)+','+y2.toFixed(1)+' A'+R+','+R+' 0 0 1 '+x3.toFixed(1)+','+y3.toFixed(1)+' Z"'+st+'<circle class="fc" data-k="ci" cx="'+cx2+'" cy="'+(cy2+R+21)+'" r="21"'+st;
+    }
+    return svg(240,170,inner,"fig-planif");
+  },
+  /* régua de 0 a 10 cm com os milímetros marcados (3º ano): f.objs = [{k, mm}] encostados no zero; 1 mm = 2,8 unidades */
+  regua2:function(f){
+    var sc=2.8,x0=10,oh=22,gap=8,rows=f.objs.length,y0=rows*(oh+gap)+8,W=x0*2+280,H=y0+50,inner="",i;
+    f.objs.forEach(function(o,r){
+      var y=4+r*(oh+gap),w=+(o.mm*sc).toFixed(1),fill={lapis:"#FFD36B",fita:"#7EE0BE",clipe:"#CFD8E8",borracha:"#F7A8C4"}[o.k],yy=o.k==="clipe"?y+5:y,hh=o.k==="clipe"?oh-10:oh;
+      inner+='<rect class="obj" x="'+x0+'" y="'+yy+'" width="'+w+'" height="'+hh+'" rx="'+(o.k==="lapis"?2:o.k==="clipe"?5:6)+'" fill="'+fill+'" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="lapis")inner+='<polygon points="'+(x0+w-12)+','+y+' '+(x0+w)+','+(y+oh/2)+' '+(x0+w-12)+','+(y+oh)+'" fill="#E8B56B" stroke="'+INK+'" stroke-width="1.8" stroke-linejoin="round"/><rect x="'+x0+'" y="'+y+'" width="9" height="'+oh+'" fill="#F2503F" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="borracha")inner+='<rect x="'+(x0+w*.55)+'" y="'+y+'" width="'+(w*.45)+'" height="'+oh+'" rx="6" fill="#8FB0FF" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(o.k==="fita")for(i=1;i*10<w-4;i++)inner+='<line x1="'+(x0+i*10)+'" x2="'+(x0+i*10)+'" y1="'+(y+4)+'" y2="'+(y+oh-4)+'" stroke="'+INK+'" stroke-width="1.2" opacity=".5"/>';
+    });
+    inner+='<rect x="'+x0+'" y="'+y0+'" width="280" height="40" fill="#F7E9B4" stroke="'+INK+'" stroke-width="1.8"/>';
+    for(i=0;i<=100;i++){var x=+(x0+i*sc).toFixed(1),len=i%10===0?15:i%5===0?10:6;
+      inner+='<line x1="'+x+'" x2="'+x+'" y1="'+y0+'" y2="'+(y0+len)+'" stroke="'+INK+'" stroke-width="'+(i%10===0?1.4:.8)+'"/>';
+      if(i%10===0)inner+='<text x="'+x+'" y="'+(y0+31)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+INK+'">'+(i/10)+'</text>'}
+    inner+='<text x="'+(x0+280)+'" y="'+(y0+38)+'" text-anchor="end" font-size="8" fill="'+INK+'">cm</text>';
+    return svg(W,H,inner,"fig-regua2");
+  },
+  /* roleta de partes iguais (3º ano): f.parts = nomes das cores, uma por parte; a seta fica no alto */
+  roleta:function(f){
+    var ROL={azul:"#2457D6",amarelo:"#FFB92B",rosa:"#F27AB0",roxo:"#7B5FD1",vermelho:"#D93B3B",verde:"#1CA97B"},n=f.parts.length,cx=72,cy=76,r=60,inner="",i;
+    f.parts.forEach(function(c,i){var a0=-Math.PI/2+i*2*Math.PI/n,a1=-Math.PI/2+(i+1)*2*Math.PI/n,x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+      inner+='<path class="sl" data-c="'+c+'" d="M'+cx+','+cy+' L'+x0.toFixed(1)+','+y0.toFixed(1)+' A'+r+','+r+' 0 0 1 '+x1.toFixed(1)+','+y1.toFixed(1)+' Z" fill="'+ROL[c]+'" stroke="'+INK+'" stroke-width="2.2" stroke-linejoin="round"/>'});
+    inner+='<circle cx="'+cx+'" cy="'+cy+'" r="5" fill="'+INK+'"/><polygon points="'+(cx-9)+',2 '+(cx+9)+',2 '+cx+',20" fill="'+INK+'"/>';
+    return svg(144,142,inner,"fig-roleta");
+  },
+  /* dado comum (face com f.n pontos) e moeda (cara e coroa), do 3º ano */
+  dado:function(f){
+    var P={1:[[50,50]],2:[[30,30],[70,70]],3:[[28,28],[50,50],[72,72]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],6:[[30,26],[70,26],[30,50],[70,50],[30,74],[70,74]]}[f.n||6],inner='<rect x="6" y="6" width="88" height="88" rx="16" fill="#fff" stroke="'+INK+'" stroke-width="3"/>';
+    P.forEach(function(q){inner+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="8" fill="'+INK+'"/>'});
+    return svg(100,100,inner,"fig-dado");
+  },
+  moeda:function(){
+    var c=function(x,t){return '<circle cx="'+x+'" cy="40" r="34" fill="#EBD08A" stroke="'+INK+'" stroke-width="3"/><circle cx="'+x+'" cy="40" r="26" fill="none" stroke="'+INK+'" stroke-width="1.6"/><text x="'+x+'" y="45" text-anchor="middle" font-size="13" font-weight="800" fill="'+INK+'">'+t+'</text>'};
+    return svg(170,80,c(40,"cara")+c(128,"coroa"),"fig-moeda2");
+  },
   /* gráfico de colunas */
   bars:function(f){
     var n=f.values.length,max=Math.max.apply(null,f.values),top=max<=6?6:(max<=10?10:Math.ceil(max/2)*2),stepY=top<=10?1:2;
+    if(f.step){top=Math.ceil(max/f.step)*f.step;stepY=f.step}   /* escala de 5 em 5 ou de 10 em 10 (3º ano) */
     var W=60+n*50,H=170,x0=38,y0=134,ph=104,inner="",t;
     if(f.title)inner+='<text x="'+(W/2)+'" y="14" text-anchor="middle" font-size="12" font-weight="700" fill="'+INK+'">'+esc(f.title)+'</text>';
     for(t=0;t<=top;t+=stepY){var y=y0-ph*t/top;
@@ -301,9 +390,20 @@ var DRAW={
     var W=360,x0=26,x1=334,n=(f.max-f.min)/f.step,inner='<line x1="'+(x0-12)+'" x2="'+(x1+12)+'" y1="68" y2="68" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>',k;
     for(k=0;k<=n;k++){var v=f.min+k*f.step,x=x0+(x1-x0)*k/n,lab=(f.labelEvery?(v-f.min)%f.labelEvery===0:true);
       inner+='<line x1="'+x+'" x2="'+x+'" y1="'+(lab?52:58)+'" y2="'+(lab?84:78)+'" stroke="'+INK+'" stroke-width="'+(lab?3.6:2.4)+'" stroke-linecap="round"/>';
-      if(lab&&v!==f.mark)inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+v+'</text>'}
+      if(lab&&v!==f.mark)inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+(f.milh?milh(v):v)+'</text>'}
     var mx=x0+(x1-x0)*((f.mark-f.min)/f.step)/n;
     inner+='<polygon points="'+mx+',62 '+(mx-11)+',38 '+(mx+11)+',38" fill="'+C.coral+'"/><text x="'+mx+'" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">?</text>';
+    return svg(W,114,inner,"fig-line");
+  },
+  /* reta numérica com pontos marcados por letras (3º ano): f.min, f.max, f.step, f.labelEvery, f.pts = [{v, l}]; o número dos pontos não é escrito */
+  reta2:function(f){
+    var W=360,x0=26,x1=334,n=(f.max-f.min)/f.step,inner='<line x1="'+(x0-12)+'" x2="'+(x1+12)+'" y1="68" y2="68" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>',k;
+    var isPt=function(v){return f.pts.some(function(p){return p.v===v})};
+    for(k=0;k<=n;k++){var v=f.min+k*f.step,x=x0+(x1-x0)*k/n,lab=(f.labelEvery?(v-f.min)%f.labelEvery===0:true);
+      inner+='<line x1="'+x+'" x2="'+x+'" y1="'+(lab?52:58)+'" y2="'+(lab?84:78)+'" stroke="'+INK+'" stroke-width="'+(lab?3.6:2.4)+'" stroke-linecap="round"/>';
+      if(lab&&!isPt(v))inner+='<text x="'+x+'" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+milh(v)+'</text>'}
+    f.pts.forEach(function(p){var px=x0+(x1-x0)*((p.v-f.min)/f.step)/n;
+      inner+='<circle class="pt2" cx="'+px+'" cy="68" r="8" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="2"/><text x="'+px+'" y="42" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">'+p.l+'</text>'});
     return svg(W,114,inner,"fig-line");
   },
   /* malha quadriculada com quadradinhos pintados */
@@ -473,6 +573,6 @@ FC.EX=[
 ];
 FC.EXBY={};FC.EX.forEach(function(e){FC.EXBY[e.id]=e});
 /* Auxiliares para os geradores da grade nova (grade1.js). */
-FC.exh={rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
+FC.exh={milh:milh,rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
 FC.SHAPE_NAMES=Object.keys(SHAPES);
 })();
