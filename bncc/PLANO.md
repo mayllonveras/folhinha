@@ -161,3 +161,8 @@ e os testes, e por fim a grade é ligada ao app (níveis 119 em diante, migraç�
 - Os valores iniciais da tabela de regras (95/80, 98/60, 2 saltos por semana) são palpites a calibrar com alunos reais.
 - Revisão do inventário pelo professor (grupos A, B e C).
 - Metas de tempo dos 150 níveis novos (estimativa inicial, ajuste com dados).
+
+## Nível inicial pelo ano escolar (15/11/2026)
+
+Decisão do professor: o cadastro dos pais **não pede mais o nível**. Os pais escolhem só o ano escolar (obrigatório, e só os anos que a grade já tem) e a criança começa no **primeiro nível desse ano**; se dominar o conteúdo, avança mais rápido pelos dias de ouro e saltos. O campo "Nível em que ele está" ficou numa seção recolhida **"Avançado"**: no cadastro vem em "Início do ano escolhido (recomendado)"; na edição mostra o nível atual, e mudar zera os carimbos, como antes. Sem migração: o banco continua recebendo `level_idx`. Ajudantes em `core.js`: `FC.primeiroNivelDoAno(ano)` e `FC.anosComGrade()`; testes em `testes/nivelinicial.test.js`.
+O teste de nivelamento (decisão 9) deixa de ser necessário na entrada e fica como opcional para depois.

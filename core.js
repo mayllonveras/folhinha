@@ -124,6 +124,10 @@ FC.anoAluno=function(s,today,pub){
   if(!s.ano_escolar||!s.ano_ref)return null;
   return Math.min(9,Math.max(1,s.ano_escolar+FC.anoLetivo(today,pub)-s.ano_ref));
 };
+/* Nível inicial pelo ano escolar: o primeiro nível da grade daquele ano. -1 = a grade ainda não tem esse ano. */
+FC.primeiroNivelDoAno=function(ano){for(var i=0;i<FC.LEVELS.length;i++)if(FC.LEVELS[i].ano===ano)return i;return -1};
+/* Anos que já têm nível na grade (para o cadastro só oferecer o que existe). */
+FC.anosComGrade=function(){var r=[];FC.LEVELS.forEach(function(l){if(r.indexOf(l.ano)<0)r.push(l.ano)});return r.sort(function(a,b){return a-b})};
 FC.shuffle=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a};
 /* 'keep' = contas que já devem estar na folha (reforço); o resto é sorteado sem repetir. */
 /* Item como vai para o banco: só pre, post, a e (se houver) extra (figura e opções). */
