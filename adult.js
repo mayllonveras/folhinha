@@ -216,7 +216,7 @@ document.addEventListener("change",function(e){
   if(t.id==="pPer"||t.id==="pLevel"||t.id==="pAno"||t.name==="days"||t.name==="free")refreshProgramInfo();
 });
 function programFields(s){
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["dinossauros"]};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:5,sticker_themes:["dinossauros"]};
   var lv=s?"":'<option value="" selected>Início do ano escolhido (recomendado)</option>',lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}

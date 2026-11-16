@@ -267,3 +267,8 @@ Decisão do professor: medir o tempo de cada conta de forma mais confiável most
 - **Tempo:** o tempo da conta é o tempo em que ela está **na tela** (para na pausa, com o app escondido e ao sair dela; soma as visitas). Também guarda o **tempo até começar a escrever** (primeira visita, só primeira rodada). O relógio do cabeçalho continua o total da folha; o tempo enviado (`p_secs`) é a **soma das contas**. O tempo continua valendo para carimbo, dia de ouro e salto: as metas por nível só serão recalibradas depois de comparar os dois modos com dados reais.
 - **Pausa, rascunho, voltar e conta em branco** continuam; o rascunho guarda a conta atual e o modo. Correção junto: folha em que ainda não se escreveu nada não deixa rascunho (antes, sair e voltar abria uma tela de retorno à toa).
 - **Banco:** `app_settings.modo_folha`, `sheet_log.modo`, `sheet_items.modo` e `sheet_items.ms_inicio` (copiados das respostas pelo gatilho `sheets_to_log`) e a visão `v_uso_modo` (acerto e tempos por nível e por modo). Migração `migracoes/2026-11-15-folha-uma-por-vez.sql` (**ainda não aplicada**; ensaiada numa transação desfeita). Sem a migração o app já usa uma conta por vez, mas o modo e o tempo até escrever não vão para o banco. Testes: `testes/folha-uma-por-vez.test.js`. Cache `folhinha-v49`.
+
+## Padrão de 5 folhas por dia (16/11/2026)
+
+Pedido do professor: o cadastro de um aluno novo já vem com **5 folhas por dia** (antes, 3). O mínimo continua 3 e os pais mudam em "Avançado". Vale só para alunos novos:
+nenhum aluno existente muda e não há migração (o app já enviava o valor escolhido). Com 5 folhas são 50 contas por dia (40 do nível e 10 de revisão) e, no caminho normal de 1 carimbo por dia, 250 contas por nível.
