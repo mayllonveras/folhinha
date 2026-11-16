@@ -722,12 +722,71 @@ var DICAS={1:"Conte os objetos e digite quantos são.",2:"Olhe os dois grupos: o
   25:"Cada barra vale 10 e cada quadradinho vale 1.",26:"Conte até 100, de 10 em 10.",27:"Escolha o maior ou o menor número de dois algarismos.",28:"Como 30 + 20, 34 + 5 e 38 − 5.",
   29:"Como 34 = 30 + ?",30:"Compare comprimentos, capacidades e pesos.",31:"Manhã, tarde e noite; dias da semana; meses.",32:"Leia o calendário e escreva datas.",
   33:"Moedas e cédulas do dinheiro brasileiro.",34:"Com certeza, talvez ou impossível?",35:"Leia gráficos e tabelas."};
+/* ===================== Tipos e nota de dificuldade (rodízio e rampa, ver plano.js e bncc/TIPOS-E-DIFICULDADE-1ANO.md) ===================== */
+/* tipos: os tipos de conta do nível; tipo(it): o número do tipo da conta; nota(it): quanto maior, mais difícil (relativa ao nível); ordem: tipos do mais fácil ao mais difícil. */
+function g01(it,pref){var l=(it.limits||[]).filter(function(x){return x[0].indexOf(pref)===0})[0];return l?l[0]:""}
+function unico1(rotulo,nota){return {tipos:[rotulo],tipo:function(){return 0},nota:nota}}
+function porGrupo1(pref,rotulos,ranks,extra){
+  return {tipos:rotulos,tipo:function(it){return +g01(it,pref).slice(pref.length)-1},
+    nota:function(it){var i=+g01(it,pref).slice(pref.length)-1;return (ranks[i]||0)*2+(extra?extra(it,it._info||{}):0)}};
+}
+function porNome1(nomes,ranks,extra,rotulos){
+  return {tipos:rotulos||nomes,tipo:function(it){return nomes.indexOf(it._info.tipo)},
+    nota:function(it){var i=nomes.indexOf(it._info.tipo);return (ranks[i]||0)*2+(extra?extra(it,it._info):0)}};
+}
+function porOp1(extra){return {tipos:["soma","subtração"],tipo:function(it){return it._info.op==="+"?0:1},nota:function(it){var i=it._info;return (i.op==="+"?0:2)+extra(it,i)}}}
+function gap1(v){var s=v.slice().sort(function(a,b){return a-b}),d=99,k;for(k=1;k<s.length;k++)d=Math.min(d,s[k]-s[k-1]);return d}
+var FORMA1={"círculo":0,"quadrado":1,"triângulo":1,"retângulo":2,"pentágono":3,"hexágono":3,"losango":3};
+function formaNota(it){var t=String(it.pre),k,best=0;for(k in FORMA1)if(t.indexOf(k)>=0)best=Math.max(best,FORMA1[k]);var f=it.extra&&it.extra.fig;if(f&&f.n&&FORMA1[f.n]!=null)best=Math.max(best,FORMA1[f.n]);return best}
+var ESPEC1={
+ 1:unico1("contar objetos até 10",function(it){return it.a}),
+ 2:{tipos:["onde tem mais","onde tem menos"],tipo:function(it){return it._info.mais?0:1},nota:function(it){var i=it._info;return (10-Math.min(9,Math.abs(i.n1-i.n2)))+(i.mais?0:2)+Math.max(i.n1,i.n2)/3}},
+ 3:{tipos:["fila que sobe","fila que desce"],tipo:function(it){var f=it._info.fila;return f[1]>f[0]?0:1},nota:function(it){var i=it._info,d=i.fila[1]<i.fila[0];return (d?3:0)+(i.k-1)*.7+i.fila[0]/10}},
+ 4:unico1("contar objetos até 20",function(it){return it.a}),
+ 5:unico1("contar objetos soltos até 20",function(it){return it.a}),
+ 6:{tipos:["que número vem depois","que número vem antes","que número está entre","posição na fila"],
+    tipo:function(it){var p=String(it.pre);return /fila/.test(p)?3:/entre/.test(p)?2:/antes/.test(p)?1:0},
+    nota:function(it){var p=String(it.pre),r=/fila/.test(p)?3:/entre/.test(p)?2:/antes/.test(p)?1:0;return r*2+it.a/6}},
+ 7:{tipos:["o maior","o menor"],tipo:function(it){return it._info.maior?0:1},nota:function(it){var i=it._info;return 8-Math.min(8,gap1(i.v))+(i.maior?0:1)+Math.max.apply(null,i.v)/10}},
+ 8:{tipos:["soma","subtração"],tipo:function(it){return g01(it,"n8:op")==="n8:op-"?1:0},nota:function(it){var i=it._info;return (i.op==="+"?0:2)+(i.a+i.b)/2}},
+ 9:{tipos:["soma","subtração"],tipo:function(it){return g01(it,"n9:op")==="n9:op-"?1:0},nota:function(it){var i=it._info;return (i.op==="+"?0:2)+(i.a+i.b)/3}},
+ 10:{tipos:["somar 1","somar 2 ou 3"],tipo:function(it){return g01(it,"n10:")==="n10:um"?0:1},nota:function(it){var i=it._info;return (g01(it,"n10:")==="n10:um"?0:2)+i.b+i.a/3}},
+ 11:unico1("subtração até 10",function(it){var i=it._info;return i.a/2+i.b}),
+ 12:porOp1(function(it,i){return i.a/2+i.b}),
+ 13:porNome1(["juntar","acrescentar","separar","retirar"],[0,0,1,1],function(it,i){return (i.a+i.b)/3}),
+ 14:{tipos:["como se chama a figura","qual destas é a figura"],tipo:function(it){return g01(it,"n14:t")==="n14:t2"?1:0},nota:function(it){return (g01(it,"n14:t")==="n14:t2"?2:0)+formaNota(it)}},
+ 15:porGrupo1("n15:t",["objeto com a forma do sólido","nome do sólido","sólido de um objeto","face do sólido"],[1,0,1,2]),
+ 16:{tipos:["em cima e embaixo","esquerda e direita","na caixa"],tipo:function(it){return ({v:0,h:1,caixa:2})[it._info.tipo]},nota:function(it){var i=it._info;return ({v:0,h:1,caixa:2})[i.tipo]*2+(i.itens?i.itens.length:0)}},
+ 17:porGrupo1("n17:t",["a figura que não combina","a maior ou a menor figura","a figura que vem depois"],[1,0,2]),
+ 18:{tipos:["dezena + número","dezena − número"],tipo:function(it){return g01(it,"n18:op")==="n18:op-"?1:0},nota:function(it){var i=it._info;return (i.op==="+"?0:2)+i.b/3}},
+ 19:unico1("soma até 20, sem passar da dezena",function(it){var i=it._info;return (i.a%10+i.b)/2}),
+ 20:unico1("soma que passa da dezena",function(it){var i=it._info;return (i.a%10+i.b%10)/2+(g01(it,"n20:vinte")?2:0)}),
+ 21:unico1("subtração até 20, sem passar da dezena",function(it){var i=it._info;return i.b/2+i.a/6}),
+ 22:unico1("subtração que passa da dezena",function(it){var i=it._info;return (i.b-i.a%10)/2+(g01(it,"n22:vinte")?2:0)}),
+ 23:{tipos:["soma sem passar da dezena","soma que passa da dezena","subtração sem passar da dezena","subtração que passa da dezena"],tipo:function(it){return it._info.fam-1},nota:function(it){var i=it._info;return (i.fam-1)*2+(i.vinte?1:0)+i.b/4}},
+ 24:porNome1(["juntar","acrescentar","separar","retirar"],[0,0,1,1],function(it,i){return (i.a+i.b)/6}),
+ 25:porGrupo1("n25:t",["valor das barras e quadradinhos","quantas barras","quantos soltos"],[0,1,1],function(it){return it.a/20}),
+ 26:unico1("contar pacotes de 10 e soltos",function(it){return Math.floor(it.a/10)/2+(it.a%10?3:0)}),
+ 27:{tipos:["o maior","o menor"],tipo:function(it){return /menor/.test(String(it.pre))?1:0},nota:function(it){var i=it._info;return ({sep:0,mesma:2,troca:3})[i.modo]*2+8-Math.min(8,gap1(i.v)/2)}},
+ 28:porGrupo1("n28:f",["dezena + dezena","dezena − dezena","dezena + unidade","dezena e unidade, tirando","dezena + 1","tirar para ficar dezena"],[0,1,2,3,2,3],function(it){return it.a/40}),
+ 29:porGrupo1("n29:t",["unidade que falta","dezena que falta","montar o número","quantas dezenas"],[0,2,1,1],function(it){return it.a/10}),
+ 30:porGrupo1("n30:t",["comparar barras","comparar potes","comparar pesos"],[0,1,2],function(it,i){return i.sz?6-Math.min(6,gap1(i.sz)*20):2}),
+ 31:porGrupo1("n31:t",["período do dia","dias da semana","meses do ano"],[0,1,2]),
+ 32:porGrupo1("n32:t",["dia da semana no calendário","dia do mês","escrever a data"],[0,1,2]),
+ 33:porGrupo1("n33:t",["valor da cédula","valor da moeda","quantos reais","qual vale mais"],[0,0,1,2]),
+ 34:{tipos:["bola no saco","frase do dia a dia"],tipo:function(it){return g01(it,"n34:")==="n34:fr"?1:0},nota:function(it){return g01(it,"n34:")==="n34:fr"?2:0}},
+ 35:porGrupo1("n35:t",["ler um valor (gráfico)","qual teve menos votos","ler um valor (tabela)","somar dois valores"],[0,1,0,2])
+};
+/* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia sempre cubram todos os tipos. */
+var ORDEM1={"1":[0],"2":[0,1],"3":[0,1],"4":[0],"5":[0],"6":[0,1,2,3],"7":[0,1],"8":[0,1],"9":[0,1],"10":[0,1],"11":[0],"12":[0,1],"13":[1,0,3,2],"14":[0,1],"15":[1,0,2,3],"16":[0,2,1],"17":[1,0,2],"18":[0,1],"19":[0],"20":[0],"21":[0],"22":[0],"23":[0,1,2,3],"24":[0,1,2,3],"25":[1,2,0],"26":[0],"27":[0,1],"28":[0,1,4,2,5,3],"29":[0,3,2,1],"30":[0,1,2],"31":[0,1,2],"32":[0,1,2],"33":[0,1,2,3],"34":[0,1],"35":[0,2,1,3]};
+Object.keys(ORDEM1).forEach(function(n){ESPEC1[n].ordem=ORDEM1[n]});
 /* Texto de abertura de um nível (aparece no começo da folha). */
 var INTROS={16:"Lembrete: a esquerda é o lado da sua mão esquerda, e a direita é o lado da sua mão direita."};
 FC.LEVELS=FC.G1.map(function(e){
   var grupo=BLOCOS.filter(function(b){return e.nivel<=b[0]})[0][1];
   var l={group:grupo,id:String(e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS[e.nivel],target:e.meta,gen:e.gen,ano:1,hab:e.hab};
   if(INTROS[e.nivel])l.intro=INTROS[e.nivel];
+  l.espec=ESPEC1[e.nivel];
   return l;
 });
 })();

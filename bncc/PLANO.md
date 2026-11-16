@@ -311,3 +311,11 @@ O mesmo motor (`plano.js`) passa a valer para os 41 níveis do 2º ano (36 a 76)
 `testes/plano.test.js` agora cobre os 129 níveis do 2º, 3º e 4º ano (todos os tipos nas 5 folhas em todos os dias, dificuldade média que nunca desce e sobe pelo menos 10 pontos, contas em ordem).
 Medido: a dificuldade média da folha 1 à 5 vai de cerca de 15–35 até 65–89. Os níveis 64 (quem está entre) e 75 (provável e impossível) têm quase só um grau de dificuldade e sobem pouco (uns 12 pontos). Níveis de conta com um só tipo (43 a 46) ganharam notas por tamanho das unidades para a rampa funcionar.
 Falta só o 1º ano (muitos níveis de figuras, que precisam de outra medida de dificuldade).
+
+## Rodízio e rampa também no 1º ano (16/11/2026)
+
+O mesmo motor (`plano.js`) passa a valer para os 35 níveis do 1º ano: `grade1.js` ganhou `ESPEC1` (tipos, `tipo`, `nota` e `ORDEM1` de cada nível). Lista de tipos e regra de dificuldade em `TIPOS-E-DIFICULDADE-1ANO.md`.
+Com isso **todos os 164 níveis** usam o rodízio de tipos e a rampa; `FC.makeItems` só cai no sorteio livre na folha de revisão do teto e quando a folha do dia não é informada.
+Níveis de figuras usam a nota própria da figura (nome da forma, número de itens na fila, quão parecidos são os tamanhos); níveis de contagem usam a quantidade de objetos.
+`testes/plano.test.js` cobre os 164 níveis (todos os tipos nas 5 folhas em todos os dias, dificuldade média que nunca desce e sobe pelo menos 10 pontos, contas em ordem; o nível 1 não tem contas de revisão).
+Medido: a dificuldade média da folha 1 à 5 vai de cerca de 15–40 até 55–84.
