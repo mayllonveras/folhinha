@@ -23,7 +23,7 @@ Etapa 2 entregue: parâmetros editáveis no `/adm`, ano escolar e teto por aluno
 
 ## Regras de avanço (valores iniciais, todos editáveis no `/adm`)
 
-Hoje: o dia fecha ao cumprir a cota de folhas (mínimo 3). Com 80% ou mais de acertos de primeira e tempo médio dentro da meta, ganha 1 carimbo. Com 5 carimbos, sobe 1 nível. Máximo de 1 nível por dia de estudo.
+Hoje: o dia fecha ao cumprir a cota de folhas (mínimo 5, desde 16/11/2026). Com 80% ou mais de acertos de primeira e tempo médio dentro da meta, ganha 1 carimbo. Com 5 carimbos, sobe 1 nível. Máximo de 1 nível por dia de estudo.
 
 | Tipo de dia | Acertos de primeira | Tempo médio | Efeito |
 |---|---|---|---|
@@ -272,3 +272,9 @@ Decisão do professor: medir o tempo de cada conta de forma mais confiável most
 
 Pedido do professor: o cadastro de um aluno novo já vem com **5 folhas por dia** (antes, 3). O mínimo continua 3 e os pais mudam em "Avançado". Vale só para alunos novos:
 nenhum aluno existente muda e não há migração (o app já enviava o valor escolhido). Com 5 folhas são 50 contas por dia (40 do nível e 10 de revisão) e, no caminho normal de 1 carimbo por dia, 250 contas por nível.
+
+## Mínimo de 5 folhas por dia (16/11/2026)
+
+Decisão do professor: o formulário dos pais só oferece de 5 a 10 folhas por dia e o banco recusa menos de 5 (`students_check_limits`, migração `migracoes/2026-11-16-minimo-5-folhas.sql`, testada numa transação desfeita: 4 folhas dá `min_folhas`, 5 e 8 passam, 2 dias de estudo dá `min_dias`).
+O mínimo de 3 dias por semana não mudou. Quem já tivesse menos de 5 sobe para 5. No caminho normal (1 carimbo por dia) são 250 contas por nível (200 do nível e 50 de revisão).
+**Próximo passo, já aprovado como ideia:** garantir que cada tipo de conta do nível apareça nas 5 folhas do dia (rodízio) e classificar a dificuldade de cada conta para a dificuldade subir aos poucos ao longo do conjunto de folhas.
