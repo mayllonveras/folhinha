@@ -292,3 +292,9 @@ Aprovado pelo professor (caminho A): as 5 folhas do dia cobrem **todos os tipos*
 - **Medido:** a dificuldade média da folha 1 à 5 fica em torno de 15 a 35 → 75 a 85 nos 46 níveis. Níveis com tipos de dificuldade muito diferente (como o 148) sobem menos, porque o tipo vem primeiro.
 - **A nota é regra nossa**, ainda sem calibrar com crianças. Depois dos primeiros dados de uso (tempo e acerto por conta), calibrar.
 - **Falta:** a lista de tipos e a nota dos níveis do 1º, 2º e 3º anos (um documento por ano, para revisão).
+
+## Histórico dos pais no celular (16/11/2026)
+
+A tabela "Folhas feitas" tinha 7 colunas sem quebra de linha (cerca de 650 px) e, no celular, o botão Ver e as contas erradas ficavam fora da tela, só alcançáveis rolando para o lado.
+Em telas de até 720 px cada folha agora é um cartão: dia e nível à esquerda, botão **Ver** à direita (sempre à vista), acertos de primeira e tempo na linha de baixo, o resultado (carimbo ou subiu de nível) e, quando houver, as contas erradas.
+A tabela de habilidades da aba Atenção também empilha, e ao tocar em Ver a folha aberta rola até o começo. Conferido a 320, 360 e 800 px: a página nunca rola para o lado. Em telas largas a tabela continua igual.

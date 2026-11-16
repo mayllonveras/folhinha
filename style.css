@@ -733,6 +733,35 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 /* Folhas feitas e dificuldades (pais) */
 .inline-chk{display:flex;gap:8px;align-items:center;margin:6px 0 10px;font-size:.9rem}
 .errs{min-width:150px}
+/* Histórico dos pais no celular: cada folha vira um cartão (a tabela larga escondia o botão Ver e as contas erradas) */
+table.hab td{white-space:normal}
+.sv .small-t{white-space:nowrap}
+@media (max-width:720px){
+  .tablewrap{overflow-x:visible}
+  table.hist,table.hist tbody{display:block}
+  table.hist thead{display:none}
+  table.hist tr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"dia ver" "nivel ver" "ok tempo" "res res" "errs errs";gap:4px 12px;align-items:center;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  table.hist tr[hidden]{display:none}
+  table.hist td{display:block;min-width:0;padding:0;border:0;white-space:normal}
+  table.hist .c-dia{grid-area:dia;font-weight:700;font-size:1rem}
+  table.hist .c-nivel{grid-area:nivel}
+  table.hist .c-ok{grid-area:ok}
+  table.hist .c-tempo{grid-area:tempo;text-align:right}
+  table.hist .c-res{grid-area:res}
+  table.hist .errs{grid-area:errs;min-width:0}
+  table.hist .c-ver{grid-area:ver;grid-row:1 / span 2;align-self:center}
+  table.hist .c-ver .btn{min-height:44px;padding-inline:20px}
+  table.hist .c-nivel::before,table.hist .c-ok::before,table.hist .c-tempo::before{content:attr(data-label) ": ";color:var(--muted);font-size:.78rem}
+  table.hist .c-res:empty{display:none}
+  table.hist .errs .muted{display:none}
+  table.hist .errs:has(.errlist){margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
+  table.hist .errs:not(:has(.tag)){display:none}
+  table.hab,table.hab tbody{display:block}
+  table.hab thead{display:none}
+  table.hab tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+  table.hab td{display:block;min-width:0;padding:0;border:0;white-space:normal}
+  table.hab td:first-child{grid-column:1 / -1}
+}
 .errlist{margin:6px 0 0;padding-left:16px;font-size:.84rem;line-height:1.35}
 .errlist s{color:var(--danger,#c93a3a)}
 .dif-tools{margin:6px 0 12px}
