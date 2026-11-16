@@ -50,7 +50,7 @@ FC.err=function(e){
     ["User already registered","Este e-mail já tem cadastro. Entre com a senha."],
     ["sessao_invalida","Sessão expirada."],
     ["sem_folha_hoje","Hoje não é dia de folha para este aluno."],
-    ["min_folhas","O mínimo é de 3 folhas por dia."],
+    ["min_folhas","O mínimo é de 5 folhas por dia."],
     ["min_dias","O mínimo é de 3 dias de estudo por semana."],
     ["min_meta","A meta precisa ser de pelo menos 70% do máximo de pontos da semana."],
     ["sem_pacote","Você não tem pacotinho para abrir agora."],
@@ -101,7 +101,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v51";
+FC.VERSAO="folhinha-v52";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){

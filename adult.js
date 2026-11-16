@@ -12,8 +12,8 @@ function anoLine(s,L,today){
   var d=L.ano-a;
   return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"")+h;
 }
-/* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
-var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
+/* Limites mínimos do programa: 5 folhas por dia e 3 dias por semana. */
+var MIN_SHEETS=5,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
 function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
