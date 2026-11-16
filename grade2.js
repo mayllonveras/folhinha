@@ -852,6 +852,79 @@ FC.G2=[
 ];
 FC.G2BY={};FC.G2.forEach(function(e){FC.G2BY[e.id]=e});
 
+/* ===================== Tipos e nota de dificuldade (rodízio e rampa, ver plano.js e bncc/TIPOS-E-DIFICULDADE-2ANO.md) ===================== */
+/* tipos: os tipos de conta do nível; tipo(it): o número do tipo da conta; nota(it): quanto maior, mais difícil (relativa ao nível); ordem: tipos do mais fácil ao mais difícil. */
+function nums2(it){return (String(it.pre)+" "+String(it.post||"")).replace(/\u202F/g,"").match(/\d+/g)||[]}
+function nz2(n){return /0/.test(String(n))&&n>=10?1:0}
+function dg2(n){return String(n).length}
+function maxN2(it){return Math.max.apply(null,nums2(it).map(Number).concat([0]))}
+function cv2(a,b){var x=String(a).split("").reverse().map(Number),y=String(b).split("").reverse().map(Number),c=0,n=0,i;for(i=0;i<Math.max(x.length,y.length);i++){var s=(x[i]||0)+(y[i]||0)+c;if(s>=10){n++;c=1}else c=0}return n}
+function br2(a,b){var x=String(a).split("").reverse().map(Number),y=String(b).split("").reverse().map(Number),c=0,n=0,i;for(i=0;i<x.length;i++){var v=x[i]-c-(y[i]||0);if(v<0){n++;c=1}else c=0}return n}
+function g02(it,pref){var l=(it.limits||[]).filter(function(x){return x[0].indexOf(pref)===0})[0];return l?l[0]:""}
+function unico(rotulo,nota){return {tipos:[rotulo],tipo:function(){return 0},nota:nota}}
+function porNome2(nomes,ranks,extra,rotulos){
+  return {tipos:rotulos||nomes,tipo:function(it){return nomes.indexOf(it._info.tipo)},
+    nota:function(it){var i=nomes.indexOf(it._info.tipo);return (ranks[i]||0)*2+(extra?extra(it,it._info):0)}};
+}
+/* tipo pelo grupo de limite: "n12:f1", "n12:f2"... (prefixo + número) */
+function porGrupo(pref,rotulos,ranks,extra){
+  return {tipos:rotulos,tipo:function(it){return +g02(it,pref).slice(pref.length)-1},
+    nota:function(it){var i=+g02(it,pref).slice(pref.length)-1;return (ranks[i]||0)*2+(extra?extra(it,it._info||{}):0)}};
+}
+function porNum2(rotulos,ranks,extra){
+  return {tipos:rotulos,tipo:function(it){return it._info.tipo-1},
+    nota:function(it){var i=it._info.tipo-1;return (ranks[i]||0)*2+(extra?extra(it,it._info):0)}};
+}
+function contaNota(it){var i=it._info;return (i.op==="+"?cv2(i.a,i.b):br2(i.a,i.b)+1)*2+nz2(i.a)+nz2(i.b)+dg2(Math.max(i.a,i.b))}
+var tabuada=function(nomes){return porNome2(nomes,[0,1,2,2],function(it,i){return (i.k||0)*(i.n||0)/6})};
+var ESPEC2={
+ 1:unico("contar de 2 em 2, 5 em 5, 10 em 10",function(it){var i=it._info;return ({2:0,10:2,5:3}[i.passo]||1)+(i.k-1)*.5}),
+ 2:porGrupo("n2:t",["valor da figura","quantas peças","casa vazia"],[0,1,2],function(it){return nz2(it.a)}),
+ 3:porGrupo("n3:t",["montar o número","valor do algarismo"],[0,1],function(it){return 2*nz2(maxN2(it))+Math.min(4,maxN2(it)/250)}),
+ 4:porGrupo("n4:t",["falta a unidade","falta a dezena","falta a centena","montar o número","falta o resto"],[0,2,1,0,1],function(it){return 2*nz2(maxN2(it))}),
+ 5:{tipos:["maior ou menor","ordem certa"],tipo:function(it){return g02(it,"n5:t")==="n5:t2"?1:0},
+    nota:function(it){var i=it._info;return ({sep:0,dez:1,uni:1,cent:2,zero:2,troca:3}[i.modo]||0)*2+(g02(it,"n5:t")==="n5:t2"?1:0)}},
+ 6:unico("completar a fila",function(it){var i=it._info;return ({1:0,10:2,100:3}[i.passo]||1)+(i.k-1)*.5}),
+ 7:unico("estimar quantidades",function(it){return Math.min(5,(it._info.n||0)/200)}),
+ 8:unico("soma sem reagrupar",function(it){var i=it._info;return (i.a%10+i.b%10)/2+(i.a+i.b>=60?1:0)+nz2(i.a)+nz2(i.b)}),
+ 9:unico("soma com reagrupamento",function(it){var i=it._info;return (i.a%10+i.b%10)/3+(i.a+i.b)/40+nz2(i.a)+nz2(i.b)}),
+ 10:unico("subtração sem emprestar",function(it){var i=it._info;return (i.a%10+i.b%10)/3+i.a/40+nz2(i.a)+nz2(i.b)}),
+ 11:unico("subtração com empréstimo",function(it){var i=it._info;return (i.b%10)/2+i.a/30+nz2(i.a)+nz2(i.b)}),
+ 12:porGrupo("n12:f",["soma sem reagrupar","soma com reagrupamento","subtração sem emprestar","subtração com empréstimo"],[0,0,0,0],function(it){return contaNota(it)}),
+ 13:porGrupo("n13:f",["centena + centena","centena − centena","centena + dezena","dezena + dezena","dezena − dezena"],[0,1,2,2,3],function(it){return nz2(maxN2(it))}),
+ 14:{tipos:["soma","subtração"],tipo:function(it){return it._info.op==="+"?0:1},nota:function(it){var i=it._info;return (i.op==="+"?0:2)+nz2(i.a)+nz2(i.b)+(i.a%100+i.b%100)/40+(i.a%10+i.b%10)/5}},
+ 15:porGrupo("n15:f",["parcela escondida (19 + __ = 59)","parcela escondida na frente (__ + 45 = 100)","subtraendo escondido (30 − __ = 20)","minuendo escondido (__ − 54 = 46)"],[0,1,2,3],function(it){return dg2(maxN2(it))}),
+ 16:{tipos:["na figura","com números"],tipo:function(it){return g02(it,"n16:")==="n16:num"?1:0},nota:function(it){var i=it._info;return (i.num?2:0)+dg2(Math.max(i.a,i.b))+(i.mais?0:1)}},
+ 17:porNome2(["juntar","acrescentar","separar","retirar"],[0,0,1,1],function(it,i){return (i.regroup?2:0)+dg2(Math.max(i.a,i.b))}),
+ 18:porNome2(["juntar","acrescentar","separar","retirar"],[0,0,1,1],function(it,i){return (i.regroup?2:0)+dg2(Math.max(i.a,i.b))}),
+ 19:porNome2(["fig","soma"],[0,1],function(it,i){return (i.g||0)*(i.q||0)/4}),
+ 20:tabuada(["fig","conta","nome"]),
+ 21:tabuada(["fig","conta","nome"]),
+ 22:tabuada(["fig","conta","vezes"]),
+ 23:tabuada(["fig","conta","vezes"]),
+ 24:tabuada(["fig","conta","vezes","nome"]),
+ 25:porNome2(["fig","metade","terca"],[0,1,2],function(it,i){return (i.q||0)/4}),
+ 26:porNome2(["dobro","triplo","metade","terca","grupos"],[0,1,2,3,2],function(it,i){return (i.q||0)/4}),
+ 27:porNome2(["fig","sim","pal"],[0,1,2],function(it,i){return (i.p||0)+(i.meio?2:0)}),
+ 28:porGrupo("n28:t",["de quanto em quanto","completar a sequência","achar a regra"],[0,1,2],function(it,i){return ({2:0,10:1,5:1,100:2}[i.passo]||2)+(i.sobe===false?1:0)}),
+ 29:{tipos:["quem está entre","à esquerda e à direita"],tipo:function(it){return g02(it,"n29:")==="n29:dois"?1:0},nota:function(it){return g02(it,"n29:")==="n29:dois"?3:0}},
+ 30:{tipos:["onde vai parar","quantas casas"],tipo:function(it){return g02(it,"n30:")==="n30:t2"?1:0},
+    nota:function(it){var i=it._info;return g02(it,"n30:")==="n30:t2"?2+Math.abs(i.ax-i.bx)+Math.abs(i.ay-i.by):(i.n1||0)+(i.n2||0)+(i.m2?2:0)}},
+ 31:porNome2(["nome","obj","car"],[0,1,2],null,["nome do sólido","objeto do dia a dia","características"]),
+ 32:porNome2(["cont","nome","qual"],[0,1,2],null,["contar lados","nome da figura","qual figura"]),
+ 33:porNome2(["medir","comparar","unidade"],[0,1,2],function(it,i){return (i.len||0)/4},["medir com a régua","comparar comprimentos","unidade certa"]),
+ 34:porNome2(["somar","falta"],[0,1],function(it,i){return ((i.lados||[]).length)+((i.tot||0)/10)},["medida do contorno","lado que falta"]),
+ 35:porNome2(["unidade","comparar","balanca"],[0,1,2],null,["unidade certa","comparar","balança"]),
+ 36:porGrupo("n36:t",["dia da semana","dias entre datas","mês seguinte","meses do ano"],[0,2,1,3]),
+ 37:porGrupo("n37:t",["ler a hora","duração em horas","hora de término","duração em minutos"],[0,1,2,3],function(it,i){return i.m?1:0}),
+ 38:porGrupo("n38:t",["valor do conjunto","trocar moedas","conjunto equivalente"],[0,1,2],function(it){return dg2(maxN2(it))}),
+ 39:porGrupo("n39:t",["valor do conjunto","trocar cédulas","conjunto equivalente"],[0,1,2],function(it){return dg2(maxN2(it))}),
+ 40:porGrupo("n40:t",["bolas no saco","frases do dia a dia"],[0,1]),
+ 41:porNum2(["ler um valor","mais ou menos votos","soma de duas turmas"],[0,1,2],function(it,i){return (i.tab?1:0)+dg2(it.a)})
+};
+/* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia sempre cubram todos os tipos. */
+var ORDEM2={"1":[0],"2":[0,1,2],"3":[0,1],"4":[0,3,4,2,1],"5":[0,1],"6":[0],"7":[0],"8":[0],"9":[0],"10":[0],"11":[0],"12":[0,1,2,3],"13":[0,1,2,3,4],"14":[0,1],"15":[0,1,2,3],"16":[0,1],"17":[0,1,2,3],"18":[1,0,2,3],"19":[1,0],"20":[0,1,2],"21":[0,1,2],"22":[0,1,2],"23":[0,1,2],"24":[0,1,3,2],"25":[0,1,2],"26":[0,1,4,2,3],"27":[0,1,2],"28":[0,1,2],"29":[0,1],"30":[0,1],"31":[0,1,2],"32":[0,1,2],"33":[1,0,2],"34":[0,1],"35":[0,1,2],"36":[0,2,1,3],"37":[0,1,2,3],"38":[0,1,2],"39":[0,1,2],"40":[0,1],"41":[0,1,2]};
+Object.keys(ORDEM2).forEach(function(n){ESPEC2[n].ordem=ORDEM2[n]});
 /* ===================== O 2º ano na grade do app: FC.LEVELS (a trilha é uma só: os níveis do 2º ano seguem os 35 do 1º) ===================== */
 /* Os números das fichas (1 a 41) são do 2º ano; no app o aluno vê a numeração corrida, de 36 a 76. */
 var BASE=FC.LEVELS.length;                          /* 35 */
@@ -877,6 +950,7 @@ FC.G2.forEach(function(e){
   var grupo=BLOCOS2.filter(function(b){return e.nivel<=b[0]})[0][1];
   var l={group:grupo,id:String(BASE+e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS2[e.nivel],target:e.meta,gen:e.gen,ano:2,hab:e.hab};
   if(INTROS2[e.nivel])l.intro=INTROS2[e.nivel];
+  l.espec=ESPEC2[e.nivel];
   FC.LEVELS.push(l);
 });
 })();
