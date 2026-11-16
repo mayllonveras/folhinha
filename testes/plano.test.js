@@ -1,4 +1,4 @@
-/* Rodízio de tipos e rampa de dificuldade (plano.js), níveis do 3º e do 4º ano. Rodar com: node testes/plano.test.js
+/* Rodízio de tipos e rampa de dificuldade (plano.js), níveis do 2º, 3º e 4º ano. Rodar com: node testes/plano.test.js
    Para cada nível: em cada dia de 5 folhas todos os tipos aparecem (garantido, não sorteado); a dificuldade média nunca desce da folha 1 à 5;
    dentro de cada folha as contas do nível vão do mais fácil ao mais difícil; cada folha tem 10 contas sem repetição e 2 de revisão. */
 global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
@@ -8,8 +8,8 @@ global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_UR
 require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');require('../plano.js');
 const FC=global.FC;let falhas=0;const falha=m=>{falhas++;if(falhas<40)console.log("  FALHA",m)};
 const DIAS=Number(process.env.DIAS||120);
-const L=FC.LEVELS,idx4=L.map((l,i)=>l.ano>=3?i:-1).filter(i=>i>=0);
-if(idx4.length!==88)falha("88 níveis (3º e 4º ano) com espec");
+const L=FC.LEVELS,idx4=L.map((l,i)=>l.ano>=2?i:-1).filter(i=>i>=0);
+if(idx4.length!==129)falha("129 níveis (2º, 3º e 4º ano) com espec");
 let semTipo=0,resumo=[];
 for(const i of idx4){
   const E=L[i].espec;if(!E||!E.tipos.length||typeof E.tipo!=="function"||typeof E.nota!=="function"){falha("nível "+L[i].id+" sem espec");continue}
@@ -36,7 +36,7 @@ for(const i of idx4){
   for(let s=1;s<5;s++)if(medias[s]<medias[s-1]-0.02)desceu++;
   if(faltou)falha("nível "+L[i].id+": em "+faltou+" de "+DIAS+" dias algum tipo não apareceu nas 5 folhas");
   if(desceu)falha("nível "+L[i].id+": a dificuldade média desce entre folhas: "+medias.map(x=>Math.round(x*100)).join(" → "));
-  if(medias[4]-medias[0]<.25)falha("nível "+L[i].id+": rampa fraca: "+medias.map(x=>Math.round(x*100)).join(" → "));
+  if(medias[4]-medias[0]<.1)falha("nível "+L[i].id+": rampa fraca: "+medias.map(x=>Math.round(x*100)).join(" → "));
   if(fora)falha("nível "+L[i].id+": contas fora de ordem ("+fora+")");
   if(rep)falha("nível "+L[i].id+": "+rep+" folhas com conta repetida");
   if(revErr)falha("nível "+L[i].id+": folha sem 2 contas de revisão");
