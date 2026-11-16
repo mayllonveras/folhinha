@@ -278,3 +278,17 @@ nenhum aluno existente muda e não há migração (o app já enviava o valor esc
 Decisão do professor: o formulário dos pais só oferece de 5 a 10 folhas por dia e o banco recusa menos de 5 (`students_check_limits`, migração `migracoes/2026-11-16-minimo-5-folhas.sql`, testada numa transação desfeita: 4 folhas dá `min_folhas`, 5 e 8 passam, 2 dias de estudo dá `min_dias`).
 O mínimo de 3 dias por semana não mudou. Quem já tivesse menos de 5 sobe para 5. No caminho normal (1 carimbo por dia) são 250 contas por nível (200 do nível e 50 de revisão).
 **Próximo passo, já aprovado como ideia:** garantir que cada tipo de conta do nível apareça nas 5 folhas do dia (rodízio) e classificar a dificuldade de cada conta para a dificuldade subir aos poucos ao longo do conjunto de folhas.
+
+## Rodízio de tipos e rampa de dificuldade, 4º ano (16/11/2026)
+
+Aprovado pelo professor (caminho A): as 5 folhas do dia cobrem **todos os tipos** de conta do nível e a dificuldade sobe de uma folha para a seguinte. Lista de tipos e regra de dificuldade por nível em `TIPOS-E-DIFICULDADE-4ANO.md`.
+
+- **Onde está:** `plano.js` (o motor; troca `FC.makeItems` quando o nível tem `espec`) e `grade4.js` (`ESPEC`: tipos, `tipo(conta)`, `nota(conta)` e `ORDEM` de cada um dos 46 níveis). `student.js` passa o número da folha do dia (`done_today`).
+- **Rodízio:** o tipo de ordem j (do mais fácil ao mais difícil, medido) é reservado à folha j mod 5. É determinístico: folhas montadas em momentos e aparelhos diferentes continuam cobrindo todos os tipos. As outras contas são sorteadas.
+- **Rampa:** a nota de cada conta vira um percentil dentro do nível; a folha 1 usa a faixa de 0 a 40%, a 2 de 15 a 55%, a 3 de 30 a 70%, a 4 de 45 a 85% e a 5 de 60 a 100%. Dentro da folha, as contas do nível vão da mais fácil à mais difícil; as 2 de revisão e as de reforço ficam em posições sorteadas. A faixa se abre um pouco se o nível não tiver contas nela.
+- **Limites por grupo** (por exemplo "n15:6"): no modo com rampa vão até 5 por folha, porque a faixa de dificuldade já varia a folha. Nome, número repetido etc. continuam como antes.
+- **Não usa o rodízio:** níveis do 1º ao 3º ano (ainda sem lista de tipos), folha de revisão do teto e folha repetida.
+- **Teste** (`testes/plano.test.js`): em 120 dias simulados por nível, todos os tipos aparecem nas 5 folhas em todos os dias; a dificuldade média nunca desce da folha 1 à 5 e sobe pelo menos 25 pontos; contas em ordem; 10 contas sem repetição e 2 de revisão por folha.
+- **Medido:** a dificuldade média da folha 1 à 5 fica em torno de 15 a 35 → 75 a 85 nos 46 níveis. Níveis com tipos de dificuldade muito diferente (como o 148) sobem menos, porque o tipo vem primeiro.
+- **A nota é regra nossa**, ainda sem calibrar com crianças. Depois dos primeiros dados de uso (tempo e acerto por conta), calibrar.
+- **Falta:** a lista de tipos e a nota dos níveis do 1º, 2º e 3º anos (um documento por ano, para revisão).

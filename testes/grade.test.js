@@ -5,7 +5,7 @@ global.window=global;global.addEventListener=function(){};global.removeEventList
 global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
 global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};global.localStorage={};
 global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
-require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');
+require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');require('../plano.js');
 const FC=global.FC,fs=require('fs');
 let falhas=0;const falha=m=>{falhas++;if(falhas<30)console.log("  FALHA",m)};
 const L=FC.LEVELS;
@@ -36,7 +36,7 @@ const visual=p=>p.key||(p.pre+"|"+(p.post||"")+"|"+JSON.stringify(p.extra||"",(k
 for(let i=0;i<L.length;i++){
   let rep=0,rev=0,tot=0;
   for(let n=0;n<200;n++){
-    const it=FC.makeItems(i);
+    const it=FC.makeItems(i,null,{sheetNo:n%5});
     if(it.length!==10)falha("nível "+L[i].id+": folha sem 10 contas");
     if(new Set(it.map(FC.itemKey)).size<10)rep++;
     const r=it.filter(p=>p._rev).length;rev+=r;tot++;
