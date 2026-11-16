@@ -50,4 +50,9 @@ ok(/id="onlyErr"/.test(ad)&&/Contas erradas/.test(ad)&&/class="errs"/.test(ad),"
 ok(/id="difPer"/.test(ad),"período escolhido pelos pais (7 dias, 30 dias, tudo)");
 ok(/habilidades\.js/.test(idx)&&/analise\.js/.test(idx)&&/habilidades\.js/.test(sw)&&/analise\.js/.test(sw),"arquivos carregados e guardados no cache");
 ok(!/dica/i.test(ad.slice(ad.indexOf("function renderDif("),ad.indexOf("/* Contas em que o aluno mais demora"))),"sem dica pedagógica por enquanto");
+// responsividade do Histórico no celular: a tabela vira cartões, com o botão Ver sempre à vista
+const css=fs.readFileSync(path.join(root,"style.css"),"utf8");
+ok(/<table class="hist">/.test(ad)&&/class="c-ver"/.test(ad)&&/data-label="Acertos de primeira"/.test(ad),"Histórico: tabela com classes e rótulos para o celular");
+ok(/@media \(max-width:720px\)\{[\s\S]*table\.hist tr\{display:grid/.test(css)&&/table\.hist \.c-ver\{grid-area:ver/.test(css),"Histórico: cartões em tela estreita, com o botão Ver ao lado do dia");
+ok(/table\.hab tr\{display:grid/.test(css),"tabela de habilidades também empilha no celular");
 console.log(falhas?"\n"+falhas+" falha(s)":"dificuldades: tudo certo");process.exit(falhas?1:0);

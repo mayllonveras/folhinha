@@ -474,8 +474,8 @@ async function detail(id){
 
   var rows=sheets.slice(0,40).map(function(x){
     var er=x.total-x.first_ok;
-    return '<tr data-err="'+er+'"><td>'+FC.dayLabel(x.study_day)+'</td><td>'+esc(FC.lv(x.level_idx))+'</td><td>'+x.first_ok+'/'+x.total+'</td><td class="errs" data-sid="'+x.id+'">'+(er?'<span class="tag bad">'+er+' erro'+(er>1?'s':'')+'</span>':'<span class="muted">–</span>')+'</td><td>'+FC.fmtTime(x.secs)+'</td><td>'+
-      (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td><button class="btn ghost small" data-sheet="'+x.id+'">Ver</button></td></tr>';
+    return '<tr data-err="'+er+'"><td class="c-dia" data-label="Dia">'+FC.dayLabel(x.study_day)+'</td><td class="c-nivel" data-label="Nível">'+esc(FC.lv(x.level_idx))+'</td><td class="c-ok" data-label="Acertos de primeira">'+x.first_ok+'/'+x.total+'</td><td class="errs" data-sid="'+x.id+'" data-label="Contas erradas">'+(er?'<span class="tag bad">'+er+' erro'+(er>1?'s':'')+'</span>':'<span class="muted">–</span>')+'</td><td class="c-tempo" data-label="Tempo">'+FC.fmtTime(x.secs)+'</td><td class="c-res" data-label="Resultado">'+
+      (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td class="c-ver"><button class="btn ghost small" data-sheet="'+x.id+'" aria-label="Ver a folha de '+esc(FC.dayLabel(x.study_day))+'">Ver</button></td></tr>';
   }).join("");
   var names=guards.map(function(g){
     var p=profs.filter(function(x){return x.id===g.user_id})[0];
@@ -519,7 +519,7 @@ async function detail(id){
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
-    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table class="hist"><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
   var dificuldades='<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
     '<div class="dif-tools"><label class="field inline">Período<select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>';
@@ -653,7 +653,7 @@ function renderDif(){
   box.innerHTML='<p class="muted">'+list.length+' folha'+(list.length>1?'s':'')+' · acertou de primeira '+Math.round(100-(n?e*100/n:0))+'% das contas. '+
     'Dificuldade: errou 40% ou mais de primeira; atenção: de 20% a 40%. Só entra assunto com pelo menos 5 contas feitas.</p>'+
     (fortes.length?fortes.map(card).join(""):'<p class="muted">Ainda não há contas suficientes em nenhum assunto neste período.</p>')+
-    (hab.length?'<details class="gap"><summary>Por habilidade da BNCC ('+hab.length+')</summary><div class="tablewrap"><table><thead><tr><th>Habilidade</th><th>Erros de primeira</th><th></th></tr></thead><tbody>'+hab.map(function(h){
+    (hab.length?'<details class="gap"><summary>Por habilidade da BNCC ('+hab.length+')</summary><div class="tablewrap"><table class="hab"><thead><tr><th>Habilidade</th><th>Erros de primeira</th><th></th></tr></thead><tbody>'+hab.map(function(h){
       var d=FC.HAB&&FC.HAB[h.cod];
       return '<tr><td><b>'+esc(h.cod)+'</b>'+(d?'<br><span class="muted small-t" title="'+esc(d[2])+'">'+esc(d[1])+'</span>':'')+'</td><td>'+h.erros+' de '+h.n+' ('+Math.round(h.taxa)+'%)</td><td><span class="tag sem sem-'+h.semaforo+'">'+SEM_TXT[h.semaforo]+'</span></td></tr>'}).join("")+'</tbody></table></div>'+
       '<p class="muted small-t">Cada conta conta em todas as habilidades do nível dela; por isso os números são aproximados quando um nível treina mais de uma habilidade.</p></details>':'')+
@@ -728,6 +728,6 @@ async function openSheet(sid,btn){
   }).join("");
   box.innerHTML='<div class="sheetview"><h3>Folha de '+FC.dayLabel(sh.study_day)+' · nível '+esc(FC.lv(sh.level_idx))+'</h3>'+
     '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+(avg?' · tempo médio por conta '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+')':'')+'</p><ol class="sv">'+li+'</ol></div>';
-  box.scrollIntoView({behavior:"smooth",block:"nearest"});
+  box.scrollIntoView({behavior:"smooth",block:"start"});
 }
 })();
