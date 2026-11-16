@@ -3,7 +3,7 @@ global.window=global;global.addEventListener=function(){};global.removeEventList
 global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
 global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};global.localStorage={};
 global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
-require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');
+require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');require('../plano.js');
 const FC=global.FC;let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
 const anos=FC.anosComGrade();
 ok(anos.join()==="1,2,3,4","anos com grade: "+anos);

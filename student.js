@@ -754,6 +754,8 @@ async function logout(){
    plano de reforço, contas sorteadas e registro da folha no banco. Ao tocar em "Começar", ela só abre. */
 var prep=null;
 function prepKey(){var m=S.me;return [FC.today(),m.level_idx,m.stamps,m.done_today].join("|")}
+/* Níveis com rodízio e rampa já devolvem as contas na ordem certa (do mais fácil ao mais difícil); os demais são embaralhados. */
+function ordena(items){return items.ordenada?items:FC.shuffle(items)}
 async function buildSheet(){
   var m=S.me,day=FC.today(),items,base="Preencha as 10 contas. O relógio já está correndo. Enter passa para a próxima.",intro=base;
   var plan=null;
@@ -763,10 +765,10 @@ async function buildSheet(){
     items=plan.repeat.map(FC.plainItem);
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
   }else if(plan&&plan.mode==="reforco"&&plan.weak&&plan.weak.length){
-    items=FC.shuffle(FC.makeItems(m.level_idx,plan.weak,{teto:teto}));
+    items=ordena(FC.makeItems(m.level_idx,plan.weak,{teto:teto,sheetNo:m.done_today}));
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
-  }else{items=FC.shuffle(FC.makeItems(m.level_idx,null,{teto:teto}))}
+  }else{items=ordena(FC.makeItems(m.level_idx,null,{teto:teto,sheetNo:m.done_today}))}
   var Lv=FC.LEVELS[m.level_idx];if(Lv&&Lv.intro)intro=Lv.intro+" "+intro;
   if(teto)intro="Você já concluiu tudo o que dá para avançar por enquanto. Hoje é folha de revisão: contas dos níveis que você já fez. "+intro;
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */

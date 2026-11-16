@@ -639,6 +639,73 @@ FC.G4=[
 ];
 FC.G4BY={};FC.G4.forEach(function(e){FC.G4BY[e.id]=e});
 
+/* ===================== Tipos e nota de dificuldade (rodízio e rampa, ver plano.js e bncc/TIPOS-E-DIFICULDADE-4ANO.md) ===================== */
+/* tipos: os tipos de conta do nível, na ordem em que o rodízio os reserva às folhas; tipo(it): o número do tipo da conta (0, 1, ...); nota(it): quanto maior, mais difícil (relativa ao nível). */
+function nums(it){return (String(it.pre)+" "+String(it.post||"")).replace(/\u202F/g,"").match(/\d+/g)||[]}
+function nz(n){return /0/.test(String(n))?1:0}                          /* tem zero */
+function dg(n){return String(n).length}
+function maxN(it){return Math.max.apply(null,nums(it).map(Number).concat([0]))}
+function grupo0(it,pref){var l=(it.limits||[]).filter(function(x){return x[0].indexOf(pref)===0})[0];return l?l[0]:""}
+function kk(it){return (it._info.k||it._info.tipo||it._info.f)-1}
+var ESPEC={
+ 1:{tipos:["extenso → algarismos","algarismos → extenso"],tipo:function(it){return it._info.tipo==="algarismos"?0:1},
+    nota:function(it){var n=it._info.n,r=n%1000;return 2*String(n).replace(/[^0]/g,"").length+((r&&!(r<100||r%100===0))?1:0)+(it._info.tipo==="extenso"?1:0)}},
+ 2:{tipos:["termo escondido","valor do algarismo","algarismo da casa","montar o número"],tipo:kk,
+    nota:function(it){var n=it._info.tipo===4?it.a:+(nums(it).filter(function(x){return x.length>=5})[0]||it.a);return 2*String(n).replace(/[^0]/g,"").length+(it._info.tipo===1?1:0)}},
+ 3:{tipos:["maior","menor","sinal","número vizinho"],tipo:function(it){return +grupo0(it,"n3:t").slice(4)-1},
+    nota:function(it){var t=+grupo0(it,"n3:t").slice(4),n=nums(it).map(String);
+      if(t===1||t===2){var o=it.extra.opts.map(function(x){return String(x).replace(/\u202F/g,"")}),c=0;while(c<5&&o.every(function(x){return x[c]===o[0][c]}))c++;return c}
+      if(t===3){var a=n[0],b=n[1],c2=0;while(c2<5&&a[c2]===b[c2])c2++;return c2+(a===b?2:0)}
+      var ref=n[n.length-1];return /000$/.test(ref)||/999$/.test(ref)?4:1}},
+ 4:{tipos:["dezena","centena","milhar"],tipo:function(it){return {10:0,100:1,1000:2}[it._info.k]},
+    nota:function(it){var i=it._info,r=i.n%i.k;return ({10:0,100:2,1000:4})[i.k]+(i.a>i.n?1:0)+(r>=i.k/2&&r<i.k/2+i.k/10?1:0)}},
+ 5:{tipos:["soma"],tipo:function(){return 0},nota:function(it){var i=it._info;return vaiUm(i.a,i.b)*2+nz(i.a)+nz(i.b)+(i.a+i.b>9999?1:0)}},
+ 6:{tipos:["sem zero","com zero"],tipo:function(it){return it._info.z?1:0},nota:function(it){var i=it._info;return empresta(i.a,i.b)*2+nz(i.a)+nz(i.b)}},
+ 7:{tipos:["soma","subtração"],tipo:function(it){return it._info.op==="+"?0:1},nota:function(it){var i=it._info;return (i.op==="+"?vaiUm(i.a,i.b):empresta(i.a,i.b)+1)*2+nz(i.a)+nz(i.b)}},
+ 8:{tipos:["soma","subtração"],tipo:function(it){return it._info.soma?0:1},nota:function(it){var i=it._info;return (i.k===1000?2:0)+(i.soma?0:1)+Math.round(3*(1-Math.min(1,Math.abs(i.a%i.k-i.k/2)/(i.k/2)))+3*(1-Math.min(1,Math.abs(i.b%i.k-i.k/2)/(i.k/2))))}},
+ 9:{tipos:["juntar","acrescentar","separar","retirar","comparar","completar"],tipo:function(it){return ["juntar","acrescentar","separar","retirar","comparar","completar"].indexOf(it._info.tipo)},
+    nota:function(it){var i=it._info,r={juntar:0,acrescentar:0,separar:1,retirar:1,comparar:2,completar:2}[i.tipo];return 2*r+dg(Math.max(i.a,i.b))+(i.tipo==="juntar"||i.tipo==="acrescentar"?vaiUm(i.a,i.b):empresta(i.a,i.b))}},
+ 10:{tipos:["soma → subtração","subtração → soma","lacuna"],tipo:kk,nota:function(it){var i=it._info;return [0,1,2][kk(it)]*2+dg(Math.max(i.a,i.b))+nz(i.a)+nz(i.b)}},
+ 11:{tipos:["distributiva","comutativa","associativa","decomposição completa"],tipo:kk,nota:function(it){return [1,0,2,3][kk(it)]*2+dg(maxN(it))}},
+ 12:{tipos:["por 10","por 100","por 1000"],tipo:function(it){return {10:0,100:1,1000:2}[it._info.k]},nota:function(it){var i=it._info;return ({10:0,100:2,1000:4})[i.k]+(i.f===3?2:0)+nz(i.n)}},
+ 13:{tipos:["dezena × dezena","centena × unidade","dezena × centena"],tipo:function(it){var i=it._info;return i.a%10===0&&i.b%10===0&&Math.max(i.a,i.b)<100?0:Math.min(i.a,i.b)<10?1:2},nota:function(it){var i=it._info;return dg(i.a*i.b)+(Math.min(i.a,i.b)>=10&&Math.max(i.a,i.b)>=100?2:0)}},
+ 14:{tipos:["multiplicação sem reagrupar"],tipo:function(){return 0},nota:function(it){var i=it._info;return i.b+dg(i.a)}},
+ 15:{tipos:["2 algarismos × 1"],tipo:function(){return 0},nota:function(it){var i=it._info;return reagrupa(i.a,i.b)*2+i.b/3+nz(i.a)}},
+ 16:{tipos:["3 algarismos × 1"],tipo:function(){return 0},nota:function(it){var i=it._info;return reagrupa(i.a,i.b)*2+i.b/3+nz(i.a)}},
+ 17:{tipos:["4 algarismos × 2 a 5"],tipo:function(){return 0},nota:function(it){var i=it._info;return reagrupa(i.a,i.b)*2+i.b/3+nz(i.a)}},
+ 18:{tipos:["direta","decomposição guiada"],tipo:function(it){return grupo0(it,"n18:d")?1:0},nota:function(it){var i=it._info;return (i.a%10+i.b%10)/4+(grupo0(it,"n18:d")?0:1)+(i.a*i.b>250?1:0)}},
+ 19:{tipos:["2 algarismos × 2 algarismos"],tipo:function(){return 0},nota:function(it){var i=it._info;return (i.a%10+i.b%10)/4+(i.a*i.b>600?2:0)+reagrupa(i.a,i.b%10)}},
+ 20:{tipos:["grupos","proporção","fileiras"],tipo:function(it){return [0,1,2][kk(it)]},nota:function(it){return [1,2,0][kk(it)]*2+dg(it.a)}},
+ 21:{tipos:["contar combinações","achar o fator que falta"],tipo:kk,nota:function(it){var i=it._info;return (i.k===2?2:0)+i.a*i.b/12}},
+ 22:{tipos:["quociente sem zero","quociente com zero"],tipo:function(it){return nz(it._info.q)},nota:function(it){var i=it._info;return i.d/2+nz(i.q)*2+(i.q>=100?1:0)}},
+ 23:{tipos:["quociente","resto","verificação"],tipo:kk,nota:function(it){var i=it._info;return [1,0,2][kk(it)]*2+i.d/2+nz(i.q)}},
+ 24:{tipos:["exata","quociente com resto","resto"],tipo:kk,nota:function(it){var i=it._info;return i.d/2+dg(i.q)+(i.k===1?0:1)+nz(i.q)}},
+ 25:{tipos:["direta","com pista da multiplicação"],tipo:function(it){return /então/.test(it.pre)?1:0},nota:function(it){var i=it._info;return i.d/3+i.q/5+(/então/.test(it.pre)?0:1)}},
+ 26:{tipos:["repartir","quantas caixas","o que sobra","viagens necessárias"],tipo:kk,nota:function(it){return kk(it)*2+dg(maxN(it))}},
+ 27:{tipos:["reconhecer múltiplo","sequência de múltiplos","resto","mesmo resto"],tipo:kk,nota:function(it){var n=nums(it).map(Number);return kk(it)*2+Math.min.apply(null,n.filter(function(x){return x>=3}).concat([9]))/3}},
+ 28:{tipos:["somar o mesmo número","tirar o mesmo número","equivalência"],tipo:kk,nota:function(it){return [0,1,2][kk(it)]*2+dg(maxN(it))}},
+ 29:{tipos:["adição","subtração","multiplicação","dividendo escondido","divisor escondido"],tipo:kk,nota:function(it){return kk(it)*2+dg(maxN(it))}},
+ 30:{tipos:["soma depois de multiplicar","subtração depois de multiplicar","divisão depois de subtração"],tipo:kk,nota:function(it){return kk(it)*2+dg(it.a)}},
+ 31:{tipos:["fração pintada","partes iguais","quantos 1/n formam o inteiro","escolher a figura","qual é maior"],tipo:kk,nota:function(it){var i=it._info;return [0,0,1,1,2][kk(it)]*2+(i.d>=5?2:0)+(it.extra&&it.extra.fig&&it.extra.fig.forma==="circulo"?1:0)}},
+ 32:{tipos:["fração no ponto","quantas partes","escolher a reta"],tipo:kk,nota:function(it){var i=it._info;return [0,0,2][kk(it)]*2+(i.d>=5?2:0)+i.d/5}},
+ 33:{tipos:["décimos","centésimos","qual decimal","converter"],tipo:kk,nota:function(it){return [0,2,3,1][kk(it)]*2+(it._info.n%10===0?0:1)}},
+ 34:{tipos:["reais → centavos","centavos → reais","soma","moedas"],tipo:kk,nota:function(it){return [0,2,2,1][kk(it)]*2+(it.a%100!==0&&kk(it)===0?1:0)}},
+ 35:{tipos:["casas para a direita","casa da estrela","deslocamento","total de casas"],tipo:kk,nota:function(it){var f=it.extra&&it.extra.fig,d=0;if(f&&f.s&&f.d)d=Math.abs(f.d[0]-f.s[0])+Math.abs(f.d[1]-f.s[1]);return [0,1,3,2][kk(it)]*2+d/2}},
+ 36:{tipos:["contar faces, arestas, vértices","dar o nome do sólido"],tipo:kk,nota:function(it){var n=it._info.n;return (kk(it)===1?3:0)+n+(/arestas|vértices/.test(it.pre)?2:0)}},
+ 37:{tipos:["reto, agudo ou obtuso","qual é o maior","ângulos retos de uma figura"],tipo:kk,nota:function(it){if(kk(it)===0)return 6-Math.min(6,Math.abs(it.extra.fig.g-90)/10);if(kk(it)===1){var g=it.extra.opts.map(function(o){return o.fig.g}).sort(function(a,b){return a-b});return 6-Math.min(6,(g[2]-g[1])/10)}return 2}},
+ 38:{tipos:["quadradinhos que faltam","a figura é simétrica?","eixos de simetria"],tipo:kk,nota:function(it){var f=it.extra&&it.extra.fig;return kk(it)===0?f.cells.length:kk(it)===1?4+f.cells.length/2:it.a}},
+ 39:{tipos:["perímetro","lado que falta","conversão de unidades"],tipo:kk,nota:function(it){var f=it.extra&&it.extra.fig;return [0,2,1][kk(it)]*2+(f?f.lados.length:/km|mm/.test(it.pre)?4:2)}},
+ 40:{tipos:["contar quadradinhos","retângulo","comparar figuras"],tipo:kk,nota:function(it){var f=it.extra&&it.extra.fig;if(kk(it)===0)return f.cells.length/2;if(kk(it)===1)return (+nums(it)[0])*(+nums(it)[1])/10;var a=it.extra.opts.map(function(o){return o.fig.shapes[0].cells.length}).sort(function(x,y){return x-y});return 8-Math.min(6,Math.min(a[1]-a[0],a[2]-a[1]))}},
+ 41:{tipos:["kg → g e L → mL","g → kg e mL → L","misto"],tipo:function(it){var k=kk(it);return k<=1?0:k===2?1:2},nota:function(it){var k=kk(it);return k<=1?0:k===2?2:4}},
+ 42:{tipos:["ler o relógio","minutos de duração","hora de término","conversões"],tipo:kk,nota:function(it){return [1,2,2,0][kk(it)]*2+(kk(it)===0&&it.extra.fig.m%5!==0?2:0)+(kk(it)===1?(it.a>60?1:0):0)}},
+ 43:{tipos:["ler o termômetro","diferença","subiu ou desceu","cidade mais quente"],tipo:kk,nota:function(it){return [0,1,2,0][kk(it)]*2+dg(maxN(it))}},
+ 44:{tipos:["troco","desconto","parcelas","à vista ou parcelado"],tipo:kk,nota:function(it){return [0,1,2,3][kk(it)]*2+dg(maxN(it))}},
+ 45:{tipos:["cor mais ou menos provável","certo, possível ou impossível","comparar roletas"],tipo:kk,nota:function(it){return [1,0,2][kk(it)]*2+(kk(it)===0&&/menos/.test(it.pre)?2:0)}},
+ 46:{tipos:["ler um valor","soma de valores","diferença entre dois","total"],tipo:kk,nota:function(it){var f=it.extra.fig;return kk(it)*2+(f.t==="tabela2"?1:0)+dg(it.a)}}
+};
+/* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia, montadas em momentos diferentes, sempre cubram todos os tipos. */
+var ORDEM={"1":[0,1],"2":[2,3,1,0],"3":[0,1,3,2],"4":[0,1,2],"5":[0],"6":[0,1],"7":[0,1],"8":[0,1],"9":[1,0,2,3,4,5],"10":[0,1,2],"11":[1,0,2,3],"12":[0,1,2],"13":[0,1,2],"14":[0],"15":[0],"16":[0],"17":[0],"18":[1,0],"19":[0],"20":[2,0,1],"21":[0,1],"22":[0,1],"23":[1,0,2],"24":[0,2,1],"25":[1,0],"26":[0,1,2,3],"27":[0,1,2,3],"28":[0,1,2],"29":[0,1,2,3,4],"30":[0,1,2],"31":[0,1,3,2,4],"32":[1,0,2],"33":[0,3,1,2],"34":[0,3,1,2],"35":[0,1,2,3],"36":[0,1],"37":[1,2,0],"38":[2,0,1],"39":[0,2,1],"40":[0,1,2],"41":[0,1,2],"42":[3,0,2,1],"43":[0,3,1,2],"44":[0,1,2,3],"45":[1,0,2],"46":[0,1,2,3]};
+Object.keys(ORDEM).forEach(function(n){ESPEC[n].ordem=ORDEM[n]});
 /* ===================== O 4º ano na grade do app: FC.LEVELS (os níveis seguem os 118 dos três primeiros anos; o aluno vê a numeração corrida, de 119 a 164) ===================== */
 var BASE4=FC.LEVELS.length;                          /* 118 */
 var BLOCOS4=[[4,"Números até 99 999"],[10,"Adição e subtração até 99 999"],[21,"Multiplicação"],[27,"Divisão, múltiplos e restos"],[30,"Igualdades e problemas"],[34,"Frações e decimais"],[38,"Ângulos, sólidos e simetria"],[44,"Perímetro, área, tempo e dinheiro"],[46,"Acaso, tabelas e gráficos"]];
@@ -667,6 +734,7 @@ FC.G4.forEach(function(e){
   var grupo=BLOCOS4.filter(function(b){return e.nivel<=b[0]})[0][1];
   var l={group:grupo,id:String(BASE4+e.nivel),name:e.nome.replace(/^Nível \d+ — /,""),hint:DICAS4[e.nivel],target:e.meta,gen:e.gen,ano:4,hab:e.hab};
   if(INTROS4[e.nivel])l.intro=INTROS4[e.nivel];
+  l.espec=ESPEC[e.nivel];
   FC.LEVELS.push(l);
 });
 })();
