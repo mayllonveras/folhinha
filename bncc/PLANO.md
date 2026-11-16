@@ -298,3 +298,9 @@ Aprovado pelo professor (caminho A): as 5 folhas do dia cobrem **todos os tipos*
 A tabela "Folhas feitas" tinha 7 colunas sem quebra de linha (cerca de 650 px) e, no celular, o botão Ver e as contas erradas ficavam fora da tela, só alcançáveis rolando para o lado.
 Em telas de até 720 px cada folha agora é um cartão: dia e nível à esquerda, botão **Ver** à direita (sempre à vista), acertos de primeira e tempo na linha de baixo, o resultado (carimbo ou subiu de nível) e, quando houver, as contas erradas.
 A tabela de habilidades da aba Atenção também empilha, e ao tocar em Ver a folha aberta rola até o começo. Conferido a 320, 360 e 800 px: a página nunca rola para o lado. Em telas largas a tabela continua igual.
+
+## Rodízio e rampa também no 3º ano (16/11/2026)
+
+O mesmo motor do 4º ano (`plano.js`) passa a valer para os 42 níveis do 3º ano (77 a 118): `grade3.js` ganhou `ESPEC3` (tipos, `tipo`, `nota` e `ORDEM3` de cada nível). Lista de tipos e regra de dificuldade em `TIPOS-E-DIFICULDADE-3ANO.md`.
+`testes/plano.test.js` agora cobre os 88 níveis do 3º e do 4º ano (120 dias por nível: todos os tipos nas 5 folhas, dificuldade média que nunca desce, contas em ordem; tolerância de 2 pontos na descida por causa do ruído da simulação).
+Medido: a dificuldade média da folha 1 à 5 vai de cerca de 20–35 até 70–87 nos 42 níveis. Falta o 1º e o 2º ano (o 1º tem muitos níveis de figuras, que precisam de outra medida de dificuldade).
