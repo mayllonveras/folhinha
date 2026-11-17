@@ -207,6 +207,6 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 | Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao `index.html` e ao `sw.js` | não feita; o app não carrega o `turbo.js` ainda |
-| Migração SQL (`turbo_*` e `awards.source`) | não escrita; não será aplicada sem autorização |
+| Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **escrita e validada num Postgres local de teste** (`testes/banco/turbo.sh`, 39 verificações). **Não aplicada no Supabase**: só com autorização do professor |
 | Telas do aluno (dois cartões, sessão, nivelamento, pacotinho) | não feitas |
 | Painel dos pais | não feito |
