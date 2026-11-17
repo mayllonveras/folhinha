@@ -206,7 +206,30 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 |---|---|
 | Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
-| Ligação do motor ao `index.html` e ao `sw.js` | não feita; o app não carrega o `turbo.js` ainda |
+| Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
 | Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
-| Telas do aluno (dois cartões, sessão, nivelamento, pacotinho) | não feitas |
+| Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e pacotinho | **feitas e testadas no navegador** (item 13) |
 | Painel dos pais | não feito |
+
+## 13. Telas do aluno: o que foram e o que ficou de fora
+
+Arquivo `turbo-aluno.js`, ligado ao `student.js` por `FC.turboUi` (o `student.js` só ganhou o contexto, o cartão e o botão voltar).
+
+**Tela inicial:** a trilha BNCC e a Turbo aparecem em dois cartões, lado a lado no tablet e empilhados no celular. A criança escolhe a ordem. O cartão da Turbo muda conforme o dia: convite para o nivelamento, "Turbo do dia" (revisões, fatos novos e minutos), "Continue a Turbo", "concluída" (com o pacotinho), "nada para treinar hoje" e "sem Turbo hoje" em dia de descanso. Se o banco não responder, o cartão não aparece e a BNCC segue normal.
+
+**Sessão do dia:** uma conta por vez, com o teclado numérico do PIN (e o teclado do aparelho). O tempo até o primeiro toque é medido no toque do dedo. Não há relógio na tela. Dica antes da tentativa só na primeira exposição; em erro, a resposta aparece por 1,8 s, a dica vem depois e a criança tenta de novo na hora (essa segunda tentativa não conta nas regras); "Dica" sob demanda e "Não sei". Voltar ou sair no meio pergunta antes e guarda o que foi feito. Se sair do aplicativo no meio de uma conta, o tempo daquela conta recomeça.
+
+**Fim da sessão:** resultado, botão **Abrir pacotinho** (usa o fluxo de figurinhas que já existe) e volta ao início. Se não houver conexão ao enviar, a sessão fica guardada no aparelho e sobe na próxima vez.
+
+**Nivelamento (primeira entrada):** aquecimento de 6 números; jogos de pré-requisito (6 comparações, 4 de pontinhos, 3 de contagem) só até 7 anos, ou depois da sondagem para quem não passou nem na primeira família; sondagem de fatos por busca binária, sem mostrar acerto ou erro. Falhar nos pré-requisitos (menos de 60% de acertos) liga a carga reduzida de 1 a 2 fatos novos por sessão.
+
+**O que ficou de fora ou é diferente do plano**
+
+- **Os pais ainda não podem pular o nivelamento.** Falta a opção nas telas dos adultos; por enquanto ele aparece para toda criança nova (a criança pode tocar em "Agora não").
+- **A dica é só texto.** Ainda não há desenho (pontinhos, dezena fechada).
+- **"Contou nos dedos" não é detectado**: o app registra sempre "não contou". O critério de domínio, na prática, só usa acerto e tempo.
+- **O aquecimento não é gravado** como tentativa, porque o banco só aceita tentativas ligadas a um fato. A parte de pré-requisitos também não vira tentativa: só o resumo vai no resultado do nivelamento.
+- **Nivelamento cria uma linha em `turbo_days`** com 0 tentativas e estado "started". O cartão ignora essa linha.
+- O tempo foi testado com navegador emulado, não com um toque real em tablet ou celular.
+- O painel dos pais continua sem fazer.
+

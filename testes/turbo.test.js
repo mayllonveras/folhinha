@@ -21,6 +21,7 @@ function sessaoCom(st,dia,aparelho,tentativas){
 /* criança simulada: p(acerto) e tempo por fato */
 function jogar(st,dia,o){
   const rnd=o.rnd||T.rng(dia+7),sess=T.iniciarSessao(st,{dia,aparelho:o.aparelho||"tablet",rnd});
+  if(sess.bloco.length>(st.cargaReduzida?2:P.BLOCO_MAX))falha("bloco com "+sess.bloco.length+" fatos no dia "+dia);
   let it,n=0;
   while((it=T.proximo(st,sess))){
     const acerta=rnd()<(o.acerto==null?1:typeof o.acerto==="function"?o.acerto(it,st):o.acerto);
@@ -100,7 +101,19 @@ function jogar(st,dia,o){
   const b0=T.proximoBloco(aluno());ok(b0.length===P.BLOCO_MIN&&b0.every(f=>f.fam===0),"Somar zero: bloco mínimo da própria família");
   /* família pequena (Faz 10 tem 2 fatos novos): completa com a família seguinte */
   const st4=aluno();T.catalogo().soma.facts.filter(f=>f.fam<4).forEach(f=>pôr(st4,f.id,{s:3,due:99}));
-  const b4=T.proximoBloco(st4);ok(b4.length>=P.BLOCO_MIN&&b4[0].fam===4&&b4.some(f=>f.fam===5),"família pequena completa com a seguinte: "+b4.map(f=>f.eq).join(", "));
+  const b4=T.proximoBloco(st4);ok(b4.length>=P.BLOCO_MIN&&b4.length<=P.BLOCO_MAX&&b4[0].fam===4&&b4.some(f=>f.fam===5),"família pequena completa com a seguinte, sem passar do máximo: "+b4.map(f=>f.eq).join(", "));
+  /* em qualquer ponto da trilha o bloco fica entre o mínimo e o máximo (ou 1 a 2 com carga reduzida) */
+  {let estouro=0,curto=0;
+   for(const lib of [["soma"],["soma","sub","mult","div"]])for(const red of [false,true])for(let k=0;k<=12;k++){
+     const s=aluno({liberadas:lib});s.cargaReduzida=red;
+     const todos=[].concat(...T.ORDEM.map(o=>T.catalogo()[o].facts));
+     todos.forEach((f,i)=>{if(i<k*30)pôr(s,f.id,{s:3,due:99})});
+     for(const o of T.ORDEM)if(k>=4)T.catalogo()[o].facts.filter(f=>f.fam<=k-4).forEach(f=>pôr(s,f.id,{s:5,due:99,rev:5}));
+     const b=T.proximoBloco(s),mx=red?2:P.BLOCO_MAX;
+     if(b.length>mx)estouro++;
+     if(b.length>0&&b.length<(red?1:Math.min(P.BLOCO_MIN,b.length)))curto++;
+   }
+   igual(estouro,0,"nenhum bloco passa do máximo");igual(curto,0,"nenhum bloco abaixo do mínimo");}
   /* fila de aprendizagem cheia: não entra fato novo */
   const st3=aluno();T.catalogo().soma.facts.slice(0,8).forEach(f=>pôr(st3,f.id,{s:2,due:5}));
   igual(T.proximoBloco(st3).length,0,"com 8 fatos aprendendo, nenhum fato novo entra");
@@ -342,6 +355,57 @@ function jogar(st,dia,o){
   /* nenhum fato fica sem data de revisão */
   const semData=Object.keys(st.fatos).filter(id=>st.fatos[id].s>=1&&st.fatos[id].due==null);
   igual(semData.length,0,"todo fato em treino tem data de revisão");
+}
+
+/* ---------- 15. ponte com o banco e dados para a tela ---------- */
+{
+  igual(T.diaDe("1970-01-02"),1,"dia 1 = 02/01/1970");igual(T.dataDe(T.diaDe("2026-11-17")),"2026-11-17","ida e volta de data");
+  igual(T.dataDe(null),null,"data nula");igual(T.diaDe(null),null,"dia nulo");
+  ok(T.diaDe("2026-03-01")-T.diaDe("2026-02-28")===1,"fevereiro de 2026 tem 28 dias");
+  /* sessões de verdade -> linhas para o banco -> estado de volta: igual */
+  const st=aluno({idade:8}),hoje=T.diaDe("2026-11-01");
+  for(let d=0;d<8;d++)jogar(st,hoje+d,{acerto:.9,rnd:T.rng(d+100)});
+  const ids=Object.keys(st.fatos),linhas=T.fatosParaBanco(st,ids.concat(ids));
+  igual(linhas.length,ids.length,"fatosParaBanco não repete fato");
+  linhas.forEach(l=>{
+    if(!/^(\+|-|×|÷):[0-9]{1,2}:[0-9]{1,2}$/.test(l.id))falha("id fora do padrão do banco: "+l.id);
+    if(!(l.s>=0&&l.s<=5))falha("estado fora de 0..5: "+l.id);
+    if(l.recent.length>10)falha("mais de 10 tentativas recentes: "+l.id);
+    if(l.due!=null&&!/^\d{4}-\d{2}-\d{2}$/.test(l.due))falha("due não é AAAA-MM-DD: "+l.due);
+    if(l.lat!=null&&!Number.isInteger(l.lat))falha("lat não é inteiro: "+l.lat);
+  });
+  const volta=T.deBanco({age:8,unlocked:["soma"],devices:st.aparelhos,placement:null,skip_placement:false,today:{pack_given:false},facts:linhas},hoje+8);
+  let difere=0;ids.forEach(id=>{const a=st.fatos[id],b=volta.fatos[id];["s","n","diasOk","ultimoDiaOk","boas","rev","due","stub","atingiu"].forEach(k=>{if(a[k]!==b[k])difere++});if((a.lat==null?null:Math.round(a.lat))!==b.lat)difere++});
+  igual(difere,0,"estado igual depois de ida e volta pelo formato do banco");
+  igual(T.iniciarSessao(st,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,T.iniciarSessao(volta,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,"mesma fila do dia");
+  /* pacotinho de hoje já entregue vira premio no motor */
+  const v2=T.deBanco({age:8,unlocked:["soma"],devices:{},today:{pack_given:true},facts:[]},hoje);igual(v2.premios[hoje],1,"pack_given vira prêmio do dia");
+  const s2=T.iniciarSessao(v2,{dia:hoje,aparelho:"tablet",rnd:T.rng(1)});let x;while((x=T.proximo(v2,s2)))T.registrar(v2,s2,{id:x.id,tipo:x.tipo,ok:true,t1:900,total:1500,dica:x.dica});
+  ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º pacotinho do dia, mesmo depois de recarregar");
+  /* registro das tentativas para o banco */
+  const s3=T.iniciarSessao(aluno(),{dia:hoje,aparelho:"tablet",rnd:T.rng(2)}),st3=aluno();
+  const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,t1:850,total:1400,dica:it.dica,contou:false});
+  igual(s3.log[0],{fact:it.id,kind:"novo",ok:true,t1:850,total:1400,hint:"before",counted:false,stateBefore:0},"log da tentativa");
+  /* carga reduzida: 1 a 2 fatos novos */
+  const cr=aluno();cr.cargaReduzida=true;const b=T.proximoBloco(cr);ok(b.length>=1&&b.length<=2,"carga reduzida: bloco de 1 a 2 fatos ("+b.length+")");
+  igual(T.deBanco({age:7,unlocked:["soma"],devices:{},placement:{pre:{falhou:true}},facts:[]}).cargaReduzida,true,"carga reduzida vem do nivelamento");
+  /* pedir dica em provável ou maduro não deixa a sessão limpa */
+  const sd=aluno(),idd="+:4:4";pôr(sd,idd,{s:4,rev:1,due:0});sessaoCom(sd,0,"tablet",[{id:idd,ok:true,t1:600,dica:"demand"}]);
+  igual(T.fato(sd,idd).rev,1,"revisão com dica pedida não avança o calendário");igual(T.fato(sd,idd).due,1,"e confere de novo amanhã");
+  const sd3=aluno();pôr(sd3,idd,{s:3,atingiu:true,due:0,n:5,diasOk:3,recent:[]});sessaoCom(sd3,0,"tablet",[{id:idd,ok:true,t1:600,dica:"demand"}]);
+  igual(T.fato(sd3,idd).boas,1,"em consolidando, pedir dica é normal e a sessão conta como boa");
+  /* resumo do dia para o cartão: não altera o estado */
+  const ps=aluno(),antes=JSON.stringify(ps),pd=T.planoDoDia(ps,0,"tablet");
+  igual(JSON.stringify(ps),antes,"planoDoDia não muda o estado");
+  ok(pd.revisoes===0&&pd.novos>=3&&!pd.semTarefa&&pd.minutos>=1&&pd.minutos<=5&&pd.tentativas===pd.novos*P.REPS_NOVO,"plano do primeiro dia: "+JSON.stringify(pd));
+  const vazio=aluno();T.catalogo().soma.facts.forEach(f=>pôr(vazio,f.id,{s:5,due:999,rev:5}));ok(T.planoDoDia(vazio,0).semTarefa,"tudo maduro e longe de vencer: sem tarefa");
+  /* precisa de nivelamento? */
+  ok(T.precisaNivelamento(aluno()),"aluno novo precisa");ok(!T.precisaNivelamento(Object.assign(aluno(),{nivelamento:{}})),"já fez: não precisa");
+  ok(!T.precisaNivelamento(Object.assign(aluno(),{pularNivelamento:true})),"pais pularam: não precisa");const comF=aluno();pôr(comF,"+:1:1",{s:1});ok(!T.precisaNivelamento(comF),"quem já tem fatos não precisa");
+  /* nivelamento devolve os fatos que mudou */
+  const nv=T.nivelamento.inicio("soma",7);let q;while((q=T.nivelamento.proximo(nv)))T.nivelamento.registrar(nv,q.fam,q.fam<=3?"rapido":"falhou");
+  const sn=aluno(),info=T.nivelamento.aplicar(sn,nv,0);
+  igual(info.ids.length,T.catalogo().soma.facts.filter(f=>f.fam<=3).length,"aplicar informa os fatos que mudou");ok(info.ids.every(id=>sn.fatos[id]&&sn.fatos[id].s>0),"e todos ficaram com estado");
 }
 
 console.log(falhas?"\n"+falhas+" falha(s)":"turbo: tudo certo");process.exit(falhas?1:0);

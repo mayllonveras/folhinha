@@ -116,6 +116,8 @@ function dicaPara(f){
 
 /* ---------- sessão ---------- */
 function proximoBloco(st,portoesAgora){
+  /* Carga reduzida (pré-requisitos fracos na primeira entrada): 1 a 2 fatos novos por sessão. */
+  var maxB=st.cargaReduzida?2:P.BLOCO_MAX,minB=st.cargaReduzida?1:P.BLOCO_MIN;
   var c=catalogo(),pt=portoesAgora||portoes(st),aprendendo=0;
   ORDEM.forEach(function(o){c[o].facts.forEach(function(f){var e=estado(st,f.id);if(e===1||e===2)aprendendo++})});
   if(aprendendo>=P.APRENDENDO_MAX)return [];
@@ -128,15 +130,15 @@ function proximoBloco(st,portoesAgora){
        Só passa para a família seguinte se a atual tem menos fatos novos do que o mínimo do bloco. */
     var bloco=[],usados={},fams=[];
     pool.forEach(function(f){if(fams.indexOf(f.fam)<0)fams.push(f.fam)});
-    for(var k=0;k<fams.length&&bloco.length<P.BLOCO_MIN;k++){
+    for(var k=0;k<fams.length&&bloco.length<minB;k++){
       var daFam=pool.filter(function(f){return f.fam===fams[k]}),ini=bloco.length;
       daFam.forEach(function(f){
-        if(bloco.length>=P.BLOCO_MAX)return;
+        if(bloco.length>=maxB)return;
         var meus=f.nums.filter(function(v,i){return f.nums.indexOf(v)===i});
         if(meus.some(function(v){return usados[v]}))return;
         bloco.push(f);meus.forEach(function(v){usados[v]=1});
       });
-      daFam.forEach(function(f){if(bloco.length-ini<Math.min(P.BLOCO_MIN,daFam.length)&&bloco.indexOf(f)<0)bloco.push(f)});
+      daFam.forEach(function(f){if(bloco.length<minB&&bloco.indexOf(f)<0)bloco.push(f)});   // completa até o mínimo do bloco, sem nunca passar do máximo
     }
     return bloco;
   }
@@ -169,11 +171,12 @@ function proximo(st,sess){
   var it=sess.fila.shift(),f=fato(st,it.id);
   return {id:it.id,tipo:it.tipo,rep:it.rep,dica:dicaPara(f)};
 }
-/* a: {id, ok, t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
+/* a: {id, tipo ('revisao'|'novo'|'reinsercao'), ok, t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
 function registrar(st,sess,a){
-  var f=fato(st,a.id),dia=sess.dia;
+  var f=fato(st,a.id),dia=sess.dia,antes=f.s;
   if(f.s===0){f.s=1;f.due=dia}
   var reg={ok:!!a.ok,t1:a.t1==null?null:a.t1,dica:a.dica||"none",contou:!!a.contou,aparelho:sess.aparelho};
+  (sess.log=sess.log||[]).push({fact:a.id,kind:a.tipo||"revisao",ok:reg.ok,t1:reg.t1,total:a.total!=null?a.total:null,hint:reg.dica,counted:reg.contou,stateBefore:antes});
   f.recent.push(reg);if(f.recent.length>10)f.recent.shift();
   var lista=sess.att[a.id]||(sess.att[a.id]=[],sess.ordemAtt.push(a.id),sess.att[a.id]);
   lista.push(reg);
@@ -206,7 +209,8 @@ function finalizarSessao(st,sess){
   sess.ordemAtt.forEach(function(id){
     var f=fato(st,id),atts=sess.att[id],antes=f.s;
     var errou=atts.some(function(a){return !a.ok});
-    var limpa=atts.every(function(a){return !a.contou&&a.dica!=="before"});
+    /* sessão "limpa": sem contar nos dedos, sem dica antes da tentativa e, em provável ou maduro, sem pedir dica (pedir dica é sinal de que o fato ainda não está maduro) */
+    var limpa=atts.every(function(a){return !a.contou&&a.dica!=="before"&&!(f.s>=4&&a.dica==="demand")});
     var tempos=atts.filter(function(a){return a.ok&&a.t1!=null}).map(function(a){return a.t1});
     var med=mediana(tempos),noTempo=med!=null&&med<=sess.meta;
     var acertoRecente=f.recent.length?f.recent.filter(function(r){return r.ok}).length/f.recent.length:0;
@@ -286,19 +290,57 @@ function classificar(t1,ok,meta){
   return t1<=meta?"rapido":"lento";
 }
 function nivelamentoAplicar(st,nv,dia){
-  var c=catalogo(),H=nv.lo,j=0;
+  var c=catalogo(),H=nv.lo,j=0,ids=[];
   if(H>=0){
     c[nv.op].facts.filter(function(f){return f.fam<=H&&estado(st,f.id)===0}).forEach(function(f){
       var alvo=nv.resultados[f.fam]==="lento"?2:3,x=fato(st,f.id);
-      x.s=alvo;x.atingiu=alvo===3;x.boas=0;x.due=dia+1+Math.floor(j++/P.NIVELAMENTO_POR_DIA);
+      x.s=alvo;x.atingiu=alvo===3;x.boas=0;x.due=dia+1+Math.floor(j++/P.NIVELAMENTO_POR_DIA);ids.push(f.id);
     });
   }
   st.nivelamento={op:nv.op,dia:dia,resultados:nv.resultados,maisAlta:H};
-  return st.nivelamento;
+  return Object.assign({},st.nivelamento,{ids:ids});
 }
+
+/* ---------- ponte com o banco (student_turbo_get / student_turbo_save) ---------- */
+/* O motor conta dias como números (dias desde 1970-01-01); o banco guarda datas AAAA-MM-DD. */
+function diaDe(s){if(s==null)return null;var p=String(s).slice(0,10).split("-");return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/86400000)}
+function dataDe(n){return n==null?null:new Date(n*86400000).toISOString().slice(0,10)}
+/* Resposta de student_turbo_get -> estado do motor. dia = hoje (número); se o pacotinho de hoje já saiu, o motor sabe. */
+function deBanco(d,dia){
+  var st=novoAluno({idade:d.age,liberadas:d.unlocked});
+  st.aparelhos=Object.assign({},d.devices||{});
+  st.nivelamento=d.placement||null;
+  st.cargaReduzida=!!(d.placement&&d.placement.pre&&d.placement.pre.falhou);
+  st.pularNivelamento=!!d.skip_placement;
+  if(d.today&&d.today.pack_given&&dia!=null)st.premios[dia]=1;
+  (d.facts||[]).forEach(function(f){
+    st.fatos[f.id]={s:f.s,n:f.n||0,diasOk:f.daysOk||0,ultimoDiaOk:diaDe(f.lastOkDay),boas:f.good||0,rev:f.rev||0,due:diaDe(f.due),
+      recent:f.recent||[],stub:!!f.stub,atingiu:!!f.reached,lat:f.lat==null?null:f.lat};
+  });
+  return st;
+}
+/* Fatos que mudaram -> linhas para student_turbo_save. */
+function fatosParaBanco(st,ids){
+  var vistos={},r=[];
+  ids.forEach(function(id){
+    if(vistos[id]||!st.fatos[id])return;vistos[id]=1;
+    var f=st.fatos[id];
+    r.push({id:id,s:f.s,n:f.n,daysOk:f.diasOk,lastOkDay:dataDe(f.ultimoDiaOk),good:f.boas,rev:f.rev,due:dataDe(f.due),recent:f.recent,lat:f.lat==null?null:Math.round(f.lat),stub:!!f.stub,reached:!!f.atingiu});
+  });
+  return r;
+}
+/* Resumo do dia para o cartão da tela inicial, sem alterar o estado. */
+function planoDoDia(st,dia,aparelho){
+  var s=iniciarSessao(st,{dia:dia,aparelho:aparelho||"desconhecido",rnd:function(){return .5}});
+  var rev=s.fila.filter(function(i){return i.tipo==="revisao"}).length,novos=s.bloco.length;
+  return {revisoes:rev,novos:novos,semTarefa:s.semTarefa,tentativas:Math.min(P.TETO_TENT,s.fila.length),
+          minutos:Math.min(P.TETO_SEG/60,Math.max(1,Math.round((rev*6+novos*45)/60)))};
+}
+/* O app precisa do nivelamento? Só quem ainda não tem fato nenhum, não fez e os pais não pularam. */
+function precisaNivelamento(st){return !st.nivelamento&&!st.pularNivelamento&&Object.keys(st.fatos).length===0}
 
 FC.turbo={P:P,ORDEM:ORDEM,REQ:REQ,catalogo:catalogo,porId:porId,rng:rng,novoAluno:novoAluno,estado:estado,fato:fato,portoes:portoes,metaDe:metaDe,
   dicaPara:dicaPara,proximoBloco:proximoBloco,iniciarSessao:iniciarSessao,proximo:proximo,registrar:registrar,concluida:concluida,ehChute:ehChute,
-  finalizarSessao:finalizarSessao,resumo:resumo,
+  finalizarSessao:finalizarSessao,resumo:resumo,diaDe:diaDe,dataDe:dataDe,deBanco:deBanco,fatosParaBanco:fatosParaBanco,planoDoDia:planoDoDia,precisaNivelamento:precisaNivelamento,
   nivelamento:{sentinelas:sentinelas,inicio:nivelamentoInicio,proximo:nivelamentoProximo,registrar:nivelamentoRegistrar,classificar:classificar,aplicar:nivelamentoAplicar}};
 })(typeof window!=="undefined"?window:globalThis);
