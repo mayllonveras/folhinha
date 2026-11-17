@@ -416,7 +416,7 @@ var BASES=[[3,"triangular"],[4,"quadrada"],[5,"pentagonal"],[6,"hexagonal"]];
 function gPrisma(){
   var k=pick([1,1,1,2]),b=pick(BASES),n=b[0],it;
   if(k===1){var prisma=Math.random()<.5,el=pick([0,1,2]),nome=["faces","arestas","vértices"][el],cont=prisma?[n+2,3*n,2*n][el]:[n+1,2*n,n+1][el];
-    it=typed("Um"+(prisma?" prisma":"a pirâmide")+" de base "+b[1]+" tem quantas "+nome+"?",cont);it.key="s36|1|"+prisma+"|"+n+"|"+el;it.limits=[["n36:t1",4],["n36:"+(prisma?"p":"q")+n,2]]}
+    it=typed("Um"+(prisma?" prisma":"a pirâmide")+" de base "+b[1]+" tem "+(el===2?"quantos ":"quantas ")+nome+"?",cont);it.key="s36|1|"+prisma+"|"+n+"|"+el;it.limits=[["n36:t1",4],["n36:"+(prisma?"p":"q")+n,2]]}
   else{var prisma2=Math.random()<.5,desc=prisma2?"duas bases "+b[1]+"s e as faces laterais retangulares":"uma base "+b[1]+" e as faces laterais triangulares",
       cert=(prisma2?"prisma":"pirâmide")+" de base "+b[1],w1=(prisma2?"pirâmide":"prisma")+" de base "+b[1],o=pick(BASES.filter(function(x){return x[0]!==n})),w2=(prisma2?"prisma":"pirâmide")+" de base "+o[1];
     it=choice("Um sólido tem "+desc+". Qual é o nome dele?",cert,[w1,w2],null);it.pre="Um sólido tem "+desc.replace("bases quadradas","bases quadradas")+". Qual é o nome dele?";it.key="s36|2|"+cert;it.limits=[["n36:t2",2]]}
