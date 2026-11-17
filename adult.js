@@ -17,6 +17,84 @@ var MIN_SHEETS=5,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns apare
 function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
+/* ---------- Trilha Turbo (resumo para os pais e configuração) ----------
+   Só o que ajuda o adulto: se a Turbo de hoje foi feita, quantos fatos já estão firmes em cada operação, quais fatos pedem atenção e quais aparelhos
+   a criança usa. Sem tempos em milissegundos, sem comparar com outras crianças, sem ranking. Regras em turbo/ESPECIFICACAO.md.
+   Se o banco não tiver as tabelas da Turbo, nada disto aparece e o resto do painel segue normal. */
+var TURBO_OK=null;
+async function turboLoad(id){
+  if(!FC.turbo)return null;
+  try{
+    var r=await Promise.all([
+      sb.rpc("adult_turbo_summary",{p_student:id,p_day:FC.today()}),
+      sb.from("turbo_students").select("unlocked,age,skip_placement,placement,devices").eq("student_id",id).maybeSingle(),
+      sb.from("turbo_days").select("study_day,status,attempts,promoted").eq("student_id",id).order("study_day",{ascending:false}).limit(14)]);
+    if(r[0].error||r[1].error||r[2].error){TURBO_OK=false;return null}
+    TURBO_OK=true;
+    return{sum:r[0].data||{},cfg:r[1].data,days:r[2].data||[]};
+  }catch(e){TURBO_OK=false;return null}
+}
+var DEV_NOME={celular:"Celular",tablet:"Tablet",computador:"Computador"};
+function turboPanel(t,s,today){
+  if(!t||!FC.turbo)return "";
+  var T=FC.turbo,cat=T.catalogo(),sum=t.sum||{},cfg=t.cfg||{},ops=sum.ops||{},unl=cfg.unlocked||["soma"],gate=Math.round(T.P.GATE*100);
+  var row=t.days.filter(function(d){return d.study_day===today})[0],kind=FC.dayKind(s,today);
+  var tag=row&&row.status==="done"?'<span class="tag ok">Turbo de hoje concluída</span>'
+    :row&&row.attempts>0?'<span class="tag warn">Turbo de hoje em andamento</span>'
+    :kind==="rest"?'<span class="tag">Hoje é descanso</span>':'<span class="tag">Turbo de hoje ainda não feita</span>';
+  var niv=cfg.placement?"Nivelamento feito"+(cfg.placement.dia!=null?" em "+FC.dm(T.dataDe(cfg.placement.dia)):""):cfg.skip_placement?"Nivelamento pulado pelos pais":"Nivelamento ainda não feito";
+  var pct={},bloq={},learning=0;
+  T.ORDEM.forEach(function(o){var f=(ops[o]&&ops[o].firm)||0;pct[o]=f/cat[o].facts.length;learning+=(ops[o]&&ops[o].learning)||0});
+  T.ORDEM.forEach(function(o){var req=T.REQ[o];bloq[o]=(o!=="soma"&&unl.indexOf(o)<0)||(!!req&&(bloq[req]||pct[req]<T.P.GATE))});
+  var rows=T.ORDEM.map(function(o){
+    var total=cat[o].facts.length,x=ops[o]||{},firm=x.firm||0,lrn=x.learning||0,req=T.REQ[o],nota="";
+    if(bloq[o])nota=(o!=="soma"&&unl.indexOf(o)<0)?"Não liberada para este aluno (aba Programa).":"Abre quando "+cat[req].nome+" chegar a "+gate+"% de fatos firmes (hoje "+Math.round(pct[req]*100)+"%).";
+    return '<div class="tp-row'+(bloq[o]?" off":"")+'"><div class="split"><b>'+esc(cat[o].nome)+'</b><span class="muted small-t num">'+firm+' de '+total+' firmes</span></div>'+
+      '<div class="tp-bar" role="img" aria-label="'+esc(cat[o].nome)+': '+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div>'+
+      (nota?'<small class="muted">'+esc(nota)+'</small>':'')+'</div>';
+  }).join("");
+  function chips(ids){return ids.map(function(id){var f=T.porId(id);return f?'<span class="tag num">'+esc(f.eq)+'</span>':""}).join(" ")}
+  var stub=sum.stubborn||[],slow=(sum.slowest||[]).filter(function(id){return stub.indexOf(id)<0});
+  var recent=t.days.filter(function(d){return d.attempts>0}).slice(0,3);
+  var alerta=recent.length===3&&learning>0&&recent.every(function(d){return d.promoted===0})
+    ?'<div class="panel offer"><b>Nos últimos 3 dias de Turbo, nenhum fato novo ficou firme</b><p class="small-t">Isso acontece em algumas fases e não é motivo de preocupação. Se continuar por mais alguns dias, vale sentar com ele numa sessão e ver onde ele trava.</p></div>':"";
+  var devs=Object.keys(cfg.devices||{}).map(function(k){return '<span class="tag">'+esc(DEV_NOME[k]||k)+' · '+cfg.devices[k]+(cfg.devices[k]===1?' sessão':' sessões')+'</span>'}).join(" ");
+  var comecou=T.ORDEM.some(function(o){return ops[o]&&ops[o].registered>0});
+  return '<div class="panel" id="turboBox"><div class="split"><div class="eyebrow">Trilha Turbo</div>'+tag+'</div>'+alerta+
+    (comecou?rows:'<p class="muted gap">'+(cfg.placement||cfg.skip_placement?'Ele ainda não treinou nenhum fato na Turbo.':'Ele ainda não começou a Turbo. Na primeira vez, ela abre com um jogo rápido para descobrir por onde começar.')+'</p>')+
+    (stub.length?'<div class="gap"><div class="eyebrow">Fatos teimosos</div><p class="muted small-t">Ele já tinha aprendido e voltou a errar. A Turbo traz de volta com uma dica.</p><div class="tp-chips">'+chips(stub)+'</div></div>':'')+
+    (slow.length?'<div class="gap"><div class="eyebrow">Fatos mais demorados</div><p class="muted small-t">Os que ele ainda leva mais tempo para responder.</p><div class="tp-chips">'+chips(slow)+'</div></div>':'')+
+    (devs?'<div class="gap"><div class="eyebrow">Aparelhos usados</div><div class="tp-chips">'+devs+'</div></div>':'')+
+    '<p class="muted small-t gap">'+esc(niv)+'. Fato firme é o que ele já responde sem pensar muito e que foi revisado em dias diferentes. A parte mais escura da barra mostra os firmes; a clara, os que estão em treino.</p></div>';
+}
+/* Configuração no cadastro e no programa: pular o jogo de nivelamento e escolher quais operações podem abrir. */
+function turboFields(s){
+  if(TURBO_OK===false||!FC.turbo)return "";
+  var T=FC.turbo,cfg=s&&s._turbo,unl=(cfg&&cfg.unlocked)||["soma"],feito=!!(cfg&&cfg.placement),pula=!!(cfg&&cfg.skip_placement);
+  var ops=T.ORDEM.map(function(o){
+    return '<label class="chk"><input type="checkbox" name="tops" value="'+o+'"'+(o==="soma"||unl.indexOf(o)>=0?" checked":"")+(o==="soma"?" disabled":"")+'><span>'+esc(T.catalogo()[o].nome)+'</span></label>'}).join("");
+  return '<details class="adv" id="pTurbo"><summary>Trilha Turbo: nivelamento e operações</summary><div class="adv-body">'+
+    '<label class="consent-chk"><input type="checkbox" id="pTurboSkip"'+(pula?" checked":"")+(feito?" disabled":"")+'><span>Pular o jogo de nivelamento da primeira entrada</span></label>'+
+    '<small>'+(feito?"O nivelamento já foi feito.":"O jogo leva uns 5 minutos e descobre por onde a criança começa na Turbo. Se pular, ela começa do primeiro fato.")+'</small>'+
+    '<fieldset class="field"><legend>Operações que a Turbo pode abrir</legend><div class="chks">'+ops+'</div>'+
+    '<small>A soma é sempre liberada. Cada operação só abre quando a base dela está firme (85% dos fatos). Subtração, multiplicação e divisão ainda estão em teste.</small></fieldset></div></details>';
+}
+function readTurbo(){
+  var box=$("#pTurbo");if(!box)return null;
+  var skip=$("#pTurboSkip"),unl=["soma"].concat($$('input[name="tops"]:checked',box).map(function(c){return c.value}).filter(function(o){return o!=="soma"}));
+  return{unlocked:unl,skip:skip&&!skip.disabled?skip.checked:null};
+}
+async function saveTurbo(id,t){
+  if(!t)return true;
+  try{
+    var ex=await sb.from("turbo_students").select("student_id").eq("student_id",id).maybeSingle();
+    if(ex.error)return false;
+    var patch={unlocked:t.unlocked};if(t.skip!=null)patch.skip_placement=t.skip;
+    var r=ex.data?await sb.from("turbo_students").update(patch).eq("student_id",id):await sb.from("turbo_students").insert(Object.assign({student_id:id},patch));
+    return !r.error;
+  }catch(e){return false}
+}
+
 /* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado e #/aluno/ID/ABA. */
 var PAI_TABS=["resumo","album","historico","dificuldades","programa","acesso"];
 function route(path){
@@ -126,7 +204,7 @@ function todayDone(s,sheets){var t=FC.today();return sheets.filter(function(x){r
 
 async function dash(){
   FC.render('<p class="loading">Carregando…</p>');
-  var prof,students,sheets;
+  var prof,students,sheets,tdays=null;
   try{
     if(!U.user){var g=await sb.auth.getUser();if(g.error||!g.data.user)return showAuth("login");U.user=g.data.user}
     var res=await Promise.all([
@@ -135,15 +213,21 @@ async function dash(){
       q(sb.from("sheets").select("student_id,study_day").eq("status","done").gte("study_day",FC.addDays(FC.today(),-60)))]);
     prof=res[0];students=res[1];sheets=res[2];
     await ensurePub();
+    if(FC.turbo){try{var tdr=await sb.from("turbo_days").select("student_id,status,attempts").eq("study_day",FC.today());if(!tdr.error)tdays=tdr.data||[]}catch(e){}}   // a linha da Turbo é um extra: se falhar, a lista abre igual
   }catch(e){return errScreen(e,dash)}
   U.profile=prof||{name:"",role:"pai"};
   var today=FC.today(),cards=students.map(function(s){
     var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,pct=Math.min(100,Math.round(100*Math.min(s.stamps,need)/need));
     var kind=FC.dayKind(s,today),done=todayDone(s,sheets);
     var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
+    var tl="";
+    if(tdays&&kind!=="rest"&&today>=s.start_date){
+      var tr=tdays.filter(function(x){return x.student_id===s.id})[0];
+      tl=tr&&tr.status==="done"?"Turbo de hoje: concluída":tr&&tr.attempts>0?"Turbo de hoje: em andamento":"Turbo de hoje: ainda não feita";
+    }
     return '<div class="cardwrap"><button type="button" class="card-qr" data-qr="'+s.id+'" title="Mostrar o QR Code do aluno" aria-label="Mostrar o QR Code de '+esc(s.name)+'">'+FC.icon("qr")+'</button><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
       '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
-      '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+
+      '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+(tl?'<div class="muted small-t">'+tl+'</div>':'')+
       '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
       (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button></div>';
   }).join("");
@@ -255,7 +339,7 @@ function programFields(s){
       '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
       '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
       '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não perde a sequência. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
-    '</div></details>'+
+    '</div></details>'+turboFields(s)+
     '<details class="adv"><summary>Ver como o aluno avança</summary>'+rulesBox()+'</details>';
 }
 function rulesBox(){
@@ -346,7 +430,7 @@ function readProgram(){
   if(lvl<0)return{error:"A grade ainda não tem o "+anoV+"º ano. Escolha outro ano."};
   return{v:{name:name,level_idx:lvl,start_date:$("#pStart").value,study_days:days,free_days:checkedVals("free").filter(function(d){return days.indexOf(d)<0}),
     sheets_per_day:Number($("#pPer").value),sticker_themes:themes,sticker_theme:themes[0],
-    ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV),consent:consent}};
+    ano_escolar:anoV===""?null:Number(anoV),teto_anos:tetoV===""?null:Number(tetoV),consent:consent},turbo:readTurbo()};
 }
 
 async function showForm(){
@@ -363,6 +447,7 @@ async function showForm(){
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
       p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days,p_consent:true});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
+    if(r.turbo&&!(await saveTurbo(res.data.id,r.turbo)))FC.toast("Aluno cadastrado, mas não deu para salvar a opção da Turbo. Ajuste na aba Programa.",true);
     created(r.v.name,res.data.link_code,res.data.id);
   };
 }
@@ -436,6 +521,7 @@ async function detail(id){
     if(!mv.error)moves=mv.data||[];
     profs=await q(sb.from("profiles").select("id,name,role").in("id",guards.map(function(g){return g.user_id})));
   }catch(e){return errScreen(e,function(){detail(id)})}
+  var turbo=await turboLoad(id);s._turbo=turbo&&turbo.cfg;   // a Turbo nunca impede o painel de abrir
   var iAmOwner=guards.some(function(g){return g.user_id===U.user.id&&g.role==="owner"});
   var link=linkFor(s.link_code),today=FC.today(),L=FC.LEVELS[s.level_idx];
   var sk=FC.streakNow(s,today);
@@ -532,7 +618,7 @@ async function detail(id){
     '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
       (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div></div>';
-  var resumo=doneNotice+notices+stats+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
+  var resumo=doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
@@ -619,7 +705,8 @@ async function detail(id){
     $("#fBtn").disabled=true;
     var res=await sb.from("students").update(patch).eq("id",id);
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
-    FC.toast("Programa salvo.");detail(id);
+    var turboOk=await saveTurbo(id,r.turbo);
+    FC.toast(turboOk?"Programa salvo.":"Programa salvo, mas não deu para salvar a opção da Turbo.",!turboOk);detail(id);
   };
   $$("[data-sheet]").forEach(function(b){b.onclick=function(){openSheet(b.getAttribute("data-sheet"),b)}});
   var onlyErr=$("#onlyErr");

@@ -209,7 +209,7 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 | Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
 | Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
 | Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e pacotinho | **feitas e testadas no navegador** (item 13) |
-| Painel dos pais | não feito |
+| Painel dos pais (`adult.js`): resumo da Turbo na aba Resumo, linha "Turbo de hoje" na lista de alunos, opções no cadastro e na aba Programa | **feito e testado** (item 14) |
 
 ## 13. Telas do aluno: o que foram e o que ficou de fora
 
@@ -231,5 +231,18 @@ Arquivo `turbo-aluno.js`, ligado ao `student.js` por `FC.turboUi` (o `student.js
 - **O aquecimento não é gravado** como tentativa, porque o banco só aceita tentativas ligadas a um fato. A parte de pré-requisitos também não vira tentativa: só o resumo vai no resultado do nivelamento.
 - **Nivelamento cria uma linha em `turbo_days`** com 0 tentativas e estado "started". O cartão ignora essa linha.
 - O tempo foi testado com navegador emulado, não com um toque real em tablet ou celular.
-- O painel dos pais continua sem fazer.
+
+## 14. Painel dos pais
+
+Em `adult.js`, sem nova aba (o menu do celular já tem 6). Decisão 5 do item 11.
+
+- **Lista de alunos:** uma linha "Turbo de hoje: concluída / em andamento / ainda não feita".
+- **Aba Resumo, painel "Trilha Turbo":** se a Turbo de hoje foi feita; para cada operação, a barra de fatos firmes (parte escura) e em treino (parte clara), com "N de total firmes"; operação travada explica por quê ("Abre quando a Soma chegar a 85%, hoje 45%" ou "Não liberada para este aluno"); até 3 **fatos teimosos** e até 3 **fatos mais demorados**, escritos como conta ("7 × 8"); aparelhos usados, com o número de sessões; e se o nivelamento foi feito, quando, ou se foi pulado. Nada de milissegundos, de comparação com outras crianças ou de ranking.
+- **Aviso neutro de "sem progresso":** se nos últimos 3 dias de Turbo, com pelo menos 1 tentativa, nenhum fato ficou mais firme, e ainda há fatos em treino. O texto diz que isso acontece em algumas fases e sugere sentar com a criança. O dia do nivelamento (0 tentativas) não conta.
+- **Cadastro e aba Programa, seção "Trilha Turbo: nivelamento e operações":** pular o jogo de nivelamento (trava depois de feito) e escolher quais operações a Turbo pode abrir (soma sempre liberada; as outras continuam sujeitas ao portão de 85% e estão marcadas como "em teste"). Quem não mexe fica com o padrão: nivelamento ligado, só a soma.
+- Se o banco não tiver as tabelas da Turbo, nada disso aparece e o painel segue normal.
+
+**Verificado no banco de produção** (numa transação desfeita, assumindo a identidade de um responsável cadastrado): ele lê os fatos e o resumo do próprio aluno, cria e altera a configuração, e **não** consegue alterar o nivelamento nem os fatos nem ler as tentativas. Um adulto que não é responsável não vê nenhum dado e não grava nada, e o resumo dele vem vazio.
+
+**Ficou de fora:** não há tela para o responsável informar a idade (a Turbo calcula pela série); o aviso de "sem progresso" usa só os dias de Turbo; e o resumo não mostra o histórico dia a dia.
 
