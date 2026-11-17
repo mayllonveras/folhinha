@@ -444,15 +444,32 @@ async function detail(id){
   /* Os pais veem só a capa de cada álbum liberado e as figurinhas que a criança já conquistou: nunca as que ainda faltam
      (a criança pode pegar o celular do adulto e descobrir figurinhas antes de ganhar). */
   var doneNotice=s.albums_done_at?'<div class="panel offer"><b>'+esc(s.name)+' completou todos os álbuns!</b><p class="small-t">Ele não vai mais receber figurinhas, porque todos os álbuns liberados estão completos. Quer liberar outro álbum?</p><div class="actions"><button class="btn small" data-more="1">Liberar mais álbuns</button></div></div>':"";
+  /* Mesmo formato da criança: capas com "3 de 52", abas Mesa e Gaveta; tocar na capa abre o álbum (capa grande + só as já conquistadas). */
+  var gotBy={};
+  themeIds.forEach(function(id){var seen={};gotBy[id]=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}})});
+  var fullIds=themeIds.filter(function(id){return gotBy[id].length>=FC.ALBUM_SIZE});
+  var deskIds=(s.desk_themes&&s.desk_themes.length?s.desk_themes:themeIds.slice(0,2)).filter(function(id){return themeIds.indexOf(id)>=0&&fullIds.indexOf(id)<0});
+  var drawerIds=themeIds.filter(function(id){return deskIds.indexOf(id)<0&&fullIds.indexOf(id)<0});
+  var AL={sub:"mesa",open:null};
+  function cap(id){return '<button type="button" class="cover-card" data-aopen="'+id+'" aria-label="'+esc(FC.theme(id).name)+', '+gotBy[id].length+' de '+FC.ALBUM_SIZE+'">'+FC.themeCapa(id)+'<span class="cover-badge num">'+gotBy[id].length+' de '+FC.ALBUM_SIZE+'</span></button>'}
+  function grid(list,empty){return list.length?'<div class="cover-grid">'+list.map(cap).join("")+'</div>':'<p class="muted small-t">'+empty+'</p>'}
+  function albPaneHtml(){
+    if(AL.open){
+      var id=AL.open,th=FC.theme(id),got=gotBy[id];
+      return '<div class="pagehead"><button type="button" class="link crumb" data-aback>'+FC.icon("back")+'Álbuns</button></div>'+
+        '<div class="album-big">'+FC.themeCapa(id)+'</div>'+
+        '<div class="split gap"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+(got.length>=FC.ALBUM_SIZE?' ✔':'')+'</span></div>'+
+        '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
+        '<p class="muted small-t gap">'+esc(th.desc)+'</p>'+
+        (got.length?'<p class="muted small-t">Aqui aparecem só as figurinhas que a criança já conquistou. Toque em uma figurinha para ver o verso.</p><div class="gap">'+FC.albumHtml(id,got,{adult:true,only:true})+'</div>':'<p class="muted small-t gap">A criança ainda não conquistou nenhuma figurinha deste álbum.</p>');
+    }
+    var tabs='<div class="album-tabs" role="tablist">'+[["mesa","Mesa ("+deskIds.length+")"],["gaveta","Gaveta ("+(drawerIds.length+fullIds.length)+")"]].map(function(t){
+      return '<button type="button" class="chip-btn'+(AL.sub===t[0]?" on":"")+'" role="tab" aria-selected="'+(AL.sub===t[0])+'" data-asub="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>';
+    return tabs+(AL.sub==="mesa"?grid(deskIds,"A mesa está vazia."):grid(drawerIds,"Nenhum álbum na gaveta.")+(fullIds.length?'<div class="eyebrow gap">Completos ('+fullIds.length+')</div>'+grid(fullIds,""):""));
+  }
   var rewardPanel=doneNotice+'<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
     (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
-    '<p class="muted small-t">Aqui aparecem só as figurinhas que a criança já conquistou. Toque em uma figurinha para ver o verso.</p>'+
-    themeIds.map(function(id,i){
-      var th=FC.theme(id),seen={},got=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}});
-      return '<details class="album-detail gap"'+(i===0?" open":"")+'><summary>'+esc(th.name)+' · '+got.length+' de '+FC.ALBUM_SIZE+(got.length>=FC.ALBUM_SIZE?' ✔':'')+'</summary>'+
-        '<div class="album-head gap">'+FC.themeCapa(id)+'<p class="grow muted small-t">'+esc(th.desc)+'</p></div>'+
-        (got.length?'<div class="gap">'+FC.albumHtml(id,got,{adult:true,only:true})+'</div>':'<p class="muted small-t gap">A criança ainda não conquistou nenhuma figurinha deste álbum.</p>')+'</details>';
-    }).join("")+'</div>';
+    '<div id="albPane">'+albPaneHtml()+'</div></div>';
   var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
 
   /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
@@ -551,6 +568,14 @@ async function detail(id){
     if(r.error){lib.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Limite liberado: mais 1 ano à frente.");detail(id);
   };
+  function bindAlb(){
+    var box=$("#albPane");if(!box)return;
+    function redraw(){box.innerHTML=albPaneHtml();bindAlb()}
+    $$("[data-asub]",box).forEach(function(b){b.onclick=function(){AL.sub=b.getAttribute("data-asub");redraw()}});
+    $$("[data-aopen]",box).forEach(function(b){b.onclick=function(){AL.open=b.getAttribute("data-aopen");redraw()}});
+    $$("[data-aback]",box).forEach(function(b){b.onclick=function(){AL.open=null;redraw()}});
+  }
+  bindAlb();
   $$("[data-more]").forEach(function(b){b.onclick=function(){
     FC.tabState.pai="programa";try{sessionStorage.setItem("fc_tab_pai","programa")}catch(e){}
     detail(id).then(function(){var el=$("#pThemes");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})});
