@@ -86,7 +86,7 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 .msg{font-size:.92rem;color:var(--muted);min-height:1.2em}
 .msg.bad{color:var(--mark)} .msg.good{color:var(--ok)}
 .authbox,.pinbox{max-width:440px;width:100%;margin:0 auto}
-.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .tab{flex:1;border:1px solid var(--line);background:transparent;border-radius:10px;padding:10px;font-weight:600}
 .tab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .linkrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}

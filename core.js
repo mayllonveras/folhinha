@@ -77,6 +77,14 @@ FC.err=function(e){
     ["pedido_repetido","Você já fez esse mesmo pedido de troca."],
     ["muitos_pedidos","Você já tem 10 pedidos de troca esperando. Cancele algum para fazer outro."],
     ["pedido_invalido","Esse pedido de troca não existe mais."],
+    ["cupom_invalido","Esse cupom não existe ou não está mais valendo. Confira se digitou certinho."],
+    ["cupom_fora_do_prazo","Esse cupom está fora do prazo de validade."],
+    ["cupom_ja_usado","Você já usou esse cupom."],
+    ["cupom_so_novos","Esse cupom é só para quem ainda não assinou."],
+    ["cupom_esgotado","Esse cupom já foi usado o máximo de vezes."],
+    ["cupom_muitas_tentativas","Muitos cupons errados seguidos. Tente de novo daqui a 1 hora."],
+    ["cupom_em_uso","Esse cupom já foi usado: dá para mudar validade, limite e observação, mas não o tipo nem o valor."],
+    ["cupom_codigo_invalido","O código do cupom tem de 3 a 30 letras, números ou hífen, sem espaço."],
     ["plano_albuns","No plano Grátis a criança tem 1 álbum. Com o VIP, todos os álbuns ficam liberados."],
     ["plano_album","No plano Grátis os pacotinhos abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
     ["plano_alunos","Você chegou ao limite de alunos do seu plano. No VIP, a família cadastra até 4 crianças."],
@@ -109,7 +117,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v65";
+FC.VERSAO="folhinha-v66";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
