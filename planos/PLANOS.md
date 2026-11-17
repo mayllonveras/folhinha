@@ -17,8 +17,8 @@ Decisões do professor (17/11/2026) e a ordem de implementação.
 
 | Fase | O que entra | Situação |
 |---|---|---|
-| 1 | `entitlements`, limites do Grátis no banco, teste de 14 dias, Fundador, "Dar VIP" no /adm, tela Planos | `migracoes/2026-11-17-plano-vip.sql` |
-| 2 | Cupons (% de desconto, valor fixo, meses grátis, vitalício), tela de cupons no /adm | a fazer |
+| 1 | `entitlements`, limites do Grátis no banco, teste de 14 dias, Fundador, "Dar VIP" no /adm, tela Planos | `migracoes/2026-11-17-plano-vip.sql` (aplicada em 17/11/2026) |
+| 2 | Cupons (% de desconto, valor fixo, meses grátis, vitalício), tela de cupons no /adm | `migracoes/2026-11-18-cupons.sql` |
 | 3 | Asaas: assinatura mensal e anual, webhook numa Edge Function do Supabase, histórico de pagamentos | a fazer |
 | 4 | Indicação: link, 1 mês grátis, pacote especial das crianças, painel de indicações | a fazer |
 
@@ -31,3 +31,14 @@ Decisões do professor (17/11/2026) e a ordem de implementação.
 - A aba Atenção do painel dos pais é trancada **só na tela**: os dados vêm da tabela `sheets`, que os pais leem pelo RLS (e são dados do próprio filho).
 
 Testes do banco: `testes/banco/planos.sh` (usa a cópia da estrutura de produção em `testes/banco/replica/`).
+
+## Como os cupons funcionam (fase 2)
+
+- **Meses de VIP** e **vitalício** viram VIP na hora (linha em `entitlements` com `source = 'cupom'`). Meses somam a partir do fim do VIP atual.
+- **Desconto** (% ou R$) fica **guardado** na conta (`coupon_redemptions.status = 'reservado'`) e a fase 3 aplica na hora de assinar. Um desconto novo substitui o guardado. Cada desconto diz em quantas cobranças vale (1, N ou todas) e em que plano (mensal, anual ou os dois).
+- Regras por cupom: período de validade, limite total de usos, uma vez por conta, só para quem nunca assinou, ativo ou não.
+- Cupom usado não muda de tipo nem de valor e não é apagado: o /adm desativa.
+- Contra chute de códigos: 10 códigos errados por conta em 1 hora bloqueiam por 1 hora.
+- Onde fica: o pai usa o cupom na tela Planos; o professor cria e acompanha na aba Cupons do /adm.
+
+Testes do banco dos cupons: `testes/banco/cupons.sh`.

@@ -68,9 +68,41 @@ async function showPlans(){
     '<div class="panel"><div class="tablewrap"><table class="plan-table"><thead><tr><th></th><th>Grátis</th><th>VIP</th></tr></thead><tbody>'+
       PLAN_ROWS.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td><b>'+esc(r[2])+'</b></td></tr>'}).join("")+'</tbody></table></div>'+
       '<p class="small-t muted gap">Conta nova começa com '+planLim("teste_dias",14)+' dias de VIP, sem cartão. Quando o VIP acaba, nada do que a criança conquistou se perde: figurinhas, amigos e histórico ficam guardados.</p></div>'+
+    '<div class="panel" id="cupBox"><div class="eyebrow">Tem um cupom?</div>'+
+      '<form id="cupForm" class="form inline" novalidate><label class="field grow">Código do cupom<input id="cupCode" maxlength="30" autocomplete="off" autocapitalize="characters" placeholder="Ex.: BLACKFRIDAY50"></label><button class="btn" type="submit" id="cupBtn">Usar cupom</button></form>'+
+      '<p class="msg" id="cupMsg" role="alert"></p><div id="cupList"></div></div>'+
     '<div class="panel center"><b>A assinatura online chega em breve</b><p class="small-t muted">Pix, cartão e boleto. Avisamos por aqui assim que abrir.</p></div>');
   FC.nav.at("/planos");bindTop();
   $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
+  bindCoupons();
+}
+/* ---------- cupons (migracoes/2026-11-18-cupons.sql) ----------
+   Cupom de meses ou vitalício vira VIP na hora. Cupom de desconto fica guardado e vale quando a assinatura abrir. */
+async function loadCoupons(){
+  var box=$("#cupList");if(!box)return;
+  var r;try{r=await sb.rpc("adult_coupons")}catch(e){return}
+  if(r.error||!r.data||!r.data.length){box.innerHTML="";return}
+  box.innerHTML='<ul class="plain small-t gap">'+r.data.map(function(c){
+    return '<li><b>'+esc(c.code)+'</b>: '+esc(c.text)+(c.status==="reservado"?' <span class="tag ok">guardado para a assinatura</span>':c.status==="usado"?' <span class="tag">já usado na assinatura</span>':' <span class="tag ok">aplicado</span>')+'</li>'}).join("")+'</ul>';
+}
+function bindCoupons(){
+  var f=$("#cupForm");if(!f)return;
+  loadCoupons();
+  f.onsubmit=async function(e){
+    e.preventDefault();
+    var code=$("#cupCode").value.trim(),msg=$("#cupMsg"),btn=$("#cupBtn");
+    if(!code){msg.textContent="Digite o código do cupom.";msg.className="msg bad";return}
+    btn.disabled=true;
+    var r=await sb.rpc("adult_redeem_coupon",{p_code:code});
+    btn.disabled=false;
+    if(r.error){msg.textContent=FC.err(r.error);msg.className="msg bad";return}
+    if(!r.data.ok){msg.textContent=FC.err({message:r.data.why});msg.className="msg bad";return}
+    if(r.data.reserved){
+      $("#cupCode").value="";msg.textContent="Cupom guardado: "+r.data.text+". Ele vale quando você assinar o VIP.";msg.className="msg good";loadCoupons();
+    }else{
+      FC.toast("Cupom aplicado: "+r.data.text+"!");showPlans();
+    }
+  };
 }
 
 /* ---------- Trilha Turbo (resumo para os pais e configuração) ----------

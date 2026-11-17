@@ -5,7 +5,7 @@
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 function catalogo(){return (FC.EX||[]).concat(FC.G1||[],FC.G2||[],FC.G3||[],FC.G4||[],FC.G5||[])}
 function porId(id){return catalogo().filter(function(e){return e.id===id})[0]}
-var DATA=null,SET=null,SETERR=null,LEV=null,TAB="alunos",FILTER="";
+var DATA=null,SET=null,SETERR=null,LEV=null,CUP=null,CUPEDIT=null,TAB="alunos",FILTER="";
 
 function dt(s){if(!s)return "—";var d=new Date(s);return FC.pad(d.getDate())+"/"+FC.pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+FC.pad(d.getHours())+":"+FC.pad(d.getMinutes())}
 function dtDay(s){return s?dt(s).slice(0,10):"—"}
@@ -15,8 +15,8 @@ function bar(email){
 }
 function bindBar(){var b=$("#logout");if(b)b.onclick=async function(){await sb.auth.signOut();login()}}
 
-/* Endereços da administração: #/ (alunos), #/contas, #/parametros, #/exercicios. */
-var TABS_ADM=["alunos","contas","parametros","exercicios"],ADMU=null;
+/* Endereços da administração: #/ (alunos), #/contas, #/cupons, #/parametros, #/exercicios. */
+var TABS_ADM=["alunos","contas","cupons","parametros","exercicios"],ADMU=null;
 function admPath(tab){return tab==="alunos"?"/":"/"+tab}
 function admRoute(path){
   var t=path==="/"?"alunos":path.slice(1);
@@ -66,6 +66,8 @@ async function load(user){
   SET=sr.error?null:sr.data;SETERR=sr.error?FC.err(sr.error):null;
   var lr=await sb.rpc("admin_levels");   /* só existe depois da migração da etapa 4a */
   LEV=lr.error?null:lr.data;
+  var cr=await sb.rpc("admin_coupons");   /* só existe depois da migração dos cupons */
+  CUP=cr.error?null:cr.data;
   show(user);
 }
 
@@ -283,6 +285,76 @@ function bindAccounts(user){
   });
 }
 
+/* ---------- cupons (migracoes/2026-11-18-cupons.sql) ----------
+   Tipos: meses e vitalício viram VIP na hora; percentual e valor são desconto na assinatura (guardado até a fase 3).
+   Cupom usado não muda de tipo nem de valor; para parar de valer, desative (o histórico fica). */
+var CUP_KIND={percentual:"% de desconto",valor:"R$ de desconto",meses:"Meses de VIP",vitalicio:"VIP vitalício"};
+function isoLocal(v,endOfDay){if(!v)return null;var d=new Date(v+(endOfDay?"T23:59:59":"T00:00:00"));return isNaN(d)?null:d.toISOString()}
+function dayInput(iso){if(!iso)return "";var d=new Date(iso);return d.getFullYear()+"-"+FC.pad(d.getMonth()+1)+"-"+FC.pad(d.getDate())}
+function cupStatus(c){
+  var now=Date.now();
+  if(!c.active)return '<span class="tag">desativado</span>';
+  if(c.valid_from&&new Date(c.valid_from)>now)return '<span class="tag">começa '+dtDay(c.valid_from)+'</span>';
+  if(c.valid_until&&new Date(c.valid_until)<=now)return '<span class="tag">vencido</span>';
+  if(c.max_uses&&c.uses>=c.max_uses)return '<span class="tag">esgotado</span>';
+  return '<span class="tag ok">valendo</span>';
+}
+function cuponsHtml(){
+  var e=CUPEDIT||{kind:"percentual",plans:"ambos"},editing=!!CUPEDIT,used=editing&&e.uses>0,dis=used?" disabled":"";
+  function opt(v,l,cur){return '<option value="'+v+'"'+(cur===v?" selected":"")+'>'+l+'</option>'}
+  var form='<form id="cupForm" class="form" novalidate><h2>'+(editing?"Editar cupom "+esc(e.code):"Novo cupom")+'</h2>'+
+    (used?'<p class="small-t muted">Este cupom já foi usado: dá para mudar validade, limite, “só contas novas” e observação.</p>':'')+
+    '<div class="two"><label class="field">Código<input id="cCode" maxlength="30" autocomplete="off" autocapitalize="characters" value="'+esc(e.code||"")+'"'+(editing?" disabled":"")+' placeholder="Ex.: BLACKFRIDAY50"><small>Letras, números e hífen.</small></label>'+
+    '<label class="field">Tipo<select id="cKind"'+dis+'>'+Object.keys(CUP_KIND).map(function(k){return opt(k,CUP_KIND[k],e.kind)}).join("")+'</select></label></div>'+
+    '<div class="two"><label class="field" id="cValBox">Valor<input id="cVal" type="number" min="0" step="0.01" inputmode="decimal" value="'+(e.value!=null&&e.kind!=="vitalicio"?esc(e.value):"")+'"'+dis+'><small id="cValHint"></small></label>'+
+    '<label class="field" id="cPlansBox">Vale no plano<select id="cPlans"'+dis+'>'+opt("ambos","Mensal e anual",e.plans)+opt("mensal","Só mensal",e.plans)+opt("anual","Só anual",e.plans)+'</select></label></div>'+
+    '<label class="field" id="cCyclesBox">Quantas cobranças<input id="cCycles" type="number" min="1" max="120" inputmode="numeric" value="'+(e.cycles||"")+'"'+dis+' placeholder="vazio = todas"><small>1 = só a primeira cobrança.</small></label>'+
+    '<div class="two"><label class="field">Começa em<input id="cFrom" type="date" value="'+dayInput(e.valid_from)+'"><small>Vazio = já vale.</small></label>'+
+    '<label class="field">Termina em (inclusive)<input id="cUntil" type="date" value="'+dayInput(e.valid_until)+'"><small>Vazio = sem prazo.</small></label></div>'+
+    '<div class="two"><label class="field">Limite de usos<input id="cMax" type="number" min="1" inputmode="numeric" value="'+(e.max_uses||"")+'" placeholder="vazio = sem limite"></label>'+
+    '<label class="field">Observação<input id="cNote" maxlength="200" value="'+esc(e.note||"")+'" placeholder="Ex.: Black Friday 2026"></label></div>'+
+    '<label class="inline-chk"><input type="checkbox" id="cNew"'+(e.only_new?" checked":"")+'> Só para quem ainda não assinou</label>'+
+    '<p class="msg bad" id="cMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="cSave">'+(editing?"Salvar":"Criar cupom")+'</button>'+
+    (editing?'<button class="btn ghost" type="button" id="cCancel">Cancelar</button>':'')+'</div></form>';
+  var rows=(CUP||[]).map(function(c){
+    return '<tr><td><b>'+esc(c.code)+'</b>'+(c.note?'<div class="muted small-t">'+esc(c.note)+'</div>':'')+'</td><td>'+esc(c.text)+(c.only_new?'<div class="muted small-t">só quem não assinou</div>':'')+'</td>'+
+      '<td>'+(c.valid_from?dtDay(c.valid_from):"—")+' a '+(c.valid_until?dtDay(c.valid_until):"—")+'</td><td>'+c.uses+(c.max_uses?' de '+c.max_uses:'')+(c.reserved?'<div class="muted small-t">'+c.reserved+' guardado'+(c.reserved>1?'s':'')+'</div>':'')+'</td>'+
+      '<td>'+cupStatus(c)+'</td><td><button type="button" class="link small-t" data-cedit="'+esc(c.code)+'">editar</button> · <button type="button" class="link small-t" data-ctog="'+esc(c.code)+'" data-on="'+(c.active?0:1)+'">'+(c.active?"desativar":"ativar")+'</button></td></tr>'});
+  return '<div class="panel">'+form+'</div>'+(rows.length?table(["Código","O que dá","Validade","Usos","Situação",""],rows):'<p class="muted gap">Nenhum cupom ainda.</p>');
+}
+function bindCupons(user){
+  var f=$("#cupForm");if(!f)return;
+  function kindUi(){
+    var k=$("#cKind").value,disc=k==="percentual"||k==="valor";
+    $("#cValBox").hidden=k==="vitalicio";$("#cPlansBox").hidden=!disc;$("#cCyclesBox").hidden=!disc;
+    $("#cValHint").textContent=k==="percentual"?"De 1 a 100 (%).":k==="valor"?"Em reais, por cobrança.":k==="meses"?"Quantos meses de VIP (1 a 120).":"";
+  }
+  $("#cKind").onchange=kindUi;kindUi();
+  var cc=$("#cCancel");if(cc)cc.onclick=function(){CUPEDIT=null;show(user)};
+  f.onsubmit=async function(e){
+    e.preventDefault();
+    var k=$("#cKind").value,disc=k==="percentual"||k==="valor",msg=$("#cMsg");
+    var p={code:(CUPEDIT?CUPEDIT.code:$("#cCode").value).trim().toUpperCase(),valid_from:isoLocal($("#cFrom").value,false),valid_until:isoLocal($("#cUntil").value,true),
+      max_uses:$("#cMax").value?Number($("#cMax").value):null,only_new:$("#cNew").checked,note:$("#cNote").value.trim()};
+    if(!(CUPEDIT&&CUPEDIT.uses>0)){
+      p.kind=k;p.value=k==="vitalicio"?0:Number($("#cVal").value||0);
+      p.plans=disc?$("#cPlans").value:"ambos";p.cycles=disc&&$("#cCycles").value?Number($("#cCycles").value):null;
+      if(k!=="vitalicio"&&!(p.value>0)){msg.textContent="Informe o valor do cupom.";return}
+    }
+    $("#cSave").disabled=true;
+    var r=await sb.rpc("admin_save_coupon",{p:p});
+    if(r.error){$("#cSave").disabled=false;msg.textContent=FC.err(r.error);return}
+    FC.toast((CUPEDIT?"Cupom salvo: ":"Cupom criado: ")+r.data.code+" ("+r.data.text+").");CUPEDIT=null;load(user);
+  };
+  $$("[data-cedit]").forEach(function(b){b.onclick=function(){CUPEDIT=(CUP||[]).filter(function(c){return c.code===b.getAttribute("data-cedit")})[0]||null;show(user);window.scrollTo(0,0)}});
+  $$("[data-ctog]").forEach(function(b){b.onclick=async function(){
+    var on=b.getAttribute("data-on")==="1";b.disabled=true;
+    var r=await sb.rpc("admin_set_coupon_active",{p_code:b.getAttribute("data-ctog"),p_active:on});
+    if(r.error){b.disabled=false;return FC.toast(FC.err(r.error),true)}
+    FC.toast(on?"Cupom ativado.":"Cupom desativado.");load(user);
+  }});
+}
+
 function show(user){
   FC.nav.at(admPath(TAB));
   var t=DATA.totals;
@@ -291,15 +363,16 @@ function show(user){
       stat(t.active_7d,"alunos ativos em 7 dias")+stat(t.friendships,"amizades")+(t.vip!=null?stat(t.vip,"contas VIP agora"):"")+'</div>'+
     '<div class="panel"><div class="tabs"><button class="tab'+(TAB==="alunos"?" on":"")+'" data-t="alunos">Alunos ('+DATA.students.length+')</button>'+
       '<button class="tab'+(TAB==="contas"?" on":"")+'" data-t="contas">Contas ('+DATA.accounts.length+')</button>'+
+      (CUP?'<button class="tab'+(TAB==="cupons"?" on":"")+'" data-t="cupons">Cupons ('+CUP.length+')</button>':'')+
       '<button class="tab'+(TAB==="parametros"?" on":"")+'" data-t="parametros">Parâmetros</button>'+
       '<button class="tab'+(TAB==="exercicios"?" on":"")+'" data-t="exercicios">Exercícios</button></div>'+
-    (TAB==="parametros"?paramsHtml():TAB==="exercicios"?exHtml():
+    (TAB==="parametros"?paramsHtml():TAB==="exercicios"?exHtml():TAB==="cupons"?cuponsHtml():
     '<label class="field">Buscar<input id="aFind" type="search" autocomplete="off" value="'+esc(FILTER)+'" placeholder="nome ou e-mail"></label>'+
     '<div id="admBody">'+(TAB==="alunos"?studentsTable():accountsTable())+'</div>')+'</div>');
   bindBar();
   $("#reload").onclick=function(){load(user)};
   $$(".tab").forEach(function(b){b.onclick=function(){TAB=b.getAttribute("data-t");show(user)}});
-  bindParams(user);bindLevels();bindEx();bindAccounts(user);
+  bindParams(user);bindLevels();bindEx();bindAccounts(user);bindCupons(user);
   if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable();bindAccounts(user)};
 }
 })();
