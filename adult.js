@@ -30,7 +30,7 @@ function daysLeft(iso){return Math.max(0,Math.ceil((new Date(iso)-Date.now())/86
 function planName(){
   if(!PLAN)return "";
   if(!PLAN.vip)return "Plano Grátis";
-  if(PLAN.lifetime)return "VIP vitalício";
+  if(PLAN.lifetime)return PLAN.source==="fundador"?"VIP Fundador vitalício":"VIP vitalício";
   var n=daysLeft(PLAN.until);
   if(PLAN.source==="teste")return "Teste do VIP: "+(n<=1?"último dia":"faltam "+n+" dias");
   if(PLAN.source==="fundador")return "VIP Fundador até "+FC.dm(String(PLAN.until).slice(0,10));
@@ -40,9 +40,9 @@ function planBanner(){
   if(!PLAN)return "";
   var cls=PLAN.vip?"plan-vip":"plan-free",msg;
   if(!PLAN.vip)msg=PLAN.trial_used?"O teste do VIP terminou. As figurinhas e o histórico continuam guardados; com o VIP voltam os álbuns, as trocas, a Turbo e as folhas do programa.":"Conheça o VIP: todos os álbuns, trocas com amigos, Trilha Turbo e até 4 crianças.";
-  else if(PLAN.lifetime)msg="Tudo liberado, para sempre. Obrigado por fazer parte da Folhinha!";
+  else if(PLAN.lifetime)msg=PLAN.source==="fundador"?"Conta de fundador: tudo liberado, para sempre.":"Tudo liberado, para sempre. Obrigado por fazer parte da Folhinha!";
   else if(PLAN.source==="teste")msg="Aproveite tudo do VIP. Quando o teste acabar, a conta passa para o plano Grátis e nada do que a criança conquistou se perde.";
-  else if(PLAN.source==="fundador")msg="Obrigado por chegar primeiro! Você ganhou 3 meses de VIP e o preço de fundador quando a assinatura abrir.";
+  else if(PLAN.source==="fundador")msg="Obrigado por chegar primeiro! Conta de fundador.";
   else msg="Tudo liberado no seu plano.";
   return '<div class="panel plan-banner '+cls+'"><div class="grow"><b>'+esc(planName())+'</b><p class="small-t">'+esc(msg)+'</p></div><button type="button" class="btn '+(PLAN.vip?"ghost ":"")+'small" id="seePlans">Ver planos</button></div>';
 }

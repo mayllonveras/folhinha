@@ -19,7 +19,8 @@
 --      - amigos e trocas: convidar, aceitar convite, propor e aceitar troca exigem VIP (plano_vip); o amigo também precisa ser VIP (amigo_sem_vip)
 --      - Trilha Turbo: student_turbo_get e student_turbo_save exigem VIP (plano_vip)
 --    Nada é apagado quando o VIP acaba: figurinhas, amigos e o histórico ficam; só param de crescer.
---  * Conta nova ganha o teste do VIP (handle_new_user). As contas que já existem ganham o Fundador: 3 meses de VIP.
+--  * Conta nova ganha o teste do VIP (handle_new_user). Das contas que já existem, só a do professor ganha o Fundador (VIP vitalício);
+--    as outras são contas de teste e ficam no Grátis.
 --  * Funções novas: adult_plan() para o painel dos pais; admin_grant_vip, admin_revoke_vip para o /adm; admin_overview passa a mostrar o plano.
 --
 -- As funções alteradas foram copiadas da definição em produção (17/11/2026) e mudam só nas linhas marcadas acima.
@@ -856,11 +857,12 @@ begin
   return (select jsonb_object_agg(key, value) from app_settings);
 end $function$;
 
--- ---------- Fundador: as contas que já existem ganham 3 meses de VIP ----------
+-- ---------- Fundador: só a conta do professor, VIP vitalício (as outras contas de hoje são de teste e ficam no Grátis) ----------
 insert into public.entitlements(user_id, source, ends_at, note)
-  select u.id, 'fundador', now() + interval '3 months', 'Fundador: 3 meses de VIP'
+  select u.id, 'fundador', null, 'Fundador: VIP vitalício'
     from auth.users u
-   where not exists (select 1 from public.entitlements e where e.user_id = u.id and e.source = 'fundador');
+   where u.id = '7b696275-c979-40a9-bebb-8a6f0d5f2978'
+     and not exists (select 1 from public.entitlements e where e.user_id = u.id and e.source = 'fundador');
 
 -- ---------- permissões ----------
 revoke all on function public._vip_until(uuid), public._is_vip(uuid), public._student_vip(uuid), public._need_vip(uuid),

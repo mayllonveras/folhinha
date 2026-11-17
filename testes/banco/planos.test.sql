@@ -24,9 +24,10 @@ insert into auth.users(id, email, raw_user_meta_data) values ('00000000-0000-000
 select pg_temp.t('conta nova ganha o teste do VIP (14 dias)', (select count(*)=1 and bool_and(ends_at between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour') from entitlements where user_id='00000000-0000-0000-0000-0000000000c1' and source='teste'));
 select pg_temp.t('conta nova é VIP no teste', public._is_vip('00000000-0000-0000-0000-0000000000c1'));
 select pg_temp.t('cadastro de professor segue funcionando (perfil e teste)', (select role='professor' from profiles where id='00000000-0000-0000-0000-0000000000e1') and public._is_vip('00000000-0000-0000-0000-0000000000e1'));
-select pg_temp.t('conta antiga ganha Fundador de 3 meses e não ganha teste',
-  (select count(*)=1 and bool_and(source='fundador' and ends_at between now() + interval '89 days' and now() + interval '93 days') from entitlements where user_id='00000000-0000-0000-0000-00000000a000'));
-select pg_temp.t('adult_plan da conta antiga: fundador, VIP', (select (r->>'fundador')::boolean and (r->>'vip')::boolean and r->>'source'='fundador' from (select public._plan_info('00000000-0000-0000-0000-00000000a000') r) x));
+select pg_temp.t('conta do professor ganha Fundador vitalício e não ganha teste',
+  (select count(*)=1 and bool_and(source='fundador' and ends_at is null) from entitlements where user_id='7b696275-c979-40a9-bebb-8a6f0d5f2978'));
+select pg_temp.t('plano do professor: fundador, VIP vitalício', (select (r->>'fundador')::boolean and (r->>'vip')::boolean and (r->>'lifetime')::boolean and r->>'source'='fundador' from (select public._plan_info('7b696275-c979-40a9-bebb-8a6f0d5f2978') r) x));
+select pg_temp.t('outra conta antiga (de teste) fica no Grátis', not public._is_vip('00000000-0000-0000-0000-00000000a000') and (select count(*)=0 from entitlements where user_id='00000000-0000-0000-0000-00000000a000'));
 select pg_temp.t('conta sem login não lê adult_plan', (select pg_temp.como(null)) is null and pg_temp.err('select public.adult_plan()') like '%nao_autenticado%');
 
 -- F: teste vencido

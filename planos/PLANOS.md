@@ -8,7 +8,7 @@ Decisões do professor (17/11/2026) e a ordem de implementação.
 - **Grátis:** 1 criança, 2 folhas por dia, 1 álbum, pacotinhos só de boas-vindas e de dias seguidos, sem amigos/trocas, sem Trilha Turbo, painel dos pais sem a aba Atenção. Todos os anos e vídeos ficam liberados.
 - **VIP:** R$ 24,90 por mês ou R$ 199 por ano (33% de desconto).
 - **Teste:** toda conta nova começa com 14 dias de VIP, sem cartão.
-- **Fundador:** as contas que já existiam ganham 3 meses de VIP e o preço travado quando a assinatura abrir.
+- **Fundador:** só a conta do professor, com VIP vitalício. As outras contas de hoje são de teste e ficam no Grátis.
 - **Pagamento:** Asaas (Pix Automático, cartão e boleto, com nota fiscal automática).
 - **Indicação:** quem indica ganha 1 mês grátis quando o indicado paga e passam 7 dias (prazo de arrependimento). Cada filho de quem indicou ganha um pacote especial. O indicado ganha 30 dias de teste em vez de 14.
 - Quando o VIP acaba, **nada se perde**: figurinhas, amigos e histórico ficam guardados. Só param de crescer.
