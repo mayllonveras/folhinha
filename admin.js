@@ -124,7 +124,8 @@ function bindEx(){
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
   salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2,modo_folha:1,
-  plano_folhas_gratis:2,plano_albuns_gratis:1,plano_alunos_gratis:1,plano_alunos_vip:4,plano_teste_dias:14};
+  plano_folhas_gratis:2,plano_albuns_gratis:1,plano_alunos_gratis:1,plano_alunos_vip:4,plano_teste_dias:14,
+  preco_mensal_centavos:2490,preco_anual_centavos:19900,assinatura_carencia_dias:3};
 var GROUPS=[
   {t:"Carimbos e subida de nível",d:"O dia fecha quando o aluno faz a cota de folhas. Cumprindo o dia normal, ganha 1 carimbo.",f:[
     ["stamps_needed","Carimbos para subir de nível",1,10,"carimbos"],
@@ -155,7 +156,11 @@ var GROUPS=[
     ["plano_albuns_gratis","Álbuns no Grátis",1,5,"álbuns"],
     ["plano_alunos_gratis","Alunos por conta no Grátis",1,10,"alunos"],
     ["plano_alunos_vip","Alunos por conta no VIP (família)",1,20,"alunos"],
-    ["plano_teste_dias","Dias de teste do VIP para conta nova (0 desliga)",0,60,"dias"]]}];
+    ["plano_teste_dias","Dias de teste do VIP para conta nova (0 desliga)",0,60,"dias"]]},
+  {t:"Preço da assinatura",d:"Em centavos (2490 = R$ 24,90). Vale para quem assinar depois da mudança; quem já assinou continua com o valor de quando assinou. A carência são os dias de VIP depois do vencimento, enquanto o pagamento não chega.",f:[
+    ["preco_mensal_centavos","VIP mensal",500,99900,"centavos"],
+    ["preco_anual_centavos","VIP anual",500,999900,"centavos"],
+    ["assinatura_carencia_dias","Carência depois do vencimento",0,15,"dias"]]}];
 function paramsHtml(){
   if(!SET)return '<p class="msg bad">'+esc(SETERR||"Não deu para carregar os parâmetros.")+'</p>';
   return '<form id="parForm" class="form" novalidate>'+GROUPS.filter(function(g){return g.f.every(function(f){return SET[f[0]]!=null})}).map(function(g){   // grupo sem os parâmetros no banco (migração ainda não aplicada) não aparece

@@ -77,6 +77,13 @@ FC.err=function(e){
     ["pedido_repetido","Você já fez esse mesmo pedido de troca."],
     ["muitos_pedidos","Você já tem 10 pedidos de troca esperando. Cancele algum para fazer outro."],
     ["pedido_invalido","Esse pedido de troca não existe mais."],
+    ["assinatura_ativa","Você já tem uma assinatura ativa."],
+    ["sem_assinatura","Não há assinatura para cancelar."],
+    ["cpf_invalido","Esse CPF não é válido. Confira os números."],
+    ["nome_invalido","Digite o nome completo de quem paga."],
+    ["forma_invalida","Escolha a forma de pagamento."],
+    ["sem_link","O Asaas não devolveu o link de pagamento. Tente de novo em instantes."],
+    ["nao_autenticado","Sua sessão acabou. Entre de novo."],
     ["cupom_invalido","Esse cupom não existe ou não está mais valendo. Confira se digitou certinho."],
     ["cupom_fora_do_prazo","Esse cupom está fora do prazo de validade."],
     ["cupom_ja_usado","Você já usou esse cupom."],
@@ -117,7 +124,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v66";
+FC.VERSAO="folhinha-v67";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){

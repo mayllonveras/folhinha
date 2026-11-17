@@ -865,3 +865,6 @@ tr[hidden]{display:none}
 .plan-table{width:100%;table-layout:fixed}
 .plan-table th,.plan-table td{white-space:normal;overflow-wrap:break-word;hyphens:auto;vertical-align:top;padding-right:8px}
 .plan-table th:first-child,.plan-table td:first-child{width:40%}
+.ok-t{color:var(--ok);margin:4px 0 10px}
+.sub-btns .btn{margin-top:8px}
+p.bad{color:var(--mark)}
