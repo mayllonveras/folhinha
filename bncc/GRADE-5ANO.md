@@ -120,4 +120,5 @@ Os blocos de contas e os de figuras se alternam ao longo do ano para variar o ti
 
 ## Decisões do professor
 
-_(a preencher depois da revisão)_
+- **Rodízio e rampa (17/11/2026):** o 5º ano já nasce com rodízio de tipos e rampa de dificuldade. O `ESPEC5` (tipos, `tipo`, `nota` e ordem dos tipos de cada nível) é escrito junto com o `grade5.js`, no mesmo PR, e o `TIPOS-E-DIFICULDADE-5ANO.md` acompanha. Cada ficha traz os tipos de conta e o que torna a conta mais difícil. `testes/plano.test.js` passa a cobrir também os níveis 165 a 211.
+- _As respostas às 9 perguntas acima ainda estão pendentes._
