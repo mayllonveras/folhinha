@@ -47,7 +47,7 @@ ok(/function openAlbums\(/.test(adult)&&/id="thDone">Pronto</.test(adult),"tela 
 
 /* 4. Regras da mesa e da gaveta (funções puras da tela da criança, extraídas do arquivo) */
 const src=fs.readFileSync(path.join(root,"student.js"),"utf8");
-const blk=src.slice(src.indexOf("function themesOf("),src.indexOf("function deskRow("));
+const blk=src.slice(src.indexOf("function themesOf("),src.indexOf("function coverCard("));
 const ctx={FC:{ALBUM_SIZE:52}};
 vm.createContext(ctx);vm.runInContext(blk+";this.api={themesOf,gotOf,isFull,deskLimit,deskOf,drawerOf,doneAlbums}",ctx);
 const A=ctx.api;
