@@ -319,3 +319,8 @@ Com isso **todos os 164 níveis** usam o rodízio de tipos e a rampa; `FC.makeIt
 Níveis de figuras usam a nota própria da figura (nome da forma, número de itens na fila, quão parecidos são os tamanhos); níveis de contagem usam a quantidade de objetos.
 `testes/plano.test.js` cobre os 164 níveis (todos os tipos nas 5 folhas em todos os dias, dificuldade média que nunca desce e sobe pelo menos 10 pontos, contas em ordem; o nível 1 não tem contas de revisão).
 Medido: a dificuldade média da folha 1 à 5 vai de cerca de 15–40 até 55–84.
+
+## Proposta de grade do 5º ano (17/11/2026)
+
+`GRADE-5ANO.md` traz a proposta de **47 níveis** (numeração do app 165 a 211) para revisão do professor: 24 das 25 habilidades do 5º ano (fica de fora só EF05MA25, a pesquisa de campo), na ordem números até 999 999, adição e subtração, multiplicação, divisão, álgebra e proporção, frações, decimais e porcentagem, geometria, medidas e dados e acaso.
+Ainda **sem código**. Peças novas a escrever depois da aprovação: resposta digitada com vírgula (decimais), fração em dois campos, plano cartesiano, pilhas de cubos, diagrama de árvore, figura de fração com mais de um inteiro e gráfico de linhas. As 9 perguntas para o professor estão no fim do documento.
