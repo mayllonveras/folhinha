@@ -506,20 +506,26 @@ FC.optText=function(o,i){return o&&typeof o==="object"&&o.fig?"figura "+(i+1):St
 FC.answerText=function(p,v){
   var n=Number(v);
   if(p&&p.extra&&p.extra.opts&&n>=1&&n<=p.extra.opts.length)return FC.optText(p.extra.opts[n-1],n-1);
-  return v===""||v==null?"(em branco)":String(v);
+  return v===""||v==null?"(em branco)":(typeof v==="number"?FC.numBR(v):String(v));
 };
 FC.isRich=function(p){return !!(p&&p.extra)};
 
+/* Resposta digitada: número com até 6 algarismos e, nos decimais, vírgula (2,5). A tela mostra e aceita vírgula; "2.5" também vale. */
+FC.numBR=function(n){return String(n).replace(".",",")};
+FC.parseAns=function(v){var t=String(v==null?"":v).trim().replace(",",".");return /^\d{1,7}(\.\d{1,3})?$/.test(t)?Number(t):null};
+FC.sameAns=function(v,a){var x=FC.parseAns(v);return x!==null&&Math.abs(x-Number(a))<1e-9};
+FC.isDecimalItem=function(it){return it.a!==Math.floor(it.a)||/\d,\d/.test(String(it.pre||""))};
+FC.ansMode=function(it){return FC.isDecimalItem(it)?"decimal":"numeric"};
 /* Linha de uma folha. Itens simples mantêm o desenho de sempre. */
 FC.itemInner=function(it,i){
   var ex=it.extra;
-  if(!ex)return '<span class="n">'+(i+1)+')</span><span class="q">'+esc(it.pre)+'</span><span class="ans"><input id="in'+i+'" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'');
+  if(!ex)return '<span class="n">'+(i+1)+')</span><span class="q">'+esc(it.pre)+'</span><span class="ans"><input id="in'+i+'" inputmode="'+FC.ansMode(it)+'" autocomplete="off" maxlength="9" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'');
   var body='<span class="n">'+(i+1)+')</span><div class="rich"><div class="rq">'+esc(it.pre)+'</div>'+(ex.fig?FC.fig(ex.fig):"");
   if(ex.opts){
     body+='<div class="opts" role="group" aria-label="Opções da conta '+(i+1)+'">'+ex.opts.map(function(o,k){
       return '<button type="button" class="opt" data-i="'+i+'" data-k="'+(k+1)+'" aria-label="Opção '+(k+1)+': '+esc(FC.optText(o,k))+'">'+optHtml(o)+'</button>'}).join("")+'</div><input type="hidden" id="in'+i+'">';
   }else{
-    body+='<div class="rans"><span class="ans"><input id="in'+i+'" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'')+'</div>';
+    body+='<div class="rans"><span class="ans"><input id="in'+i+'" inputmode="'+FC.ansMode(it)+'" autocomplete="off" maxlength="9" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'')+'</div>';
   }
   return body+'</div>';
 };
@@ -529,7 +535,7 @@ FC.itemStatic=function(p,v){
   if(ex.opts)out+='<div class="opts static">'+ex.opts.map(function(o,k){
     var right=k+1===p.a,mine=v!=null&&v!==""&&Number(v)===k+1;
     return '<span class="opt'+(right?" right":"")+(mine&&!right?" wrong":"")+'">'+optHtml(o)+(right?'<i>certa</i>':mine?'<i>resposta</i>':'')+'</span>'}).join("")+'</div>';
-  else out+='<div class="rans static"><span class="muted">resposta:</span> <b>'+esc(p.a)+'</b>'+(v!=null&&v!==""&&Number(v)!==p.a?' <span class="muted">(respondeu '+esc(v)+')</span>':'')+'</div>';
+  else out+='<div class="rans static"><span class="muted">resposta:</span> <b>'+esc(FC.numBR(p.a))+'</b>'+(v!=null&&v!==""&&!FC.sameAns(v,p.a)?' <span class="muted">(respondeu '+esc(v)+')</span>':'')+'</div>';
   return out+'</div>';
 };
 

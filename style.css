@@ -170,7 +170,7 @@ details.adv[open] summary{margin-bottom:10px}
 .row .n{font-size:.75rem;color:var(--muted);width:1.6rem;flex:none;font-variant-numeric:tabular-nums}
 .row .q{font-family:var(--font-num);font-weight:500;font-size:1.35rem;white-space:pre-wrap}
 .ans{position:relative;display:inline-block}
-.ans input{font-family:var(--font-num);font-weight:600;font-size:1.35rem;width:6ch;text-align:center;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--ink);padding:2px 0;border-radius:0}
+.ans input{font-family:var(--font-num);font-weight:600;font-size:1.35rem;width:7ch;text-align:center;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--ink);padding:2px 0;border-radius:0}
 .ans input:focus{outline:none;border-bottom-color:var(--accent);background:var(--soft)}
 .row.ok .ans::after{content:"";position:absolute;inset:-7px -12px;border:2.5px solid var(--mark);border-radius:52% 48% 55% 45%/50% 55% 45% 50%;transform:rotate(-3deg);pointer-events:none}
 .row.ok .ans input{border-bottom-color:transparent}

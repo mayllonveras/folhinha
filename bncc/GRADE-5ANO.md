@@ -121,4 +121,4 @@ Os blocos de contas e os de figuras se alternam ao longo do ano para variar o ti
 ## Decisões do professor
 
 - **Rodízio e rampa (17/11/2026):** o 5º ano já nasce com rodízio de tipos e rampa de dificuldade. O `ESPEC5` (tipos, `tipo`, `nota` e ordem dos tipos de cada nível) é escrito junto com o `grade5.js`, no mesmo PR, e o `TIPOS-E-DIFICULDADE-5ANO.md` acompanha. Cada ficha traz os tipos de conta e o que torna a conta mais difícil. `testes/plano.test.js` passa a cobrir também os níveis 165 a 211.
-- _As respostas às 9 perguntas acima ainda estão pendentes._
+- **Perguntas 1 a 9 (17/11/2026):** o professor aprovou todas as sugestões. Extenso só no nível 1; decimais digitados com vírgula; frações por escolha entre opções (dois campos só se um nível exigir fração digitada); equações sem a letra x; decimais com até 2 casas, multiplicador e divisor naturais de 1 algarismo; porcentagem só em 10%, 25%, 50%, 75% e 100%; plano cartesiano no 1º quadrante (0 a 10), com a planilha como um dos tipos do nível 37; combinações com 2 coleções e 3 só no último tipo; perímetro e área por escolha com figuras na malha; 47 níveis.

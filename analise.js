@@ -7,7 +7,7 @@ var FC=window.FC;
    "Devagar": tempo médio por conta acima de 1,5 vez o esperado do nível. */
 FC.ANALISE={minContas:5,vermelho:40,amarelo:20,lentoX:1.5};
 function chave(p){return (p.pre||"")+"|"+(p.post||"")+"|"+(p.extra?JSON.stringify(p.extra):"")}
-function ehNumero(v){return /^[0-9]{1,4}$/.test(String(v))}
+function ehNumero(v){return /^[0-9]{1,7}$/.test(String(v))}
 /* sheets: [{level_idx, study_day, problems, answers}]. o.target(level_idx) = segundos esperados para 10 contas; o.hab(level_idx) = códigos da BNCC. */
 FC.analisar=function(sheets,o){
   o=o||{};var C=FC.ANALISE,target=o.target||function(){return 90},habOf=o.hab||function(){return[]};
