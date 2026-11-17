@@ -1,6 +1,7 @@
 -- Plano VIP, fase 2: cupons. Especificação: planos/PLANOS.md.
 --
--- *** AINDA NÃO APLICADA EM PRODUÇÃO. Aplicar só com autorização do professor, DEPOIS de 2026-11-17-plano-vip.sql. Não é repetível (cria tabelas). ***
+-- *** APLICADA EM PRODUÇÃO em 17/11/2026 (projeto folhinha-calculo), com autorização do professor. NÃO REAPLIQUE: ela cria tabelas. ***
+-- Conferido depois: tabelas criadas sem acesso direto pela API; adult_redeem_coupon liberada só para quem entrou.
 --
 -- Tipos de cupom
 --  * meses: dá N meses de VIP na hora (entitlements, source 'cupom'). Soma a partir do fim do VIP atual.
