@@ -134,7 +134,7 @@ create policy turbo_attempts_admin on public.turbo_attempts for select to authen
 -- Devolve o que o motor (turbo.js) precisa: configuração, fatos e como está o dia. Datas voltam como texto AAAA-MM-DD.
 create or replace function public.student_turbo_get(p_token text, p_day date)
  returns jsonb
- language plpgsql stable security definer set search_path to 'public', 'extensions'
+ language plpgsql security definer set search_path to 'public', 'extensions'   -- VOLÁTIL de propósito: _student_from_token atualiza last_seen (ver 2026-11-17-turbo-get-volatil.sql)
 as $$
 declare sid uuid; s students%rowtype; ta turbo_students%rowtype; dr turbo_days%rowtype; ok_day boolean; ano int;
 begin

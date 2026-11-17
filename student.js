@@ -134,7 +134,7 @@ function pinScreen(mode,first,msg){
 /* Trilha Turbo (turbo-aluno.js): o que ela precisa de cá. Se o banco não responder, o cartão da Turbo não aparece e o resto segue normal. */
 function turboCtx(){
   return{get token(){return S.token},get code(){return S.code},get me(){return S.me},rpc:rpc,track:track,fail:fail,
-    goHome:function(){return goHome()},
+    goHome:function(){return goHome()},reload:function(){return loadHome()},
     setPacks:function(n){if(S.me){S.me.pending_packs=n;refreshPacks()}},
     openPack:function(){openPackFlow()},
     expired:function(){setTok(null);S.token=null;pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}};

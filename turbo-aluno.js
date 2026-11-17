@@ -56,16 +56,30 @@ async function salvar(dia,sess){
 async function load(ctx){
   X=ctx;D=null;
   var hoje=FC.today();
-  await reenviar();
-  var raw=await X.rpc("student_turbo_get",{p_token:X.token,p_day:hoje});
-  var dia=T.diaDe(hoje);
-  D={raw:raw,st:T.deBanco(raw,dia),dia:dia,hoje:hoje};
+  try{
+    await reenviar();
+    var raw=await X.rpc("student_turbo_get",{p_token:X.token,p_day:hoje});
+    var dia=T.diaDe(hoje);
+    D={raw:raw,st:T.deBanco(raw,dia),dia:dia,hoje:hoje};
+  }catch(e){
+    if(FC.isSessionErr(e))throw e;
+    /* Não esconde em silêncio: o cartão mostra que não carregou e deixa tentar de novo. Só some de vez se o banco não tem a Turbo. */
+    D={falha:errMsg(e)};
+    X.track("turbo_erro",{data:{msg:D.falha.slice(0,120)}});
+  }
 }
+var SEM_TURBO=/does not exist|schema cache|PGRST20|42883|42P01/;
 
 /* ---------- cartão da tela inicial ---------- */
 function cardHtml(){
   if(!D||!X||!X.me)return "";
-  var m=X.me,t=D.raw.today||{},head='<span class="eyebrow">Trilha Turbo · Hoje</span>';
+  var head='<span class="eyebrow">Trilha Turbo · Hoje</span>';
+  if(D.falha){
+    if(SEM_TURBO.test(D.falha))return "";   // o banco ainda não tem a Turbo: nada a mostrar
+    return '<section class="hero turbo">'+head+'<h2>A Turbo não carregou</h2><p>Não deu para abrir a Turbo agora. A trilha BNCC continua funcionando. Toque para tentar de novo.</p>'+
+      '<button class="btn reward block" data-turbo="retry">Tentar de novo</button></section>';
+  }
+  var m=X.me,t=D.raw.today||{};
   if(m.quota===0)return '<section class="hero turbo">'+head+'<h2>Sem Turbo hoje</h2><p>Hoje é dia de descanso. A Turbo volta no próximo dia de estudo.</p></section>';
   if(T.precisaNivelamento(D.st))
     return '<section class="hero turbo">'+head+'<h2>Vamos começar a Turbo</h2><p>Primeiro um jogo rápido, de uns 5 minutos, para descobrir por onde começar. Não vale nota.</p>'+
@@ -81,7 +95,7 @@ function cardHtml(){
     '<button class="btn reward block" data-turbo="start">'+(started?"Continuar":"Começar a Turbo")+'</button></section>';
 }
 function bind(){
-  $$("[data-turbo]").forEach(function(b){b.onclick=function(){var k=b.getAttribute("data-turbo");if(k==="start")startSession();else if(k==="nivel")startPlacement()}});
+  $$("[data-turbo]").forEach(function(b){b.onclick=function(){var k=b.getAttribute("data-turbo");if(k==="start")startSession();else if(k==="nivel")startPlacement();else if(k==="retry"){b.disabled=true;b.textContent="Tentando…";X.reload().catch(X.fail)}}});
 }
 
 /* ---------- peças de tela ---------- */
@@ -176,7 +190,7 @@ function leave(){clearTimers();if(run){run.fim=true}FC.setKeys(null);run=null;re
 
 /* ================= sessão do dia ================= */
 function startSession(){
-  if(!D||run)return;
+  if(!D||!D.st||run)return;
   var ap=deviceClass(),sess=T.iniciarSessao(D.st,{dia:D.dia,aparelho:ap,rnd:Math.random});
   if(sess.semTarefa){FC.toast("Hoje não tem nada para treinar na Turbo.");return}
   run={tipo:"dia",ap:ap,sess:sess,key:rkey(),fim:false,E:null,q:null,timers:[]};
@@ -284,7 +298,7 @@ function resultado(r){
 
 /* ================= nivelamento da primeira entrada ================= */
 function startPlacement(){
-  if(!D||run)return;
+  if(!D||!D.st||run)return;
   run={tipo:"nivel",passo:"intro",ap:deviceClass(),key:rkey(),fim:false,timers:[],E:null,q:null,log:[],pre:null,nv:null,idade:D.st.idade};
   FC.nav.at("/turbo");
   X.track("turbo_nivelamento",{data:{etapa:"inicio",idade:run.idade}});

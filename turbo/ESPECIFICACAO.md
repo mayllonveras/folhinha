@@ -207,7 +207,7 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 | Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
-| Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
+| Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** **Corrigida no mesmo dia** (item 15: `student_turbo_get` passou a volátil). Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
 | Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e pacotinho | **feitas e testadas no navegador** (item 13) |
 | Painel dos pais (`adult.js`): resumo da Turbo na aba Resumo, linha "Turbo de hoje" na lista de alunos, opções no cadastro e na aba Programa | **feito e testado** (item 14) |
 
@@ -245,4 +245,17 @@ Em `adult.js`, sem nova aba (o menu do celular já tem 6). Decisão 5 do item 11
 **Verificado no banco de produção** (numa transação desfeita, assumindo a identidade de um responsável cadastrado): ele lê os fatos e o resumo do próprio aluno, cria e altera a configuração, e **não** consegue alterar o nivelamento nem os fatos nem ler as tentativas. Um adulto que não é responsável não vê nenhum dado e não grava nada, e o resumo dele vem vazio.
 
 **Ficou de fora:** não há tela para o responsável informar a idade (a Turbo calcula pela série); o aviso de "sem progresso" usa só os dias de Turbo; e o resumo não mostra o histórico dia a dia.
+
+## 15. Correção de 17/11/2026: o cartão da Turbo não aparecia
+
+**O que o professor viu:** na tela do Samuel, depois de publicar, o cartão "Trilha Turbo" não apareceu ao lado da BNCC. No painel dos pais, a linha "Turbo de hoje" apareceu normalmente.
+
+**Causa:** `student_turbo_get` foi criada como `STABLE`. A API do Supabase roda função estável numa transação **só de leitura**, e a função chama `_student_from_token`, que atualiza `student_sessions.last_seen`. Pela API o resultado era o erro `25006` ("cannot execute UPDATE in a read-only transaction"). O app engolia o erro e escondia o cartão. No teste direto no SQL a transação era de escrita, e por isso o erro não apareceu. As outras funções do aluno que conferem o token já eram voláteis.
+
+**Correção:** `migracoes/2026-11-17-turbo-get-volatil.sql` (`alter function ... volatile`), **aplicada em produção em 17/11/2026**. Conferida chamando a função pela API de verdade, com uma sessão temporária (apagada em seguida): resposta 200 com o estado do aluno.
+
+**O que mudou para não se repetir:**
+
+- O teste de banco (`testes/banco/`) passou a simular a atualização do `last_seen` e a exigir que `student_turbo_get` e `student_turbo_save` sejam voláteis. Com a função estável de volta, o teste falha; com a correção, passa. O script de teste também passou a falhar quando alguma verificação dá `ERROR` (antes ele só contava as que terminavam, e uma verificação com erro de sintaxe passava como sucesso).
+- Se a Turbo falhar ao carregar, o cartão agora mostra "A Turbo não carregou" com **Tentar de novo**, em vez de sumir em silêncio. Só some de vez se o banco não tiver a Turbo. Com o consentimento dos pais ligado, o erro também vai para os dados de uso (`turbo_erro`).
 

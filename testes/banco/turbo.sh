@@ -16,5 +16,6 @@ for f in stub.sql "$tmp" ../../migracoes/2026-11-17-trilha-turbo.sql dados.sql; 
 saida="$($PSQL -q -d turbo_test -f turbo.test.sql 2>&1 | grep -E "FALHOU|TOTAL|ERROR" || true)"
 echo "$saida"
 run -d postgres -c "drop database if exists turbo_test" 2>/dev/null
-if echo "$saida" | grep -qE "FALHOU"; then exit 1; fi
+# uma verificação que dá ERRO não conta como feita: o script falha em vez de aprovar sem rodá-la
+if echo "$saida" | grep -qE "FALHOU|ERROR"; then exit 1; fi
 echo "$saida" | grep -q "TOTAL: .* 0 falha(s)" || { echo "testes não terminaram"; exit 1; }
