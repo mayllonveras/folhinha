@@ -1,6 +1,6 @@
 # Proposta de grade do 5º ano (47 níveis) — para revisão do professor
 
-> **Estado:** proposta, escrita em 17/11/2026. Ainda **sem código**: depois da revisão do professor vêm as fichas, os geradores (`grade5.js`), a migração e os testes, como nos outros anos.
+> **Estado:** aprovada pelo professor em 17/11/2026 (todas as sugestões) e **implementada** no mesmo dia: `grade5.js` (47 geradores, rodízio e rampa), figuras novas, migração `2026-11-17-grade-5ano.sql` (não aplicada), habilidades da BNCC na tela dos pais e `testes/grade5.test.js`. A tabela abaixo é a proposta original; as decisões estão no fim.
 
 Base: inventário `inventario-anos-iniciais.csv` (25 habilidades do 5º ano: 24 treináveis, grupos A e B; fica de fora **EF05MA25** (realizar pesquisa e redigir a síntese), grupo C, que é atividade de casa ou de sala)
 e as decisões já tomadas: grade **refeita do zero**, cada nível nasce de uma **ficha** revisada antes do código, a dificuldade entra aos poucos, e o número de níveis é uma referência, não um limite
@@ -122,3 +122,12 @@ Os blocos de contas e os de figuras se alternam ao longo do ano para variar o ti
 
 - **Rodízio e rampa (17/11/2026):** o 5º ano já nasce com rodízio de tipos e rampa de dificuldade. O `ESPEC5` (tipos, `tipo`, `nota` e ordem dos tipos de cada nível) é escrito junto com o `grade5.js`, no mesmo PR, e o `TIPOS-E-DIFICULDADE-5ANO.md` acompanha. Cada ficha traz os tipos de conta e o que torna a conta mais difícil. `testes/plano.test.js` passa a cobrir também os níveis 165 a 211.
 - **Perguntas 1 a 9 (17/11/2026):** o professor aprovou todas as sugestões. Extenso só no nível 1; decimais digitados com vírgula; frações por escolha entre opções (dois campos só se um nível exigir fração digitada); equações sem a letra x; decimais com até 2 casas, multiplicador e divisor naturais de 1 algarismo; porcentagem só em 10%, 25%, 50%, 75% e 100%; plano cartesiano no 1º quadrante (0 a 10), com a planilha como um dos tipos do nível 37; combinações com 2 coleções e 3 só no último tipo; perímetro e área por escolha com figuras na malha; 47 níveis.
+
+## Implementação (17/11/2026)
+
+- **`grade5.js`:** 47 geradores, `ESPEC` (tipos e nota de dificuldade) e `ORDEM` (medida em 4 000 contas por nível). Lista dos tipos em `TIPOS-E-DIFICULDADE-5ANO.md`.
+- **Figuras novas** (`exercicios.js`): reta numérica geral (`retaG`), fração com mais de um inteiro (`fracaoM`), plano cartesiano com modo planilha (`cartesiano`), bloco de cubinhos (`cubos`), diagrama de árvore (`arvore`) e gráfico de linhas (`linhas`).
+- **Resposta digitada** (corrige também o 4º ano): a caixa tinha `maxlength="4"` e a função `student_submit_sheet` só aceitava `^[0-9]{1,4}$` como inteiro, então respostas de 5 algarismos (4º ano) e decimais nunca seriam corretas. Agora a tela aceita até 6 algarismos e uma vírgula (teclado decimal quando a conta tem vírgula) e o banco confere como número (até 7 algarismos e 3 casas). Migração `2026-11-17-resposta-decimal.sql`, que deve ser aplicada **antes** da do 5º ano.
+- **Frações:** todas respondidas por escolha entre opções; nenhum nível exigiu fração digitada em dois campos, então essa peça não foi criada.
+- **Nomes dos blocos** diferentes dos do 4º ano (o teste da grade exige que um bloco não apareça em dois pedaços): "Multiplicação por dois algarismos", "Divisão por dois algarismos", "Plano cartesiano, sólidos e polígonos", "Unidades, tempo, área e volume" e "Probabilidade e gráficos de linhas".
+- **Ritmo e metas:** metas de tempo de 110 a 180 s por folha de 10 contas, estimadas; ajustar com dados reais.

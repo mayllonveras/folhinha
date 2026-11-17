@@ -320,7 +320,10 @@ Níveis de figuras usam a nota própria da figura (nome da forma, número de ite
 `testes/plano.test.js` cobre os 164 níveis (todos os tipos nas 5 folhas em todos os dias, dificuldade média que nunca desce e sobe pelo menos 10 pontos, contas em ordem; o nível 1 não tem contas de revisão).
 Medido: a dificuldade média da folha 1 à 5 vai de cerca de 15–40 até 55–84.
 
-## Proposta de grade do 5º ano (17/11/2026)
+## 5º ano: grade, geradores, rodízio e rampa (17/11/2026)
 
-`GRADE-5ANO.md` traz a proposta de **47 níveis** (numeração do app 165 a 211) para revisão do professor: 24 das 25 habilidades do 5º ano (fica de fora só EF05MA25, a pesquisa de campo), na ordem números até 999 999, adição e subtração, multiplicação, divisão, álgebra e proporção, frações, decimais e porcentagem, geometria, medidas e dados e acaso.
-Ainda **sem código**. Peças novas a escrever depois da aprovação: resposta digitada com vírgula (decimais), fração em dois campos, plano cartesiano, pilhas de cubos, diagrama de árvore, figura de fração com mais de um inteiro e gráfico de linhas. As 9 perguntas para o professor estão no fim do documento.
+Proposta de 47 níveis aprovada pelo professor (todas as sugestões) e implementada: `grade5.js` com os 47 geradores, `ESPEC` e `ORDEM` (rodízio de tipos e rampa já nascem com o ano, por decisão do professor), níveis 165 a 211, habilidades EF05MA01 a EF05MA24 (fica de fora a EF05MA25, pesquisa de campo). Detalhes em `GRADE-5ANO.md` e `TIPOS-E-DIFICULDADE-5ANO.md`.
+Com isso **a grade dos anos iniciais (1º ao 5º ano) está completa: 211 níveis.** Em janeiro de 2027, quem cursa o 5º ano passa ao 6º e a grade ainda não tem os anos finais (ver "Fim da grade").
+Peças novas: reta numérica geral, fração com mais de um inteiro, plano cartesiano (com modo planilha), bloco de cubinhos, diagrama de árvore e gráfico de linhas.
+**Correção do motor de resposta:** a tela aceitava 4 algarismos e o banco só conferia inteiros de até 4 algarismos; agora aceitam 6 algarismos e decimais com vírgula (`migracoes/2026-11-17-resposta-decimal.sql`, a aplicar antes de `2026-11-17-grade-5ano.sql`). Isso também conserta as respostas de 5 algarismos do 4º ano.
+Migrações **não aplicadas**: `2026-11-17-resposta-decimal.sql` e `2026-11-17-grade-5ano.sql` (só acrescenta 47 linhas em `levels`, idx 164 a 210, ano 5).

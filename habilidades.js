@@ -467,6 +467,126 @@ FC.HAB={
 "Probabilidade e estatística",
 "Analisar dados apresentados em tabelas simples ou de dupla entrada e em gráficos de…",
 "Analisar dados apresentados em tabelas simples ou de dupla entrada e em gráficos de colunas ou pictóricos, com base em informações das diferentes áreas do conhecimento, e produzir texto com a síntese de sua análise."
+],
+"EF05MA01":[
+"Números",
+"Ler, escrever e ordenar números naturais até a ordem das centenas de milhar com…",
+"Ler, escrever e ordenar números naturais até a ordem das centenas de milhar com compreensão das principais características do sistema de numeração decimal."
+],
+"EF05MA02":[
+"Números",
+"Ler, escrever e ordenar números racionais na forma decimal com compreensão das…",
+"Ler, escrever e ordenar números racionais na forma decimal com compreensão das principais características do sistema de numeração decimal, utilizando, como recursos, a composição e decomposição e a reta numérica."
+],
+"EF05MA03":[
+"Números",
+"Identificar e representar frações (menores e maiores que a unidade), associando-as ao…",
+"Identificar e representar frações (menores e maiores que a unidade), associando-as ao resultado de uma divisão ou à ideia de parte de um todo, utilizando a reta numérica como recurso."
+],
+"EF05MA04":[
+"Números",
+"Identificar frações equivalentes.",
+"Identificar frações equivalentes."
+],
+"EF05MA05":[
+"Números",
+"Comparar e ordenar números racionais positivos (representações fracionária e decimal),…",
+"Comparar e ordenar números racionais positivos (representações fracionária e decimal), relacionando-os a pontos na reta numérica."
+],
+"EF05MA06":[
+"Números",
+"Associar as representações 10%, 25%, 50%, 75% e 100% respectivamente à décima parte,…",
+"Associar as representações 10%, 25%, 50%, 75% e 100% respectivamente à décima parte, quarta parte, metade, três quartos e um inteiro, para calcular porcentagens, utilizando estratégias pessoais, cálculo mental e calculadora, em contextos de educação financeira, entre outros."
+],
+"EF05MA07":[
+"Números",
+"Resolver e elaborar problemas de adição e subtração com números naturais e com números…",
+"Resolver e elaborar problemas de adição e subtração com números naturais e com números racionais, cuja representação decimal seja finita, utilizando estratégias diversas, como cálculo por estimativa, cálculo mental e algoritmos."
+],
+"EF05MA08":[
+"Números",
+"Resolver e elaborar problemas de multiplicação e divisão com números naturais e com…",
+"Resolver e elaborar problemas de multiplicação e divisão com números naturais e com números racionais cuja representação decimal é finita (com multiplicador natural e divisor natural e diferente de zero), utilizando estratégias diversas, como cálculo por estimativa, cálculo mental e algoritmos."
+],
+"EF05MA09":[
+"Números",
+"Resolver e elaborar problemas simples de contagem envolvendo o princípio…",
+"Resolver e elaborar problemas simples de contagem envolvendo o princípio multiplicativo, como a determinação do número de agrupamentos possíveis ao se combinar cada elemento de uma coleção com todos os elementos de outra coleção, por meio de diagramas de árvore ou por tabelas."
+],
+"EF05MA10":[
+"Álgebra",
+"Concluir, por meio de investigações, que a relação de igualdade existente entre dois…",
+"Concluir, por meio de investigações, que a relação de igualdade existente entre dois membros permanece ao adicionar, subtrair, multiplicar ou dividir cada um desses membros por um mesmo número, para construir a noção de equivalência."
+],
+"EF05MA11":[
+"Álgebra",
+"Resolver e elaborar problemas cuja conversão em sentença matemática seja uma igualdade…",
+"Resolver e elaborar problemas cuja conversão em sentença matemática seja uma igualdade com uma operação em que um dos termos é desconhecido."
+],
+"EF05MA12":[
+"Álgebra",
+"Resolver problemas que envolvam variação de proporcionalidade direta entre duas…",
+"Resolver problemas que envolvam variação de proporcionalidade direta entre duas grandezas, para associar a quantidade de um produto ao valor a pagar, alterar as quantidades de ingredientes de receitas, ampliar ou reduzir escala em mapas, entre outros."
+],
+"EF05MA13":[
+"Álgebra",
+"Resolver problemas envolvendo a partilha de uma quantidade em duas partes desiguais,…",
+"Resolver problemas envolvendo a partilha de uma quantidade em duas partes desiguais, tais como dividir uma quantidade em duas partes, de modo que uma seja o dobro da outra, com compreensão da ideia de razão entre as partes e delas com o todo."
+],
+"EF05MA14":[
+"Geometria",
+"Utilizar e compreender diferentes representações para a localização de objetos no…",
+"Utilizar e compreender diferentes representações para a localização de objetos no plano, como mapas, células em planilhas eletrônicas e coordenadas geográficas, a fim de desenvolver as primeiras noções de coordenadas cartesianas."
+],
+"EF05MA15":[
+"Geometria",
+"Interpretar, descrever e representar a localização ou movimentação de objetos no plano…",
+"Interpretar, descrever e representar a localização ou movimentação de objetos no plano cartesiano (1º quadrante), utilizando coordenadas cartesianas, indicando mudanças de direção e de sentido e giros."
+],
+"EF05MA16":[
+"Geometria",
+"Associar figuras espaciais a suas planificações (prismas, pirâmides, cilindros e cones)…",
+"Associar figuras espaciais a suas planificações (prismas, pirâmides, cilindros e cones) e analisar, nomear e comparar seus atributos."
+],
+"EF05MA17":[
+"Geometria",
+"Reconhecer, nomear e comparar polígonos, considerando lados, vértices e ângulos, e…",
+"Reconhecer, nomear e comparar polígonos, considerando lados, vértices e ângulos, e desenhá-los, utilizando material de desenho ou tecnologias digitais."
+],
+"EF05MA18":[
+"Geometria",
+"Reconhecer a congruência dos ângulos e a proporcionalidade entre os lados…",
+"Reconhecer a congruência dos ângulos e a proporcionalidade entre os lados correspondentes de figuras poligonais em situações de ampliação e de redução em malhas quadriculadas e usando tecnologias digitais."
+],
+"EF05MA19":[
+"Grandezas e medidas",
+"Resolver e elaborar problemas envolvendo medidas das grandezas comprimento, área,…",
+"Resolver e elaborar problemas envolvendo medidas das grandezas comprimento, área, massa, tempo, temperatura e capacidade, recorrendo a transformações entre as unidades mais usuais em contextos socioculturais."
+],
+"EF05MA20":[
+"Grandezas e medidas",
+"Concluir, por meio de investigações, que figuras de perímetros iguais podem ter áreas…",
+"Concluir, por meio de investigações, que figuras de perímetros iguais podem ter áreas diferentes e que, também, figuras que têm a mesma área podem ter perímetros diferentes."
+],
+"EF05MA21":[
+"Grandezas e medidas",
+"Reconhecer volume como grandeza associada a sólidos geométricos e medir volumes por…",
+"Reconhecer volume como grandeza associada a sólidos geométricos e medir volumes por meio de empilhamento de cubos, utilizando, preferencialmente, objetos concretos."
+],
+"EF05MA22":[
+"Probabilidade e estatística",
+"Apresentar todos os possíveis resultados de um experimento aleatório, estimando se…",
+"Apresentar todos os possíveis resultados de um experimento aleatório, estimando se esses resultados são igualmente prováveis ou não."
+],
+"EF05MA23":[
+"Probabilidade e estatística",
+"Determinar a probabilidade de ocorrência de um resultado em eventos aleatórios, quando…",
+"Determinar a probabilidade de ocorrência de um resultado em eventos aleatórios, quando todos os resultados possíveis têm a mesma chance de ocorrer (equiprováveis)."
+],
+"EF05MA24":[
+"Probabilidade e estatística",
+"Interpretar dados estatísticos apresentados em textos, tabelas e gráficos (colunas ou…",
+"Interpretar dados estatísticos apresentados em textos, tabelas e gráficos (colunas ou linhas), referentes a outras áreas do conhecimento ou a outros contextos, como saúde e trânsito, e produzir textos com o objetivo de sintetizar conclusões."
 ]
 };
 })();

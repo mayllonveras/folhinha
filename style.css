@@ -557,6 +557,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fig-reparte .prato{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);background:var(--surface);box-shadow:inset 0 0 0 6px var(--bg,transparent)}
 .figsvg.fig-line{max-width:420px}
 .figsvg.fig-fracao{max-width:260px}.figsvg.fig-fracao-c{max-width:170px}.figsvg.fig-q100{max-width:190px}.figsvg.fig-angulo{max-width:190px}.figsvg.fig-termo{max-width:120px}.figsvg.fig-espelho{max-width:240px}
+.figsvg.fig-cart{max-width:310px}.figsvg.fig-cubos{max-width:230px}.figsvg.fig-arvore{max-width:330px}.figsvg.fig-linhas{max-width:360px}.figsvg.fig-fracao-m{max-width:300px}
 .figsvg.fig-grid{max-width:240px}
 .fig-emoji{display:flex;flex-direction:column;gap:6px}
 .fig-emoji.side{flex-direction:row;flex-wrap:wrap;gap:12px 14px;align-items:flex-start}

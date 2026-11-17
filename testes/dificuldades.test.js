@@ -39,7 +39,7 @@ const h2=h.filter(x=>x.cod==="EF01MA02")[0],h5=h.filter(x=>x.cod==="EF01MA05")[0
 ok(h2&&h2.n===40&&h2.erros===11&&h5&&h5.n===20&&h5.erros===1,"habilidade soma os níveis que a treinam (EF01MA02: 11 de 40; EF01MA05: 1 de 20)");
 // habilidades da BNCC: todo código usado pelos níveis tem texto
 const usados=new Set();
-["grade1.js","grade2.js","grade3.js","grade4.js","exercicios.js"].forEach(f=>{for(const m of fs.readFileSync(path.join(root,f),"utf8").matchAll(/hab:\[([^\]]*)\]/g))for(const c of m[1].matchAll(/"(EF\d\dMA\d\d)"/g))usados.add(c[1])});
+["grade1.js","grade2.js","grade3.js","grade4.js","grade5.js","exercicios.js"].forEach(f=>{for(const m of fs.readFileSync(path.join(root,f),"utf8").matchAll(/hab:\[([^\]]*)\]/g))for(const c of m[1].matchAll(/"(EF\d\dMA\d\d)"/g))usados.add(c[1])});
 const faltam=[...usados].filter(c=>!FC.HAB[c]);
 ok(usados.size>=60&&faltam.length===0,"todo código da BNCC usado nos níveis tem descrição ("+usados.size+" códigos; faltam: "+faltam.join(",")+")");
 ok(Object.values(FC.HAB).every(x=>x[1].length<=100&&x[2].length>=x[1].length-1),"resumo curto e texto oficial completo");
