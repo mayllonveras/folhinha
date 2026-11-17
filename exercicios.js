@@ -479,6 +479,88 @@ var DRAW={
     inner+='<text x="30" y="14" font-size="12" font-weight="800" fill="'+INK+'">°C</text>';
     return svg(130,214,inner,"fig-termo");
   },
+  /* ===== Figuras do 5º ano ===== */
+  /* reta numérica geral: f.d divisões iguais (marcas de 0 a d, class="tk"); f.lab = {índice: texto} escreve os números embaixo; f.pts = [{k: índice da marca, l: letra}] (class="pt2") */
+  retaG:function(f){
+    var x0=24,x1=336,i,inner='<line x1="'+(x0-10)+'" x2="'+(x1+10)+'" y1="60" y2="60" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>';
+    for(i=0;i<=f.d;i++){var x=x0+(x1-x0)*i/f.d,big=f.lab&&f.lab[i]!=null;
+      inner+='<line class="tk" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(big?46:50)+'" y2="'+(big?74:70)+'" stroke="'+INK+'" stroke-width="'+(big?3.6:2.6)+'" stroke-linecap="round"/>';
+      if(big)inner+='<text x="'+x.toFixed(1)+'" y="98" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">'+esc(f.lab[i])+'</text>'}
+    (f.pts||[]).forEach(function(p){var px=x0+(x1-x0)*p.k/f.d;
+      inner+='<circle class="pt2" data-k="'+p.k+'" cx="'+px.toFixed(1)+'" cy="60" r="8" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="2"/><text x="'+px.toFixed(1)+'" y="34" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.coral+'">'+p.l+'</text>'});
+    return svg(360,108,inner,"fig-line");
+  },
+  /* fração com mais de um inteiro: f.d partes por inteiro, f.n partes pintadas (as primeiras), f.forma = "barra" ou "circulo"; desenha ceil(n/d) inteiros (ou f.inteiros). Cada parte: class="fp" e data-on. */
+  fracaoM:function(f){
+    var w=Math.max(f.inteiros||0,Math.ceil(f.n/f.d)),inner="",i,j,on,K=INK;
+    if(f.forma==="circulo"){
+      var r=40,gap=10,W=w*(2*r+gap)+4;
+      for(j=0;j<w;j++){var cx=2+r+j*(2*r+gap),cy=r+2;
+        for(i=0;i<f.d;i++){on=j*f.d+i<f.n;
+          var a0=-Math.PI/2+i*2*Math.PI/f.d,a1=-Math.PI/2+(i+1)*2*Math.PI/f.d;
+          if(f.d===1)inner+='<circle class="fp" data-on="'+(on?1:0)+'" cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+(on?C.sun:"#fff")+'" stroke="'+K+'" stroke-width="2.2"/>';
+          else inner+='<path class="fp" data-on="'+(on?1:0)+'" d="M'+cx+','+cy+' L'+(cx+r*Math.cos(a0)).toFixed(1)+','+(cy+r*Math.sin(a0)).toFixed(1)+' A'+r+','+r+' 0 0 1 '+(cx+r*Math.cos(a1)).toFixed(1)+','+(cy+r*Math.sin(a1)).toFixed(1)+' Z" fill="'+(on?C.sun:"#fff")+'" stroke="'+K+'" stroke-width="2.2" stroke-linejoin="round"/>'}}
+      return svg(W,2*r+4,inner,"fig-fracao fig-fracao-m");
+    }
+    var bw=240,pw=bw/f.d,bh=34,gap2=10;
+    for(j=0;j<w;j++)for(i=0;i<f.d;i++){on=j*f.d+i<f.n;
+      inner+='<rect class="fp" data-on="'+(on?1:0)+'" x="'+(4+i*pw).toFixed(1)+'" y="'+(4+j*(bh+gap2))+'" width="'+pw.toFixed(1)+'" height="'+bh+'" fill="'+(on?C.sun:"#fff")+'" stroke="'+K+'" stroke-width="2.2"/>'}
+    return svg(bw+8,w*(bh+gap2)+gap2-2,inner,"fig-fracao");
+  },
+  /* plano cartesiano, só o 1º quadrante: f.max (padrão 10); f.pts = [{x, y, l}] com letra; f.sheet escreve letras nas colunas (A, B, ...) em vez de números no eixo x (planilha) */
+  cartesiano:function(f){
+    var m=f.max||10,s=24,ml=28,top=10,W=ml+m*s+18,H=top+m*s+30,inner="",i;
+    function px(v){return ml+v*s}function py(v){return top+(m-v)*s}
+    for(i=0;i<=m;i++){
+      inner+='<line x1="'+px(i)+'" x2="'+px(i)+'" y1="'+py(0)+'" y2="'+py(m)+'" stroke="'+C.line+'" stroke-width="'+(i===0?2.6:1)+'"/><line x1="'+px(0)+'" x2="'+px(m)+'" y1="'+py(i)+'" y2="'+py(i)+'" stroke="'+C.line+'" stroke-width="'+(i===0?2.6:1)+'"/>';
+      if(!f.sheet)inner+='<text x="'+(ml-7)+'" y="'+(py(i)+4)+'" text-anchor="end" font-size="11" font-weight="700" fill="'+INK+'">'+i+'</text>';
+      else if(i>=1)inner+='<text x="'+(ml-7)+'" y="'+(py(i)+s/2+4)+'" text-anchor="end" font-size="11" font-weight="700" fill="'+INK+'">'+i+'</text>';
+      if(f.sheet){if(i>=1&&i<=m)inner+='<text x="'+(px(i)-s/2)+'" y="'+(py(0)+17)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+INK+'">'+"ABCDEFGHIJ".charAt(i-1)+'</text>'}
+      else inner+='<text x="'+px(i)+'" y="'+(py(0)+17)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+INK+'">'+i+'</text>'}
+    (f.pts||[]).forEach(function(p){
+      var cx=f.sheet?px(p.x)-s/2:px(p.x),cy=f.sheet?py(p.y)+s/2:py(p.y);
+      inner+='<circle class="pt" data-x="'+p.x+'" data-y="'+p.y+'" cx="'+cx+'" cy="'+cy+'" r="6.5" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="2"/>'+
+        (p.l?'<text x="'+(cx+9)+'" y="'+(cy-8)+'" font-size="15" font-weight="800" fill="'+INK+'">'+p.l+'</text>':"")});
+    return svg(W,H,inner,"fig-cart");
+  },
+  /* bloco de cubinhos em perspectiva: f.a (largura), f.b (profundidade), f.c (altura), em cubinhos; cada quadradinho visível tem class="cq" (face t, l ou r) */
+  cubos:function(f){
+    var u=22,k=u*.866,h=u*.5,a=f.a,b=f.b,c=f.c,pad=6,ox=pad+b*k,oy=pad+c*u,inner="",i,j;
+    function P(x,y,z){return [(ox+(x-y)*k).toFixed(1),(oy+(x+y)*h-z*u).toFixed(1)]}
+    function q(p1,p2,p3,p4,face,fill){return '<polygon class="cq" data-f="'+face+'" points="'+[p1,p2,p3,p4].map(function(p){return p.join(",")}).join(" ")+'" fill="'+fill+'" stroke="'+INK+'" stroke-width="1.3" stroke-linejoin="round"/>'}
+    for(i=0;i<a;i++)for(j=0;j<b;j++)inner+=q(P(i,j,c),P(i+1,j,c),P(i+1,j+1,c),P(i,j+1,c),"t",C.sky);
+    for(i=0;i<a;i++)for(j=0;j<c;j++)inner+=q(P(i,b,j),P(i+1,b,j),P(i+1,b,j+1),P(i,b,j+1),"l",C.blue);
+    for(i=0;i<b;i++)for(j=0;j<c;j++)inner+=q(P(a,i,j),P(a,i+1,j),P(a,i+1,j+1),P(a,i,j+1),"r","#173F9F");
+    return svg(Math.ceil((a+b)*k+2*pad),Math.ceil(c*u+(a+b)*h+2*pad),inner,"fig-cubos");
+  },
+  /* diagrama de árvore: f.niv = [[nomes do nível 1], [nomes do nível 2], ...]; cada ramo se divide em todos os nomes do nível seguinte; as pontas têm class="lf" */
+  arvore:function(f){
+    var L=f.niv,n=L.length,leaves=1,i;L.forEach(function(x){leaves*=x.length});
+    var rh=22,H=leaves*rh+10,colW=92,x0=18,W=x0+n*colW+4,inner="";
+    function node(nivel,idx,y0,y1,px,py){      /* desenha o nó e os filhos; devolve nada */
+      var y=(y0+y1)/2,x=x0+(nivel+1)*colW-colW/2+6;
+      inner+='<line x1="'+px+'" y1="'+py+'" x2="'+(x-6)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="1.8"/>';
+      if(nivel===n-1){inner+='<circle class="lf" cx="'+(x-6)+'" cy="'+y+'" r="3.5" fill="'+C.coral+'"/><text x="'+(x+2)+'" y="'+(y+4)+'" font-size="13" font-weight="700" fill="'+INK+'">'+esc(L[nivel][idx])+'</text>';return}
+      inner+='<text x="'+(x-4)+'" y="'+(y-5)+'" font-size="13" font-weight="800" fill="'+INK+'">'+esc(L[nivel][idx])+'</text>';
+      var m=L[nivel+1].length,span=(y1-y0)/m,j;
+      for(j=0;j<m;j++)node(nivel+1,j,y0+j*span,y0+(j+1)*span,x+Math.max(14,esc(L[nivel][idx]).length*7),y);
+    }
+    var m0=L[0].length,span0=(H-10)/m0;
+    inner+='<circle cx="'+x0+'" cy="'+(H/2)+'" r="4" fill="'+INK+'"/>';
+    for(i=0;i<m0;i++)node(0,i,5+i*span0,5+(i+1)*span0,x0,H/2);
+    return svg(W+30,H,inner,"fig-arvore");
+  },
+  /* gráfico de linhas: f.title, f.labels (eixo x), f.values (inteiros), f.ymax e f.ystep; cada ponto tem class="pt" e data-v */
+  linhas:function(f){
+    var W=330,H=210,ml=36,mr=12,top=26,bot=34,w=W-ml-mr,h=H-top-bot,n=f.labels.length,inner="",i;
+    function X(i){return ml+w*(n===1?.5:i/(n-1))}function Y(v){return top+h*(1-v/f.ymax)}
+    inner+='<text x="'+(W/2)+'" y="16" text-anchor="middle" font-size="13" font-weight="800" fill="'+INK+'">'+esc(f.title)+'</text>';
+    for(i=0;i<=f.ymax;i+=f.ystep)inner+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+Y(i)+'" y2="'+Y(i)+'" stroke="'+C.line+'" stroke-width="1"/><text x="'+(ml-6)+'" y="'+(Y(i)+4)+'" text-anchor="end" font-size="11" font-weight="700" fill="'+INK+'">'+i+'</text>';
+    inner+='<polyline points="'+f.values.map(function(v,i){return X(i).toFixed(1)+","+Y(v).toFixed(1)}).join(" ")+'" fill="none" stroke="'+C.blue+'" stroke-width="3" stroke-linejoin="round"/>';
+    f.values.forEach(function(v,i){inner+='<circle class="pt" data-v="'+v+'" cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="4.5" fill="'+C.coral+'" stroke="'+INK+'" stroke-width="1.6"/>'});
+    f.labels.forEach(function(l,i){inner+='<text x="'+X(i).toFixed(1)+'" y="'+(H-bot+16)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+INK+'">'+esc(l)+'</text>'});
+    return svg(W,H,inner,"fig-linhas");
+  },
   shape:function(f){return shapeFig(f.n,f.color)},
   /* sólidos geométricos */
   /* objeto em forma de cone: chapéu de festa (não existe emoji de cone inteiro) */
@@ -506,20 +588,26 @@ FC.optText=function(o,i){return o&&typeof o==="object"&&o.fig?"figura "+(i+1):St
 FC.answerText=function(p,v){
   var n=Number(v);
   if(p&&p.extra&&p.extra.opts&&n>=1&&n<=p.extra.opts.length)return FC.optText(p.extra.opts[n-1],n-1);
-  return v===""||v==null?"(em branco)":String(v);
+  return v===""||v==null?"(em branco)":(typeof v==="number"?FC.numBR(v):String(v));
 };
 FC.isRich=function(p){return !!(p&&p.extra)};
 
+/* Resposta digitada: número com até 6 algarismos e, nos decimais, vírgula (2,5). A tela mostra e aceita vírgula; "2.5" também vale. */
+FC.numBR=function(n){return String(n).replace(".",",")};
+FC.parseAns=function(v){var t=String(v==null?"":v).trim().replace(",",".");return /^\d{1,7}(\.\d{1,3})?$/.test(t)?Number(t):null};
+FC.sameAns=function(v,a){var x=FC.parseAns(v);return x!==null&&Math.abs(x-Number(a))<1e-9};
+FC.isDecimalItem=function(it){return it.a!==Math.floor(it.a)||/\d,\d/.test(String(it.pre||""))};
+FC.ansMode=function(it){return FC.isDecimalItem(it)?"decimal":"numeric"};
 /* Linha de uma folha. Itens simples mantêm o desenho de sempre. */
 FC.itemInner=function(it,i){
   var ex=it.extra;
-  if(!ex)return '<span class="n">'+(i+1)+')</span><span class="q">'+esc(it.pre)+'</span><span class="ans"><input id="in'+i+'" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'');
+  if(!ex)return '<span class="n">'+(i+1)+')</span><span class="q">'+esc(it.pre)+'</span><span class="ans"><input id="in'+i+'" inputmode="'+FC.ansMode(it)+'" autocomplete="off" maxlength="9" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'');
   var body='<span class="n">'+(i+1)+')</span><div class="rich"><div class="rq">'+esc(it.pre)+'</div>'+(ex.fig?FC.fig(ex.fig):"");
   if(ex.opts){
     body+='<div class="opts" role="group" aria-label="Opções da conta '+(i+1)+'">'+ex.opts.map(function(o,k){
       return '<button type="button" class="opt" data-i="'+i+'" data-k="'+(k+1)+'" aria-label="Opção '+(k+1)+': '+esc(FC.optText(o,k))+'">'+optHtml(o)+'</button>'}).join("")+'</div><input type="hidden" id="in'+i+'">';
   }else{
-    body+='<div class="rans"><span class="ans"><input id="in'+i+'" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'')+'</div>';
+    body+='<div class="rans"><span class="ans"><input id="in'+i+'" inputmode="'+FC.ansMode(it)+'" autocomplete="off" maxlength="9" aria-label="Resposta da conta '+(i+1)+'"></span>'+(it.post?'<span class="q">'+esc(it.post)+'</span>':'')+'</div>';
   }
   return body+'</div>';
 };
@@ -529,7 +617,7 @@ FC.itemStatic=function(p,v){
   if(ex.opts)out+='<div class="opts static">'+ex.opts.map(function(o,k){
     var right=k+1===p.a,mine=v!=null&&v!==""&&Number(v)===k+1;
     return '<span class="opt'+(right?" right":"")+(mine&&!right?" wrong":"")+'">'+optHtml(o)+(right?'<i>certa</i>':mine?'<i>resposta</i>':'')+'</span>'}).join("")+'</div>';
-  else out+='<div class="rans static"><span class="muted">resposta:</span> <b>'+esc(p.a)+'</b>'+(v!=null&&v!==""&&Number(v)!==p.a?' <span class="muted">(respondeu '+esc(v)+')</span>':'')+'</div>';
+  else out+='<div class="rans static"><span class="muted">resposta:</span> <b>'+esc(FC.numBR(p.a))+'</b>'+(v!=null&&v!==""&&!FC.sameAns(v,p.a)?' <span class="muted">(respondeu '+esc(v)+')</span>':'')+'</div>';
   return out+'</div>';
 };
 
