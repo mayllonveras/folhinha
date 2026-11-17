@@ -77,6 +77,14 @@ FC.err=function(e){
     ["pedido_repetido","Você já fez esse mesmo pedido de troca."],
     ["muitos_pedidos","Você já tem 10 pedidos de troca esperando. Cancele algum para fazer outro."],
     ["pedido_invalido","Esse pedido de troca não existe mais."],
+    ["plano_albuns","No plano Grátis a criança tem 1 álbum. Com o VIP, todos os álbuns ficam liberados."],
+    ["plano_album","No plano Grátis os pacotinhos abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
+    ["plano_alunos","Você chegou ao limite de alunos do seu plano. No VIP, a família cadastra até 4 crianças."],
+    ["amigo_sem_vip","Seu amigo está no plano Grátis: amigos e trocas são do VIP."],
+    ["plano_vip","Isso faz parte do plano VIP. Peça para seu responsável conhecer o VIP!"],
+    ["conta_nao_encontrada","Não existe conta com esse e-mail."],
+    ["dias_invalidos","Escolha de 1 a 3650 dias (ou deixe em branco para vitalício)."],
+    ["alunos_invalidos","O limite de alunos vai de 1 a 200."],
     ["Password should be","A senha precisa ter pelo menos 8 caracteres."],
     ["rate limit","Muitas tentativas. Aguarde alguns minutos."],
     ["Failed to fetch","Sem conexão com a internet. Tente de novo."],
@@ -101,7 +109,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v64";
+FC.VERSAO="folhinha-v65";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
