@@ -1,8 +1,8 @@
 # Trilha Turbo: especificação do motor (rascunho v1)
 
-Estado: **rascunho para revisão do professor**. Nada disto está implementado no app. A página de apresentação com dados de exemplo é o artefato "Trilha Turbo" (claude.ai).
+Estado: **decisões do professor registradas (17/11/2026), motor escrito e testado, ainda não ligado ao app**. O motor está em `turbo.js` e os testes em `testes/turbo.test.js` (`node testes/turbo.test.js`). Faltam banco, telas e painel (item 12). A página de apresentação com dados de exemplo é o artefato "Trilha Turbo" (claude.ai).
 
-A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível, sequência de dias nem pacotes de figurinhas da trilha BNCC.
+A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível nem sequência de dias da trilha BNCC. **Ao concluir a sessão do dia, a criança ganha 1 pacotinho de figurinha** (item 6.1).
 
 **Objetivo:** que a criança resolva contas de aritmética básica (+, −, ×, ÷) rapidamente ao olhar, isto é, por recuperação direta da memória.
 
@@ -55,6 +55,14 @@ Status: *heurística*. O 85% é proposta e deve ser editável.
 
 **Rebaixamento:** um erro em recuperação provável ou maduro volta o fato um estado, sem zerar. Erro de um fato em consolidando mantém o estado e agenda reapresentação na mesma sessão. Fato que erra de novo depois de chegar a consolidando é marcado como **teimoso**.
 
+Regras de detalhe que o motor aplica:
+
+- **Aprendendo para consolidando:** 3 recuperações corretas **em pelo menos 2 dias diferentes**. Três acertos na mesma sessão não bastam.
+- **Duas sessões boas seguidas:** uma sessão sem erro, mas lenta, com dica antes da tentativa ou contando nos dedos, **zera a sequência**. Sessão em aparelho novo não conta nem zera.
+- **Revisão lenta ou com apoio de um fato provável:** não avança o calendário e o fato volta a ser conferido no dia seguinte.
+- **Calendário de revisões de um fato provável:** 1, 3, 7, 14 e 30 dias. Passando a de 30 dias, vira maduro (revisão a cada 21 dias). Um erro em maduro volta a provável com revisão em 7 dias ou mais.
+- **Teimoso:** erra depois de já ter chegado a consolidando. Sai da marca ao voltar a provável.
+
 Status: *heurística* (a pesquisa sustenta a lógica de acerto, latência e repetições, não os valores exatos).
 
 ## 5. Medição de tempo (sem calibração obrigatória)
@@ -105,7 +113,7 @@ Depois de pelo menos 30 pares de tentativas no mesmo fato firme em duas classes,
 Composição, nesta ordem:
 
 1. **Revisões vencidas** dos fatos já no agendador.
-2. **Bloco novo** de 3 a 4 fatos de uma família, sem repetir números dentro do bloco e sem fatos de tabuadas vizinhas na mesma sessão (por exemplo, nunca 6×7, 7×7 e 8×7 juntos).
+2. **Bloco novo** de 3 a 4 fatos de uma família, sem repetir números dentro do bloco e sem fatos de tabuadas vizinhas na mesma sessão (por exemplo, nunca 6×7, 7×7 e 8×7 juntos). Exceções: se todos os fatos da família têm o mesmo número (somar zero, ×0), o bloco completa o mínimo de 3 mesmo assim; se a família tem menos de 3 fatos novos (faz 10), completa com a seguinte. Cada fato novo aparece 3 vezes na sessão. **Fila de aprendizagem cheia:** com 8 ou mais fatos em novo ou aprendendo, não entra bloco novo.
 3. **Reapresentação** dos erros ao fim da sessão.
 
 Limites: **5 minutos** e **40 tentativas**, o que vier primeiro. O dia da Turbo conta como concluído quando as revisões vencidas e o bloco novo do dia foram feitos, ou ao atingir o teto.
@@ -119,6 +127,22 @@ Política de resposta e erro:
 - Cronômetro **invisível** no início; depois "seu melhor tempo"; nunca ranking nem prova cronometrada de alto risco.
 
 Status: *validado* para prática de recuperação e feedback imediato; *heurística* para tetos, tamanho de bloco e fading da dica.
+
+### 6.1 Recompensa: o Turbo do dia
+
+Decisão do professor (17/11/2026): **concluir a sessão do dia dá uma figurinha.**
+
+Como o app já entrega figurinha por "pacotinho" que a criança abre, o Turbo do dia dá **1 pacotinho** com origem nova, `turbo`:
+
+- **No máximo 1 por dia.** O índice único `awards_pack_once` (aluno, dia, origem, posição) já garante isso.
+- **Vale pela sessão concluída, não pela nota.** Concluída quer dizer: a fila do dia acabou, ou bateu o teto de 40 tentativas ou 5 minutos. Acertar menos não tira o pacotinho, para a criança não ter motivo para ter pressa.
+- **Não ganha** quem parou no meio, quem não tinha nada a fazer naquele dia e quem "chutou" (8 tentativas ou mais com metade ou mais errada e respondida em menos de 0,5 s). Isso é heurística.
+- **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e o pacotinho da BNCC continua independente.
+- A figurinha vem do mesmo álbum e das mesmas regras de abertura que o app já tem (`student_open_pack`).
+
+Efeito no banco: a restrição `awards.source` (hoje `carimbo`, `perseveranca`, `marco`) precisa aceitar `turbo`. Isso entra na migração, que não é aplicada sem autorização do professor.
+
+Status: decisão do professor; o efeito da figurinha na motivação e na pressa é *a testar*.
 
 ## 7. Revisões (espaçamento)
 
@@ -136,7 +160,9 @@ Curta (5 a 6 min), com cara de jogo, divisível em dois dias. Os pais podem pula
 | B. Pré-requisitos | qual é maior (6 itens), quantidade de 1 a 4 pontos sem contar (4), "7 + 3" contando a partir do 7 (3) | só para os pequenos ou se a parte C for ruim |
 | C. Sondagem de fatos | um fato "sentinela" por família, subindo e descendo na ordem das famílias; botão "não sei" sempre disponível | sempre |
 
-- A sondagem para após duas famílias seguidas falhadas ou 12 itens.
+- A sondagem é uma **busca binária** pela família mais alta que a criança passa (as famílias estão em ordem de dificuldade). O primeiro palpite é a 2ª família para 6 anos e a família do meio para mais velhos. Cada sentinela dá "rápido" (acertou dentro da meta), "lento" (acertou, passou da meta) ou "falhou" (errou, "não sei" ou passou de 8 s).
+- Para após duas famílias seguidas falhadas, 12 itens ou quando acha o limite.
+- Resultado: famílias até a mais alta que passou viram **consolidando** (a sentinela lenta, aprendendo), as de cima ficam na fila. As revisões desses fatos são espalhadas, no máximo 15 por dia, a partir do dia seguinte. Nunca se rebaixa fato que já tinha estado.
 - Tempo sem pressão visível, sem nota para a criança.
 - **O teste nunca declara um fato dominado.** No máximo marca "consolidando". Os fatos só viram "recuperação provável" nas sessões normais.
 - O teste **não abre portão**.
@@ -152,7 +178,7 @@ Tabelas novas com prefixo `turbo_`, no mesmo padrão de token e segurança que o
 - `turbo_attempts`: uma linha por tentativa, com os campos do item 5.
 - `turbo_days`: a sessão do dia, com status.
 
-Usar o consentimento e o `anon_id` que o app já tem. Nenhuma tabela da trilha BNCC (`sheets`, carimbos, figurinhas) muda. **Nenhuma migração é aplicada no banco sem autorização do professor.**
+Usar o consentimento e o `anon_id` que o app já tem. Na trilha BNCC nada muda (`sheets`, carimbos, nível, sequência). A única alteração em tabela existente é a do item 6.1: `awards.source` passa a aceitar `turbo`. **Nenhuma migração é aplicada no banco sem autorização do professor.**
 
 ## 10. Experimentos que o app pode rodar
 
@@ -166,10 +192,21 @@ Usar o consentimento e o `anon_id` que o app já tem. Nenhuma tabela da trilha B
 
 São testes internos de produto, não substituem um ensaio controlado externo. Para alegação pública de eficácia será preciso grupo de controle ativo, pré e pós-teste e acompanhamento de retenção.
 
-## 11. Decisões abertas
+## 11. Decisões do professor (17/11/2026)
 
-1. O teste da primeira entrada é obrigatório com opção de pular pelos pais, ou opcional?
-2. A parte B (pré-requisitos) entra para todos ou só para os pequenos e para quem falha na C?
-3. O primeiro corte do app libera só a soma (e deixa as outras operações bloqueadas) ou a trilha completa?
-4. Recompensa da Turbo: selo próprio, ou algo ligado às figurinhas? (Na v1 não mexe em carimbos nem em nível.)
-5. Painel dos pais: o que mostrar (fatos dominados, em aprendizado, mais lentos, aparelhos usados)?
+1. **Teste da primeira entrada:** roda por padrão, e os pais podem pular no cadastro. O aquecimento de 6 toques vale para todos.
+2. **Parte B (pré-requisitos):** só para os pequenos (até cerca de 7 anos) ou para quem for mal na sondagem de fatos.
+3. **Primeiro corte do app:** só a soma liberada. O motor já nasce com as quatro operações; as demais ficam bloqueadas (`liberadas` no estado do aluno) até os dados mostrarem que o portão funciona.
+4. **Recompensa:** **1 figurinha (pacotinho) ao concluir o Turbo do dia**, no lugar do selo próprio que eu tinha proposto. Detalhes no item 6.1.
+5. **Painel dos pais, o mínimo útil:** se a Turbo de hoje foi feita; barra de fatos firmes por operação; os 3 fatos mais teimosos ou lentos; aparelhos usados; aviso neutro quando a criança passa 3 sessões sem progresso. Sem milissegundos crus, sem comparação com outras crianças, sem ranking.
+
+## 12. Estado da implementação
+
+| Parte | Estado |
+|---|---|
+| Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
+| Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
+| Ligação do motor ao `index.html` e ao `sw.js` | não feita; o app não carrega o `turbo.js` ainda |
+| Migração SQL (`turbo_*` e `awards.source`) | não escrita; não será aplicada sem autorização |
+| Telas do aluno (dois cartões, sessão, nivelamento, pacotinho) | não feitas |
+| Painel dos pais | não feito |
