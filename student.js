@@ -42,6 +42,7 @@ function leaveSheet(path){
 }
 function route(path){
   if(!S.token)return;
+  if(FC.turboUi&&FC.turboUi.route(path))return;   // Turbo em andamento: o voltar pergunta antes de sair
   if(cur&&cur.secs==null){   // folha em andamento: o botão voltar não pode jogar fora o que a criança escreveu sem perguntar
     var typed=cur.items.some(function(i){var el=$("#in"+i.i);return i.tries>0||(el&&el.value.trim()!=="")});
     if(!typed)return leaveSheet(path);
@@ -130,8 +131,17 @@ function pinScreen(mode,first,msg){
 }
 
 /* ---------- início ---------- */
+/* Trilha Turbo (turbo-aluno.js): o que ela precisa de cá. Se o banco não responder, o cartão da Turbo não aparece e o resto segue normal. */
+function turboCtx(){
+  return{get token(){return S.token},get code(){return S.code},get me(){return S.me},rpc:rpc,track:track,fail:fail,
+    goHome:function(){return goHome()},
+    setPacks:function(n){if(S.me){S.me.pending_packs=n;refreshPacks()}},
+    openPack:function(){openPackFlow()},
+    expired:function(){setTok(null);S.token=null;pinScreen("login",null,"Sua sessão acabou. Digite o PIN.")}};
+}
 async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
+  if(FC.turboUi){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
   home();
   if(S.me.welcome_pending)showWelcome();
 }
@@ -155,11 +165,11 @@ function home(){
   }
   var need=m.stamps_needed||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
   var hero;
-  if(canStart)hero='<section class="hero"><span class="eyebrow">Hoje'+(m.free_day?" · dia livre":"")+' · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
-  else hero='<section class="hero"><span class="eyebrow">Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
+  if(canStart)hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje'+(m.free_day?" · dia livre":"")+' · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
+  else hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
-  var inicio=offerHtml(m,L)+hero+packPanel(m)+
+  var inicio=offerHtml(m,L)+'<div class="duo">'+hero+(FC.turboUi?FC.turboUi.cardHtml():"")+'</div>'+packPanel(m)+
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
     '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. Cada carimbo vale um pacotinho de figurinhas. Com '+need+' carimbos você sobe de nível.</p></section>'+
     '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
@@ -188,6 +198,7 @@ function home(){
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
+  if(FC.turboUi)FC.turboUi.bind();
   bindOffer(m);
   bindPack();bindAlbum();friendsLoad();TR.step="home";trLoad();
 }

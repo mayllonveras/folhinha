@@ -797,3 +797,49 @@ tr[hidden]{display:none}
 .step-nav .btn[hidden]{display:none}
 .mapa-b.cur i{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent);font-weight:800}
 
+
+/* ---------- Trilha Turbo (aluno): cartão da tela inicial, sessão do dia e nivelamento. Regras em turbo/ESPECIFICACAO.md ---------- */
+:root{--turbo-a:#12856E;--turbo-b:#0C5A6B}
+@media (prefers-color-scheme:dark){:root{--turbo-a:#14665A;--turbo-b:#0E3E4D}}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.duo>.hero{display:flex;flex-direction:column}
+.duo>.hero .btn.reward{margin-top:auto}
+.hero.turbo{background:linear-gradient(145deg,var(--turbo-a),var(--turbo-b))}
+.hero.turbo .eyebrow{color:#C7F1E6}
+.hero.turbo p{color:#D9F5EE}
+.turbo-run{max-width:520px;gap:16px}
+.tr-top{display:flex;align-items:center;gap:12px}
+.tr-prog{flex:1;height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
+.tr-prog i{display:block;height:100%;background:var(--ok-fill);border-radius:99px}
+.tr-count{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:5.2em;text-align:right}
+.tr-body{display:flex;flex-direction:column;gap:14px;align-items:center;min-height:430px}
+.tr-hint{align-self:stretch;background:var(--soft);border-left:4px solid var(--reward);border-radius:var(--r-sm);padding:10px 14px;font-size:.95rem}
+.tr-q{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:.35em;font-family:var(--font-num);font-weight:600;font-size:clamp(2.2rem,11vw,3.6rem);line-height:1.1;margin-top:6px}
+.tr-ans{display:inline-block;min-width:2.1ch;text-align:center;border-bottom:4px solid var(--ink)}
+.tr-ans.ok{color:var(--ok);border-bottom-color:var(--ok)}
+.tr-ans.bad{color:var(--mark);border-bottom-color:var(--mark)}
+.tr-fb{min-height:1.8em;text-align:center;font-weight:500}
+.tr-pad{margin:0 auto}
+.key.go{background:var(--reward);color:var(--on-reward)}
+.tr-pad .key,.tc{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.tr-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.tr-say{margin:0;font-size:1.15rem;font-weight:500;text-align:center}
+.tr-big{font-family:var(--font-num);font-weight:600;font-size:4rem;line-height:1}
+.tdots{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:320px}
+.tdots i{width:28px;height:28px;border-radius:50%;background:var(--primary)}
+.tdots i.plus{background:var(--reward)}
+.tcmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%}
+.tcmp.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tc{font-family:var(--font-num);font-size:2.4rem;font-weight:600;padding:22px 0;border-radius:var(--r-lg);border:2px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.tc:active{background:var(--accent);color:var(--accent-ink)}
+.turbo-intro{max-width:520px;margin:0 auto;width:100%}
+.turbo-res .actions{justify-content:center}
+
+/* ---------- Trilha Turbo (painel dos pais) ---------- */
+.tp-row{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.tp-row.off{opacity:.62}
+.tp-bar{display:flex;height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
+.tp-bar i{display:block;height:100%}
+.tp-bar i.f{background:var(--ok-fill)}
+.tp-bar i.l{background:color-mix(in srgb,var(--ok-fill) 38%,var(--soft))}
+.tp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
