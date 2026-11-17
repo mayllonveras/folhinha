@@ -1038,7 +1038,7 @@ function renderSheet(){
       });
       return;
     }
-    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9]/g,"");$("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();noteFirstInput(it.i)});
+    inp.addEventListener("input",function(){inp.value=inp.value.replace(/[^0-9,.]/g,"").replace(/\./g,",").replace(/,/g,function(m,o,t){return t.indexOf(",")===o?m:""});$("#r"+it.i).classList.remove("bad");clearMiss(it.i);updateMapa();saveDraftSoon();noteFirstInput(it.i)});
     if(!uma){inp.addEventListener("focus",function(){startDwell(it.i)});
     inp.addEventListener("blur",stopDwell)}
     inp.addEventListener("keydown",function(e){
@@ -1091,7 +1091,7 @@ function submit(){
   var wrong=0,focus=null;
   cur.items.forEach(function(it){
     if(it.ok)return;
-    var inp=$("#in"+it.i),row=$("#r"+it.i),v=inp.value.trim(),good=v!==""&&Number(v)===it.a,isChoice=!!(it.extra&&it.extra.opts);
+    var inp=$("#in"+it.i),row=$("#r"+it.i),v=inp.value.trim(),good=v!==""&&(it.extra&&it.extra.opts?Number(v)===it.a:FC.sameAns(v,it.a)),isChoice=!!(it.extra&&it.extra.opts);
     it.tries++;
     if(it.tries===1){it.first=good;it.firstVal=v}
     if(it.vals.length<6)it.vals.push(v);
@@ -1102,7 +1102,7 @@ function submit(){
       wrong++;row.classList.add("bad");inp.value="";if(focus==null)focus=it.i;
       if(isChoice)$$("#r"+it.i+" .opt").forEach(function(o){o.classList.remove("sel")});
       if(it.tries>=3&&!row.querySelector(".tip")){var tip=document.createElement("div");tip.className="tip";
-        tip.textContent=isChoice?"Dica: a resposta certa é a opção "+it.a+". Olhe com calma e tente entender o porquê.":"Dica: a resposta é "+it.a+". Escreva e tente entender o caminho.";row.appendChild(tip)}
+        tip.textContent=isChoice?"Dica: a resposta certa é a opção "+it.a+". Olhe com calma e tente entender o porquê.":"Dica: a resposta é "+FC.numBR(it.a)+". Escreva e tente entender o caminho.";row.appendChild(tip)}
     }
   });
   updateMapa();saveDraft();

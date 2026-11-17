@@ -1,15 +1,15 @@
-/* Rodízio de tipos e rampa de dificuldade (plano.js), níveis do 1º ao 4º ano. Rodar com: node testes/plano.test.js
+/* Rodízio de tipos e rampa de dificuldade (plano.js), níveis do 1º ao 5º ano. Rodar com: node testes/plano.test.js
    Para cada nível: em cada dia de 5 folhas todos os tipos aparecem (garantido, não sorteado); a dificuldade média nunca desce da folha 1 à 5;
    dentro de cada folha as contas do nível vão do mais fácil ao mais difícil; cada folha tem 10 contas sem repetição e 2 de revisão. */
 global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
 global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
 global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};global.localStorage={};
 global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
-require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');require('../plano.js');
+require('../core.js');require('../exercicios.js');require('../grade1.js');require('../grade2.js');require('../grade3.js');require('../grade4.js');require('../grade5.js');require('../plano.js');
 const FC=global.FC;let falhas=0;const falha=m=>{falhas++;if(falhas<40)console.log("  FALHA",m)};
 const DIAS=Number(process.env.DIAS||120);
 const L=FC.LEVELS,idx4=L.map((l,i)=>l.ano>=1?i:-1).filter(i=>i>=0);
-if(idx4.length!==164)falha("164 níveis (1º ao 4º ano) com espec");
+if(idx4.length!==211)falha("211 níveis (1º ao 5º ano) com espec");
 let semTipo=0,resumo=[];
 for(const i of idx4){
   const E=L[i].espec;if(!E||!E.tipos.length||typeof E.tipo!=="function"||typeof E.nota!=="function"){falha("nível "+L[i].id+" sem espec");continue}
