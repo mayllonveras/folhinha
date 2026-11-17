@@ -121,7 +121,8 @@ function bindEx(){
 
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
-  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2,modo_folha:1};
+  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2,modo_folha:1,
+  plano_folhas_gratis:2,plano_albuns_gratis:1,plano_alunos_gratis:1,plano_alunos_vip:4,plano_teste_dias:14};
 var GROUPS=[
   {t:"Carimbos e subida de nível",d:"O dia fecha quando o aluno faz a cota de folhas. Cumprindo o dia normal, ganha 1 carimbo.",f:[
     ["stamps_needed","Carimbos para subir de nível",1,10,"carimbos"],
@@ -146,10 +147,17 @@ var GROUPS=[
   {t:"Ano escolar",d:"O ano de cada aluno é calculado a partir do ano informado pelos pais; a virada não muda o nível do aluno.",f:[
     ["teto_anos_padrao","Anos à frente do ano escolar que o aluno pode alcançar (padrão)",0,9,"anos"],
     ["virada_mes","Virada do ano escolar: mês",1,12,"mês"],
-    ["virada_dia","Virada do ano escolar: dia",1,28,"dia"]]}];
+    ["virada_dia","Virada do ano escolar: dia",1,28,"dia"]]},
+  {t:"Plano Grátis e VIP",d:"Limites do plano Grátis e o tamanho do VIP. A trava é no banco; mudar aqui vale na hora para todas as contas.",f:[
+    ["plano_folhas_gratis","Folhas por dia no Grátis",1,10,"folhas"],
+    ["plano_albuns_gratis","Álbuns no Grátis",1,5,"álbuns"],
+    ["plano_alunos_gratis","Alunos por conta no Grátis",1,10,"alunos"],
+    ["plano_alunos_vip","Alunos por conta no VIP (família)",1,20,"alunos"],
+    ["plano_teste_dias","Dias de teste do VIP para conta nova (0 desliga)",0,60,"dias"]]}];
 function paramsHtml(){
   if(!SET)return '<p class="msg bad">'+esc(SETERR||"Não deu para carregar os parâmetros.")+'</p>';
-  return '<form id="parForm" class="form" novalidate>'+GROUPS.map(function(g){
+  return '<form id="parForm" class="form" novalidate>'+GROUPS.filter(function(g){return g.f.every(function(f){return SET[f[0]]!=null})}).map(function(g){   // grupo sem os parâmetros no banco (migração ainda não aplicada) não aparece
+
     return '<fieldset class="adm-group"><legend>'+esc(g.t)+'</legend><p class="muted small-t">'+esc(g.d)+'</p><div class="adm-params">'+g.f.map(function(f){
       return '<label class="field">'+esc(f[1])+'<span class="adm-in"><input type="number" inputmode="numeric" step="1" min="'+f[2]+'" max="'+f[3]+'" name="'+f[0]+'" value="'+esc(SET[f[0]]!=null?SET[f[0]]:DEFAULTS[f[0]])+'"><em>'+esc(f[4])+'</em></span></label>'}).join("")+'</div></fieldset>'}).join("")+
     '<p class="msg" id="parMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="parSave">Salvar parâmetros</button>'+
@@ -203,7 +211,8 @@ function bindParams(user){
     e.preventDefault();
     var out={},bad=null;
     GROUPS.forEach(function(g){g.f.forEach(function(x){
-      var i=f.elements[x[0]],v=i.value.trim();
+      var i=f.elements[x[0]];if(!i)return;   // parâmetro que não está na tela (grupo escondido)
+      var v=i.value.trim();
       if(v===""||!/^-?\d+$/.test(v)||Number(v)<x[2]||Number(v)>x[3])bad=bad||("“"+x[1]+"” precisa ser um número inteiro de "+x[2]+" a "+x[3]+".");
       out[x[0]]=Number(v)})});
     var msg=$("#parMsg");
@@ -231,10 +240,47 @@ function studentsTable(){
       '<td>'+esc((s.sticker_themes||[]).join(", "))+'</td><td>'+esc(s.owners.join(", "))+'</td><td>'+dt(s.last_study)+'</td><td>'+dtDay(s.created_at)+'</td></tr>'});
   return table(["Aluno","Nível","Folhas feitas","Carimbos","Sequência","Álbuns","Responsáveis","Último estudo","Criado em"],rows);
 }
+/* Plano de cada conta (migração 2026-11-17-plano-vip.sql). Sem a migração, a coluna mostra só um traço. */
+var ORIGEM={teste:"teste",fundador:"Fundador",concessao:"concessão",cupom:"cupom",assinatura:"assinatura",indicacao:"indicação"};
+function planCell(a){
+  var p=a.plan;if(!p)return "—";
+  var t=!p.vip?'<span class="tag">Grátis</span>':'<span class="tag ok">VIP'+(p.lifetime?' vitalício':' até '+dtDay(p.until))+'</span>';
+  var ents=(a.ents||[]).map(function(e){
+    return '<li>'+esc(ORIGEM[e.source]||e.source)+(e.ends_at?' até '+dtDay(e.ends_at):' vitalício')+(e.max_students?' · '+e.max_students+' alunos':'')+(e.note?' · '+esc(e.note):'')+
+      (e.source!=="assinatura"?' <button type="button" class="link small-t" data-revoke="'+e.id+'">tirar</button>':'')+'</li>'}).join("");
+  return t+(ents?'<ul class="plain small-t">'+ents+'</ul>':'');
+}
 function accountsTable(){
   var rows=DATA.accounts.filter(function(a){return match((a.email||"")+" "+(a.name||""))}).map(function(a){
-    return '<tr><td><b>'+esc(a.email||"")+'</b></td><td>'+esc(a.name||"—")+'</td><td>'+esc(a.role||"—")+'</td><td>'+a.students+'</td><td>'+dt(a.last_sign_in_at)+'</td><td>'+dtDay(a.created_at)+'</td></tr>'});
-  return table(["E-mail","Nome","Perfil","Alunos","Último acesso","Criada em"],rows);
+    return '<tr><td><b>'+esc(a.email||"")+'</b></td><td>'+esc(a.name||"—")+'</td><td>'+esc(a.role||"—")+'</td><td>'+a.students+'</td><td>'+planCell(a)+'</td><td>'+dt(a.last_sign_in_at)+'</td><td>'+dtDay(a.created_at)+'</td></tr>'});
+  return grantForm()+table(["E-mail","Nome","Perfil","Alunos","Plano","Último acesso","Criada em"],rows);
+}
+function grantForm(){
+  return '<details class="panel"><summary>Dar VIP para uma conta</summary><form id="vipForm" class="form" novalidate>'+
+    '<label class="field">E-mail da conta<input id="vEmail" type="email" autocomplete="off" required></label>'+
+    '<div class="two"><label class="field">Dias de VIP<input id="vDays" type="number" min="1" max="3650" inputmode="numeric" placeholder="vazio = vitalício"><small>Somam a partir do fim do VIP atual.</small></label>'+
+    '<label class="field">Limite de alunos<input id="vMax" type="number" min="1" max="200" inputmode="numeric" placeholder="padrão do VIP"><small>Para professor ou escola, aumente.</small></label></div>'+
+    '<label class="field">Observação<input id="vNote" maxlength="200" placeholder="Ex.: parceria, sorteio, professor"></label>'+
+    '<p class="msg bad" id="vMsg" role="alert"></p><button class="btn" type="submit" id="vBtn">Dar VIP</button></form></details>';
+}
+function bindAccounts(user){
+  var f=$("#vipForm");
+  if(f)f.onsubmit=async function(e){
+    e.preventDefault();
+    var email=$("#vEmail").value.trim(),days=$("#vDays").value.trim(),mx=$("#vMax").value.trim();
+    if(!email){$("#vMsg").textContent="Digite o e-mail da conta.";return}
+    $("#vBtn").disabled=true;
+    var r=await sb.rpc("admin_grant_vip",{p_email:email,p_days:days?Number(days):null,p_max_students:mx?Number(mx):null,p_note:$("#vNote").value.trim()});
+    if(r.error){$("#vBtn").disabled=false;$("#vMsg").textContent=FC.err(r.error);return}
+    FC.toast(r.data.lifetime?"VIP vitalício concedido.":"VIP concedido até "+dtDay(r.data.until)+".");load(user);
+  };
+  $$("[data-revoke]").forEach(function(b){
+    FC.confirmClick(b,"tocar de novo para tirar",async function(){
+      var r=await sb.rpc("admin_revoke_vip",{p_id:b.getAttribute("data-revoke")});
+      if(r.error)return FC.toast(FC.err(r.error),true);
+      FC.toast("Concessão retirada.");load(user);
+    });
+  });
 }
 
 function show(user){
@@ -242,7 +288,7 @@ function show(user){
   var t=DATA.totals;
   FC.render(bar(user.email)+'<div class="section-head"><h1>Visão geral</h1><div class="actions"><button class="btn ghost small" id="reload">Atualizar</button></div></div>'+
     '<div class="adm-stats">'+stat(t.accounts,"contas de adultos")+stat(t.students,"alunos")+stat(t.sheets_done,"folhas feitas")+stat(t.sheets_7d,"folhas nos últimos 7 dias")+
-      stat(t.active_7d,"alunos ativos em 7 dias")+stat(t.friendships,"amizades")+'</div>'+
+      stat(t.active_7d,"alunos ativos em 7 dias")+stat(t.friendships,"amizades")+(t.vip!=null?stat(t.vip,"contas VIP agora"):"")+'</div>'+
     '<div class="panel"><div class="tabs"><button class="tab'+(TAB==="alunos"?" on":"")+'" data-t="alunos">Alunos ('+DATA.students.length+')</button>'+
       '<button class="tab'+(TAB==="contas"?" on":"")+'" data-t="contas">Contas ('+DATA.accounts.length+')</button>'+
       '<button class="tab'+(TAB==="parametros"?" on":"")+'" data-t="parametros">Parâmetros</button>'+
@@ -253,7 +299,7 @@ function show(user){
   bindBar();
   $("#reload").onclick=function(){load(user)};
   $$(".tab").forEach(function(b){b.onclick=function(){TAB=b.getAttribute("data-t");show(user)}});
-  bindParams(user);bindLevels();bindEx();
-  if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable()};
+  bindParams(user);bindLevels();bindEx();bindAccounts(user);
+  if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable();bindAccounts(user)};
 }
 })();

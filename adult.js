@@ -17,6 +17,62 @@ var MIN_SHEETS=5,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns apare
 function deskLimit(){return (PUB&&PUB.limite_mesa)||2}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
+/* ---------- plano (Grátis ou VIP) ----------
+   A trava de verdade é no banco (migracoes/2026-11-17-plano-vip.sql). Aqui o painel só explica o plano e evita mandar o adulto a um erro.
+   Se adult_plan falhar (banco sem a migração), PLAN fica nulo e o painel segue como antes, sem nada trancado. */
+var PLAN=null;
+async function loadPlan(){try{var r=await sb.rpc("adult_plan");PLAN=r.error?null:r.data}catch(e){PLAN=null}return PLAN}
+function planLim(k,d){return PLAN&&PLAN.limits&&PLAN.limits[k]!=null?PLAN.limits[k]:d}
+/* O aluno segue o plano de quem o cadastrou. Aluno de outro adulto (convite): o painel não sabe o plano dele, então não tranca nada. */
+function studentFree(s){return !!(PLAN&&s&&s.created_by===U.user.id&&!PLAN.vip)}
+function quotaOf(s){return studentFree(s)?Math.min(s.sheets_per_day,planLim("folhas_gratis",2)):s.sheets_per_day}
+function daysLeft(iso){return Math.max(0,Math.ceil((new Date(iso)-Date.now())/864e5))}
+function planName(){
+  if(!PLAN)return "";
+  if(!PLAN.vip)return "Plano Grátis";
+  if(PLAN.lifetime)return PLAN.source==="fundador"?"VIP Fundador vitalício":"VIP vitalício";
+  var n=daysLeft(PLAN.until);
+  if(PLAN.source==="teste")return "Teste do VIP: "+(n<=1?"último dia":"faltam "+n+" dias");
+  if(PLAN.source==="fundador")return "VIP Fundador até "+FC.dm(String(PLAN.until).slice(0,10));
+  return "VIP até "+FC.dm(String(PLAN.until).slice(0,10));
+}
+function planBanner(){
+  if(!PLAN)return "";
+  var cls=PLAN.vip?"plan-vip":"plan-free",msg;
+  if(!PLAN.vip)msg=PLAN.trial_used?"O teste do VIP terminou. As figurinhas e o histórico continuam guardados; com o VIP voltam os álbuns, as trocas, a Turbo e as folhas do programa.":"Conheça o VIP: todos os álbuns, trocas com amigos, Trilha Turbo e até 4 crianças.";
+  else if(PLAN.lifetime)msg=PLAN.source==="fundador"?"Conta de fundador: tudo liberado, para sempre.":"Tudo liberado, para sempre. Obrigado por fazer parte da Folhinha!";
+  else if(PLAN.source==="teste")msg="Aproveite tudo do VIP. Quando o teste acabar, a conta passa para o plano Grátis e nada do que a criança conquistou se perde.";
+  else if(PLAN.source==="fundador")msg="Obrigado por chegar primeiro! Conta de fundador.";
+  else msg="Tudo liberado no seu plano.";
+  return '<div class="panel plan-banner '+cls+'"><div class="grow"><b>'+esc(planName())+'</b><p class="small-t">'+esc(msg)+'</p></div><button type="button" class="btn '+(PLAN.vip?"ghost ":"")+'small" id="seePlans">Ver planos</button></div>';
+}
+function bindPlanBanner(){var b=$("#seePlans");if(b)b.onclick=showPlans}
+function vipLock(title,text){
+  return '<div class="panel vip-lock"><span class="vip-tag">VIP</span><b>'+esc(title)+'</b><p class="small-t muted">'+esc(text)+'</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div></div>';
+}
+function bindLocks(){$$("[data-plans]").forEach(function(b){b.onclick=showPlans})}
+var PLAN_ROWS=[["Crianças por conta","1","até 4 (família)"],["Folhas do dia","2 por dia","as do programa (5 ou mais)"],["Todos os anos (1º ao 5º) e vídeos","✓","✓"],
+  ["Álbuns de figurinhas","1","todos"],["Pacotinhos","boas-vindas e dias seguidos","+ carimbo, perseverança e Turbo"],
+  ["Amigos e trocas de figurinhas","—","✓"],["Trilha Turbo","—","✓"],["Painel dos pais","resumo e histórico","completo, com a aba Atenção"]];
+async function showPlans(){
+  FC.render('<p class="loading">Carregando…</p>');
+  await loadPlan();
+  var used=PLAN?PLAN.students+" de "+PLAN.max_students+" aluno"+(PLAN.max_students===1?"":"s"):"";
+  FC.render(topbar("Planos")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
+    '<div class="section-head"><h1>Planos</h1></div>'+
+    (PLAN?'<div class="panel plan-now"><div class="eyebrow">Seu plano agora</div><div class="v">'+esc(planName())+'</div><small class="muted">'+esc(used)+'</small></div>':'')+
+    '<div class="plan-cards">'+
+      '<div class="panel plan-card"><div class="eyebrow">Grátis</div><div class="price">R$ 0</div><p class="small-t muted">Para começar e conhecer.</p></div>'+
+      '<div class="panel plan-card best"><div class="eyebrow">VIP mensal</div><div class="price">R$ 24,90<small>/mês</small></div><p class="small-t muted">Família inteira, até 4 crianças.</p></div>'+
+      '<div class="panel plan-card best"><span class="vip-tag">33% off</span><div class="eyebrow">VIP anual</div><div class="price">R$ 199<small>/ano</small></div><p class="small-t muted">Sai a R$ 16,58 por mês.</p></div></div>'+
+    '<div class="panel"><div class="tablewrap"><table class="plan-table"><thead><tr><th></th><th>Grátis</th><th>VIP</th></tr></thead><tbody>'+
+      PLAN_ROWS.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td><b>'+esc(r[2])+'</b></td></tr>'}).join("")+'</tbody></table></div>'+
+      '<p class="small-t muted gap">Conta nova começa com '+planLim("teste_dias",14)+' dias de VIP, sem cartão. Quando o VIP acaba, nada do que a criança conquistou se perde: figurinhas, amigos e histórico ficam guardados.</p></div>'+
+    '<div class="panel center"><b>A assinatura online chega em breve</b><p class="small-t muted">Pix, cartão e boleto. Avisamos por aqui assim que abrir.</p></div>');
+  FC.nav.at("/planos");bindTop();
+  $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
+}
+
 /* ---------- Trilha Turbo (resumo para os pais e configuração) ----------
    Só o que ajuda o adulto: se a Turbo de hoje foi feita, quantos fatos já estão firmes em cada operação, quais fatos pedem atenção e quais aparelhos
    a criança usa. Sem tempos em milissegundos, sem comparar com outras crianças, sem ranking. Regras em turbo/ESPECIFICACAO.md.
@@ -101,6 +157,7 @@ function route(path){
   if(!U.user)return;
   var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+))?$/.exec(path);
   if(path==="/novo")return showForm();
+  if(path==="/planos")return showPlans();
   if(m){
     var tab=m[2];
     if(PAI_TABS.indexOf(tab)>=0){FC.tabState.pai=tab;try{sessionStorage.setItem("fc_tab_pai",tab)}catch(e){}}
@@ -212,16 +269,16 @@ async function dash(){
       q(sb.from("students").select("*").order("created_at")),
       q(sb.from("sheets").select("student_id,study_day").eq("status","done").gte("study_day",FC.addDays(FC.today(),-60)))]);
     prof=res[0];students=res[1];sheets=res[2];
-    await ensurePub();
+    await Promise.all([ensurePub(),loadPlan()]);
     if(FC.turbo){try{var tdr=await sb.from("turbo_days").select("student_id,status,attempts").eq("study_day",FC.today());if(!tdr.error)tdays=tdr.data||[]}catch(e){}}   // a linha da Turbo é um extra: se falhar, a lista abre igual
   }catch(e){return errScreen(e,dash)}
   U.profile=prof||{name:"",role:"pai"};
   var today=FC.today(),cards=students.map(function(s){
     var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,pct=Math.min(100,Math.round(100*Math.min(s.stamps,need)/need));
     var kind=FC.dayKind(s,today),done=todayDone(s,sheets);
-    var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+s.sheets_per_day+" folhas":"Hoje: descanso";
+    var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+quotaOf(s)+" folhas":"Hoje: descanso";
     var tl="";
-    if(tdays&&kind!=="rest"&&today>=s.start_date){
+    if(tdays&&kind!=="rest"&&today>=s.start_date&&!studentFree(s)){   // no Grátis a Turbo é trancada: a linha não aparece
       var tr=tdays.filter(function(x){return x.student_id===s.id})[0];
       tl=tr&&tr.status==="done"?"Turbo de hoje: concluída":tr&&tr.attempts>0?"Turbo de hoje: em andamento":"Turbo de hoje: ainda não feita";
     }
@@ -231,12 +288,20 @@ async function dash(){
       '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
       (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button></div>';
   }).join("");
-  FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
+  FC.render(topbar()+planBanner()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
   U.detail=null;FC.nav.at("/");
-  bindTop();FC.refreshInstall();
-  $("#newStudent").onclick=function(){showForm(null)};
+  bindTop();FC.refreshInstall();bindPlanBanner();
+  $("#newStudent").onclick=function(){
+    /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
+    if(PLAN&&PLAN.students>=PLAN.max_students){
+      var ov=FC.overlay('<h2>Limite de alunos do plano</h2><p class="muted">'+(PLAN.vip?'Seu plano permite '+PLAN.max_students+' aluno'+(PLAN.max_students===1?'':'s')+'.':'No plano Grátis você cadastra 1 criança. No VIP, a família cadastra até '+planLim("alunos_vip",4)+'.')+'</p>'+
+        '<div class="actions"><button class="btn" id="ovPlans">Ver planos</button></div>',{button:"Fechar"});
+      $("#ovPlans",ov.el).onclick=function(){ov.close();showPlans()};return;
+    }
+    showForm(null);
+  };
   $$(".card").forEach(function(c){c.onclick=function(){openStudent(c.getAttribute("data-id"))}});
   $$("[data-qr]").forEach(function(b){b.onclick=function(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-qr")})[0];if(s)showQr(s.name,linkFor(s.link_code));
@@ -299,7 +364,10 @@ document.addEventListener("change",function(e){
   }
   if(t.id==="pPer"||t.id==="pLevel"||t.id==="pAno"||t.name==="days"||t.name==="free")refreshProgramInfo();
 });
+var PF_FREE=false,PF_ORIG=0;   /* o formulário aberto é de um aluno do plano Grátis? e quantos álbuns ele já tinha */
+function albunsTxt(){var n=planLim("albuns_gratis",1);return n+" álbum"+(n===1?"":"s")}
 function programFields(s){
+  PF_FREE=s?studentFree(s):!!(PLAN&&!PLAN.vip);PF_ORIG=s&&s.sticker_themes?s.sticker_themes.length:0;
   var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:5,sticker_themes:["dinossauros"]};
   var lv=s?"":'<option value="" selected>Início do ano escolhido (recomendado)</option>',lastG=null;
   FC.LEVELS.forEach(function(l,i){
@@ -326,7 +394,7 @@ function programFields(s){
     '<fieldset class="field" id="pThemes"><legend>Álbuns liberados para a criança</legend>'+
       '<div class="alb-sum" id="pThemeSum"></div>'+
       '<div class="actions"><button type="button" class="btn ghost" id="thOpen">Ver álbuns</button></div>'+
-      '<small id="pThemeHint"></small>'+
+      '<small id="pThemeHint"></small>'+(PF_FREE?'<small class="plan-note">No plano Grátis a criança tem '+albunsTxt()+'. Com o VIP, todos os álbuns.</small>':'')+
       '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
     '<fieldset class="field consent" id="pConsentBox"><legend>Dados de estudo</legend>'+
       '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s&&s.consent_at?" checked":"")+'><span>Autorizo guardar os dados de estudo do aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
@@ -335,7 +403,7 @@ function programFields(s){
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
       '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-      '<label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.</small></label></div>'+
+      '<label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label></div>'+
       '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
       '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
       '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não perde a sequência. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
@@ -361,6 +429,8 @@ function themeSummary(){
   if(!box)return;
   box.innerHTML=on.length?'<div class="alb-thumbs">'+on.slice(0,6).map(function(id){return FC.themeCapa(id)}).join("")+(on.length>6?'<span class="muted">+'+(on.length-6)+'</span>':"")+'</div>'+
       '<p class="small-t"><b>'+on.length+(on.length>1?" álbuns liberados":" álbum liberado")+'</b>: '+on.map(function(id){return esc(FC.theme(id).name)}).join(", ")+'.</p>':'<p class="small-t bad">Nenhum álbum liberado.</p>';
+  var over=PF_FREE&&on.length>planLim("albuns_gratis",1)&&on.length>PF_ORIG;
+  if(h&&over){h.textContent="No plano Grátis a criança tem "+albunsTxt()+": deixe só "+(planLim("albuns_gratis",1)===1?"um marcado":"esses marcados")+".";h.className="bad";return}
   if(h){h.textContent=on.length===0?"Marque pelo menos 1 álbum.":on.length>deskLimit()?"A criança escolhe "+deskLimit()+" para começar na mesa; os outros esperam na gaveta.":"";h.className=on.length===0?"bad":""}
 }
 /* Detalhes do álbum: descrição, o que aparece nas cartas e uma amostra fixa de cartas comuns. Nunca mostra o álbum inteiro nem as raras. */
@@ -423,6 +493,7 @@ function readProgram(){
   if(!$("#pStart").value)return{error:"Informe a data de início."};
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
+  if(PF_FREE&&themes.length>planLim("albuns_gratis",1)&&themes.length>PF_ORIG)return{error:"No plano Grátis a criança tem "+albunsTxt()+". Com o VIP, todos os álbuns ficam liberados."};
   var consent=!!($("#pConsent")&&$("#pConsent").checked);
   var anoV=$("#pAno").value,tetoV=$("#pTeto").value;
   if(anoV==="")return{error:"Escolha o ano escolar."};
@@ -516,7 +587,7 @@ async function detail(id){
       q(sb.from("weak_items").select("pre,post,ans,misses,level_idx,extra").eq("student_id",id).order("misses",{ascending:false}).limit(12)),
       q(sb.from("awards").select("kind,theme,slot,source,period_end").eq("student_id",id).order("period_end"))]);
     s=res[0];sheets=res[1];guards=res[2];weak=res[3];awards=res[4];
-    await ensurePub();
+    await Promise.all([ensurePub(),loadPlan()]);
     var mv=await sb.from("level_moves").select("day,from_idx,to_idx,kind").eq("student_id",id).order("at",{ascending:false}).limit(8);
     if(!mv.error)moves=mv.data||[];
     profs=await q(sb.from("profiles").select("id,name,role").in("id",guards.map(function(g){return g.user_id})));
@@ -571,7 +642,7 @@ async function detail(id){
   for(var d=from;d<today;d=FC.addDays(d,1)){
     if(s.study_days.indexOf(FC.dow(d))<0)continue;
     var n=doneBy[d]||0;
-    if(n<s.sheets_per_day)miss.push('<li><b>'+FC.dayLabel(d)+'</b> '+(n===0?'não estudou':'fez '+n+' de '+s.sheets_per_day+' folhas')+'</li>');
+    if(n<quotaOf(s))miss.push('<li><b>'+FC.dayLabel(d)+'</b> '+(n===0?'não estudou':'fez '+n+' de '+quotaOf(s)+' folhas')+'</li>');
   }
   miss.reverse();
 
@@ -616,14 +687,16 @@ async function detail(id){
     '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small><small class="ano-line">'+esc(anoLine(s,L,today))+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div></div>'+
     '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
-    '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?s.sheets_per_day:0)+' folhas</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?quotaOf(s):0)+' folhas</small></div>'+
       (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div></div>';
-  var resumo=doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
+  var free=studentFree(s);
+  var planNote=free?'<div class="panel plan-banner plan-free"><div class="grow"><b>Plano Grátis</b><p class="small-t">'+esc(s.name)+' faz '+quotaOf(s)+' folhas por dia, com 1 álbum. Trocas com amigos, Trilha Turbo e a aba Atenção são do VIP.</p></div><button type="button" class="btn small" data-plans>Ver planos</button></div>':'';
+  var resumo=planNote+doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
     '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table class="hist"><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
-  var dificuldades='<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
+  var dificuldades=free?vipLock("Onde a criança está com dificuldade","Com o VIP você vê, conta por conta, onde a criança erra mais, quanto tempo leva e o que vale treinar em casa."):'<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
     '<div class="dif-tools"><label class="field inline">Período<select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>';
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
@@ -633,7 +706,7 @@ async function detail(id){
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
     '<div class="panel"><div class="eyebrow gap">Adultos com acesso</div><ul class="plain">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
-    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
+    '<div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+'<div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
   var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
@@ -645,7 +718,7 @@ async function detail(id){
     {id:"acesso",label:"Acesso",icon:"key",html:acesso}]}));
   U.detail=id;FC.nav.at("/aluno/"+id+"/"+FC.tabState.pai);
   FC.bindTabs("pai",null,function(tab){return "/aluno/"+id+"/"+tab});
-  bindTop();bindProgram();
+  bindTop();bindProgram();bindLocks();
   $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
   var lib=$("#liberar");
   if(lib)lib.onclick=async function(){

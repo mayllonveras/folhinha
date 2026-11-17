@@ -131,6 +131,12 @@ function pinScreen(mode,first,msg){
 }
 
 /* ---------- início ---------- */
+/* Plano: student_me diz se a família é VIP (sem o campo, banco antigo, tudo segue liberado). No Grátis a Turbo, os amigos e as trocas
+   aparecem trancados com um recado para a criança; a trava de verdade é no banco. */
+function isVip(){return !S.me||S.me.vip!==false}
+function vipLockKid(title,text){
+  return '<section class="panel vip-lock kid"><span class="vip-tag">VIP</span><b>'+esc(title)+'</b><p class="small-t muted">'+esc(text)+'</p></section>';
+}
 /* Trilha Turbo (turbo-aluno.js): o que ela precisa de cá. Se o banco não responder, o cartão da Turbo não aparece e o resto segue normal. */
 function turboCtx(){
   return{get token(){return S.token},get code(){return S.code},get me(){return S.me},rpc:rpc,track:track,fail:fail,
@@ -141,7 +147,7 @@ function turboCtx(){
 }
 async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
-  if(FC.turboUi){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
+  if(FC.turboUi&&isVip()){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
   home();
   if(S.me.welcome_pending)showWelcome();
 }
@@ -169,9 +175,10 @@ function home(){
   else hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
-  var inicio=offerHtml(m,L)+'<div class="duo">'+hero+(FC.turboUi?FC.turboUi.cardHtml():"")+'</div>'+packPanel(m)+
+  var vip=isVip(),turboCard=!FC.turboUi?"":vip?FC.turboUi.cardHtml():vipLockKid("Trilha Turbo","Treino rápido de mais, menos, vezes e dividir, com pacotinho todo dia. Faz parte do plano VIP: peça para seu responsável conhecer!");
+  var inicio=offerHtml(m,L)+'<div class="duo">'+hero+turboCard+'</div>'+packPanel(m)+
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
-    '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. Cada carimbo vale um pacotinho de figurinhas. Com '+need+' carimbos você sobe de nível.</p></section>'+
+    '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. '+(vip?'Cada carimbo vale um pacotinho de figurinhas. ':'')+'Com '+need+' carimbos você sobe de nível.</p></section>'+
     '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
   var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
     '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
@@ -179,8 +186,8 @@ function home(){
     '<section class="panel rule"><b>Como ganhar o carimbo</b><p class="small-t">Cada dia em que você acerta <b>'+(m.normal_acertos||80)+'% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p>'+
       '<p class="small-t"><b>Dia de ouro:</b> acertando <b>'+(m.ouro_acertos||95)+'% ou mais</b> de primeira, com tempo médio de até <b>'+FC.fmtTime(Math.round(L.target*(m.ouro_tempo||80)/100))+'</b> por folha, o dia vale <b>'+(m.ouro_carimbos||2)+' carimbos</b>. E quem já sabe o assunto pode até <b>pular direto</b> para o próximo nível.</p></section>'+
     '<section class="panel rule"><b>Como ganhar pacotinhos de figurinhas</b><ul class="plain small-t">'+
-      '<li><b>Carimbo do dia:</b> 1 pacotinho.</li>'+
-      '<li><b>Perseverança:</b> fechou todas as folhas do dia, mesmo sem carimbo? 1 pacotinho.</li>'+
+      (vip?'<li><b>Carimbo do dia:</b> 1 pacotinho.</li>'+
+      '<li><b>Perseverança:</b> fechou todas as folhas do dia, mesmo sem carimbo? 1 pacotinho.</li>':'<li>No plano Grátis, os pacotinhos vêm dos <b>dias seguidos</b> de estudo. Com o VIP, o carimbo e a perseverança também dão pacotinho.</li>')+
       '<li><b>Dias seguidos de estudo:</b> pacotinhos extras com 3, 7 e 14 dias, e depois a cada 30 dias. Faltar a um dia de estudo zera a sequência.</li></ul></section>'+
     '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
   var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Oi,</small><b>'+esc(m.name)+'</b></div>'+
@@ -188,8 +195,8 @@ function home(){
   FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
     {id:"inicio",label:"Início",icon:"home",html:inicio},
     {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
-    {id:"trocas",label:"Trocas",icon:"swap",html:tradesPane()},
-    {id:"amigos",label:"Amigos",icon:"friends",html:'<div id="frBox"><p class="loading">Carregando…</p></div>'},
+    {id:"trocas",label:"Trocas",icon:"swap",html:vip?tradesPane():vipLockKid("Trocas de figurinhas","Troque suas repetidas com os amigos e complete o álbum mais rápido. Faz parte do plano VIP: peça para seu responsável conhecer!")},
+    {id:"amigos",label:"Amigos",icon:"friends",html:vip?'<div id="frBox"><p class="loading">Carregando…</p></div>':vipLockKid("Amigos","Adicione amigos pelo código e veja os álbuns deles. Faz parte do plano VIP: peça para seu responsável conhecer!")},
     {id:"progresso",label:"Progresso",icon:"progress",html:progresso}]})+'</div>');
   FC.nav.at("/"+FC.tabState.aluno);
   FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true},function(id){return "/"+id});FC.refreshInstall();
@@ -198,9 +205,10 @@ function home(){
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
   if(canStart){$("#start").onclick=startSheet;prepare()}
-  if(FC.turboUi)FC.turboUi.bind();
+  if(FC.turboUi&&vip)FC.turboUi.bind();
   bindOffer(m);
-  bindPack();bindAlbum();friendsLoad();TR.step="home";trLoad();
+  bindPack();bindAlbum();
+  if(vip){friendsLoad();TR.step="home";trLoad()}
 }
 /* ---------- oferta de voltar: depois de um salto sem carimbo, a criança escolhe (nunca é automático) ---------- */
 function offerHtml(m,L){
@@ -622,6 +630,7 @@ function albumPane(m){
 }
 /* Botão Trocar: leva para a aba Trocas já na lista de amigos; dali segue o fluxo de troca de sempre. */
 function startTrade(){
+  if(!isVip()){FC.toast(FC.err({message:"plano_vip"}),true);return}
   var fr=(S.fr&&S.fr.friends)||[];
   if(!S.fr){FC.toast("Carregando os amigos. Toque de novo em um instante.");friendsLoad();return}
   if(!fr.length){FC.toast("Primeiro faça amigos na aba Amigos.",true);return}
@@ -657,6 +666,10 @@ function bindAlbum(){
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
   var open=deskOf(m);
+  if(!isVip()&&m.free_album){   // plano Grátis: o pacotinho abre só no álbum principal
+    open=open.filter(function(x){return x===m.free_album});
+    if(!open.length){FC.toast("No plano Grátis os pacotinhos abrem no álbum "+FC.theme(m.free_album).name+". Coloque-o na mesa.");var at=$$('[data-tab="album"]')[0];if(at)at.click();return}
+  }
   if(!open.length){
     if(drawerOf(m).length){   // mesa vazia: leva a criança para arrumar a mesa
       var tab=$$('[data-tab="album"]')[0];

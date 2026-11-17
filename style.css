@@ -843,3 +843,25 @@ tr[hidden]{display:none}
 .tp-bar i.f{background:var(--ok-fill)}
 .tp-bar i.l{background:color-mix(in srgb,var(--ok-fill) 38%,var(--soft))}
 .tp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+/* ---------- plano Grátis / VIP ---------- */
+.plan-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;border-left:4px solid var(--line)}
+.plan-banner p{margin:4px 0 0}
+.plan-banner.plan-vip{border-left-color:var(--reward)}
+.plan-banner.plan-free{border-left-color:var(--accent)}
+.vip-tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;letter-spacing:.06em;background:var(--reward);color:#3A2A00;margin-bottom:6px}
+.vip-lock{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.vip-lock p{margin:2px 0 6px}
+.vip-lock.kid{text-align:left}
+.plan-note{display:block;color:var(--warn);font-weight:500;margin-top:4px}
+.plan-now .v{font-size:1.3rem;font-weight:700;margin:4px 0}
+.plan-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:16px 0}
+.plan-card{position:relative}
+.plan-card.best{border:2px solid var(--reward)}
+.plan-card .vip-tag{position:absolute;top:12px;right:12px}
+.plan-card .price{font-size:1.6rem;font-weight:700;margin:6px 0}
+.plan-card .price small{font-size:.9rem;font-weight:500;color:var(--muted)}
+.plan-table td:nth-child(2),.plan-table td:nth-child(3),.plan-table th:nth-child(2),.plan-table th:nth-child(3){text-align:center}
+.plan-table{width:100%;table-layout:fixed}
+.plan-table th,.plan-table td{white-space:normal;overflow-wrap:break-word;hyphens:auto;vertical-align:top;padding-right:8px}
+.plan-table th:first-child,.plan-table td:first-child{width:40%}
