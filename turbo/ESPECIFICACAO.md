@@ -140,7 +140,7 @@ Como o app já entrega figurinha por "pacotinho" que a criança abre, o Turbo do
 - **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e o pacotinho da BNCC continua independente.
 - A figurinha vem do mesmo álbum e das mesmas regras de abertura que o app já tem (`student_open_pack`).
 
-Efeito no banco: a restrição `awards.source` (hoje `carimbo`, `perseveranca`, `marco`) precisa aceitar `turbo`. Isso entra na migração, que não é aplicada sem autorização do professor.
+Efeito no banco: a restrição `awards.source` agora aceita `turbo` (migração `2026-11-17-trilha-turbo.sql`, aplicada em produção em 17/11/2026).
 
 Status: decisão do professor; o efeito da figurinha na motivação e na pressa é *a testar*.
 
@@ -207,6 +207,6 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 | Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao `index.html` e ao `sw.js` | não feita; o app não carrega o `turbo.js` ainda |
-| Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **escrita e validada num Postgres local de teste** (`testes/banco/turbo.sh`, 39 verificações). **Não aplicada no Supabase**: só com autorização do professor |
+| Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
 | Telas do aluno (dois cartões, sessão, nivelamento, pacotinho) | não feitas |
 | Painel dos pais | não feito |

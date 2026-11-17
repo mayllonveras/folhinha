@@ -1,6 +1,8 @@
 -- Trilha Turbo: tabelas, funções e origem 'turbo' para o pacotinho de figurinha. Especificação: turbo/ESPECIFICACAO.md. Motor: turbo.js.
 --
--- *** RASCUNHO PARA REVISÃO. NÃO APLICAR NO BANCO SEM AUTORIZAÇÃO DO PROFESSOR. ***
+-- *** APLICADA EM PRODUÇÃO em 17/11/2026 (projeto folhinha-calculo), com autorização do professor. NÃO REAPLIQUE: ela cria tabelas e não é repetível. ***
+-- Conferência feita no banco real: objetos e permissões criados como projetado; um teste das funções foi rodado numa transação desfeita
+-- (get e save, pacotinho 'turbo' uma vez por dia, tentativas só com consentimento) e não deixou dado nenhum.
 --
 -- O que muda
 --  * awards.source passa a aceitar 'turbo' (Turbo do dia = 1 pacotinho por dia, aberto pelo fluxo de sempre, student_open_pack).
