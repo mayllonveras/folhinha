@@ -4,6 +4,9 @@ create temp table res(nome text, ok boolean, detalhe text);
 grant all on res to public;
 create function pg_temp.t(n text, c boolean, d text default '') returns void language sql as $$ insert into res values (n, coalesce(c,false), d) $$;
 
+-- funções do aluno que conferem o token têm de ser voláteis (erro 25006 pela API, achado em produção em 17/11/2026)
+select pg_temp.t('student_turbo_get e student_turbo_save são voláteis', (select count(*)=2 and bool_and(provolatile='v') from pg_proc where proname in ('student_turbo_get','student_turbo_save')), (select string_agg(proname||'='||provolatile::text,',') from pg_proc where proname in ('student_turbo_get','student_turbo_save')));
+
 -- sessão com 2 fatos, 3 tentativas, concluída, com pacotinho (aluno A, com consentimento)
 select pg_temp.t('get inicial: padrões', (select r->'unlocked'='["soma"]'::jsonb and (r->>'age')::int=7 and r->'facts'='[]'::jsonb and r->'today'->>'status'='none' from (select public.student_turbo_get('tokA', current_date) r) x));
 select public.student_turbo_save('tokA', current_date, jsonb_build_object(

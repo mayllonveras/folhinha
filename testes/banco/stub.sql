@@ -11,5 +11,8 @@ create table public.awards(id uuid primary key default gen_random_uuid(), studen
   period_mode text, period_start date, period_end date, earned_day date, source text, seq int not null default 1, earned_at timestamptz default now());
 alter table public.awards add constraint awards_source_check check (source = any (array['carimbo'::text,'perseveranca'::text,'marco'::text,'troca'::text,'boas_vindas'::text]));
 create unique index awards_pack_once on public.awards (student_id, earned_day, source, seq) where kind in ('pacote','figurinha');
-create function public._student_from_token(p_token text) returns uuid language plpgsql stable security definer as $$ declare i uuid; begin select id into i from students where token=p_token; if i is null then raise exception 'token_invalido'; end if; return i; end $$;
+create table public.student_sessions(student_id uuid primary key, last_seen timestamptz);
+/* Como em produção: conferir o token ATUALIZA last_seen. Por isso toda função do aluno que o chama precisa ser volátil
+   (a API do Supabase roda função estável numa transação só de leitura e esse UPDATE falha com 25006). */
+create function public._student_from_token(p_token text) returns uuid language plpgsql security definer as $$ declare i uuid; begin select id into i from students where token=p_token; if i is null then raise exception 'token_invalido'; end if; update public.student_sessions set last_seen=now() where student_id=i; return i; end $$;
 create function public.ano_do_aluno(p_ano int, p_ref int, p_day date) returns int language sql immutable as $$ select p_ano $$;
