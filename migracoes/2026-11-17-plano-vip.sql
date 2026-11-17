@@ -1,7 +1,9 @@
 -- Plano VIP, fase 1: quem é VIP, os limites do plano Grátis, o teste de 14 dias, o selo Fundador e a concessão de VIP pelo /adm.
 -- Ainda NÃO tem pagamento (fase 3) nem cupons (fase 2): aqui fica a base que os dois vão usar.
 --
--- *** AINDA NÃO APLICADA EM PRODUÇÃO. Aplicar só com autorização do professor. Não é repetível (cria tabela e concede o Fundador). ***
+-- *** APLICADA EM PRODUÇÃO em 17/11/2026 (projeto folhinha-calculo), com autorização do professor. NÃO REAPLIQUE: ela cria tabela e concede o Fundador. ***
+-- Antes de aplicar, as funções de produção foram comparadas com a cópia testada (iguais). Conferido depois: conta do professor com Fundador vitalício,
+-- as 2 contas de teste no Grátis, o aluno existente com VIP e cota de 5 folhas, funções internas fechadas para anon e authenticated.
 --
 -- O que muda
 --  * entitlements: a única fonte de verdade de "esta conta é VIP até tal data". Uma linha por concessão: origem (teste, fundador, concessao,
