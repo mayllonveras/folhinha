@@ -111,7 +111,7 @@ function subscribeForm(plan){
     if(nome.length<3){msg.textContent="Digite o nome completo.";return}
     if(c.length!==11){msg.textContent="Digite os 11 números do CPF.";return}
     var celN=cel.value.replace(/\D/g,"");
-    if(celN.length<10||celN.length>11){msg.textContent="Digite o celular com DDD.";return}
+    if(!/^[1-9]{2}9?\d{8}$/.test(celN)){msg.textContent=celN.length===11?"Celular tem 9 dígitos começando com 9 depois do DDD. Ex.: (86) 99999-8888.":"Digite o celular com DDD. Ex.: (86) 99999-8888.";return}
     btn.disabled=true;msg.textContent="";
     var r=await callBilling({acao:"assinar",plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:celN});
     if(r.error){btn.disabled=false;msg.textContent=r.error;return}
