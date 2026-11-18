@@ -57,6 +57,13 @@ Deno.test("CPF inválido não chega ao Asaas", async () => {
   assertEquals(a.calls.length, 0);
 });
 
+Deno.test("telefone fixo vai só em phone", async () => {
+  const a = asaasFake({ "PUT /customers/cus_1": {}, "POST /checkouts": { id: "chk_2" } });
+  const r = rpcFake({ billing_quote: QUOTE, billing_customer: "cus_1", billing_start: { id: "s3", delete_asaas_subscriptions: [] } });
+  await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "(86) 3222-1111" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals(a.calls[0].body, { name: "Maria Silva", cpfCnpj: "52998224725", phone: "8632221111" });
+});
+
 Deno.test("celular sem DDD não chega ao Asaas", async () => {
   const a = asaasFake({}), r = rpcFake({});
   const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "99998888" }), { env, fetch: a.f, user, rpc: r.rpc });

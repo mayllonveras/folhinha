@@ -50,12 +50,15 @@ async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Prom
   await d.rpc("billing_can_start", { p_user: u.id });
   const quote = await d.rpc("billing_quote", { p_user: u.id, p_plan: plano });
 
+  // telefone: vai sempre em phone; em mobilePhone só quando é celular (DDD + 9 dígitos começando com 9), senão o Asaas recusa
+  const fones: Record<string, string> = { phone: celular };
+  if (/^[1-9]{2}9\d{8}$/.test(celular)) fones.mobilePhone = celular;
   // cliente do Asaas: um por conta; o nome e o CPF podem mudar a cada assinatura
   let customer: string | null = await d.rpc("billing_customer", { p_user: u.id });
   if (customer) {
-    await asaas(d.env, d.fetch, "PUT", "/customers/" + customer, { name: nome, cpfCnpj: cpf, phone: celular, mobilePhone: celular });
+    await asaas(d.env, d.fetch, "PUT", "/customers/" + customer, { name: nome, cpfCnpj: cpf, ...fones });
   } else {
-    const c = await asaas(d.env, d.fetch, "POST", "/customers", { name: nome, cpfCnpj: cpf, email: u.email, phone: celular, mobilePhone: celular, externalReference: u.id });
+    const c = await asaas(d.env, d.fetch, "POST", "/customers", { name: nome, cpfCnpj: cpf, email: u.email, ...fones, externalReference: u.id });
     customer = c.id as string;
     await d.rpc("billing_set_customer", { p_user: u.id, p_customer: customer });
   }
