@@ -171,12 +171,12 @@ function proximo(st,sess){
   var it=sess.fila.shift(),f=fato(st,it.id);
   return {id:it.id,tipo:it.tipo,rep:it.rep,dica:dicaPara(f)};
 }
-/* a: {id, tipo ('revisao'|'novo'|'reinsercao'), ok, t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
+/* a: {id, tipo ('revisao'|'novo'|'reinsercao'), ok, resp (número digitado; nulo = "não sei"), t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
 function registrar(st,sess,a){
   var f=fato(st,a.id),dia=sess.dia,antes=f.s;
   if(f.s===0){f.s=1;f.due=dia}
   var reg={ok:!!a.ok,t1:a.t1==null?null:a.t1,dica:a.dica||"none",contou:!!a.contou,aparelho:sess.aparelho};
-  (sess.log=sess.log||[]).push({fact:a.id,kind:a.tipo||"revisao",ok:reg.ok,t1:reg.t1,total:a.total!=null?a.total:null,hint:reg.dica,counted:reg.contou,stateBefore:antes});
+  (sess.log=sess.log||[]).push({fact:a.id,kind:a.tipo||"revisao",ok:reg.ok,answer:a.resp==null?null:a.resp,t1:reg.t1,total:a.total!=null?a.total:null,hint:reg.dica,counted:reg.contou,stateBefore:antes});
   f.recent.push(reg);if(f.recent.length>10)f.recent.shift();
   var lista=sess.att[a.id]||(sess.att[a.id]=[],sess.ordemAtt.push(a.id),sess.att[a.id]);
   lista.push(reg);

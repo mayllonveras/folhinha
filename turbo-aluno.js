@@ -226,7 +226,7 @@ function answer(val,ts,naoSei){
   var t1=(naoSei||E.first==null)?null:E.t1(),total=E.total(ts);
   var dicaDepois=it.dica==="after"||!ok;
   var dica=q.hintShown==="before"?"before":q.hintShown==="demand"?"demand":(dicaDepois?"after":"none");
-  T.registrar(D.st,run.sess,{id:f.id,tipo:it.tipo,ok:ok,t1:t1,total:total,dica:dica,contou:false});
+  T.registrar(D.st,run.sess,{id:f.id,tipo:it.tipo,ok:ok,resp:naoSei?null:val,t1:t1,total:total,dica:dica,contou:false});
   q.stage="done";
   var a=$("#trAns"),fb=$("#trFb");
   if(ok){
@@ -379,7 +379,7 @@ function sondagem(){
     var ok=!naoSei&&val===f.res,t1=(naoSei||E.first==null)?null:E.t1(),total=E.total(ts);
     var r=T.nivelamento.classificar(t1,ok,T.metaDe(D.st));
     T.nivelamento.registrar(nv,nx.fam,r);
-    run.log.push({fact:f.id,kind:"nivelamento",ok:ok,t1:t1,total:total,hint:"none",counted:false,stateBefore:0});
+    run.log.push({fact:f.id,kind:"nivelamento",ok:ok,answer:naoSei?null:val,t1:t1,total:total,hint:"none",counted:false,stateBefore:0});
     $("#trFb").textContent="Anotado!";
     later(sondagem,350);
   }

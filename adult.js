@@ -320,6 +320,49 @@ function turboPanel(t,s,today){
     (devs?'<div class="gap"><div class="eyebrow">Aparelhos usados</div><div class="tp-chips">'+devs+'</div></div>':'')+
     '<p class="muted small-t gap">'+esc(niv)+'. Fato firme é o que ele já responde sem pensar muito e que foi revisado em dias diferentes. A parte mais escura da barra mostra os firmes; a clara, os que estão em treino.</p></div>';
 }
+/* ---------- Trilha Turbo no Histórico: o que ele estuda agora e, dia a dia, acertos e erros ----------
+   Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender do consentimento. Sem a tabela, o quadro some. */
+var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
+var TURBO_OP={"+":"soma","-":"sub","×":"mult","÷":"div"};
+function turboHistBox(){return FC.turbo&&TURBO_OK!==false?'<div class="panel" id="turboHist"><div class="eyebrow gap">Trilha Turbo</div><p class="muted">Carregando…</p></div>':""}
+function turboConta(fid,ans,ok){
+  var f=FC.turbo.porId(fid);if(!f)return esc(fid);
+  return '<span class="num">'+esc(f.eq)+' = '+(ok?'<b>'+f.res+'</b> <span class="turbo-ok" aria-label="acertou">✓</span>':'<s>'+(ans==null?"–":ans)+'</s> <b>'+f.res+'</b>'+(ans==null?' <span class="muted small-t">(não sei)</span>':''))+'</span>';
+}
+async function loadTurboHist(id){
+  var box=$("#turboHist");if(!box)return;
+  var T=FC.turbo,head='<div class="eyebrow gap">Trilha Turbo</div>';
+  var r=await Promise.all([
+    sb.from("turbo_log").select("id,study_day,fact_id,kind,ok,answer").eq("student_id",id).order("id",{ascending:false}).limit(1000),
+    sb.from("turbo_facts").select("fact_id,state,due").eq("student_id",id).gte("state",1).lte("state",3).order("due",{ascending:true})]);
+  if(r[0].error){
+    if(/does not exist|schema cache|PGRST20|42P01/.test(String(r[0].error.message||r[0].error.code||"")))box.remove();
+    else box.innerHTML=head+'<p class="msg bad">'+esc(FC.err(r[0].error))+'</p>';
+    return;
+  }
+  /* o que ele estuda agora: contas em treino (novas, aprendendo, consolidando), por operação */
+  var cat=T.catalogo(),now={};
+  (r[1].data||[]).forEach(function(x){var op=TURBO_OP[x.fact_id.charAt(0)];if(op)(now[op]=now[op]||[]).push(x)});
+  var estudando=T.ORDEM.filter(function(o){return now[o]}).map(function(o){
+    var l=now[o],shown=l.slice(0,24).map(function(x){var f=T.porId(x.fact_id);return f?'<span class="tag num" title="'+esc(TURBO_ESTADO[x.state])+'">'+esc(f.eq)+' <small class="muted">· '+esc(TURBO_ESTADO[x.state].toLowerCase())+'</small></span>':""}).join(" ");
+    return '<div class="gap"><b>'+esc(cat[o].nome)+'</b> <span class="muted small-t">· '+l.length+' em treino</span><div class="tp-chips">'+shown+(l.length>24?' <span class="muted small-t">+'+(l.length-24)+'</span>':'')+'</div></div>';
+  }).join("");
+  /* dias de estudo: cada conta, com o que ele respondeu */
+  var days=[],byDay={};
+  r[0].data.slice().reverse().forEach(function(x){var d=byDay[x.study_day];if(!d){d=byDay[x.study_day]={day:x.study_day,rows:[],ok:0};days.push(d)}d.rows.push(x);if(x.ok)d.ok++});
+  days.sort(function(a,b){return a.day<b.day?1:-1});
+  var list=days.slice(0,14).map(function(d){
+    var n=d.rows.length,bad=n-d.ok,pct=Math.round(100*d.ok/n);
+    return '<details class="tday" data-err="'+(bad?1:0)+'"><summary><b>'+FC.dayLabel(d.day)+'</b> · '+d.ok+' de '+n+' certas ('+pct+'%) '+(bad?'<span class="tag bad">'+bad+' erro'+(bad>1?'s':'')+'</span>':'<span class="tag ok">tudo certo</span>')+'</summary>'+
+      '<ul class="errlist tlist">'+d.rows.map(function(x){return '<li>'+turboConta(x.fact_id,x.answer,x.ok)+(x.kind==="nivelamento"?' <span class="muted small-t">· nivelamento</span>':'')+'</li>'}).join("")+'</ul></details>';
+  }).join("");
+  box.innerHTML=head+
+    '<p class="muted small-t">Todas as contas que ele fez na Turbo, com o que respondeu. Os erros aparecem com a resposta riscada.</p>'+
+    '<div class="eyebrow gap">Estudando agora</div>'+(estudando||'<p class="muted">Ainda não há contas em treino.</p>')+
+    '<div class="eyebrow gap">Dias de Turbo</div>'+(list?'<label class="inline-chk"><input type="checkbox" id="onlyErrT"> Mostrar só os dias com erro</label>'+list+(days.length>14?'<p class="muted small-t gap">Últimos 14 dias com Turbo.</p>':''):'<p class="muted">Ele ainda não fez nenhuma conta na Turbo.</p>');
+  var c=$("#onlyErrT");
+  if(c)c.onchange=function(){$$("details.tday").forEach(function(d){d.hidden=c.checked&&d.getAttribute("data-err")==="0"})};
+}
 /* Configuração no cadastro e no programa: pular o jogo de nivelamento e escolher quais operações podem abrir. */
 function turboFields(s){
   if(TURBO_OK===false||!FC.turbo)return "";
@@ -893,7 +936,7 @@ async function detail(id){
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
     '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
-    '<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table class="hist"><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
+    turboHistBox()+'<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table class="hist"><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
   var dificuldades=free?vipLock("Onde a criança está com dificuldade","Com o VIP você vê, conta por conta, onde a criança erra mais, quanto tempo leva e o que vale treinar em casa."):'<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
     '<div class="dif-tools"><label class="field inline">Período<select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>';
@@ -944,7 +987,7 @@ async function detail(id){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadFriends(id);loadTrades(id);loadAnalise(id);
+  loadSlow(id);loadTurboHist(id);loadFriends(id);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
