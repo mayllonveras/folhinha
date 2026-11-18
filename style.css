@@ -905,9 +905,6 @@ p.bad{color:var(--mark)}
 .stampset{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .stamp{width:var(--sz,32px);height:var(--sz,32px);border:2px dashed color-mix(in srgb,var(--muted) 55%,transparent);box-shadow:none;transform:none;background:none;color:transparent;font-size:.8em}
 .stamp.on{border:0;box-shadow:none;transform:none;background:var(--mint-500);color:var(--on-ball)}
-.stamp.on:nth-child(5n+1),.stamp.on:nth-child(5n){background:var(--coral-500)}
-.stamp.on:nth-child(5n+2),.stamp.on:nth-child(5n+4){background:var(--ball-sun);color:var(--on-ball-sun)}
-.stamp.on:nth-child(5n+3){background:var(--mint-500)}
 .stat .stampset{--sz:22px}
 .stamprow .stampset{--sz:26px}
 
