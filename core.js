@@ -127,7 +127,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v72";
+FC.VERSAO="folhinha-v75";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
@@ -411,17 +411,24 @@ FC.streakNow=function(s,today){
 };
 /* Perseverança: sequência de dias de estudo com a cota fechada e o caminho até o próximo marco.
    i = {streak,best_streak,next_marco}. */
+/* Carimbos do nível: uma fileira de bolas, uma por carimbo. */
+FC.stampSet=function(need,got,popFrom){
+  var h="";for(var i=0;i<need;i++)h+='<span class="stamp'+(i<got?" on":"")+(popFrom!=null&&i>=popFrom&&i<got?" pop":"")+'">✓</span>';
+  return '<span class="stampset">'+h+'</span>';
+};
 FC.streakHtml=function(i,o){
   o=o||{};
   var st=i.streak||0,best=i.best_streak||0,nx=i.next_marco||FC.nextMarco(st);
   var base=nx.at<=3?0:nx.at<=7?3:nx.at<=14?7:nx.at<=30?14:nx.at-30;
-  var pct=Math.max(0,Math.min(100,(st-base)/(nx.at-base)*100)),left=nx.at-st;
+  var pct=Math.max(0,Math.min(100,(st-base)/(nx.at-base)*100)),left=nx.at-st,span=nx.at-base,dots="";
+  if(span<=14){var dn=Math.max(0,Math.min(span,st-base));for(var d=0;d<span;d++)dots+='<i class="'+(d<dn?"on":"")+(d===span-1?" goal":"")+'"></i>'}
+  else dots='<div class="fill" style="width:'+pct.toFixed(1)+'%"></div>';
   var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" pacotinhos extras.":
     "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" pacotinhos extras.";
   return '<div class="trail"><div class="eyebrow">Perseverança</div>'+
     '<div class="big-pts">'+st+'<span> '+(st===1?"dia seguido":"dias seguidos")+'</span></div>'+
-    '<div class="trail-line"><div class="track" role="progressbar" aria-label="Caminho até o próximo marco de sequência" aria-valuemin="0" aria-valuemax="'+nx.at+'" aria-valuenow="'+st+'">'+
-    '<div class="fill" style="width:'+pct.toFixed(1)+'%"></div></div><div class="goalicon">'+FC.packSvg()+'</div></div>'+
+    '<div class="trail-line"><div class="'+(span<=14?"sdots":"track")+'" role="progressbar" aria-label="Caminho até o próximo marco de sequência" aria-valuemin="0" aria-valuemax="'+nx.at+'" aria-valuenow="'+st+'">'+dots+
+    '</div><div class="goalicon">'+FC.packSvg()+'</div></div>'+
     '<p class="small-t">'+msg+'</p>'+
     '<p class="muted small-t">Melhor sequência: <b>'+best+'</b> dia'+(best===1?"":"s")+'. '+
     (o.adult?"Fechar todas as folhas de um dia de estudo soma 1 dia. Faltar a um dia de estudo zera a sequência.":
