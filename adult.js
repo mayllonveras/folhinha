@@ -306,8 +306,6 @@ function turboPanel(t,s,today){
       '<div class="tp-bar" role="img" aria-label="'+esc(cat[o].nome)+': '+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div>'+
       (nota?'<small class="muted">'+esc(nota)+'</small>':'')+'</div>';
   }).join("");
-  function chips(ids){return ids.map(function(id){var f=T.porId(id);return f?'<span class="tag num">'+esc(f.eq)+'</span>':""}).join(" ")}
-  var stub=sum.stubborn||[],slow=(sum.slowest||[]).filter(function(id){return stub.indexOf(id)<0});
   var recent=t.days.filter(function(d){return d.attempts>0}).slice(0,3);
   var alerta=recent.length===3&&learning>0&&recent.every(function(d){return d.promoted===0})
     ?'<div class="panel offer"><b>Nos últimos 3 dias de Turbo, nenhum fato novo ficou firme</b><p class="small-t">Isso acontece em algumas fases e não é motivo de preocupação. Se continuar por mais alguns dias, vale sentar com ele numa sessão e ver onde ele trava.</p></div>':"";
@@ -315,53 +313,53 @@ function turboPanel(t,s,today){
   var comecou=T.ORDEM.some(function(o){return ops[o]&&ops[o].registered>0});
   return '<div class="panel" id="turboBox"><div class="split"><div class="eyebrow">Trilha Turbo</div>'+tag+'</div>'+alerta+
     (comecou?rows:'<p class="muted gap">'+(cfg.placement||cfg.skip_placement?'Ele ainda não treinou nenhum fato na Turbo.':'Ele ainda não começou a Turbo. Na primeira vez, ela abre com um jogo rápido para descobrir por onde começar.')+'</p>')+
-    (stub.length?'<div class="gap"><div class="eyebrow">Fatos teimosos</div><p class="muted small-t">Ele já tinha aprendido e voltou a errar. A Turbo traz de volta com uma dica.</p><div class="tp-chips">'+chips(stub)+'</div></div>':'')+
-    (slow.length?'<div class="gap"><div class="eyebrow">Fatos mais demorados</div><p class="muted small-t">Os que ele ainda leva mais tempo para responder.</p><div class="tp-chips">'+chips(slow)+'</div></div>':'')+
     (devs?'<div class="gap"><div class="eyebrow">Aparelhos usados</div><div class="tp-chips">'+devs+'</div></div>':'')+
-    '<p class="muted small-t gap">'+esc(niv)+'. Fato firme é o que ele já responde sem pensar muito e que foi revisado em dias diferentes. A parte mais escura da barra mostra os firmes; a clara, os que estão em treino.</p></div>';
+    '<p class="muted small-t gap">'+esc(niv)+'. Fato firme é o que ele já responde sem pensar muito e que foi revisado em dias diferentes. A parte mais escura da barra mostra os firmes; a clara, os que estão em treino. As contas de cada dia ficam no Histórico; os fatos que pedem ajuda, na aba Atenção.</p></div>';
 }
-/* ---------- Trilha Turbo no Histórico: o que ele estuda agora e, dia a dia, acertos e erros ----------
-   Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender do consentimento. Sem a tabela, o quadro some. */
+/* ---------- Trilha Turbo no Histórico e na Atenção ----------
+   Histórico: as contas de cada dia entram na página do dia. Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender
+   do consentimento. Sem a tabela, o Histórico segue só com as folhas.
+   Atenção: fatos teimosos, fatos mais demorados e o que está em treino agora. */
 var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
 var TURBO_OP={"+":"soma","-":"sub","×":"mult","÷":"div"};
-function turboHistBox(){return FC.turbo&&TURBO_OK!==false?'<div class="panel" id="turboHist"><div class="eyebrow gap">Trilha Turbo</div><p class="muted">Carregando…</p></div>':""}
 function turboConta(fid,ans,ok){
   var f=FC.turbo.porId(fid);if(!f)return esc(fid);
   return '<span class="num">'+esc(f.eq)+' = '+(ok?'<b>'+f.res+'</b> <span class="turbo-ok" aria-label="acertou">✓</span>':'<s>'+(ans==null?"–":ans)+'</s> <b>'+f.res+'</b>'+(ans==null?' <span class="muted small-t">(não sei)</span>':''))+'</span>';
 }
-async function loadTurboHist(id){
-  var box=$("#turboHist");if(!box)return;
-  var T=FC.turbo,head='<div class="eyebrow gap">Trilha Turbo</div>';
-  var r=await Promise.all([
-    sb.from("turbo_log").select("id,study_day,fact_id,kind,ok,answer").eq("student_id",id).order("id",{ascending:false}).limit(1000),
-    sb.from("turbo_facts").select("fact_id,state,due").eq("student_id",id).gte("state",1).lte("state",3).order("due",{ascending:true})]);
-  if(r[0].error){
-    if(/does not exist|schema cache|PGRST20|42P01/.test(String(r[0].error.message||r[0].error.code||"")))box.remove();
-    else box.innerHTML=head+'<p class="msg bad">'+esc(FC.err(r[0].error))+'</p>';
-    return;
-  }
-  /* o que ele estuda agora: contas em treino (novas, aprendendo, consolidando), por operação */
-  var cat=T.catalogo(),now={};
-  (r[1].data||[]).forEach(function(x){var op=TURBO_OP[x.fact_id.charAt(0)];if(op)(now[op]=now[op]||[]).push(x)});
-  var estudando=T.ORDEM.filter(function(o){return now[o]}).map(function(o){
-    var l=now[o],shown=l.slice(0,24).map(function(x){var f=T.porId(x.fact_id);return f?'<span class="tag num" title="'+esc(TURBO_ESTADO[x.state])+'">'+esc(f.eq)+' <small class="muted">· '+esc(TURBO_ESTADO[x.state].toLowerCase())+'</small></span>':""}).join(" ");
+/* Devolve {dia: {rows:[contas na ordem em que ele fez], ok:acertos}} ou null se não houver registro da Turbo. */
+async function loadTurboLog(id){
+  if(!FC.turbo||TURBO_OK===false)return null;
+  try{
+    var r=await sb.from("turbo_log").select("id,study_day,fact_id,kind,ok,answer").eq("student_id",id).order("id",{ascending:false}).limit(1000);
+    if(r.error)return null;
+    var by={};
+    r.data.slice().reverse().forEach(function(x){var d=by[x.study_day]||(by[x.study_day]={rows:[],ok:0});d.rows.push(x);if(x.ok)d.ok++});
+    return by;
+  }catch(e){return null}
+}
+function turboAtencao(t){
+  if(!t||!FC.turbo)return "";
+  var T=FC.turbo,sum=t.sum||{};
+  function chips(ids){return ids.map(function(id){var f=T.porId(id);return f?'<span class="tag num">'+esc(f.eq)+'</span>':""}).join(" ")}
+  var stub=sum.stubborn||[],slow=(sum.slowest||[]).filter(function(id){return stub.indexOf(id)<0});
+  return '<div class="panel" id="turboAt"><div class="eyebrow">Trilha Turbo</div>'+
+    (stub.length?'<div class="gap"><b>Fatos teimosos</b><p class="muted small-t">Ele já tinha aprendido e voltou a errar. A Turbo traz de volta com uma dica.</p><div class="tp-chips">'+chips(stub)+'</div></div>':'')+
+    (slow.length?'<div class="gap"><b>Fatos mais demorados</b><p class="muted small-t">Os que ele ainda leva mais tempo para responder.</p><div class="tp-chips">'+chips(slow)+'</div></div>':'')+
+    (!stub.length&&!slow.length?'<p class="muted gap">Nenhum fato da Turbo pede atenção agora.</p>':'')+
+    '<div id="turboNow"></div></div>';
+}
+/* O que ele treina agora na Turbo (novas, aprendendo, consolidando), por operação. Fica fechado: é consulta, não alerta. */
+async function loadTurboNow(id){
+  var box=$("#turboNow");if(!box)return;
+  var r;try{r=await sb.from("turbo_facts").select("fact_id,state,due").eq("student_id",id).gte("state",1).lte("state",3).order("due",{ascending:true})}catch(e){return}
+  if(r.error||!r.data||!r.data.length)return;
+  var T=FC.turbo,cat=T.catalogo(),now={};
+  r.data.forEach(function(x){var op=TURBO_OP[x.fact_id.charAt(0)];if(op)(now[op]=now[op]||[]).push(x)});
+  var html=T.ORDEM.filter(function(o){return now[o]}).map(function(o){
+    var l=now[o],shown=l.slice(0,24).map(function(x){var f=T.porId(x.fact_id);return f?'<span class="tag num">'+esc(f.eq)+' <small class="muted">· '+esc(TURBO_ESTADO[x.state].toLowerCase())+'</small></span>':""}).join(" ");
     return '<div class="gap"><b>'+esc(cat[o].nome)+'</b> <span class="muted small-t">· '+l.length+' em treino</span><div class="tp-chips">'+shown+(l.length>24?' <span class="muted small-t">+'+(l.length-24)+'</span>':'')+'</div></div>';
   }).join("");
-  /* dias de estudo: cada conta, com o que ele respondeu */
-  var days=[],byDay={};
-  r[0].data.slice().reverse().forEach(function(x){var d=byDay[x.study_day];if(!d){d=byDay[x.study_day]={day:x.study_day,rows:[],ok:0};days.push(d)}d.rows.push(x);if(x.ok)d.ok++});
-  days.sort(function(a,b){return a.day<b.day?1:-1});
-  var list=days.slice(0,14).map(function(d){
-    var n=d.rows.length,bad=n-d.ok,pct=Math.round(100*d.ok/n);
-    return '<details class="tday" data-err="'+(bad?1:0)+'"><summary><b>'+FC.dayLabel(d.day)+'</b> · '+d.ok+' de '+n+' certas ('+pct+'%) '+(bad?'<span class="tag bad">'+bad+' erro'+(bad>1?'s':'')+'</span>':'<span class="tag ok">tudo certo</span>')+'</summary>'+
-      '<ul class="errlist tlist">'+d.rows.map(function(x){return '<li>'+turboConta(x.fact_id,x.answer,x.ok)+(x.kind==="nivelamento"?' <span class="muted small-t">· nivelamento</span>':'')+'</li>'}).join("")+'</ul></details>';
-  }).join("");
-  box.innerHTML=head+
-    '<p class="muted small-t">Todas as contas que ele fez na Turbo, com o que respondeu. Os erros aparecem com a resposta riscada.</p>'+
-    '<div class="eyebrow gap">Estudando agora</div>'+(estudando||'<p class="muted">Ainda não há contas em treino.</p>')+
-    '<div class="eyebrow gap">Dias de Turbo</div>'+(list?'<label class="inline-chk"><input type="checkbox" id="onlyErrT"> Mostrar só os dias com erro</label>'+list+(days.length>14?'<p class="muted small-t gap">Últimos 14 dias com Turbo.</p>':''):'<p class="muted">Ele ainda não fez nenhuma conta na Turbo.</p>');
-  var c=$("#onlyErrT");
-  if(c)c.onchange=function(){$$("details.tday").forEach(function(d){d.hidden=c.checked&&d.getAttribute("data-err")==="0"})};
+  box.innerHTML='<details class="gap"><summary>Fatos em treino agora ('+r.data.length+')</summary>'+html+'</details>';
 }
 /* Configuração no cadastro e no programa: pular o jogo de nivelamento e escolher quais operações podem abrir. */
 function turboFields(s){
@@ -391,19 +389,24 @@ async function saveTurbo(id,t){
   }catch(e){return false}
 }
 
-/* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado e #/aluno/ID/ABA. */
+/* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado, #/aluno/ID/ABA e #/aluno/ID/historico/AAAA-MM-DD (um dia do Histórico). */
 var PAI_TABS=["resumo","album","historico","dificuldades","programa","acesso"];
 function route(path){
   if(!U.user)return;
-  var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+))?$/.exec(path);
+  var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+)(?:\/(\d{4}-\d\d-\d\d))?)?$/.exec(path);
   if(path==="/novo")return showForm();
   if(path==="/planos")return showPlans();
   if(path==="/perfil")return showProfile();
   if(m){
     var tab=m[2];
     if(PAI_TABS.indexOf(tab)>=0){FC.tabState.pai=tab;try{sessionStorage.setItem("fc_tab_pai",tab)}catch(e){}}
-    if(U.detail===m[1]&&FC.$('.shell[data-scope="pai"]'))return FC.gotoTab(FC.tabState.pai,true);
-    return detail(m[1]);
+    var day=FC.tabState.pai==="historico"&&m[3]?m[3]:null;
+    if(U.detail===m[1]&&FC.$('.shell[data-scope="pai"]')){
+      FC.gotoTab(FC.tabState.pai,true);
+      if(U.hist&&U.hist.id===m[1]&&U.hist.day!==day){U.hist.day=day;U.hist.render()}
+      return;
+    }
+    return detail(m[1],day);
   }
   dash();   // "/", "/cadastrado" e qualquer endereço desconhecido
 }
@@ -817,7 +820,7 @@ function created(name,code,id){
 }
 
 /* ---------- página do aluno ---------- */
-async function detail(id){
+async function detail(id,day){
   FC.render('<p class="loading">Carregando…</p>');
   var s,sheets,guards,profs,weak,awards,moves=[];
   try{
@@ -877,21 +880,108 @@ async function detail(id){
     '<li><b>'+by.carimbo+'</b> pelo carimbo do dia</li><li><b>'+by.perseveranca+'</b> pela perseverança (dia fechado)</li><li><b>'+by.marco+'</b> pelos marcos de sequência</li>'+(by.boas_vindas?'<li><b>'+by.boas_vindas+'</b> no pacote de boas-vindas</li>':'')+'</ul>'+
     '<p class="muted small-t">Total: <b>'+(by.carimbo+by.perseveranca+by.marco+by.boas_vindas)+'</b>. Melhor sequência: <b>'+s.best_streak+'</b> dia'+(s.best_streak===1?"":"s")+'.</p></div>';
 
-  /* faltas */
-  var doneBy={};sheets.forEach(function(x){doneBy[x.study_day]=(doneBy[x.study_day]||0)+1});
-  var miss=[],from=FC.addDays(today,-45);if(from<s.start_date)from=s.start_date;
-  for(var d=from;d<today;d=FC.addDays(d,1)){
-    if(s.study_days.indexOf(FC.dow(d))<0)continue;
-    var n=doneBy[d]||0;
-    if(n<quotaOf(s))miss.push('<li><b>'+FC.dayLabel(d)+'</b> '+(n===0?'não estudou':'fez '+n+' de '+quotaOf(s)+' folhas')+'</li>');
+  /* ---------- Histórico: um cartão por dia; tocar abre a página do dia, com as folhas, as contas erradas e a Turbo ---------- */
+  var byDay={},moveBy={},oldest=sheets.length>=300?sheets[sheets.length-1].study_day:s.start_date;   // antes disso as folhas não foram baixadas
+  sheets.forEach(function(x){
+    var d=byDay[x.study_day]||(byDay[x.study_day]={sheets:[],ok:0,tot:0,secs:0,stamp:false,adv:false});
+    d.sheets.unshift(x);d.ok+=x.first_ok;d.tot+=x.total;d.secs+=Number(x.secs)||0;if(x.stamp)d.stamp=true;if(x.advanced)d.adv=true;
+  });
+  moves.forEach(function(m){(moveBy[m.day]=moveBy[m.day]||[]).push(m)});
+  var H=U.hist={id:id,day:day||null,span:14,tlog:null,cache:{},render:renderHist};
+  function pl(n,um,varios){return n+" "+(n===1?um:varios)}
+  function dayTags(d){
+    var x=byDay[d],t=H.tlog&&H.tlog[d],mv=moveBy[d]||[],h="";
+    if(x&&x.stamp)h+='<span class="tag ok">carimbo do dia</span>';
+    if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"ok")+'">'+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
+    else if(x&&x.adv)h+='<span class="tag ok">subiu de nível</span>';
+    if(x&&d<today&&s.study_days.indexOf(FC.dow(d))>=0&&x.sheets.length<quotaOf(s))h+='<span class="tag warn">'+(quotaOf(s)-x.sheets.length===1?"faltou 1 folha":"faltaram "+(quotaOf(s)-x.sheets.length)+" folhas")+'</span>';
+    if(t)h+='<span class="tag">Turbo: '+t.ok+' de '+t.rows.length+'</span>';
+    return h;
   }
-  miss.reverse();
-
-  var rows=sheets.slice(0,40).map(function(x){
-    var er=x.total-x.first_ok;
-    return '<tr data-err="'+er+'"><td class="c-dia" data-label="Dia">'+FC.dayLabel(x.study_day)+'</td><td class="c-nivel" data-label="Nível">'+esc(FC.lv(x.level_idx))+'</td><td class="c-ok" data-label="Acertos de primeira">'+x.first_ok+'/'+x.total+'</td><td class="errs" data-sid="'+x.id+'" data-label="Contas erradas">'+(er?'<span class="tag bad">'+er+' erro'+(er>1?'s':'')+'</span>':'<span class="muted">–</span>')+'</td><td class="c-tempo" data-label="Tempo">'+FC.fmtTime(x.secs)+'</td><td class="c-res" data-label="Resultado">'+
-      (x.advanced?'<span class="tag ok">subiu de nível</span>':x.stamp?'<span class="tag ok">carimbo do dia</span>':'')+'</td><td class="c-ver"><button class="btn ghost small" data-sheet="'+x.id+'" aria-label="Ver a folha de '+esc(FC.dayLabel(x.study_day))+'">Ver</button></td></tr>';
-  }).join("");
+  function weekOf(d){return FC.addDays(d,-((FC.dow(d)+6)%7))}
+  function histList(){
+    var from=FC.addDays(today,-(H.span-1)),more=from>oldest;if(!more)from=oldest;
+    var st={dias:0,previstos:0,folhas:0,ok:0,tot:0,faltas:0,parciais:0},list="",wk=null,thisWk=weekOf(today);
+    for(var d=today;d>=from;d=FC.addDays(d,-1)){
+      var x=byDay[d],t=H.tlog&&H.tlog[d],study=d>=s.start_date&&s.study_days.indexOf(FC.dow(d))>=0,past=d<today;
+      if(study&&(past||x))st.previstos++;
+      if(x){st.dias++;st.folhas+=x.sheets.length;st.ok+=x.ok;st.tot+=x.tot;if(study&&past&&x.sheets.length<quotaOf(s))st.parciais++}
+      else if(study&&past&&!t)st.faltas++;
+      if(!x&&!t&&!(study&&past))continue;
+      var w=weekOf(d);
+      if(w!==wk){wk=w;list+='<div class="eyebrow hweek">'+(w===thisWk?"Esta semana":w===FC.addDays(thisWk,-7)?"Semana passada":"Semana de "+FC.dm(w))+'</div>'}
+      var dia='<span class="hday-d"><b>'+FC.DOW[FC.dow(d)]+'</b><small class="num">'+FC.dm(d)+'</small></span>';
+      if(!x&&!t){list+='<div class="hday off">'+dia+'<span class="hday-m"><span class="muted">Não estudou</span></span></div>';continue}
+      var pct=x&&x.tot?Math.round(100*x.ok/x.tot):null;
+      list+='<button type="button" class="hday" data-day="'+d+'" aria-label="Abrir o dia '+esc(FC.dayLabel(d))+'">'+dia+
+        '<span class="hday-m"><b>'+(x?pl(x.sheets.length,"folha","folhas")+' <span class="muted small-t num">· '+FC.fmtTime(x.secs)+'</span>':'Só a Trilha Turbo')+'</b><span class="hday-tags">'+dayTags(d)+'</span></span>'+
+        (pct!=null?'<span class="hday-pct '+(pct>=80?"ok":"warn")+'"><b class="num">'+pct+'%</b><small>de primeira</small></span>':'')+FC.icon("back","hday-go")+'</button>';
+    }
+    var stats='<div class="stats fit">'+
+      '<div class="panel stat"><div class="eyebrow">Dias com estudo</div><div class="v">'+st.dias+' <small>de '+st.previstos+'</small></div><small>dias previstos no programa</small></div>'+
+      '<div class="panel stat"><div class="eyebrow">Folhas feitas</div><div class="v">'+st.folhas+'</div></div>'+
+      '<div class="panel stat"><div class="eyebrow">Acertos de primeira</div><div class="v">'+(st.tot?Math.round(100*st.ok/st.tot)+"%":"–")+'</div></div>'+
+      '<div class="panel stat"><div class="eyebrow">Faltas</div><div class="v">'+st.faltas+'</div>'+(st.parciais?'<small>e '+pl(st.parciais,"dia incompleto","dias incompletos")+'</small>':'')+'</div></div>';
+    return '<div class="eyebrow">'+(more?"Últimos "+H.span+" dias":"Desde o começo")+'</div>'+stats+
+      '<div class="panel hdays"><div class="split"><b>Dia a dia</b><span class="muted small-t">Toque em um dia para ver as folhas e as contas</span></div>'+
+      (list||'<p class="muted gap">Nenhum dia de estudo ainda.</p>')+
+      (more?'<div class="actions gap"><button type="button" class="btn ghost small" id="histMore">Mostrar dias mais antigos</button></div>':'')+'</div>';
+  }
+  function histDay(d){
+    var x=byDay[d],t=H.tlog&&H.tlog[d],turboOn=!!FC.turbo&&TURBO_OK!==false&&!free;
+    var pct=x&&x.tot?Math.round(100*x.ok/x.tot):null;
+    var head='<div class="pagehead"><button type="button" class="link crumb" data-hback>'+FC.icon("back")+'Todos os dias</button></div>'+
+      '<div class="pagehead"><h2 class="hd-title">'+esc(FC.dayLabel(d))+'</h2><span class="hday-tags">'+dayTags(d).replace(/<span class="tag">Turbo:[^<]*<\/span>/,"")+'</span></div>';
+    if(!x&&!t)return head+'<div class="panel"><p class="muted">'+(H.tlog===null&&turboOn?"Carregando…":"Nenhum registro de estudo neste dia.")+'</p></div>';
+    var stats='<div class="stats fit">'+
+      '<div class="panel stat"><div class="eyebrow">Folhas</div><div class="v">'+(x?x.sheets.length:0)+'</div></div>'+
+      '<div class="panel stat"><div class="eyebrow">Acertos de primeira</div><div class="v">'+(x?x.ok+' <small>de '+x.tot+'</small>':"–")+'</div>'+(pct!=null?'<span class="tag '+(pct>=80?"ok":"warn")+'">'+pct+'%</span>':'')+'</div>'+
+      '<div class="panel stat"><div class="eyebrow">Tempo nas folhas</div><div class="v">'+(x?FC.fmtTime(x.secs):"–")+'</div></div>'+
+      (turboOn?'<div class="panel stat"><div class="eyebrow">Trilha Turbo</div><div class="v">'+(t?t.ok+' <small>de '+t.rows.length+'</small>':"–")+'</div><small>'+(t?"contas certas":H.tlog===null?"carregando…":"não fez neste dia")+'</small></div>':'')+'</div>';
+    var folhas=x?'<div class="panel"><b>Folhas do dia</b>'+x.sheets.map(function(sh,i){
+      var er=sh.total-sh.first_ok;
+      return '<div class="hsheet" data-sid="'+sh.id+'"><div class="split"><span><b>Folha '+(i+1)+'</b> <span class="muted small-t">· nível '+esc(FC.lv(sh.level_idx))+' · '+FC.fmtTime(sh.secs)+'</span></span>'+
+        '<span class="hday-tags">'+(sh.advanced?'<span class="tag ok">subiu de nível</span>':sh.stamp?'<span class="tag ok">carimbo do dia</span>':'')+(er?'<span class="tag bad">'+pl(er,"erro","erros")+'</span>':'<span class="tag ok">tudo certo</span>')+'</span></div>'+
+        '<div class="hs-err"></div><details class="hs-full"><summary>Ver a folha inteira</summary><div class="hs-body"><p class="muted small-t">Carregando…</p></div></details></div>';
+    }).join("")+'</div>':'';
+    var turbo="";
+    if(t){
+      var bad=t.rows.filter(function(r){return !r.ok}),li=function(r){return '<li>'+turboConta(r.fact_id,r.answer,r.ok)+(r.kind==="nivelamento"?' <span class="muted small-t">· nivelamento</span>':'')+'</li>'};
+      turbo='<div class="panel"><div class="split"><b>Trilha Turbo</b>'+(bad.length?'<span class="tag bad">'+pl(bad.length,"erro","erros")+'</span>':'<span class="tag ok">tudo certo</span>')+'</div>'+
+        '<p class="muted small-t">'+t.ok+' de '+t.rows.length+' contas certas ('+Math.round(100*t.ok/t.rows.length)+'%).'+(bad.length?' A resposta dele aparece riscada.':'')+'</p>'+
+        (bad.length?'<ul class="errlist cols">'+bad.map(li).join("")+'</ul>':'')+
+        '<details class="hs-full"><summary>Ver todas as '+t.rows.length+' contas, na ordem em que ele fez</summary><ul class="errlist cols">'+t.rows.map(li).join("")+'</ul></details></div>';
+    }
+    return head+stats+folhas+turbo;
+  }
+  /* Contas e respostas das folhas do dia: baixa uma vez por dia aberto. */
+  async function fillDay(d){
+    var x=byDay[d];if(!x)return;
+    var data=H.cache[d];
+    if(!data){
+      var r=await sb.from("sheets").select("id,problems,answers,level_idx,study_day,first_ok,secs").eq("student_id",id).eq("status","done").eq("study_day",d);
+      if(r.error){$$("#histBox .hs-body").forEach(function(b){b.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>'});return}
+      data=H.cache[d]={};r.data.forEach(function(sh){data[sh.id]=sh});
+    }
+    if(H.day!==d)return;
+    $$("#histBox .hsheet").forEach(function(el){
+      var sh=data[el.getAttribute("data-sid")];if(!sh)return;
+      var bad=[];(sh.problems||[]).forEach(function(p,i){var a=(sh.answers||[])[i];if(p&&a&&a.ok!==true)bad.push({n:i+1,p:p,a:a})});
+      $(".hs-err",el).innerHTML=bad.length?'<ul class="errlist cols">'+bad.map(function(b){
+        var plain=!(b.p.extra&&(b.p.extra.fig||b.p.extra.opts));
+        return '<li>'+(plain?esc(String(b.p.pre||"").replace(/\s*=\s*$/,""))+' = <s>'+esc(b.a.v===""||b.a.v==null?"–":b.a.v)+'</s> <b>'+esc(FC.answerText(b.p,b.p.a))+'</b>':'conta '+b.n+' <span class="muted small-t">(com figura)</span>')+'</li>'}).join("")+'</ul>':'';
+      $(".hs-body",el).innerHTML=sheetHtml(sh);
+    });
+  }
+  function renderHist(){
+    var box=$("#histBox");if(!box)return;
+    box.innerHTML=H.day?histDay(H.day):histList();
+    $$("[data-day]",box).forEach(function(b){b.onclick=function(){H.day=b.getAttribute("data-day");renderHist();window.scrollTo(0,0);FC.nav.at("/aluno/"+id+"/historico/"+H.day)}});
+    var bk=$("[data-hback]",box);
+    if(bk)bk.onclick=function(){if(FC.nav.up("/aluno/"+id+"/historico"))return;H.day=null;renderHist();window.scrollTo(0,0);FC.nav.at("/aluno/"+id+"/historico")};
+    var mo=$("#histMore",box);if(mo)mo.onclick=function(){H.span+=14;renderHist()};
+    if(H.day)fillDay(H.day);
+  }
   var names=guards.map(function(g){
     var p=profs.filter(function(x){return x.id===g.user_id})[0];
     return '<li>'+esc(p?p.name||"Sem nome":"Adulto")+' <span class="muted">· '+(p&&p.role==="professor"?"professor(a)":"responsável")+(g.role==="owner"?" · cadastrou o aluno":"")+(g.user_id===U.user.id?" · você":"")+'</span></li>';
@@ -911,9 +1001,6 @@ async function detail(id){
   }
   if(s.reached_by_jump&&s.dry_days>=((PUB&&PUB.dias_sem_carimbo_voltar)||2))notices+='<div class="panel offer"><b>Nível difícil depois do salto</b><p class="small-t">Depois de pular para o nível '+L.id+', o aluno passou '+s.dry_days+' dias de estudo sem ganhar carimbo. O app ofereceu a ele voltar ao nível anterior e treinar mais; ele escolhe. Você também pode trocar o nível na aba Programa.</p></div>';
   if(s.ano_escolar&&s.ano_ref&&FC.anoLetivo(today,PUB)>s.ano_ref)notices+='<div class="panel offer"><b>O ano escolar foi atualizado</b><p class="small-t">Na virada do ano, o ano escolar passou automaticamente para o <b>'+FC.ordAno(anoNow)+'</b>. O nível do aluno não mudou. Confira se está certo; para corrigir, use a aba Programa.</p><div class="actions"><button class="btn small" id="anoOk">Está certo</button></div></div>';
-  var movesHtml='<div class="panel"><div class="eyebrow gap">Mudanças de nível</div>'+(moves.length?'<ul class="plain miss">'+moves.map(function(m){
-    var a=FC.LEVELS[m.from_idx],b=FC.LEVELS[m.to_idx];
-    return '<li><b>'+FC.dayLabel(m.day)+'</b> '+(m.kind==="salto"?"pulou do nível "+a.id+" para o "+b.id:m.kind==="voltou"?"voltou do nível "+a.id+" para o "+b.id:"subiu do nível "+a.id+" para o "+b.id)+'</li>'}).join("")+'</ul>':'<p class="muted">Nenhuma mudança de nível registrada ainda.</p>')+'</div>';
   var weakHtml='<div class="panel"><div class="eyebrow gap">Contas em reforço</div>'+(weak.length?
     '<ul class="plain miss">'+weak.map(function(w){
       return '<li><span class="q">'+esc(w.pre)+(w.extra&&w.extra.fig?' <span class="muted small-t">(com figura)</span>':'')+' <b>'+esc(FC.answerText({extra:w.extra},w.ans))+'</b>'+esc(w.post)+'</span> <span class="muted small-t">nível '+esc(FC.lv(w.level_idx))+' · errou '+w.misses+' vez'+(w.misses>1?'es':'')+'</span></li>'}).join("")+'</ul>':
@@ -934,12 +1021,12 @@ async function detail(id){
   var planNote=free?'<div class="panel plan-banner plan-free"><div class="grow"><b>Plano Grátis</b><p class="small-t">'+esc(s.name)+' faz '+quotaOf(s)+' folhas por dia, com 1 álbum. Trocas com amigos, Trilha Turbo e a aba Atenção são do VIP.</p></div><button type="button" class="btn small" data-plans>Ver planos</button></div>':'';
   var resumo=planNote+doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
-  var historico='<div class="grid"><div class="col">'+movesHtml+packsHtml+'<div class="panel"><div class="eyebrow gap">Dias sem estudo (últimos 45 dias)</div>'+(miss.length?'<ul class="plain miss">'+miss.join("")+'</ul>':'<p class="muted">Nenhuma falta no período.</p>')+'</div></div>'+
-    '<div class="col">'+weakHtml+'<div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>'+
-    turboHistBox()+'<div class="panel"><div class="eyebrow gap">Folhas feitas</div>'+(rows?'<label class="inline-chk"><input type="checkbox" id="onlyErr"> Mostrar só as folhas com erro</label><div class="tablewrap"><table class="hist"><thead><tr><th>Dia</th><th>Nível</th><th>Acertos de primeira</th><th>Contas erradas</th><th>Tempo</th><th>Resultado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted">Nenhuma folha feita ainda.</p>')+'<div id="sheetView"></div></div>';
-  var dificuldades=free?vipLock("Onde a criança está com dificuldade","Com o VIP você vê, conta por conta, onde a criança erra mais, quanto tempo leva e o que vale treinar em casa."):'<div class="panel"><div class="eyebrow gap">Onde ele está com dificuldade</div>'+
-    '<div class="dif-tools"><label class="field inline">Período<select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
-    '<div id="difBox"><p class="loading">Carregando…</p></div></div>';
+  var historico='<div id="histBox"></div>';
+  /* Atenção: tudo o que pede ajuda fica aqui (assuntos com mais erro, contas em reforço, contas demoradas e fatos da Turbo). No Grátis, a análise por assunto é do VIP. */
+  var apoio='<div class="grid"><div class="col">'+weakHtml+'</div><div class="col"><div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>';
+  var dificuldades=free?apoio+vipLock("Onde a criança está com dificuldade","Com o VIP você vê, assunto por assunto, onde a criança erra mais e o que vale treinar em casa."):'<div class="panel"><div class="split"><div class="eyebrow">Assuntos que pedem atenção</div>'+
+    '<label class="field inline dif-per"><span class="sr">Período</span><select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
+    '<div id="difBox"><p class="loading">Carregando…</p></div></div>'+apoio+turboAtencao(turbo);
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>';
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
@@ -952,13 +1039,17 @@ async function detail(id){
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
     {id:"resumo",label:"Resumo",icon:"resumo",html:resumo},
-    {id:"album",label:"Álbum",icon:"album",html:rewardPanel},
+    {id:"album",label:"Álbum",icon:"album",html:rewardPanel+packsHtml},
     {id:"historico",label:"Histórico",icon:"history",html:historico},
     {id:"dificuldades",label:"Atenção",icon:"progress",html:dificuldades},
     {id:"programa",label:"Programa",icon:"program",html:programa},
     {id:"acesso",label:"Acesso",icon:"key",html:acesso}]}));
-  U.detail=id;FC.nav.at("/aluno/"+id+"/"+FC.tabState.pai);
-  FC.bindTabs("pai",null,function(tab){return "/aluno/"+id+"/"+tab});
+  U.detail=id;
+  if(FC.tabState.pai!=="historico")H.day=null;
+  FC.nav.at("/aluno/"+id+"/"+FC.tabState.pai+(H.day?"/"+H.day:""));
+  FC.bindTabs("pai",function(tab){if(tab==="historico"&&H.day){H.day=null;renderHist()}},function(tab){return "/aluno/"+id+"/"+tab});   // tocar na aba Histórico volta para a lista de dias
+  renderHist();
+  loadTurboLog(id).then(function(by){if(U.hist!==H)return;H.tlog=by||{};renderHist()});
   bindTop();bindProgram();bindLocks();
   $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
   var lib=$("#liberar");
@@ -987,7 +1078,7 @@ async function detail(id){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadTurboHist(id);loadFriends(id);loadTrades(id);loadAnalise(id);
+  loadSlow(id);loadTurboNow(id);loadFriends(id);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
@@ -1022,9 +1113,6 @@ async function detail(id){
     var turboOk=await saveTurbo(id,r.turbo);
     FC.toast(turboOk?"Programa salvo.":"Programa salvo, mas não deu para salvar a opção da Turbo.",!turboOk);detail(id);
   };
-  $$("[data-sheet]").forEach(function(b){b.onclick=function(){openSheet(b.getAttribute("data-sheet"),b)}});
-  var onlyErr=$("#onlyErr");
-  if(onlyErr)onlyErr.onchange=function(){$$("tr[data-err]").forEach(function(tr){tr.hidden=onlyErr.checked&&tr.getAttribute("data-err")==="0"})};
 }
 
 /* ---------- folhas feitas e dificuldades ---------- */
@@ -1038,21 +1126,12 @@ function respTxt(c){
   var ks=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,3);
   return ks.length?"respondeu "+ks.map(esc).join(", "):"sem resposta";
 }
-/* Baixa as últimas folhas com as contas e respostas e preenche a lista de contas erradas do Histórico e a aba Dificuldades. */
+/* Baixa as últimas folhas com as contas e respostas para a análise por assunto da aba Atenção. */
 async function loadAnalise(id){
   var box=$("#difBox");
   var r=await sb.from("sheets").select("id,level_idx,study_day,problems,answers,first_ok,total").eq("student_id",id).eq("status","done").order("finished_at",{ascending:false}).limit(150);
   if(r.error){if(box)box.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
   U.an={id:id,sheets:r.data};
-  r.data.forEach(function(sh){
-    var cell=$('.errs[data-sid="'+sh.id+'"]');if(!cell||sh.total<=sh.first_ok)return;
-    var bad=[];(sh.problems||[]).forEach(function(p,i){var a=(sh.answers||[])[i];if(p&&a&&a.ok!==true)bad.push({n:i+1,p:p,a:a})});
-    if(!bad.length)return;
-    cell.innerHTML='<span class="tag bad">'+bad.length+' erro'+(bad.length>1?'s':'')+'</span><ul class="errlist">'+bad.slice(0,5).map(function(b){
-      var plain=!(b.p.extra&&(b.p.extra.fig||b.p.extra.opts));
-      return '<li>'+(plain?esc(String(b.p.pre||"").replace(/\s*=\s*$/,""))+' = <s>'+esc(b.a.v===""||b.a.v==null?"–":b.a.v)+'</s> <b>'+esc(FC.answerText(b.p,b.p.a))+'</b>':'conta '+b.n+' <span class="muted small-t">(com figura)</span>')+'</li>'}).join("")+
-      (bad.length>5?'<li class="muted">+'+(bad.length-5)+' ver na folha</li>':'')+'</ul>';
-  });
   if($("#difPer"))$("#difPer").onchange=renderDif;
   renderDif();
 }
@@ -1064,26 +1143,27 @@ function renderDif(){
   var rows=FC.analisar(list,{target:function(i){return FC.LEVELS[i].target},hab:function(i){return FC.LEVELS[i].hab||[]}});
   var n=0,e=0;rows.forEach(function(r){n+=r.n;e+=r.erros});
   function card(r){
-    var L=FC.LEVELS[r.level],ok=r.semaforo==="verde";
+    var L=FC.LEVELS[r.level];
     return '<div class="dif-card sem-'+r.semaforo+'"><div class="dif-head"><b>Nível '+esc(L.id)+' · '+esc(L.name)+'</b><span class="tag sem">'+SEM_TXT[r.semaforo]+'</span></div>'+
       '<p>Errou de primeira <b>'+r.erros+' de '+r.n+'</b> contas ('+Math.round(r.taxa)+'%), em '+r.folhas+' folha'+(r.folhas>1?'s':'')+'.</p>'+
-      (r.msMedio?'<p class="muted small-t">Tempo médio por conta: '+FC.fmtSec(r.msMedio)+' (esperado até '+FC.fmtSec(r.esperadoMs)+')'+(r.devagar?' · <span class="tag warn">devagar</span>':'')+'</p>':'')+
+      (r.devagar?'<p class="small-t">Está devagar: leva em média '+FC.fmtSec(r.msMedio)+' por conta (esperado até '+FC.fmtSec(r.esperadoMs)+').</p>':'')+
       (r.numericos>=3&&r.porUm*2>=r.numericos?'<p class="small-t">Em '+r.porUm+' dos '+r.numericos+' erros a resposta ficou a <b>1 de distância</b> da certa.</p>':'')+
       (r.semResposta?'<p class="small-t">'+r.semResposta+' conta'+(r.semResposta>1?'s':'')+' ficou sem resposta.</p>':'')+
-      (!ok&&r.contas.length?'<details><summary>Contas que mais errou ('+r.contas.length+')</summary><ul class="errlist">'+r.contas.slice(0,8).map(function(c){
+      (r.contas.length?'<details><summary>Contas que mais errou ('+r.contas.length+')</summary><ul class="errlist">'+r.contas.slice(0,8).map(function(c){
         return '<li>'+contaTxt(c.p)+' = <b>'+esc(FC.answerText(c.p,c.p.a))+'</b> <span class="muted small-t">· errou '+c.erros+' de '+c.vezes+' vez'+(c.vezes>1?'es':'')+' · '+respTxt(c)+'</span></li>'}).join("")+'</ul></details>':'')+
       (r.hab.length?'<div class="hab-chips">'+r.hab.map(function(c){var h=FC.HAB&&FC.HAB[c];return '<span class="chip" title="'+esc(h?h[2]:c)+'">'+esc(c)+(h?' · '+esc(h[1]):'')+'</span>'}).join("")+'</div>':'')+'</div>';
   }
-  var fortes=rows.filter(function(r){return r.semaforo!=="poucos"}),poucos=rows.filter(function(r){return r.semaforo==="poucos"});
+  var alerta=rows.filter(function(r){return r.semaforo==="vermelho"||r.semaforo==="amarelo"}),bem=rows.filter(function(r){return r.semaforo==="verde"}),poucos=rows.filter(function(r){return r.semaforo==="poucos"});
   var hab=FC.analisarHab(rows).filter(function(h){return h.semaforo!=="poucos"});
-  box.innerHTML='<p class="muted">'+list.length+' folha'+(list.length>1?'s':'')+' · acertou de primeira '+Math.round(100-(n?e*100/n:0))+'% das contas. '+
-    'Dificuldade: errou 40% ou mais de primeira; atenção: de 20% a 40%. Só entra assunto com pelo menos 5 contas feitas.</p>'+
-    (fortes.length?fortes.map(card).join(""):'<p class="muted">Ainda não há contas suficientes em nenhum assunto neste período.</p>')+
+  box.innerHTML='<p class="muted">'+list.length+' folha'+(list.length>1?'s':'')+' · acertou de primeira '+Math.round(100-(n?e*100/n:0))+'% das contas.</p>'+
+    (alerta.length?alerta.map(card).join(""):bem.length?'<div class="dif-card sem-verde"><b>Nenhum assunto pede atenção neste período</b><p>Ele errou de primeira menos de 20% das contas em todos os assuntos que estudou.</p></div>':'<p class="muted">Ainda não há contas suficientes em nenhum assunto neste período.</p>')+
+    (bem.length?'<details class="gap"><summary>Assuntos em que ele vai bem ('+bem.length+')</summary><ul class="plain gap">'+bem.map(function(r){var L=FC.LEVELS[r.level];return '<li>Nível '+esc(L.id)+' · '+esc(L.name)+' <span class="muted small-t">· errou '+r.erros+' de '+r.n+' ('+Math.round(r.taxa)+'%)</span>'+(r.devagar?' <span class="tag warn">devagar</span>':'')+'</li>'}).join("")+'</ul></details>':'')+
     (hab.length?'<details class="gap"><summary>Por habilidade da BNCC ('+hab.length+')</summary><div class="tablewrap"><table class="hab"><thead><tr><th>Habilidade</th><th>Erros de primeira</th><th></th></tr></thead><tbody>'+hab.map(function(h){
       var d=FC.HAB&&FC.HAB[h.cod];
       return '<tr><td><b>'+esc(h.cod)+'</b>'+(d?'<br><span class="muted small-t" title="'+esc(d[2])+'">'+esc(d[1])+'</span>':'')+'</td><td>'+h.erros+' de '+h.n+' ('+Math.round(h.taxa)+'%)</td><td><span class="tag sem sem-'+h.semaforo+'">'+SEM_TXT[h.semaforo]+'</span></td></tr>'}).join("")+'</tbody></table></div>'+
       '<p class="muted small-t">Cada conta conta em todas as habilidades do nível dela; por isso os números são aproximados quando um nível treina mais de uma habilidade.</p></details>':'')+
-    (poucos.length?'<details class="gap"><summary>Assuntos com poucos dados ('+poucos.length+')</summary><ul class="plain">'+poucos.map(function(r){var L=FC.LEVELS[r.level];return '<li>Nível '+esc(L.id)+' · '+esc(L.name)+' <span class="muted small-t">· '+r.erros+' de '+r.n+' contas erradas</span></li>'}).join("")+'</ul></details>':'');
+    (poucos.length?'<details class="gap"><summary>Assuntos com poucos dados ('+poucos.length+')</summary><ul class="plain">'+poucos.map(function(r){var L=FC.LEVELS[r.level];return '<li>Nível '+esc(L.id)+' · '+esc(L.name)+' <span class="muted small-t">· '+r.erros+' de '+r.n+' contas erradas</span></li>'}).join("")+'</ul></details>':'')+
+    '<p class="muted small-t gap">Dificuldade: errou de primeira 40% ou mais das contas. Atenção: de 20% a 40%. Só entra assunto com pelo menos 5 contas feitas.</p>';
 }
 /* Contas em que o aluno mais demora, nas últimas 20 folhas: média do tempo na conta contra o tempo esperado do nível. */
 /* Amigos do aluno: o adulto vê com quem ele é amigo e pode desfazer qualquer amizade. */
@@ -1137,14 +1217,12 @@ async function loadSlow(id){
     '<p class="muted small-t gap">O tempo de cada conta conta enquanto a caixa de resposta dela está selecionada, só na primeira tentativa.</p>';
 }
 
-async function openSheet(sid,btn){
-  var box=$("#sheetView");box.innerHTML='<p class="loading">Carregando folha…</p>';
-  var r=await sb.from("sheets").select("problems,answers,level_idx,study_day,first_ok,secs").eq("id",sid).single();
-  if(r.error){box.innerHTML='<p class="msg bad">'+esc(FC.err(r.error))+'</p>';return}
-  var sh=r.data,ans=sh.answers||[];
+/* Folha inteira, conta por conta, para a página do dia no Histórico. */
+function sheetHtml(sh){
+  var ans=sh.answers||[];
   var exp=FC.LEVELS[sh.level_idx].target/10*1000,msAll=ans.map(function(a){return a&&a.ms>0?a.ms:0}).filter(function(x){return x>0});
   var avg=msAll.length?msAll.reduce(function(a,b){return a+b},0)/msAll.length:0;
-  var li=sh.problems.map(function(p,i){
+  var li=(sh.problems||[]).map(function(p,i){
     var a=ans[i]||{},ok=a.ok,ms=a.ms||0;
     var rich=!!p.extra;
     return '<li class="'+(ok?"ok":"bad")+'">'+(rich?FC.itemStatic(p,a.v):'<span class="q">'+esc(p.pre)+' '+esc(a.v===""||a.v==null?"–":a.v)+(p.post?" "+esc(p.post):"")+'</span>')+' '+
@@ -1152,8 +1230,6 @@ async function openSheet(sid,btn){
       (ms>0?' <span class="muted small-t">'+FC.fmtSec(ms)+'</span>':'')+(ms>exp*1.5?' <span class="tag warn">lenta</span>':'')+
       (a.tries>1?' <span class="muted small-t">('+a.tries+' tentativas)</span>':'')+'</li>';
   }).join("");
-  box.innerHTML='<div class="sheetview"><h3>Folha de '+FC.dayLabel(sh.study_day)+' · nível '+esc(FC.lv(sh.level_idx))+'</h3>'+
-    '<p class="muted">'+sh.first_ok+' acertos de primeira em '+FC.fmtTime(sh.secs)+(avg?' · tempo médio por conta '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+')':'')+'</p><ol class="sv">'+li+'</ol></div>';
-  box.scrollIntoView({behavior:"smooth",block:"start"});
+  return (avg?'<p class="muted small-t">Tempo médio por conta: '+FC.fmtSec(avg)+' (esperado até '+FC.fmtSec(exp)+').</p>':'')+'<ol class="sv">'+li+'</ol>';
 }
 })();

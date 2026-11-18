@@ -69,7 +69,7 @@ const hash=()=>loc.hash;
   const rd=f=>fs.readFileSync(path.join(root,f),"utf8");
   const ad=rd("adult.js"),st=rd("student.js"),am=rd("admin.js"),co=rd("core.js");
   ok(/FC\.nav\.handler=route/.test(ad)&&/FC\.nav\.handler=route/.test(st)&&/FC\.nav\.handler=admRoute/.test(am),"as três áreas (pais, aluno, administração) registram suas rotas");
-  ok(/FC\.bindTabs\("pai",null,function\(tab\)/.test(ad)&&/FC\.bindTabs\("aluno"/.test(st),"abas dos pais e da criança entram no histórico");
+  ok(/FC\.bindTabs\("pai",.*function\(tab\)\{return "\/aluno\/"/.test(ad)&&/FC\.bindTabs\("aluno"/.test(st),"abas dos pais e da criança entram no histórico");
   ok(/FC\.nav\.at\("\/folha"\)/.test(st)&&/FC\.nav\.at\("\/resultado",true\)/.test(st),"folha e resultado têm endereço (o resultado troca a entrada da folha)");
   ok(/Sair da folha\?/.test(st)&&/FC\.nav\.forward\(\)/.test(st),"voltar na folha com respostas digitadas pergunta antes de sair");
   ok(/FC\.nav\.openOverlay/.test(co)&&/FC\.nav\.closedOverlay/.test(co),"janelas (overlay) entram no histórico");

@@ -749,30 +749,9 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 @media (prefers-color-scheme:dark){.row.miss{background:#3b3216}.mapa-b.miss i{background:#3b3216;color:#ffd77a}}
 /* Folhas feitas e dificuldades (pais) */
 .inline-chk{display:flex;gap:8px;align-items:center;margin:6px 0 10px;font-size:.9rem}
-.errs{min-width:150px}
-/* Histórico dos pais no celular: cada folha vira um cartão (a tabela larga escondia o botão Ver e as contas erradas) */
 table.hab td{white-space:normal}
 .sv .small-t{white-space:nowrap}
 @media (max-width:720px){
-  .tablewrap{overflow-x:visible}
-  table.hist,table.hist tbody{display:block}
-  table.hist thead{display:none}
-  table.hist tr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"dia ver" "nivel ver" "ok tempo" "res res" "errs errs";gap:4px 12px;align-items:center;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-  table.hist tr[hidden]{display:none}
-  table.hist td{display:block;min-width:0;padding:0;border:0;white-space:normal}
-  table.hist .c-dia{grid-area:dia;font-weight:700;font-size:1rem}
-  table.hist .c-nivel{grid-area:nivel}
-  table.hist .c-ok{grid-area:ok}
-  table.hist .c-tempo{grid-area:tempo;text-align:right}
-  table.hist .c-res{grid-area:res}
-  table.hist .errs{grid-area:errs;min-width:0}
-  table.hist .c-ver{grid-area:ver;grid-row:1 / span 2;align-self:center}
-  table.hist .c-ver .btn{min-height:44px;padding-inline:20px}
-  table.hist .c-nivel::before,table.hist .c-ok::before,table.hist .c-tempo::before{content:attr(data-label) ": ";color:var(--muted);font-size:.78rem}
-  table.hist .c-res:empty{display:none}
-  table.hist .errs .muted{display:none}
-  table.hist .errs:has(.errlist){margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
-  table.hist .errs:not(:has(.tag)){display:none}
   table.hab,table.hab tbody{display:block}
   table.hab thead{display:none}
   table.hab tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
@@ -1020,3 +999,39 @@ details.adv{border:0;background:var(--soft)}
 .adm-group .adm-in input,.adm-group .adm-lv{background:var(--bg)}
 .adm-dump{background:var(--soft);padding:12px}
 .adm-in input:focus,.adm-lv:focus,.adm-dump:focus,.adm-table input:focus,.adm-table select:focus{outline:none;border-color:var(--primary)}
+
+/* ---------- Histórico dos pais: um cartão por dia; tocar abre a página do dia ---------- */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.stats.fit{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.hweek{margin:18px 0 6px}
+.hday{display:flex;align-items:center;gap:14px;width:100%;margin-top:8px;padding:12px 14px;border:0;border-radius:var(--r-md);background:var(--soft);color:inherit;font:inherit;text-align:left;min-height:60px}
+button.hday{cursor:pointer;transition:background .15s}
+button.hday:hover,button.hday:focus-visible{background:color-mix(in srgb,var(--primary) 12%,var(--soft))}
+.hday.off{background:transparent;box-shadow:inset 0 0 0 1px var(--line);min-height:0;padding-block:8px}
+.hday-d{display:flex;flex-direction:column;align-items:center;flex:0 0 46px;line-height:1.15}
+.hday-d small{color:var(--muted);font-size:.78rem}
+.hday-m{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
+.hday-tags{display:flex;flex-wrap:wrap;gap:6px}
+.hday-tags:empty{display:none}
+.hday-pct{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;flex:0 0 auto}
+.hday-pct b{font-family:var(--font-display);font-size:1.25rem;font-weight:800}
+.hday-pct small{color:var(--muted);font-size:.72rem}
+.hday-pct.ok b{color:var(--ok)} .hday-pct.warn b{color:var(--reward-text)}
+.hday-go{flex:0 0 auto;width:18px;height:18px;color:var(--muted);transform:scaleX(-1)}
+.hd-title{font-size:1.5rem}
+.hsheet{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.hsheet .split,.hdays>.split{flex-wrap:wrap}
+.hs-full{margin-top:8px}
+.hs-full .sv{margin-top:8px}
+.errlist.cols{columns:3 150px;column-gap:28px;font-size:.9rem}
+.errlist.cols li{break-inside:avoid;margin-bottom:3px}
+.dif-per{margin:0}
+@media (max-width:720px){
+  .hday{gap:10px;padding:12px}
+  .hday-d{flex-basis:40px}
+  .stats.fit{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+#histBox{display:flex;flex-direction:column;gap:18px;min-width:0}
+#histBox>.eyebrow{margin-bottom:-10px}
+#histBox>.pagehead+.pagehead{margin-top:-8px}
+.hday .tag:not(.ok):not(.warn):not(.bad){background:var(--surface)}

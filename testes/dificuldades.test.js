@@ -46,13 +46,14 @@ ok(Object.values(FC.HAB).every(x=>x[1].length<=100&&x[2].length>=x[1].length-1),
 // código da tela
 const ad=fs.readFileSync(path.join(root,"adult.js"),"utf8"),idx=fs.readFileSync(path.join(root,"index.html"),"utf8"),sw=fs.readFileSync(path.join(root,"sw.js"),"utf8");
 ok(/id:"dificuldades"/.test(ad)&&/function renderDif\(/.test(ad)&&/FC\.analisar\(/.test(ad),"aba Dificuldades usa a análise");
-ok(/id="onlyErr"/.test(ad)&&/Contas erradas/.test(ad)&&/class="errs"/.test(ad),"Histórico mostra as contas erradas e o filtro só com erro");
+ok(/id="histBox"/.test(ad)&&/function histDay\(/.test(ad)&&/class="hs-err"/.test(ad)&&/Ver a folha inteira/.test(ad),"Histórico: um cartão por dia, e a página do dia mostra as contas erradas e a folha inteira");
 ok(/id="difPer"/.test(ad),"período escolhido pelos pais (7 dias, 30 dias, tudo)");
 ok(/habilidades\.js/.test(idx)&&/analise\.js/.test(idx)&&/habilidades\.js/.test(sw)&&/analise\.js/.test(sw),"arquivos carregados e guardados no cache");
 ok(!/dica/i.test(ad.slice(ad.indexOf("function renderDif("),ad.indexOf("/* Contas em que o aluno mais demora"))),"sem dica pedagógica por enquanto");
-// responsividade do Histórico no celular: a tabela vira cartões, com o botão Ver sempre à vista
+// Histórico em cartões (um por dia) e endereço próprio para cada dia
 const css=fs.readFileSync(path.join(root,"style.css"),"utf8");
-ok(/<table class="hist">/.test(ad)&&/class="c-ver"/.test(ad)&&/data-label="Acertos de primeira"/.test(ad),"Histórico: tabela com classes e rótulos para o celular");
-ok(/@media \(max-width:720px\)\{[\s\S]*table\.hist tr\{display:grid/.test(css)&&/table\.hist \.c-ver\{grid-area:ver/.test(css),"Histórico: cartões em tela estreita, com o botão Ver ao lado do dia");
+ok(/class="hday" data-day=/.test(ad)&&/\.hday\{display:flex/.test(css)&&!/table class="hist"/.test(ad),"Histórico: cartões por dia no lugar da tabela de folhas");
+ok(/historico\/"\+H\.day/.test(ad)&&/\\d\{4\}-\\d\\d-\\d\\d/.test(ad),"cada dia do Histórico tem endereço (voltar do navegador funciona)");
+ok(/apoio\+turboAtencao\(turbo\)/.test(ad)&&!/Fatos teimosos[\s\S]*function turboAtencao/.test(ad),"contas em reforço, contas demoradas e fatos da Turbo ficam só na aba Atenção");
 ok(/table\.hab tr\{display:grid/.test(css),"tabela de habilidades também empilha no celular");
 console.log(falhas?"\n"+falhas+" falha(s)":"dificuldades: tudo certo");process.exit(falhas?1:0);
