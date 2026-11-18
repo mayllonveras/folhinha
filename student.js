@@ -169,7 +169,7 @@ function home(){
   }else{
     canStart=true;status=(m.free_day?"Hoje é <b>dia livre</b>: jogue se quiser, sem perder sua sequência. ":"")+"Hoje: <b>"+m.done_today+" de "+m.quota+"</b> folhas feitas."+(m.today_total>0?" Acertos de primeira hoje: <b>"+m.today_ok+" de "+m.today_total+"</b> ("+Math.round(100*m.today_ok/m.today_total)+"%).":"");
   }
-  var need=m.stamps_needed||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<m.stamps?" on":"")+'">✓</span>';
+  var need=m.stamps_needed||5,stamps=FC.stampSet(need,m.stamps);
   var hero;
   if(canStart)hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje'+(m.free_day?" · dia livre":"")+' · folha '+(m.done_today+1)+' de '+m.quota+'</span><h2>'+esc(L.name)+'</h2><p>'+status+'</p><button class="btn reward block" id="start">Começar folha '+(m.done_today+1)+'</button></section>';
   else hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
@@ -274,7 +274,7 @@ function friendsList(){
 async function friendView(id){
   var box=$("#frBox"),v;if(!box)return;
   try{v=await rpc("student_friend_view",{p_token:S.token,p_id:id})}catch(e){FC.toast(FC.err(e),true);return friendsLoad()}
-  var L=FC.LEVELS[v.level_idx],stamps="";for(var i=0;i<5;i++)stamps+='<span class="stamp'+(i<v.stamps?" on":"")+'">✓</span>';
+  var L=FC.LEVELS[v.level_idx],stamps=FC.stampSet(5,v.stamps);
   var ids=themesOf(v),tid=ids.indexOf(S.frTheme)>=0?S.frTheme:ids[0];S.frTheme=tid;
   var got=gotOf(v,tid),th=FC.theme(tid);
   var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
@@ -1175,8 +1175,7 @@ async function send(payload,score){
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;S.me.today_ok=res.day_ok;S.me.today_total=res.day_total;
   S.me.offer_back=res.offer_back;S.me.streak=res.streak;S.me.best_streak=res.best_streak;S.me.next_marco=res.next_marco;S.me.pending_packs=res.pending_packs;
   var pk=res.packs||{},got=(pk.carimbo||0)+(pk.perseveranca||0)+(pk.marco||0);
-  var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row="";
-  for(var i=0;i<need;i++)row+='<span class="stamp'+(i<shown?" on":"")+((res.stamp&&!res.advanced&&i>=shown-(res.gained||1)&&i<shown)?" pop":"")+'">✓</span>';
+  var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row=FC.stampSet(need,shown,(res.stamp&&!res.advanced)?shown-(res.gained||1):null);
   var seal=res.day_closed?(res.tier==="salto"?"Salto!":res.tier==="ouro"?"Ouro!":res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
   FC.nav.at("/resultado",true);   // a folha vira o resultado: voltar leva para a tela inicial, não para a folha entregue
   FC.render('<div class="res panel">'+

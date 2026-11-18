@@ -853,7 +853,7 @@ async function detail(id){
     var p=profs.filter(function(x){return x.id===g.user_id})[0];
     return '<li>'+esc(p?p.name||"Sem nome":"Adulto")+' <span class="muted">· '+(p&&p.role==="professor"?"professor(a)":"responsável")+(g.role==="owner"?" · cadastrou o aluno":"")+(g.user_id===U.user.id?" · você":"")+'</span></li>';
   }).join("");
-  var need=s.stamps_needed||(PUB&&PUB.stamps_needed)||5,stamps="";for(var i=0;i<need;i++)stamps+='<span class="stamp'+(i<s.stamps?" on":"")+'">✓</span>';
+  var need=s.stamps_needed||(PUB&&PUB.stamps_needed)||5,stamps=FC.stampSet(need,s.stamps);
   var anoNow=FC.anoAluno(s,today,PUB),notices="";
   /* limite de avanço atingido: carimbos completos e o próximo nível é de um ano além do teto */
   var tetoPad=(PUB&&PUB.teto_anos_padrao!=null)?PUB.teto_anos_padrao:1,tetoVal=s.teto_anos!=null?s.teto_anos:tetoPad,nextL=FC.LEVELS[s.level_idx+1];
