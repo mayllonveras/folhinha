@@ -18,8 +18,8 @@ Decisões do professor (17/11/2026) e a ordem de implementação.
 | Fase | O que entra | Situação |
 |---|---|---|
 | 1 | `entitlements`, limites do Grátis no banco, teste de 14 dias, Fundador, "Dar VIP" no /adm, tela Planos | `migracoes/2026-11-17-plano-vip.sql` (aplicada em 17/11/2026) |
-| 2 | Cupons (% de desconto, valor fixo, meses grátis, vitalício), tela de cupons no /adm | `migracoes/2026-11-18-cupons.sql` |
-| 3 | Asaas: assinatura mensal e anual, webhook numa Edge Function do Supabase, histórico de pagamentos | a fazer |
+| 2 | Cupons (% de desconto, valor fixo, meses grátis, vitalício), tela de cupons no /adm | `migracoes/2026-11-18-cupons.sql` (aplicada em 17/11/2026) |
+| 3 | Asaas: assinatura mensal e anual, webhook numa Edge Function do Supabase, histórico de pagamentos | `migracoes/2026-11-18-assinatura.sql`, `supabase/functions/`; como ligar: `planos/ASAAS.md` |
 | 4 | Indicação: link, 1 mês grátis, pacote especial das crianças, painel de indicações | a fazer |
 
 ## Como a fase 1 funciona

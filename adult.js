@@ -54,27 +54,125 @@ function bindLocks(){$$("[data-plans]").forEach(function(b){b.onclick=showPlans}
 var PLAN_ROWS=[["Crianças por conta","1","até 4 (família)"],["Folhas do dia","2 por dia","as do programa (5 ou mais)"],["Todos os anos (1º ao 5º) e vídeos","✓","✓"],
   ["Álbuns de figurinhas","1","todos"],["Pacotinhos","boas-vindas e dias seguidos","+ carimbo, perseverança e Turbo"],
   ["Amigos e trocas de figurinhas","—","✓"],["Trilha Turbo","—","✓"],["Painel dos pais","resumo e histórico","completo, com a aba Atenção"]];
+/* ---------- assinatura (migracoes/2026-11-18-assinatura.sql e supabase/functions/assinatura) ----------
+   Sem a migração (adult_billing falha), a tela segue com "a assinatura chega em breve". */
+var BILL=null;
+async function loadBilling(){try{var r=await sb.rpc("adult_billing");BILL=r.error?null:r.data}catch(e){BILL=null}return BILL}
+function brl(v){return "R$ "+Number(v||0).toFixed(2).replace(".",",")}
+function priceOf(plan){var q=BILL&&BILL.quote&&BILL.quote[plan];return q?Number(q.full):plan==="mensal"?24.9:199}
+var SUB_STATUS={aguardando:["Aguardando o pagamento",""],ativa:["Ativa","ok"],atrasada:["Pagamento atrasado","bad"],cancelada:["Cancelada",""]};
+function payStatus(st){return {PENDING:"em aberto",OVERDUE:"vencida",RECEIVED:"paga",CONFIRMED:"paga",REFUNDED:"estornada",RECEIVED_IN_CASH:"paga"}[st]||String(st||"").toLowerCase()}
+function subscribeHtml(){
+  var q=BILL.quote||{},cards=["mensal","anual"].map(function(pl){
+    var x=q[pl]||{},disc=x.coupon&&Number(x.first)<Number(x.full);
+    return '<button type="button" class="btn'+(pl==="anual"?"":" ghost")+' block" data-sub="'+pl+'">Assinar '+pl+' · '+brl(x.full)+(pl==="mensal"?"/mês":"/ano")+'</button>'+
+      (disc?'<p class="small-t ok-t">Com o cupom '+esc(x.coupon)+': '+brl(x.first)+' '+(x.cycles===1?'na 1ª cobrança':x.cycles?'nas '+x.cycles+' primeiras cobranças':'em todas as cobranças')+'.</p>':'');
+  }).join("");
+  return '<div class="panel"><div class="eyebrow">Assinar o VIP</div><div class="sub-btns gap">'+cards+'</div>'+
+    '<p class="small-t muted gap">Pagamento pelo Asaas: cartão de crédito (renova sozinho) ou Pix e boleto (fatura a cada mês ou ano). Cancele quando quiser: o VIP vale até o fim do período pago.</p></div>';
+}
+function billingHtml(){
+  if(!BILL)return '<div class="panel center"><b>A assinatura online chega em breve</b><p class="small-t muted">Pix, cartão e boleto. Avisamos por aqui assim que abrir.</p></div>';
+  if(PLAN&&PLAN.lifetime)return '<div class="panel center"><b>Sua conta é VIP para sempre</b><p class="small-t muted">Não precisa assinar.</p></div>';
+  var s=BILL.subscription,html="";
+  if(s){
+    var st=SUB_STATUS[s.status]||[s.status,""],per=s.plan==="mensal"?"por mês":"por ano";
+    html+='<div class="panel" id="subBox"><div class="eyebrow">Minha assinatura</div><div class="split gap"><b>VIP '+esc(s.plan)+' · '+brl(s.value_now)+' '+per+'</b><span class="tag '+st[1]+'">'+esc(st[0])+'</span></div>'+
+      (s.value_now<s.value_full&&s.status!=="cancelada"?'<p class="small-t muted">Com desconto do cupom '+esc(s.coupon||"")+'. Depois: '+brl(s.value_full)+' '+per+'.</p>':'')+
+      (s.status==="aguardando"?'<p class="small-t">O link de pagamento está pronto. Se já pagou, a confirmação chega em instantes.</p>':'')+
+      (s.status==="cancelada"?'<p class="small-t">Assinatura cancelada. '+(PLAN&&PLAN.vip&&PLAN.until?'O VIP vale até '+FC.dm(String(PLAN.until).slice(0,10))+'.':'')+'</p>':'')+
+      (s.status==="ativa"&&s.next_due?'<p class="small-t">Próxima cobrança: <b>'+FC.dm(s.next_due)+'</b>'+(s.method==="cartao"?' no cartão.':', por Pix ou boleto (a fatura chega por e-mail).')+'</p>':'')+
+      (s.status==="atrasada"?'<p class="small-t bad">A última cobrança venceu. Pague a fatura para o VIP continuar.</p>':'')+
+      '<div class="actions gap">'+(s.pay_url&&s.status!=="cancelada"?'<a class="btn" href="'+esc(s.pay_url)+'" rel="noopener">'+(s.status==="aguardando"?"Continuar pagamento":"Pagar fatura")+'</a>':'')+
+      (s.status==="ativa"||s.status==="atrasada"?'<button type="button" class="btn ghost small" id="subCancel">Cancelar assinatura</button>':'')+'</div>'+
+      ((BILL.payments||[]).length?'<details class="gap"><summary>Cobranças</summary><ul class="plain small-t">'+BILL.payments.map(function(p){
+        return '<li>'+FC.dm(p.due)+' · '+brl(p.value)+' · '+esc(payStatus(p.status))+(p.url?' · <a href="'+esc(p.url)+'" target="_blank" rel="noopener">fatura</a>':'')+'</li>'}).join("")+'</ul></details>':'')+'</div>';
+  }
+  if(!s||s.status==="aguardando"||s.status==="cancelada")html+=subscribeHtml();
+  return html;
+}
+function subscribeForm(plan){
+  var x=(BILL.quote||{})[plan]||{},v=x.first||priceOf(plan);
+  var ov=FC.overlay('<h2>Assinar o VIP '+esc(plan)+'</h2><p class="muted">'+brl(v)+(x.coupon&&Number(x.first)<Number(x.full)?' na 1ª cobrança, com o cupom '+esc(x.coupon)+'. Depois, '+brl(x.full):'')+(plan==="mensal"?" por mês.":" por ano.")+'</p>'+
+    '<form id="subForm" class="form" novalidate><label class="field">Nome completo de quem paga<input id="sNome" maxlength="100" autocomplete="name" value="'+esc((U.profile&&U.profile.name)||"")+'"></label>'+
+    '<label class="field">CPF de quem paga<input id="sCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00"><small>O Asaas pede o CPF para emitir a cobrança e a nota fiscal. A Folhinha não guarda o seu CPF.</small></label>'+
+    '<label class="field">Celular com DDD<input id="sCel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(00) 00000-0000"><small>O Asaas usa para avisos da cobrança.</small></label>'+
+    '<div class="two"><label class="field">CEP<input id="sCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></label>'+
+    '<label class="field">Número<input id="sNum" maxlength="10" autocomplete="off" placeholder="Ex.: 120"></label></div>'+
+    '<fieldset class="field"><legend>Forma de pagamento</legend><label class="radio"><input type="radio" name="sForma" value="cartao" checked> Cartão de crédito: renova sozinho</label>'+
+    '<label class="radio"><input type="radio" name="sForma" value="pix_boleto"> Pix ou boleto: fatura a cada '+(plan==="mensal"?"mês":"ano")+'</label></fieldset>'+
+    '<p class="msg bad" id="sMsg" role="alert"></p><button class="btn block" type="submit" id="sBtn">Ir para o pagamento</button>'+
+    '<p class="small-t muted">Você vai para a página segura do Asaas. Os dados do cartão são digitados lá, nunca na Folhinha.</p></form>',{button:"Voltar"});
+  var cpf=$("#sCpf",ov.el);
+  var cel=$("#sCel",ov.el);
+  cel.oninput=function(){var d=cel.value.replace(/\D/g,"").slice(0,11);cel.value=d.length<3?d:d.length<7?"("+d.slice(0,2)+") "+d.slice(2):d.length<11?"("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6):"("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7)};
+  var cepI=$("#sCep",ov.el);
+  cepI.oninput=function(){var d=cepI.value.replace(/\D/g,"").slice(0,8);cepI.value=d.length>5?d.slice(0,5)+"-"+d.slice(5):d};
+  cpf.oninput=function(){var d=cpf.value.replace(/\D/g,"").slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")};
+  $("#subForm",ov.el).onsubmit=async function(e){
+    e.preventDefault();
+    var msg=$("#sMsg",ov.el),btn=$("#sBtn",ov.el),nome=$("#sNome",ov.el).value.trim(),c=cpf.value.replace(/\D/g,"");
+    if(nome.length<3){msg.textContent="Digite o nome completo.";return}
+    if(c.length!==11){msg.textContent="Digite os 11 números do CPF.";return}
+    var celN=cel.value.replace(/\D/g,"");
+    if(!/^[1-9]{2}9?\d{8}$/.test(celN)){msg.textContent=celN.length===11?"Celular tem 9 dígitos começando com 9 depois do DDD. Ex.: (86) 99999-8888.":"Digite o celular com DDD. Ex.: (86) 99999-8888.";return}
+    var cepN=cepI.value.replace(/\D/g,""),num=$("#sNum",ov.el).value.trim();
+    if(cepN.length!==8){msg.textContent="Digite o CEP com 8 números.";return}
+    if(!num){msg.textContent="Digite o número do endereço (ou S/N).";return}
+    btn.disabled=true;msg.textContent="";
+    var r=await callBilling({acao:"assinar",cep:cepN,numero:num,plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:celN});
+    if(r.error){btn.disabled=false;msg.textContent=r.error;return}
+    btn.textContent="Abrindo o pagamento…";location.href=r.url;
+  };
+}
+/* Chama a Edge Function "assinatura" com o login do adulto. Devolve {url} ou {error: texto para a tela}. */
+async function callBilling(body){
+  try{
+    var r=await sb.functions.invoke("assinatura",{body:body});
+    if(r.error){
+      var d=null;try{d=await r.error.context.json()}catch(x){}
+      if(d&&d.error==="asaas")return{error:"O Asaas recusou: "+(d.detail||"tente de novo.")};
+      return{error:FC.err({message:(d&&d.error)||r.error.message})};
+    }
+    if(r.data&&r.data.error)return{error:FC.err({message:r.data.error})};
+    return r.data||{};
+  }catch(e){return{error:FC.err(e)}}
+}
+function bindBilling(){
+  $$("[data-sub]").forEach(function(b){b.onclick=function(){subscribeForm(b.getAttribute("data-sub"))}});
+  var c=$("#subCancel");
+  if(c)FC.confirmClick(c,"Toque de novo para cancelar",async function(){
+    c.disabled=true;
+    var r=await callBilling({acao:"cancelar"});
+    if(r.error){c.disabled=false;return FC.toast(r.error,true)}
+    FC.toast("Assinatura cancelada. O VIP vale até o fim do período pago.");showPlans();
+  });
+}
 async function showPlans(){
   FC.render('<p class="loading">Carregando…</p>');
-  await loadPlan();
+  await Promise.all([loadPlan(),loadBilling()]);
+  if(/[?&]pagamento=ok/.test(location.search)){   // volta do Asaas depois de pagar
+    try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+    FC.toast("Pagamento enviado! O VIP é liberado assim que o Asaas confirmar, em instantes.");
+  }
   var used=PLAN?PLAN.students+" de "+PLAN.max_students+" aluno"+(PLAN.max_students===1?"":"s"):"";
   FC.render(topbar("Planos")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
     '<div class="section-head"><h1>Planos</h1></div>'+
     (PLAN?'<div class="panel plan-now"><div class="eyebrow">Seu plano agora</div><div class="v">'+esc(planName())+'</div><small class="muted">'+esc(used)+'</small></div>':'')+
     '<div class="plan-cards">'+
       '<div class="panel plan-card"><div class="eyebrow">Grátis</div><div class="price">R$ 0</div><p class="small-t muted">Para começar e conhecer.</p></div>'+
-      '<div class="panel plan-card best"><div class="eyebrow">VIP mensal</div><div class="price">R$ 24,90<small>/mês</small></div><p class="small-t muted">Família inteira, até 4 crianças.</p></div>'+
-      '<div class="panel plan-card best"><span class="vip-tag">33% off</span><div class="eyebrow">VIP anual</div><div class="price">R$ 199<small>/ano</small></div><p class="small-t muted">Sai a R$ 16,58 por mês.</p></div></div>'+
+      '<div class="panel plan-card best"><div class="eyebrow">VIP mensal</div><div class="price">'+brl(priceOf("mensal"))+'<small>/mês</small></div><p class="small-t muted">Família inteira, até 4 crianças.</p></div>'+
+      '<div class="panel plan-card best"><span class="vip-tag">'+Math.round(100-100*priceOf("anual")/(12*priceOf("mensal")))+'% off</span><div class="eyebrow">VIP anual</div><div class="price">'+brl(priceOf("anual"))+'<small>/ano</small></div><p class="small-t muted">Sai a '+brl(priceOf("anual")/12)+' por mês.</p></div></div>'+
+    billingHtml()+
     '<div class="panel"><div class="tablewrap"><table class="plan-table"><thead><tr><th></th><th>Grátis</th><th>VIP</th></tr></thead><tbody>'+
       PLAN_ROWS.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td><b>'+esc(r[2])+'</b></td></tr>'}).join("")+'</tbody></table></div>'+
       '<p class="small-t muted gap">Conta nova começa com '+planLim("teste_dias",14)+' dias de VIP, sem cartão. Quando o VIP acaba, nada do que a criança conquistou se perde: figurinhas, amigos e histórico ficam guardados.</p></div>'+
     '<div class="panel" id="cupBox"><div class="eyebrow">Tem um cupom?</div>'+
       '<form id="cupForm" class="form inline" novalidate><label class="field grow">Código do cupom<input id="cupCode" maxlength="30" autocomplete="off" autocapitalize="characters" placeholder="Ex.: BLACKFRIDAY50"></label><button class="btn" type="submit" id="cupBtn">Usar cupom</button></form>'+
-      '<p class="msg" id="cupMsg" role="alert"></p><div id="cupList"></div></div>'+
-    '<div class="panel center"><b>A assinatura online chega em breve</b><p class="small-t muted">Pix, cartão e boleto. Avisamos por aqui assim que abrir.</p></div>');
+      '<p class="msg" id="cupMsg" role="alert"></p><div id="cupList"></div></div>');
   FC.nav.at("/planos");bindTop();
   $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
-  bindCoupons();
+  bindCoupons();bindBilling();
 }
 /* ---------- cupons (migracoes/2026-11-18-cupons.sql) ----------
    Cupom de meses ou vitalício vira VIP na hora. Cupom de desconto fica guardado e vale quando a assinatura abrir. */
@@ -98,7 +196,7 @@ function bindCoupons(){
     if(r.error){msg.textContent=FC.err(r.error);msg.className="msg bad";return}
     if(!r.data.ok){msg.textContent=FC.err({message:r.data.why});msg.className="msg bad";return}
     if(r.data.reserved){
-      $("#cupCode").value="";msg.textContent="Cupom guardado: "+r.data.text+". Ele vale quando você assinar o VIP.";msg.className="msg good";loadCoupons();
+      FC.toast("Cupom guardado: "+r.data.text+". Ele vale quando você assinar o VIP.");showPlans();
     }else{
       FC.toast("Cupom aplicado: "+r.data.text+"!");showPlans();
     }
