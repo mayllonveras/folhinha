@@ -80,6 +80,7 @@ FC.err=function(e){
     ["assinatura_ativa","Você já tem uma assinatura ativa."],
     ["sem_assinatura","Não há assinatura para cancelar."],
     ["cpf_invalido","Esse CPF não é válido. Confira os números."],
+    ["celular_invalido","Digite o celular com DDD (10 ou 11 números)."],
     ["nome_invalido","Digite o nome completo de quem paga."],
     ["forma_invalida","Escolha a forma de pagamento."],
     ["sem_link","O Asaas não devolveu o link de pagamento. Tente de novo em instantes."],
@@ -124,7 +125,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v67";
+FC.VERSAO="folhinha-v68";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){

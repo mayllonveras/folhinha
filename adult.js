@@ -96,6 +96,7 @@ function subscribeForm(plan){
   var ov=FC.overlay('<h2>Assinar o VIP '+esc(plan)+'</h2><p class="muted">'+brl(v)+(x.coupon&&Number(x.first)<Number(x.full)?' na 1ª cobrança, com o cupom '+esc(x.coupon)+'. Depois, '+brl(x.full):'')+(plan==="mensal"?" por mês.":" por ano.")+'</p>'+
     '<form id="subForm" class="form" novalidate><label class="field">Nome completo de quem paga<input id="sNome" maxlength="100" autocomplete="name" value="'+esc((U.profile&&U.profile.name)||"")+'"></label>'+
     '<label class="field">CPF de quem paga<input id="sCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00"><small>O Asaas pede o CPF para emitir a cobrança e a nota fiscal. A Folhinha não guarda o seu CPF.</small></label>'+
+    '<label class="field">Celular com DDD<input id="sCel" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(00) 00000-0000"><small>O Asaas usa para avisos da cobrança.</small></label>'+
     '<fieldset class="field"><legend>Forma de pagamento</legend><label class="radio"><input type="radio" name="sForma" value="cartao" checked> Cartão de crédito: renova sozinho</label>'+
     '<label class="radio"><input type="radio" name="sForma" value="pix_boleto"> Pix ou boleto: fatura a cada '+(plan==="mensal"?"mês":"ano")+'</label></fieldset>'+
     '<p class="msg bad" id="sMsg" role="alert"></p><button class="btn block" type="submit" id="sBtn">Ir para o pagamento</button>'+
@@ -107,8 +108,10 @@ function subscribeForm(plan){
     var msg=$("#sMsg",ov.el),btn=$("#sBtn",ov.el),nome=$("#sNome",ov.el).value.trim(),c=cpf.value.replace(/\D/g,"");
     if(nome.length<3){msg.textContent="Digite o nome completo.";return}
     if(c.length!==11){msg.textContent="Digite os 11 números do CPF.";return}
+    var cel=$("#sCel",ov.el).value.replace(/\D/g,"");
+    if(cel.length<10||cel.length>11){msg.textContent="Digite o celular com DDD.";return}
     btn.disabled=true;msg.textContent="";
-    var r=await callBilling({acao:"assinar",plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c});
+    var r=await callBilling({acao:"assinar",plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:cel});
     if(r.error){btn.disabled=false;msg.textContent=r.error;return}
     btn.textContent="Abrindo o pagamento…";location.href=r.url;
   };

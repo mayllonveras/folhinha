@@ -1,5 +1,5 @@
 // Edge Function "assinatura": o pai assina o VIP ou cancela. Chamada pelo painel com o login do pai (verify_jwt ligado).
-//   { acao: "assinar", plano: "mensal" | "anual", forma: "cartao" | "pix_boleto", nome, cpf }  ->  { url }  (página de pagamento do Asaas)
+//   { acao: "assinar", plano: "mensal" | "anual", forma: "cartao" | "pix_boleto", nome, cpf, celular }  ->  { url }  (página de pagamento do Asaas)
 //   { acao: "cancelar" }                                                                       ->  { ok: true }
 // Cartão: Asaas Checkout recorrente (o pai digita o cartão na página do Asaas e a assinatura renova sozinha).
 // Pix ou boleto: assinatura do Asaas com fatura a cada ciclo (o pai escolhe Pix ou boleto na fatura).
@@ -39,11 +39,13 @@ export async function handle(req: Request, d: Deps): Promise<Response> {
 }
 
 async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Promise<{ url?: string; error?: string }> {
-  const plano = b.plano, forma = b.forma, nome = String(b.nome || "").trim().slice(0, 100), cpf = String(b.cpf || "").replace(/\D/g, "");
+  const plano = b.plano, forma = b.forma, nome = String(b.nome || "").trim().slice(0, 100), cpf = String(b.cpf || "").replace(/\D/g, ""),
+    celular = String(b.celular || "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
   if (plano !== "mensal" && plano !== "anual") throw new Error("plano_invalido");
   if (forma !== "cartao" && forma !== "pix_boleto") return { error: "forma_invalida" };
   if (nome.length < 3) return { error: "nome_invalido" };
   if (!cpfValido(cpf)) return { error: "cpf_invalido" };
+  if (!/^[1-9]{2}9?\d{8}$/.test(celular)) return { error: "celular_invalido" };   // DDD + 8 ou 9 dígitos (o Checkout do Asaas exige telefone)
 
   await d.rpc("billing_can_start", { p_user: u.id });
   const quote = await d.rpc("billing_quote", { p_user: u.id, p_plan: plano });
@@ -51,9 +53,9 @@ async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Prom
   // cliente do Asaas: um por conta; o nome e o CPF podem mudar a cada assinatura
   let customer: string | null = await d.rpc("billing_customer", { p_user: u.id });
   if (customer) {
-    await asaas(d.env, d.fetch, "PUT", "/customers/" + customer, { name: nome, cpfCnpj: cpf });
+    await asaas(d.env, d.fetch, "PUT", "/customers/" + customer, { name: nome, cpfCnpj: cpf, phone: celular, mobilePhone: celular });
   } else {
-    const c = await asaas(d.env, d.fetch, "POST", "/customers", { name: nome, cpfCnpj: cpf, email: u.email, externalReference: u.id });
+    const c = await asaas(d.env, d.fetch, "POST", "/customers", { name: nome, cpfCnpj: cpf, email: u.email, phone: celular, mobilePhone: celular, externalReference: u.id });
     customer = c.id as string;
     await d.rpc("billing_set_customer", { p_user: u.id, p_customer: customer });
   }
