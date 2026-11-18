@@ -983,3 +983,30 @@ details.adv{border:0;background:var(--soft)}
   .nbtn.on .pill{background:var(--block);color:var(--ball-sun)}
 }
 @media (max-width:767px) and (prefers-color-scheme:dark){.nbtn.on .pill{color:#fff}}
+
+/* ---------- redesign "Bolas": login, PIN, amigos, trocas e Turbo ---------- */
+.tabs{background:var(--soft);border-radius:16px;padding:4px;gap:4px}
+.tab{border:0;border-radius:12px;color:var(--muted)}
+.tab.on{background:var(--block);color:var(--on-block)}
+.form input:not([type=checkbox]):not([type=radio]),.form select,.field input:not([type=checkbox]):not([type=radio]),.field select,.fr-add input,.linkrow input{background:var(--soft);border:2px solid transparent;border-radius:12px;padding:11px 14px}
+.form input:not([type=checkbox]):not([type=radio]):focus,.form select:focus,.field input:focus,.field select:focus,.fr-add input:focus,.linkrow input:focus{outline:none;background:var(--surface);border-color:var(--primary)}
+.chk span{border:0;background:var(--soft);border-radius:12px}
+.chk input:checked+span{background:var(--block);color:var(--on-block)}
+.pin-logo{box-shadow:none}
+.dots4 i{border:2px solid var(--muted)}
+.dots4 i.on{border-color:transparent;background:var(--mint-500)}
+.dots4 i.on:nth-child(1){background:var(--coral-500)}
+.dots4 i.on:nth-child(2),.dots4 i.on:nth-child(4){background:var(--ball-sun)}
+.key{background:var(--soft);font-family:var(--font-display);font-weight:700}
+.key:active{background:var(--block);color:var(--on-block)}
+.key.go{background:var(--reward);color:var(--on-reward)}
+.fr-code{font-family:var(--font-display);font-weight:800;letter-spacing:.14em;background:var(--soft);border-radius:var(--r-md);padding:12px 8px}
+.fr-row,.tr-req{border-top-color:var(--soft)}
+.tr-swap>svg.i{width:44px;height:44px;padding:11px;border-radius:50%;background:var(--ball-sun);color:var(--on-ball-sun)}
+.tr-dot{background:var(--danger);color:var(--on-ball)}
+.tr-q,.tr-big{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em}
+.tr-ans{border-bottom:0;background:var(--soft);border-radius:18px;padding:0 .2em;min-width:2.4ch}
+.tr-ans.ok{background:var(--t-mint);color:var(--t-mint-ink)}
+.tr-ans.bad{background:var(--t-coral);color:var(--t-coral-ink)}
+.tc{border:0;box-shadow:none;background:var(--soft);font-family:var(--font-display);font-weight:800}
+.tc:active{background:var(--block);color:var(--on-block)}
