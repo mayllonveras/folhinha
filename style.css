@@ -868,3 +868,9 @@ tr[hidden]{display:none}
 .ok-t{color:var(--ok);margin:4px 0 10px}
 .sub-btns .btn{margin-top:8px}
 p.bad{color:var(--mark)}
+/* perfil: pares rótulo/valor */
+.pkv{display:grid;grid-template-columns:minmax(110px,max-content) 1fr;gap:8px 16px;margin:0}
+.pkv dt{color:var(--muted);font-size:.85rem}
+.pkv dd{margin:0;overflow-wrap:anywhere}
+@media (max-width:480px){.pkv{grid-template-columns:1fr;gap:2px}.pkv dd{margin-bottom:8px}}
+.who .iconbtn{width:38px;height:38px}

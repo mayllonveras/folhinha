@@ -98,7 +98,7 @@ Deno.test("cartão: cria o cliente e o Checkout recorrente com o valor do cupom"
   assertEquals(chk.customer, "cus_1");
   assertEquals(chk.items[0].value, 99.5);
   assertEquals(chk.subscription.cycle, "YEARLY");
-  assertEquals(chk.callback.successUrl, "https://www.folhinha.vip/?pagamento=ok#/planos");
+  assertEquals(chk.callback.successUrl, "https://www.folhinha.vip/?pagamento=ok#/perfil");
   assertEquals(r.calls.map((c) => c.fn), ["billing_can_start", "billing_quote", "billing_customer", "billing_set_customer", "billing_start"]);
   const st = r.calls.find((c) => c.fn === "billing_start")!.args;
   assertEquals([st.p_method, st.p_checkout, st.p_asaas_sub, st.p_customer], ["cartao", "chk_1", null, "cus_1"]);
@@ -143,6 +143,43 @@ Deno.test("erro do Asaas vira 502 com a descrição", async () => {
   const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(res.status, 502);
   assertEquals((await res.json()).detail, "O CPF informado é inválido.");
+});
+
+Deno.test("perfil: lê o cliente do Asaas e mascara o CPF", async () => {
+  const a = asaasFake({ "GET /customers/cus_1": { name: "Maria Silva", email: "m@x", cpfCnpj: "52998224725", mobilePhone: "86999998888", postalCode: "64000020",
+    address: "Rua Teste", addressNumber: "100", province: "Centro", cityName: "Teresina", state: "PI" } });
+  const r = rpcFake({ billing_customer: "cus_1" });
+  const res = await assinatura(req({ acao: "perfil" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const p = (await res.json()).perfil;
+  assertEquals(p.cpf, "***.***.247-25");
+  assertEquals([p.nome, p.celular, p.rua, p.numero, p.cidade, p.uf], ["Maria Silva", "86999998888", "Rua Teste", "100", "Teresina", "PI"]);
+});
+
+Deno.test("perfil: sem cadastro no Asaas devolve nulo", async () => {
+  const a = asaasFake({}), r = rpcFake({ billing_customer: null });
+  const res = await assinatura(req({ acao: "perfil" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals(await res.json(), { perfil: null });
+  assertEquals(a.calls.length, 0);
+});
+
+Deno.test("salvar_perfil: valida e grava no Asaas", async () => {
+  const a = asaasFake({ "POST /customers": { id: "cus_7" }, "GET /customers/cus_7": { name: "Maria Silva", cpfCnpj: "52998224725" } });
+  let cust: string | null = null;
+  const r = rpcFake({ billing_customer: () => cust, billing_set_customer: (x: any) => { cust = x.p_customer; } });
+  const ruim = await assinatura(req({ acao: "salvar_perfil", nome: "Maria Silva", cpf: "1", celular: "86999998888", cep: "64000020", numero: "1" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals(ruim.status, 400);
+  const res = await assinatura(req({ acao: "salvar_perfil", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "1" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals((await res.json()).perfil.cpf, "***.***.247-25");
+  assertEquals(cust, "cus_7");
+});
+
+Deno.test("assinar com usar_perfil não pede nem regrava os dados", async () => {
+  const a = asaasFake({ "POST /checkouts": { id: "chk_9" } });
+  const r = rpcFake({ billing_quote: QUOTE, billing_customer: "cus_1", billing_start: { id: "s9", delete_asaas_subscriptions: [] } });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", usar_perfil: true }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals(res.status, 200);
+  assert(!a.calls.some((c) => c.url.startsWith("/customers")), "não mexe no cliente");
+  assertEquals(a.calls.find((c) => c.url === "/checkouts")!.body.customer, "cus_1");
 });
 
 Deno.test("cancelar apaga no Asaas e marca cancelada", async () => {

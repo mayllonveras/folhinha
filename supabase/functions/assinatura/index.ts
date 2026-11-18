@@ -1,6 +1,10 @@
 // Edge Function "assinatura": o pai assina o VIP ou cancela. Chamada pelo painel com o login do pai (verify_jwt ligado).
 //   { acao: "assinar", plano: "mensal" | "anual", forma: "cartao" | "pix_boleto", nome, cpf, celular, cep, numero }  ->  { url }  (página de pagamento do Asaas)
 //   { acao: "cancelar" }                                                                       ->  { ok: true }
+//   { acao: "perfil" }                       ->  { perfil: { nome, email, cpf (mascarado), celular, cep, rua, numero, bairro, cidade, uf } | null }
+//   { acao: "salvar_perfil", nome, cpf, celular, cep, numero }                                ->  { perfil }
+//   Os dados de pagamento ficam SÓ no Asaas (cadastro do cliente). A Folhinha guarda apenas o id do cliente.
+//   Em "assinar", usar_perfil: true usa o cadastro que já está no Asaas, sem pedir os dados de novo.
 // Cartão: Asaas Checkout recorrente (o pai digita o cartão na página do Asaas e a assinatura renova sozinha).
 // Pix ou boleto: assinatura do Asaas com fatura a cada ciclo (o pai escolhe Pix ou boleto na fatura).
 // A regra (preço, cupom, quem pode assinar, VIP) fica no banco: funções billing_* (migracoes/2026-11-18-assinatura.sql).
@@ -27,6 +31,12 @@ export async function handle(req: Request, d: Deps): Promise<Response> {
   try {
     if (b?.acao === "assinar") { const r = await assinar(d, u, b); return json(r.error ? 400 : 200, r); }
     if (b?.acao === "cancelar") return json(200, await cancelar(d, u.id));
+    if (b?.acao === "perfil") return json(200, { perfil: await lerPerfil(d, u.id) });
+    if (b?.acao === "salvar_perfil") {
+      const r = await salvarCliente(d, u, b);
+      if ("error" in r) return json(400, r);
+      return json(200, { perfil: await lerPerfil(d, u.id) });
+    }
     return json(400, { error: "acao_invalida" });
   } catch (e) {
     const m = String((e as Error)?.message || e);
@@ -38,21 +48,16 @@ export async function handle(req: Request, d: Deps): Promise<Response> {
   }
 }
 
-async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Promise<{ url?: string; error?: string }> {
-  const plano = b.plano, forma = b.forma, nome = String(b.nome || "").trim().slice(0, 100), cpf = String(b.cpf || "").replace(/\D/g, ""),
+// cria ou atualiza o cliente do Asaas com os dados de pagamento (nome, CPF, celular, CEP e número; rua e bairro pelo ViaCEP)
+async function salvarCliente(d: Deps, u: { id: string; email?: string }, b: any): Promise<{ customer: string } | { error: string }> {
+  const nome = String(b.nome || "").trim().slice(0, 100), cpf = String(b.cpf || "").replace(/\D/g, ""),
     celular = String(b.celular || "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, ""),
     cep = String(b.cep || "").replace(/\D/g, ""), numero = String(b.numero || "").trim().slice(0, 10);
-  if (plano !== "mensal" && plano !== "anual") throw new Error("plano_invalido");
-  if (forma !== "cartao" && forma !== "pix_boleto") return { error: "forma_invalida" };
   if (nome.length < 3) return { error: "nome_invalido" };
   if (!cpfValido(cpf)) return { error: "cpf_invalido" };
   if (!/^[1-9]{2}9?\d{8}$/.test(celular)) return { error: "celular_invalido" };   // DDD + 8 ou 9 dígitos (o Checkout do Asaas exige telefone)
   if (!/^\d{8}$/.test(cep)) return { error: "cep_invalido" };                       // o Checkout do Asaas exige endereço
   if (!numero) return { error: "numero_invalido" };
-
-  await d.rpc("billing_can_start", { p_user: u.id });
-  const quote = await d.rpc("billing_quote", { p_user: u.id, p_plan: plano });
-
   // telefone: vai sempre em phone; em mobilePhone só quando é celular (DDD + 9 dígitos começando com 9), senão o Asaas recusa
   const fones: Record<string, string> = { phone: celular };
   if (/^[1-9]{2}9\d{8}$/.test(celular)) fones.mobilePhone = celular;
@@ -69,6 +74,36 @@ async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Prom
     customer = c.id as string;
     await d.rpc("billing_set_customer", { p_user: u.id, p_customer: customer });
   }
+  return { customer };
+}
+
+// os dados de pagamento como estão no Asaas, para a página do perfil (o CPF vai mascarado)
+async function lerPerfil(d: Deps, user: string) {
+  const customer: string | null = await d.rpc("billing_customer", { p_user: user });
+  if (!customer) return null;
+  const c = await asaas(d.env, d.fetch, "GET", "/customers/" + customer);
+  if (!c || c.deleted) return null;
+  const cpf = String(c.cpfCnpj || "").replace(/\D/g, "");
+  return {
+    nome: c.name || "", email: c.email || "", cpf: cpf.length === 11 ? "***.***." + cpf.slice(6, 9) + "-" + cpf.slice(9) : "",
+    celular: c.mobilePhone || c.phone || "", cep: c.postalCode || "", rua: c.address || "", numero: c.addressNumber || "",
+    bairro: c.province || "", cidade: c.cityName || "", uf: c.state || "",
+  };
+}
+
+async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Promise<{ url?: string; error?: string }> {
+  const plano = b.plano, forma = b.forma;
+  if (plano !== "mensal" && plano !== "anual") throw new Error("plano_invalido");
+  if (forma !== "cartao" && forma !== "pix_boleto") return { error: "forma_invalida" };
+  await d.rpc("billing_can_start", { p_user: u.id });
+  const quote = await d.rpc("billing_quote", { p_user: u.id, p_plan: plano });
+  // dados de pagamento: os do perfil (já no Asaas) ou os que vieram agora, que passam a ser os do perfil
+  let customer: string | null = b.usar_perfil ? await d.rpc("billing_customer", { p_user: u.id }) : null;
+  if (!customer) {
+    const r = await salvarCliente(d, u, b);
+    if ("error" in r) return r;
+    customer = r.customer;
+  }
 
   const cycle = plano === "mensal" ? "MONTHLY" : "YEARLY", desc = "Folhinha VIP " + plano, hoje = hojeSP();
   const voltar = d.env.siteUrl + "/#/planos";
@@ -76,7 +111,7 @@ async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Prom
   if (forma === "cartao") {
     const chk = await asaas(d.env, d.fetch, "POST", "/checkouts", {
       billingTypes: ["CREDIT_CARD"], chargeTypes: ["RECURRENT"], minutesToExpire: 120, customer, externalReference: u.id,
-      callback: { successUrl: d.env.siteUrl + "/?pagamento=ok#/planos", cancelUrl: voltar, expiredUrl: voltar },
+      callback: { successUrl: d.env.siteUrl + "/?pagamento=ok#/perfil", cancelUrl: voltar, expiredUrl: voltar },
       items: [{ name: desc, description: "Família, até 4 crianças", quantity: 1, value: Number(quote.first) }],
       subscription: { cycle, nextDueDate: hoje },
     });
@@ -87,7 +122,7 @@ async function assinar(d: Deps, u: { id: string; email?: string }, b: any): Prom
   } else {
     const sub = await asaas(d.env, d.fetch, "POST", "/subscriptions", {
       customer, billingType: "UNDEFINED", nextDueDate: hoje, value: Number(quote.first), cycle, description: desc, externalReference: u.id,
-      callback: { successUrl: d.env.siteUrl + "/?pagamento=ok#/planos", autoRedirect: true },
+      callback: { successUrl: d.env.siteUrl + "/?pagamento=ok#/perfil", autoRedirect: true },
     });
     let url: string | null = null;
     try {

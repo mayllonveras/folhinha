@@ -11,11 +11,15 @@ export type Deps = { env: Env; fetch: Fetch; rpc: (fn: string, args: Record<stri
 
 export async function handle(req: Request, d: Deps): Promise<Response> {
   if (req.method !== "POST") return new Response("metodo", { status: 405 });
-  const tok = req.headers.get("asaas-access-token") || "";
-  if (!d.env.webhookToken || !igualSeguro(tok, d.env.webhookToken)) return new Response("token", { status: 401 });
+  const tok = (req.headers.get("asaas-access-token") || "").trim(), esperado = d.env.webhookToken.trim();
+  if (!esperado || !igualSeguro(tok, esperado)) {
+    // só os tamanhos vão para o log, nunca o token
+    console.warn("webhook recusado: token", JSON.stringify({ recebido: tok.length, esperado: esperado.length, temHeader: req.headers.has("asaas-access-token") }));
+    return new Response("token", { status: 401 });
+  }
   let p: any;
-  try { p = await req.json(); } catch { return new Response("json", { status: 400 }); }
-  if (!p?.id || !p?.event) return new Response("evento", { status: 400 });
+  try { p = await req.json(); } catch { console.warn("webhook recusado: corpo não é JSON"); return new Response("json", { status: 400 }); }
+  if (!p?.id || !p?.event) { console.warn("webhook recusado: sem id ou event"); return new Response("evento", { status: 400 }); }
   let r: any;
   try { r = await d.rpc("billing_webhook", { p }); }
   catch (e) { console.error("webhook banco", (e as Error).message); return new Response("banco", { status: 500 }); }

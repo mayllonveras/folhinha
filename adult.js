@@ -36,17 +36,6 @@ function planName(){
   if(PLAN.source==="fundador")return "VIP Fundador até "+FC.dm(String(PLAN.until).slice(0,10));
   return "VIP até "+FC.dm(String(PLAN.until).slice(0,10));
 }
-function planBanner(){
-  if(!PLAN)return "";
-  var cls=PLAN.vip?"plan-vip":"plan-free",msg;
-  if(!PLAN.vip)msg=PLAN.trial_used?"O teste do VIP terminou. As figurinhas e o histórico continuam guardados; com o VIP voltam os álbuns, as trocas, a Turbo e as folhas do programa.":"Conheça o VIP: todos os álbuns, trocas com amigos, Trilha Turbo e até 4 crianças.";
-  else if(PLAN.lifetime)msg=PLAN.source==="fundador"?"Conta de fundador: tudo liberado, para sempre.":"Tudo liberado, para sempre. Obrigado por fazer parte da Folhinha!";
-  else if(PLAN.source==="teste")msg="Aproveite tudo do VIP. Quando o teste acabar, a conta passa para o plano Grátis e nada do que a criança conquistou se perde.";
-  else if(PLAN.source==="fundador")msg="Obrigado por chegar primeiro! Conta de fundador.";
-  else msg="Tudo liberado no seu plano.";
-  return '<div class="panel plan-banner '+cls+'"><div class="grow"><b>'+esc(planName())+'</b><p class="small-t">'+esc(msg)+'</p></div><button type="button" class="btn '+(PLAN.vip?"ghost ":"")+'small" id="seePlans">Ver planos</button></div>';
-}
-function bindPlanBanner(){var b=$("#seePlans");if(b)b.onclick=showPlans}
 function vipLock(title,text){
   return '<div class="panel vip-lock"><span class="vip-tag">VIP</span><b>'+esc(title)+'</b><p class="small-t muted">'+esc(text)+'</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div></div>';
 }
@@ -74,53 +63,68 @@ function subscribeHtml(){
 function billingHtml(){
   if(!BILL)return '<div class="panel center"><b>A assinatura online chega em breve</b><p class="small-t muted">Pix, cartão e boleto. Avisamos por aqui assim que abrir.</p></div>';
   if(PLAN&&PLAN.lifetime)return '<div class="panel center"><b>Sua conta é VIP para sempre</b><p class="small-t muted">Não precisa assinar.</p></div>';
-  var s=BILL.subscription,html="";
-  if(s){
-    var st=SUB_STATUS[s.status]||[s.status,""],per=s.plan==="mensal"?"por mês":"por ano";
-    html+='<div class="panel" id="subBox"><div class="eyebrow">Minha assinatura</div><div class="split gap"><b>VIP '+esc(s.plan)+' · '+brl(s.value_now)+' '+per+'</b><span class="tag '+st[1]+'">'+esc(st[0])+'</span></div>'+
-      (s.value_now<s.value_full&&s.status!=="cancelada"?'<p class="small-t muted">Com desconto do cupom '+esc(s.coupon||"")+'. Depois: '+brl(s.value_full)+' '+per+'.</p>':'')+
-      (s.status==="aguardando"?'<p class="small-t">O link de pagamento está pronto. Se já pagou, a confirmação chega em instantes.</p>':'')+
-      (s.status==="cancelada"?'<p class="small-t">Assinatura cancelada. '+(PLAN&&PLAN.vip&&PLAN.until?'O VIP vale até '+FC.dm(String(PLAN.until).slice(0,10))+'.':'')+'</p>':'')+
-      (s.status==="ativa"&&s.next_due?'<p class="small-t">Próxima cobrança: <b>'+FC.dm(s.next_due)+'</b>'+(s.method==="cartao"?' no cartão.':', por Pix ou boleto (a fatura chega por e-mail).')+'</p>':'')+
-      (s.status==="atrasada"?'<p class="small-t bad">A última cobrança venceu. Pague a fatura para o VIP continuar.</p>':'')+
-      '<div class="actions gap">'+(s.pay_url&&s.status!=="cancelada"?'<a class="btn" href="'+esc(s.pay_url)+'" rel="noopener">'+(s.status==="aguardando"?"Continuar pagamento":"Pagar fatura")+'</a>':'')+
-      (s.status==="ativa"||s.status==="atrasada"?'<button type="button" class="btn ghost small" id="subCancel">Cancelar assinatura</button>':'')+'</div>'+
-      ((BILL.payments||[]).length?'<details class="gap"><summary>Cobranças</summary><ul class="plain small-t">'+BILL.payments.map(function(p){
-        return '<li>'+FC.dm(p.due)+' · '+brl(p.value)+' · '+esc(payStatus(p.status))+(p.url?' · <a href="'+esc(p.url)+'" target="_blank" rel="noopener">fatura</a>':'')+'</li>'}).join("")+'</ul></details>':'')+'</div>';
-  }
-  if(!s||s.status==="aguardando"||s.status==="cancelada")html+=subscribeHtml();
-  return html;
+  var s=BILL.subscription;
+  if(s&&(s.status==="ativa"||s.status==="atrasada"))
+    return '<div class="panel"><div class="eyebrow">Minha assinatura</div><p class="gap">Você assina o <b>VIP '+esc(s.plan)+'</b>.'+(s.status==="atrasada"?' <span class="tag bad">Pagamento atrasado</span>':'')+'</p>'+
+      '<p class="small-t muted">Vencimento, cobranças e cancelamento ficam em Meu perfil.</p><div class="actions gap"><button type="button" class="btn small" data-perfil>Abrir meu perfil</button></div></div>';
+  return (s&&s.status==="aguardando"&&s.pay_url?'<div class="panel"><div class="eyebrow">Pagamento em aberto</div><p class="small-t gap">O link de pagamento está pronto. Se já pagou, a confirmação chega em instantes.</p><div class="actions"><a class="btn small" href="'+esc(s.pay_url)+'" rel="noopener">Continuar pagamento</a></div></div>':'')+subscribeHtml();
 }
-function subscribeForm(plan){
+/* Campos dos dados de pagamento (perfil e assinar). Ficam só no Asaas; o CPF nunca volta inteiro para a tela. */
+function payFieldsHtml(pf){
+  pf=pf||{};
+  return '<label class="field">Nome completo de quem paga<input id="sNome" maxlength="100" autocomplete="name" value="'+esc(pf.nome||(U.profile&&U.profile.name)||"")+'"></label>'+
+    '<label class="field">CPF de quem paga<input id="sCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="'+(pf.cpf?"Digite de novo para confirmar":"000.000.000-00")+'"><small>O Asaas pede o CPF para emitir a cobrança e a nota fiscal. A Folhinha não guarda o seu CPF.</small></label>'+
+    '<label class="field">Celular com DDD<input id="sCel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(00) 00000-0000" value="'+esc(fmtCel(pf.celular||""))+'"><small>O Asaas usa para avisos da cobrança.</small></label>'+
+    '<div class="two"><label class="field">CEP<input id="sCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" value="'+esc(fmtCep(pf.cep||""))+'"></label>'+
+    '<label class="field">Número<input id="sNum" maxlength="10" autocomplete="off" placeholder="Ex.: 120" value="'+esc(pf.numero||"")+'"></label></div>';
+}
+function fmtCel(v){var d=String(v).replace(/\D/g,"").slice(0,11);return d.length<3?d:d.length<7?"("+d.slice(0,2)+") "+d.slice(2):d.length<11?"("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6):"("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7)}
+function fmtCep(v){var d=String(v).replace(/\D/g,"").slice(0,8);return d.length>5?d.slice(0,5)+"-"+d.slice(5):d}
+function bindPayFields(root){
+  var cpf=$("#sCpf",root),cel=$("#sCel",root),cep=$("#sCep",root);
+  cel.oninput=function(){cel.value=fmtCel(cel.value)};
+  cep.oninput=function(){cep.value=fmtCep(cep.value)};
+  cpf.oninput=function(){var d=cpf.value.replace(/\D/g,"").slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")};
+}
+/* Lê e confere os campos; devolve {dados} ou {erro} */
+function readPayFields(root){
+  var nome=$("#sNome",root).value.trim(),c=$("#sCpf",root).value.replace(/\D/g,""),celN=$("#sCel",root).value.replace(/\D/g,""),
+    cepN=$("#sCep",root).value.replace(/\D/g,""),num=$("#sNum",root).value.trim();
+  if(nome.length<3)return{erro:"Digite o nome completo."};
+  if(c.length!==11)return{erro:"Digite os 11 números do CPF."};
+  if(!/^[1-9]{2}9?\d{8}$/.test(celN))return{erro:celN.length===11?"Celular tem 9 dígitos começando com 9 depois do DDD. Ex.: (86) 99999-8888.":"Digite o celular com DDD. Ex.: (86) 99999-8888."};
+  if(cepN.length!==8)return{erro:"Digite o CEP com 8 números."};
+  if(!num)return{erro:"Digite o número do endereço (ou S/N)."};
+  return{dados:{nome:nome,cpf:c,celular:celN,cep:cepN,numero:num}};
+}
+function payDataHtml(pf){
+  var end=[[pf.rua,pf.numero].filter(Boolean).join(", "),pf.bairro,[pf.cidade,pf.uf].filter(Boolean).join("/"),pf.cep?"CEP "+fmtCep(pf.cep):""].filter(Boolean).join(" · ");
+  return '<dl class="pkv"><dt>Nome</dt><dd>'+esc(pf.nome||"—")+'</dd><dt>CPF</dt><dd>'+esc(pf.cpf||"—")+'</dd><dt>Celular</dt><dd>'+esc(fmtCel(pf.celular||"")||"—")+'</dd>'+
+    '<dt>Endereço</dt><dd>'+esc(end||"—")+'</dd></dl>';
+}
+var PERFIL;   /* dados de pagamento do Asaas: undefined = ainda não lidos; null = não tem */
+async function loadPerfil(){var r=await callBilling({acao:"perfil"});PERFIL=r.error?null:(r.perfil||null);return PERFIL}
+async function subscribeForm(plan){
   var x=(BILL.quote||{})[plan]||{},v=x.first||priceOf(plan);
+  if(PERFIL===undefined){FC.toast("Carregando seus dados…");await loadPerfil()}
+  var pf=PERFIL;
   var ov=FC.overlay('<h2>Assinar o VIP '+esc(plan)+'</h2><p class="muted">'+brl(v)+(x.coupon&&Number(x.first)<Number(x.full)?' na 1ª cobrança, com o cupom '+esc(x.coupon)+'. Depois, '+brl(x.full):'')+(plan==="mensal"?" por mês.":" por ano.")+'</p>'+
-    '<form id="subForm" class="form" novalidate><label class="field">Nome completo de quem paga<input id="sNome" maxlength="100" autocomplete="name" value="'+esc((U.profile&&U.profile.name)||"")+'"></label>'+
-    '<label class="field">CPF de quem paga<input id="sCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00"><small>O Asaas pede o CPF para emitir a cobrança e a nota fiscal. A Folhinha não guarda o seu CPF.</small></label>'+
-    '<label class="field">Celular com DDD<input id="sCel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(00) 00000-0000"><small>O Asaas usa para avisos da cobrança.</small></label>'+
-    '<div class="two"><label class="field">CEP<input id="sCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></label>'+
-    '<label class="field">Número<input id="sNum" maxlength="10" autocomplete="off" placeholder="Ex.: 120"></label></div>'+
+    '<form id="subForm" class="form" novalidate>'+
+    (pf?'<div id="sUsar"><div class="eyebrow">Dados de pagamento</div>'+payDataHtml(pf)+'<button type="button" class="link small-t" id="sOutros">Usar outros dados</button></div><div id="sCampos" hidden>'+payFieldsHtml(pf)+'</div>':payFieldsHtml(null))+
     '<fieldset class="field"><legend>Forma de pagamento</legend><label class="radio"><input type="radio" name="sForma" value="cartao" checked> Cartão de crédito: renova sozinho</label>'+
     '<label class="radio"><input type="radio" name="sForma" value="pix_boleto"> Pix ou boleto: fatura a cada '+(plan==="mensal"?"mês":"ano")+'</label></fieldset>'+
     '<p class="msg bad" id="sMsg" role="alert"></p><button class="btn block" type="submit" id="sBtn">Ir para o pagamento</button>'+
     '<p class="small-t muted">Você vai para a página segura do Asaas. Os dados do cartão são digitados lá, nunca na Folhinha.</p></form>',{button:"Voltar"});
-  var cpf=$("#sCpf",ov.el);
-  var cel=$("#sCel",ov.el);
-  cel.oninput=function(){var d=cel.value.replace(/\D/g,"").slice(0,11);cel.value=d.length<3?d:d.length<7?"("+d.slice(0,2)+") "+d.slice(2):d.length<11?"("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6):"("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7)};
-  var cepI=$("#sCep",ov.el);
-  cepI.oninput=function(){var d=cepI.value.replace(/\D/g,"").slice(0,8);cepI.value=d.length>5?d.slice(0,5)+"-"+d.slice(5):d};
-  cpf.oninput=function(){var d=cpf.value.replace(/\D/g,"").slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")};
+  bindPayFields(ov.el);
+  var usarPerfil=!!pf,outros=$("#sOutros",ov.el);
+  if(outros)outros.onclick=function(){usarPerfil=false;$("#sUsar",ov.el).hidden=true;$("#sCampos",ov.el).hidden=false;$("#sCpf",ov.el).focus()};
   $("#subForm",ov.el).onsubmit=async function(e){
     e.preventDefault();
-    var msg=$("#sMsg",ov.el),btn=$("#sBtn",ov.el),nome=$("#sNome",ov.el).value.trim(),c=cpf.value.replace(/\D/g,"");
-    if(nome.length<3){msg.textContent="Digite o nome completo.";return}
-    if(c.length!==11){msg.textContent="Digite os 11 números do CPF.";return}
-    var celN=cel.value.replace(/\D/g,"");
-    if(!/^[1-9]{2}9?\d{8}$/.test(celN)){msg.textContent=celN.length===11?"Celular tem 9 dígitos começando com 9 depois do DDD. Ex.: (86) 99999-8888.":"Digite o celular com DDD. Ex.: (86) 99999-8888.";return}
-    var cepN=cepI.value.replace(/\D/g,""),num=$("#sNum",ov.el).value.trim();
-    if(cepN.length!==8){msg.textContent="Digite o CEP com 8 números.";return}
-    if(!num){msg.textContent="Digite o número do endereço (ou S/N).";return}
+    var msg=$("#sMsg",ov.el),btn=$("#sBtn",ov.el),body={acao:"assinar",plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value};
+    if(usarPerfil)body.usar_perfil=true;
+    else{var f=readPayFields(ov.el);if(f.erro){msg.textContent=f.erro;return}Object.keys(f.dados).forEach(function(k){body[k]=f.dados[k]});PERFIL=undefined}
     btn.disabled=true;msg.textContent="";
-    var r=await callBilling({acao:"assinar",cep:cepN,numero:num,plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:celN});
+    var r=await callBilling(body);
     if(r.error){btn.disabled=false;msg.textContent=r.error;return}
     btn.textContent="Abrindo o pagamento…";location.href=r.url;
   };
@@ -140,21 +144,84 @@ async function callBilling(body){
 }
 function bindBilling(){
   $$("[data-sub]").forEach(function(b){b.onclick=function(){subscribeForm(b.getAttribute("data-sub"))}});
-  var c=$("#subCancel");
+  $$("[data-perfil]").forEach(function(b){b.onclick=showProfile});
+}
+function paidReturn(){   // volta do Asaas depois de pagar
+  if(!/[?&]pagamento=ok/.test(location.search))return;
+  try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+  FC.toast("Pagamento enviado! O VIP é liberado assim que o Asaas confirmar, em instantes.");
+}
+/* ---------- Meu perfil: conta, dados de pagamento (do Asaas) e o plano, com cancelamento ---------- */
+var ORIGEM_PLANO={teste:"Teste do VIP",fundador:"VIP Fundador",concessao:"VIP (concedido)",cupom:"VIP (cupom)",assinatura:"Assinatura VIP",indicacao:"VIP (indicação)"};
+function planHtml(){
+  var s=BILL&&BILL.subscription,ativa=s&&(s.status==="ativa"||s.status==="atrasada"),h='';
+  var tipo=!PLAN?"—":!PLAN.vip?"Grátis":s&&ativa?"Assinatura VIP "+s.plan:(ORIGEM_PLANO[PLAN.source]||"VIP");
+  var venc=!PLAN?"—":!PLAN.vip?"—":PLAN.lifetime?"Sem vencimento (vitalício)":PLAN.until?FC.dm(String(PLAN.until).slice(0,10))+"/"+String(PLAN.until).slice(0,4):"—";
+  h+='<dl class="pkv"><dt>Plano</dt><dd><b>'+esc(tipo)+'</b>'+(s&&ativa?' <span class="tag '+(s.status==="ativa"?"ok":"bad")+'">'+(s.status==="ativa"?"Ativa":"Pagamento atrasado")+'</span>':'')+'</dd>'+
+    '<dt>'+(s&&ativa?'VIP pago até':'Vencimento')+'</dt><dd>'+esc(venc)+'</dd>';
+  if(s&&ativa){
+    var per=s.plan==="mensal"?"por mês":"por ano";
+    h+='<dt>Valor</dt><dd>'+brl(s.value_now)+' '+per+(s.value_now<s.value_full?' <span class="muted small-t">(cupom '+esc(s.coupon||"")+'; depois '+brl(s.value_full)+')</span>':'')+'</dd>'+
+      '<dt>Pagamento</dt><dd>'+(s.method==="cartao"?"Cartão de crédito (renova sozinho)":"Pix ou boleto (fatura por e-mail)")+'</dd>'+
+      (s.next_due?'<dt>Próxima cobrança</dt><dd>'+FC.dm(s.next_due)+'</dd>':'');
+  }
+  h+='</dl>';
+  if(s&&s.status==="atrasada")h+='<p class="small-t bad">A última cobrança venceu. Pague a fatura para o VIP continuar.</p>';
+  if(s&&s.status==="cancelada")h+='<p class="small-t muted">Assinatura cancelada'+(PLAN&&PLAN.vip&&PLAN.until?': o VIP vale até '+FC.dm(String(PLAN.until).slice(0,10))+'.':'.')+'</p>';
+  h+='<div class="actions gap">'+(s&&s.pay_url&&(s.status==="atrasada"||s.status==="aguardando")?'<a class="btn small" href="'+esc(s.pay_url)+'" rel="noopener">'+(s.status==="aguardando"?"Continuar pagamento":"Pagar fatura")+'</a>':'')+
+    (ativa?'<button type="button" class="btn danger small" id="planCancel">Cancelar plano</button>':'')+
+    (!ativa&&!(PLAN&&PLAN.lifetime)?'<button type="button" class="btn small" data-planos>'+(PLAN&&PLAN.vip?"Assinar o VIP":"Ver planos e assinar")+'</button>':'')+'</div>'+
+    (ativa?'<p class="small-t muted">Ao cancelar, não há novas cobranças e o VIP continua até o fim do período já pago.</p>':'');
+  if(BILL&&(BILL.payments||[]).length)h+='<details class="gap"><summary>Cobranças</summary><ul class="plain small-t">'+BILL.payments.map(function(p){
+    return '<li>'+FC.dm(p.due)+' · '+brl(p.value)+' · '+esc(payStatus(p.status))+(p.url?' · <a href="'+esc(p.url)+'" target="_blank" rel="noopener">fatura</a>':'')+'</li>'}).join("")+'</ul></details>';
+  return h;
+}
+async function showProfile(){
+  FC.render('<p class="loading">Carregando…</p>');
+  if(!U.profile){try{U.profile=await q(sb.from("profiles").select("name,role").eq("id",U.user.id).maybeSingle())}catch(e){}}
+  await Promise.all([loadPlan(),loadBilling(),loadPerfil()]);
+  paidReturn();
+  var pf=PERFIL;
+  FC.render(topbar("Meu perfil")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
+    '<div class="section-head"><h1>Meu perfil</h1></div>'+
+    '<div class="panel"><div class="eyebrow">Conta</div><dl class="pkv gap"><dt>Nome</dt><dd>'+esc((U.profile&&U.profile.name)||"—")+'</dd><dt>E-mail</dt><dd>'+esc(U.user.email||"—")+'</dd>'+
+      '<dt>Perfil</dt><dd>'+((U.profile&&U.profile.role)==="professor"?"Professor(a)":"Pai, mãe ou responsável")+'</dd></dl></div>'+
+    '<div class="panel" id="payBox"><div class="eyebrow">Dados de pagamento</div>'+
+      (pf?payDataHtml(pf)+'<div class="actions gap"><button type="button" class="btn ghost small" id="payEdit">Editar dados</button></div>':
+        '<p class="small-t muted gap">Ainda sem dados de pagamento. Eles são pedidos na primeira assinatura, ou cadastre agora.</p><div class="actions"><button type="button" class="btn ghost small" id="payEdit">Cadastrar dados</button></div>')+
+      '<p class="small-t muted gap">Nome, CPF, celular e endereço são exigidos pelo Asaas, que faz a cobrança. Eles ficam guardados no Asaas, não na Folhinha.</p></div>'+
+    '<div class="panel"><div class="eyebrow">Meu plano</div><div class="gap">'+planHtml()+'</div></div>');
+  FC.nav.at("/perfil");bindTop();
+  $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
+  $$("[data-planos]").forEach(function(b){b.onclick=showPlans});
+  $("#payEdit").onclick=function(){editPayData(pf)};
+  var c=$("#planCancel");
   if(c)FC.confirmClick(c,"Toque de novo para cancelar",async function(){
     c.disabled=true;
     var r=await callBilling({acao:"cancelar"});
     if(r.error){c.disabled=false;return FC.toast(r.error,true)}
-    FC.toast("Assinatura cancelada. O VIP vale até o fim do período pago.");showPlans();
+    FC.toast("Plano cancelado. O VIP vale até o fim do período pago.");showProfile();
   });
+}
+function editPayData(pf){
+  var ov=FC.overlay('<h2>Dados de pagamento</h2><form id="pfForm" class="form" novalidate>'+payFieldsHtml(pf)+
+    '<p class="msg bad" id="pfMsg" role="alert"></p><button class="btn block" type="submit" id="pfBtn">Salvar</button></form>',{button:"Voltar"});
+  bindPayFields(ov.el);
+  $("#pfForm",ov.el).onsubmit=async function(e){
+    e.preventDefault();
+    var msg=$("#pfMsg",ov.el),btn=$("#pfBtn",ov.el),f=readPayFields(ov.el);
+    if(f.erro){msg.textContent=f.erro;return}
+    btn.disabled=true;msg.textContent="";
+    var body={acao:"salvar_perfil"};Object.keys(f.dados).forEach(function(k){body[k]=f.dados[k]});
+    var r=await callBilling(body);
+    if(r.error){btn.disabled=false;msg.textContent=r.error;return}
+    PERFIL=r.perfil||null;ov.close();FC.toast("Dados de pagamento salvos.");showProfile();
+  };
 }
 async function showPlans(){
   FC.render('<p class="loading">Carregando…</p>');
   await Promise.all([loadPlan(),loadBilling()]);
-  if(/[?&]pagamento=ok/.test(location.search)){   // volta do Asaas depois de pagar
-    try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
-    FC.toast("Pagamento enviado! O VIP é liberado assim que o Asaas confirmar, em instantes.");
-  }
+  paidReturn();
   var used=PLAN?PLAN.students+" de "+PLAN.max_students+" aluno"+(PLAN.max_students===1?"":"s"):"";
   FC.render(topbar("Planos")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
     '<div class="section-head"><h1>Planos</h1></div>'+
@@ -288,6 +355,7 @@ function route(path){
   var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+))?$/.exec(path);
   if(path==="/novo")return showForm();
   if(path==="/planos")return showPlans();
+  if(path==="/perfil")return showProfile();
   if(m){
     var tab=m[2];
     if(PAI_TABS.indexOf(tab)>=0){FC.tabState.pai=tab;try{sessionStorage.setItem("fc_tab_pai",tab)}catch(e){}}
@@ -317,9 +385,9 @@ FC.adultApp=async function(){
 function topbar(extra){
   var name=U.profile?esc(U.profile.name||"")+(U.profile.role==="professor"?" · professor(a)":" · responsável"):"";
   return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha VIP</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
-    (U.user?'<div class="who"><span class="who-name">'+name+'</span><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
+    (U.user?'<div class="who"><span class="who-name">'+name+'</span><button type="button" class="iconbtn" id="profileBtn" aria-label="Meu perfil" title="Meu perfil">'+FC.icon("user")+'</button><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
 }
-function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()}}
+function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()};var pf=$("#profileBtn");if(pf)pf.onclick=showProfile}
 function errScreen(e,retry){
   FC.render(topbar()+'<div class="panel center"><h1>Não deu para carregar</h1><p class="muted">'+esc(FC.err(e))+'</p><p><button class="btn" id="retry">Tentar de novo</button></p></div>');
   bindTop();$("#retry").onclick=retry||dash;
@@ -418,11 +486,11 @@ async function dash(){
       '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
       (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button></div>';
   }).join("");
-  FC.render(topbar()+planBanner()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
+  FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
   U.detail=null;FC.nav.at("/");
-  bindTop();FC.refreshInstall();bindPlanBanner();
+  bindTop();FC.refreshInstall();
   $("#newStudent").onclick=function(){
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
     if(PLAN&&PLAN.students>=PLAN.max_students){
