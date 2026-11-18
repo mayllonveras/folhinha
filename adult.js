@@ -97,6 +97,8 @@ function subscribeForm(plan){
     '<form id="subForm" class="form" novalidate><label class="field">Nome completo de quem paga<input id="sNome" maxlength="100" autocomplete="name" value="'+esc((U.profile&&U.profile.name)||"")+'"></label>'+
     '<label class="field">CPF de quem paga<input id="sCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00"><small>O Asaas pede o CPF para emitir a cobrança e a nota fiscal. A Folhinha não guarda o seu CPF.</small></label>'+
     '<label class="field">Celular com DDD<input id="sCel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(00) 00000-0000"><small>O Asaas usa para avisos da cobrança.</small></label>'+
+    '<div class="two"><label class="field">CEP<input id="sCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></label>'+
+    '<label class="field">Número<input id="sNum" maxlength="10" autocomplete="off" placeholder="Ex.: 120"></label></div>'+
     '<fieldset class="field"><legend>Forma de pagamento</legend><label class="radio"><input type="radio" name="sForma" value="cartao" checked> Cartão de crédito: renova sozinho</label>'+
     '<label class="radio"><input type="radio" name="sForma" value="pix_boleto"> Pix ou boleto: fatura a cada '+(plan==="mensal"?"mês":"ano")+'</label></fieldset>'+
     '<p class="msg bad" id="sMsg" role="alert"></p><button class="btn block" type="submit" id="sBtn">Ir para o pagamento</button>'+
@@ -104,6 +106,8 @@ function subscribeForm(plan){
   var cpf=$("#sCpf",ov.el);
   var cel=$("#sCel",ov.el);
   cel.oninput=function(){var d=cel.value.replace(/\D/g,"").slice(0,11);cel.value=d.length<3?d:d.length<7?"("+d.slice(0,2)+") "+d.slice(2):d.length<11?"("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6):"("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7)};
+  var cepI=$("#sCep",ov.el);
+  cepI.oninput=function(){var d=cepI.value.replace(/\D/g,"").slice(0,8);cepI.value=d.length>5?d.slice(0,5)+"-"+d.slice(5):d};
   cpf.oninput=function(){var d=cpf.value.replace(/\D/g,"").slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")};
   $("#subForm",ov.el).onsubmit=async function(e){
     e.preventDefault();
@@ -112,8 +116,11 @@ function subscribeForm(plan){
     if(c.length!==11){msg.textContent="Digite os 11 números do CPF.";return}
     var celN=cel.value.replace(/\D/g,"");
     if(!/^[1-9]{2}9?\d{8}$/.test(celN)){msg.textContent=celN.length===11?"Celular tem 9 dígitos começando com 9 depois do DDD. Ex.: (86) 99999-8888.":"Digite o celular com DDD. Ex.: (86) 99999-8888.";return}
+    var cepN=cepI.value.replace(/\D/g,""),num=$("#sNum",ov.el).value.trim();
+    if(cepN.length!==8){msg.textContent="Digite o CEP com 8 números.";return}
+    if(!num){msg.textContent="Digite o número do endereço (ou S/N).";return}
     btn.disabled=true;msg.textContent="";
-    var r=await callBilling({acao:"assinar",plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:celN});
+    var r=await callBilling({acao:"assinar",cep:cepN,numero:num,plano:plan,forma:$('input[name="sForma"]:checked',ov.el).value,nome:nome,cpf:c,celular:celN});
     if(r.error){btn.disabled=false;msg.textContent=r.error;return}
     btn.textContent="Abrindo o pagamento…";location.href=r.url;
   };

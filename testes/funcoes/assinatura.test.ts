@@ -12,6 +12,10 @@ function asaasFake(resp: Record<string, any>) {
   const f = async (url: string, init?: RequestInit) => {
     const method = init?.method || "GET", path = url.replace(env.base, "");
     calls.push({ method, url: path, body: init?.body ? JSON.parse(String(init.body)) : null, headers: init?.headers as Record<string, string> });
+    if (url.startsWith("https://viacep.com.br/")) {
+      const cep = url.split("/")[4];
+      return new Response(JSON.stringify(cep === "99999999" ? { erro: true } : { logradouro: "Rua Teste", bairro: "Centro" }), { status: 200 });
+    }
     const r = resp[method + " " + path] ?? resp[method + " " + path.replace(/\/[^/]+$/, "/*")];
     if (r instanceof Error) return new Response(JSON.stringify({ errors: [{ description: r.message }] }), { status: 400 });
     return new Response(JSON.stringify(r ?? {}), { status: 200 });
@@ -60,8 +64,15 @@ Deno.test("CPF inválido não chega ao Asaas", async () => {
 Deno.test("telefone fixo vai só em phone", async () => {
   const a = asaasFake({ "PUT /customers/cus_1": {}, "POST /checkouts": { id: "chk_2" } });
   const r = rpcFake({ billing_quote: QUOTE, billing_customer: "cus_1", billing_start: { id: "s3", delete_asaas_subscriptions: [] } });
-  await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "(86) 3222-1111" }), { env, fetch: a.f, user, rpc: r.rpc });
-  assertEquals(a.calls[0].body, { name: "Maria Silva", cpfCnpj: "52998224725", phone: "8632221111" });
+  await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "(86) 3222-1111", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals(a.calls.find((c) => c.method === "PUT")!.body, { name: "Maria Silva", cpfCnpj: "52998224725", phone: "8632221111", postalCode: "64000020", address: "Rua Teste", addressNumber: "100", province: "Centro" });
+});
+
+Deno.test("CEP que não existe não chega ao Asaas", async () => {
+  const a = asaasFake({}), r = rpcFake({ billing_quote: QUOTE });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "99999-999", numero: "1" }), { env, fetch: a.f, user, rpc: r.rpc });
+  assertEquals((await res.json()).error, "cep_invalido");
+  assert(!a.calls.some((c) => !c.url.startsWith("https://viacep")), "nenhuma chamada ao Asaas");
 });
 
 Deno.test("celular sem DDD não chega ao Asaas", async () => {
@@ -74,11 +85,11 @@ Deno.test("celular sem DDD não chega ao Asaas", async () => {
 Deno.test("cartão: cria o cliente e o Checkout recorrente com o valor do cupom", async () => {
   const a = asaasFake({ "POST /customers": { id: "cus_1" }, "POST /checkouts": { id: "chk_1", link: "https://sandbox.asaas.com/checkoutSession/show/chk_1" } });
   const r = rpcFake({ billing_quote: QUOTE, billing_customer: null, billing_start: { id: "s1", delete_asaas_subscriptions: [] } });
-  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "529.982.247-25", celular: "(86) 99999-8888" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "529.982.247-25", celular: "(86) 99999-8888", cep: "64000-020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(res.status, 200);
   assertEquals((await res.json()).url, "https://sandbox.asaas.com/checkoutSession/show/chk_1");
   const cus = a.calls.find((c) => c.url === "/customers")!;
-  assertEquals(cus.body, { name: "Maria Silva", cpfCnpj: "52998224725", email: "pai@teste.local", phone: "86999998888", mobilePhone: "86999998888", externalReference: "u1" });
+  assertEquals(cus.body, { name: "Maria Silva", cpfCnpj: "52998224725", email: "pai@teste.local", phone: "86999998888", mobilePhone: "86999998888", postalCode: "64000020", address: "Rua Teste", addressNumber: "100", province: "Centro", externalReference: "u1" });
   assertEquals(cus.headers["access_token"], "chave-teste");
   assertEquals(cus.headers["User-Agent"], "folhinha-vip");
   const chk = a.calls.find((c) => c.url === "/checkouts")!.body;
@@ -102,7 +113,7 @@ Deno.test("Pix/boleto: assinatura com fatura e apaga a antiga que aguardava", as
   });
   const r = rpcFake({ billing_quote: { plan: "mensal", full: 24.9, first: 24.9, coupon: null }, billing_customer: "cus_1",
                       billing_start: { id: "s2", delete_asaas_subscriptions: ["sub_velha"] } });
-  const res = await assinatura(req({ acao: "assinar", plano: "mensal", forma: "pix_boleto", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const res = await assinatura(req({ acao: "assinar", plano: "mensal", forma: "pix_boleto", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(await res.json(), { url: "https://sandbox.asaas.com/i/pay_1" });
   const sub = a.calls.find((c) => c.method === "POST" && c.url === "/subscriptions")!.body;
   assertEquals([sub.customer, sub.billingType, sub.cycle, sub.value], ["cus_1", "UNDEFINED", "MONTHLY", 24.9]);
@@ -113,7 +124,7 @@ Deno.test("Pix/boleto: assinatura com fatura e apaga a antiga que aguardava", as
 Deno.test("Pix/boleto: se o banco recusar, desfaz a assinatura no Asaas", async () => {
   const a = asaasFake({ "PUT /customers/cus_1": {}, "POST /subscriptions": { id: "sub_3" }, "GET /subscriptions/sub_3/payments": { data: [] }, "DELETE /subscriptions/sub_3": {} });
   const r = rpcFake({ billing_quote: QUOTE, billing_customer: "cus_1", billing_start: new Error('P0001: assinatura_ativa') });
-  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "pix_boleto", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "pix_boleto", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(res.status, 409);
   assertEquals((await res.json()).error, "assinatura_ativa");
   assert(a.calls.some((c) => c.method === "DELETE" && c.url === "/subscriptions/sub_3"));
@@ -121,7 +132,7 @@ Deno.test("Pix/boleto: se o banco recusar, desfaz a assinatura no Asaas", async 
 
 Deno.test("com assinatura ativa, nem chama o Asaas", async () => {
   const a = asaasFake({}), r = rpcFake({ billing_can_start: new Error("assinatura_ativa") });
-  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(res.status, 409);
   assertEquals(a.calls.length, 0);
 });
@@ -129,7 +140,7 @@ Deno.test("com assinatura ativa, nem chama o Asaas", async () => {
 Deno.test("erro do Asaas vira 502 com a descrição", async () => {
   const a = asaasFake({ "POST /customers": new Error("O CPF informado é inválido.") });
   const r = rpcFake({ billing_quote: QUOTE, billing_customer: null });
-  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888" }), { env, fetch: a.f, user, rpc: r.rpc });
+  const res = await assinatura(req({ acao: "assinar", plano: "anual", forma: "cartao", nome: "Maria Silva", cpf: "52998224725", celular: "86999998888", cep: "64000020", numero: "100" }), { env, fetch: a.f, user, rpc: r.rpc });
   assertEquals(res.status, 502);
   assertEquals((await res.json()).detail, "O CPF informado é inválido.");
 });
