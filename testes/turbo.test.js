@@ -384,8 +384,10 @@ function jogar(st,dia,o){
   ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º pacotinho do dia, mesmo depois de recarregar");
   /* registro das tentativas para o banco */
   const s3=T.iniciarSessao(aluno(),{dia:hoje,aparelho:"tablet",rnd:T.rng(2)}),st3=aluno();
-  const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,t1:850,total:1400,dica:it.dica,contou:false});
-  igual(s3.log[0],{fact:it.id,kind:"novo",ok:true,t1:850,total:1400,hint:"before",counted:false,stateBefore:0},"log da tentativa");
+  const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,resp:T.porId(it.id).res,t1:850,total:1400,dica:it.dica,contou:false});
+  igual(s3.log[0],{fact:it.id,kind:"novo",ok:true,answer:T.porId(it.id).res,t1:850,total:1400,hint:"before",counted:false,stateBefore:0},"log da tentativa (com a resposta digitada)");
+  const it2=T.proximo(st3,s3);T.registrar(st3,s3,{id:it2.id,tipo:it2.tipo,ok:false,resp:null,t1:null,total:900,dica:"after",contou:false});
+  ok(s3.log[1].ok===false&&s3.log[1].answer===null,"\"não sei\" vai para o log sem resposta");
   /* carga reduzida: 1 a 2 fatos novos */
   const cr=aluno();cr.cargaReduzida=true;const b=T.proximoBloco(cr);ok(b.length>=1&&b.length<=2,"carga reduzida: bloco de 1 a 2 fatos ("+b.length+")");
   igual(T.deBanco({age:7,unlocked:["soma"],devices:{},placement:{pre:{falhou:true}},facts:[]}).cargaReduzida,true,"carga reduzida vem do nivelamento");

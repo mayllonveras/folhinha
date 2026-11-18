@@ -851,6 +851,9 @@ tr[hidden]{display:none}
 .tp-bar i.f{background:var(--ok-fill)}
 .tp-bar i.l{background:color-mix(in srgb,var(--ok-fill) 38%,var(--soft))}
 .tp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tday{padding:8px 0;border-top:1px solid var(--line)} .tday[hidden]{display:none} .tday summary{cursor:pointer}
+.tlist{columns:2 220px;list-style:none;padding-left:0} .tlist li{break-inside:avoid;padding:2px 0}
+.turbo-ok{color:var(--ok);font-weight:700}
 
 /* ---------- plano Grátis / VIP ---------- */
 .plan-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;border-left:4px solid var(--line)}
