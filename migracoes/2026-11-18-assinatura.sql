@@ -1,6 +1,7 @@
 -- Plano VIP, fase 3: assinatura pelo Asaas (cartão com renovação automática; Pix ou boleto com fatura a cada ciclo). Especificação: planos/PLANOS.md.
 --
--- *** AINDA NÃO APLICADA EM PRODUÇÃO. Aplicar só com autorização do professor, DEPOIS de 2026-11-18-cupons.sql. Não é repetível (cria tabelas). ***
+-- *** APLICADA EM PRODUÇÃO em 18/11/2026 (projeto folhinha-calculo), com autorização do professor. NÃO REAPLIQUE: ela cria tabelas. ***
+-- As Edge Functions "assinatura" (verify_jwt ligado) e "asaas-webhook" (verify_jwt desligado) foram publicadas no mesmo dia pela API do Supabase.
 --
 -- Quem fala com o Asaas são as Edge Functions (supabase/functions): "assinatura" (o pai assina ou cancela) e "asaas-webhook" (o Asaas avisa
 -- pagamentos). A chave do Asaas fica só nos segredos das Edge Functions. Toda a regra fica aqui no banco, nas funções billing_*, que só o
