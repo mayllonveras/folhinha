@@ -127,7 +127,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v74";
+FC.VERSAO="folhinha-v75";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
@@ -411,10 +411,10 @@ FC.streakNow=function(s,today){
 };
 /* Perseverança: sequência de dias de estudo com a cota fechada e o caminho até o próximo marco.
    i = {streak,best_streak,next_marco}. */
-/* Carimbos do nível: com 5, viram a cruz da logo (uma bola por carimbo); com outro número, uma fileira de bolas. */
+/* Carimbos do nível: uma fileira de bolas, uma por carimbo. */
 FC.stampSet=function(need,got,popFrom){
   var h="";for(var i=0;i<need;i++)h+='<span class="stamp'+(i<got?" on":"")+(popFrom!=null&&i>=popFrom&&i<got?" pop":"")+'">✓</span>';
-  return '<span class="stampset'+(need===5?" cross":"")+'">'+h+'</span>';
+  return '<span class="stampset">'+h+'</span>';
 };
 FC.streakHtml=function(i,o){
   o=o||{};
