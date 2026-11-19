@@ -123,7 +123,7 @@ function bindEx(){
 
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
 var DEFAULTS={stamps_needed:5,normal_acertos:80,ouro_acertos:95,ouro_tempo:80,ouro_carimbos:2,salto_acertos:98,salto_tempo:60,
-  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:2,pausas_max:2,modo_folha:1,
+  salto_por_semana:2,dias_sem_carimbo_voltar:2,bloqueio_salto_dias:7,teto_anos_padrao:1,virada_mes:1,virada_dia:1,limite_mesa:1,pausas_max:2,modo_folha:1,
   plano_folhas_gratis:2,plano_albuns_gratis:1,plano_alunos_gratis:1,plano_alunos_vip:4,plano_teste_dias:14,
   preco_mensal_centavos:2490,preco_anual_centavos:19900,assinatura_carencia_dias:3};
 var GROUPS=[
