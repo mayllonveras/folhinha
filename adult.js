@@ -520,20 +520,29 @@ async function dash(){
     if(FC.turbo){try{var tdr=await sb.from("turbo_days").select("student_id,status,attempts").eq("study_day",FC.today());if(!tdr.error)tdays=tdr.data||[]}catch(e){}}   // a linha da Turbo é um extra: se falhar, a lista abre igual
   }catch(e){return errScreen(e,dash)}
   U.profile=prof||{name:"",role:"pai"};
+  /* Cartão de cada aluno: o dia de hoje em destaque (folhas e Turbo), o nível e quanto falta para subir; QR Code e app da criança no rodapé. */
   var today=FC.today(),cards=students.map(function(s){
-    var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,pct=Math.min(100,Math.round(100*Math.min(s.stamps,need)/need));
-    var kind=FC.dayKind(s,today),done=todayDone(s,sheets);
-    var st=today<s.start_date?"Começa em "+FC.dm(s.start_date):kind!=="rest"?"Hoje"+(kind==="free"?" (dia livre)":"")+": "+done+" de "+quotaOf(s)+" folhas":"Hoje: descanso";
-    var tl="";
-    if(tdays&&kind!=="rest"&&today>=s.start_date&&!studentFree(s)){   // no Grátis a Turbo é trancada: a linha não aparece
+    var L=FC.LEVELS[s.level_idx],sk=FC.streakNow(s,today),need=(PUB&&PUB.stamps_needed)||5,got=Math.min(s.stamps,need),pct=Math.round(100*got/need);
+    var kind=FC.dayKind(s,today),done=todayDone(s,sheets),quota=quotaOf(s),hoje;
+    if(today<s.start_date)hoje='<span class="tag">Começa em '+FC.dm(s.start_date)+'</span>';
+    else if(kind==="rest")hoje='<span class="tag">Hoje é descanso</span>';
+    else if(done>=quota)hoje='<span class="tag ok">Fez as '+quota+' folhas de hoje</span>';
+    else if(done>0)hoje='<span class="tag warn">Hoje: '+done+' de '+quota+' folhas</span>';
+    else hoje='<span class="tag">'+(kind==="free"?"Dia livre: nenhuma folha ainda":"Ainda não estudou hoje")+'</span>';
+    if(tdays&&kind!=="rest"&&today>=s.start_date&&!studentFree(s)){   // no Grátis a Turbo é trancada: a etiqueta não aparece
       var tr=tdays.filter(function(x){return x.student_id===s.id})[0];
-      tl=tr&&tr.status==="done"?"Turbo de hoje: concluída":tr&&tr.attempts>0?"Turbo de hoje: em andamento":"Turbo de hoje: ainda não feita";
+      hoje+=tr&&tr.status==="done"?'<span class="tag ok">Turbo feita</span>':tr&&tr.attempts>0?'<span class="tag warn">Turbo em andamento</span>':'<span class="tag">Turbo ainda não feita</span>';
     }
-    return '<div class="cardwrap"><button type="button" class="card-qr" data-qr="'+s.id+'" title="Mostrar o QR Code do aluno" aria-label="Mostrar o QR Code de '+esc(s.name)+'">'+FC.icon("qr")+'</button><a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir a página do aluno em outra aba" aria-label="Abrir a página de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'</a>'+
-      '<button class="panel card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
-      '<div class="muted">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today))+'</div><div class="muted small-t">'+st+'</div>'+(tl?'<div class="muted small-t">'+tl+'</div>':'')+
-      '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="small-t">'+Math.min(s.stamps,need)+' de '+need+' carimbos · '+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+'</div>'+
-      (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button></div>';
+    var nextL=FC.LEVELS[s.level_idx+1];
+    return '<div class="cardwrap"><button type="button" class="card" data-id="'+s.id+'"><div class="card-top"><b class="card-name">'+esc(s.name)+'</b><span class="lvlchip">Nível '+L.id+'</span></div>'+
+      '<div class="card-lv">'+esc(L.name)+'</div><div class="muted small-t">'+esc(anoLine(s,L,today,true))+'</div>'+
+      '<div class="card-today">'+hoje+'</div>'+
+      '<div class="split small-t card-stamps"><span>Carimbos'+(nextL?' para o nível '+esc(nextL.id):'')+'</span><b class="num">'+got+' de '+need+'</b></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      (sk>0?'<div class="small-t muted">'+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+' de estudo</div>':'')+
+      (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button>'+
+      '<div class="card-foot"><button type="button" class="card-qr" data-qr="'+s.id+'" title="Mostrar o QR Code do aluno" aria-label="Mostrar o QR Code de '+esc(s.name)+'">'+FC.icon("qr")+'<span>QR Code</span></button>'+
+      '<a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir o app da criança em outra aba" aria-label="Abrir o app de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'<span>App da criança</span></a></div></div>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
