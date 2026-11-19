@@ -887,7 +887,7 @@ async function detail(id,day){
     d.sheets.unshift(x);d.ok+=x.first_ok;d.tot+=x.total;d.secs+=Number(x.secs)||0;if(x.stamp)d.stamp=true;if(x.advanced)d.adv=true;
   });
   moves.forEach(function(m){(moveBy[m.day]=moveBy[m.day]||[]).push(m)});
-  var H=U.hist={id:id,day:day||null,span:14,tlog:null,cache:{},render:renderHist};
+  var H=U.hist={id:id,day:day||null,span:30,tlog:null,cache:{},render:renderHist};
   function pl(n,um,varios){return n+" "+(n===1?um:varios)}
   function dayTags(d){
     var x=byDay[d],t=H.tlog&&H.tlog[d],mv=moveBy[d]||[],h="";
@@ -979,7 +979,7 @@ async function detail(id,day){
     $$("[data-day]",box).forEach(function(b){b.onclick=function(){H.day=b.getAttribute("data-day");renderHist();window.scrollTo(0,0);FC.nav.at("/aluno/"+id+"/historico/"+H.day)}});
     var bk=$("[data-hback]",box);
     if(bk)bk.onclick=function(){if(FC.nav.up("/aluno/"+id+"/historico"))return;H.day=null;renderHist();window.scrollTo(0,0);FC.nav.at("/aluno/"+id+"/historico")};
-    var mo=$("#histMore",box);if(mo)mo.onclick=function(){H.span+=14;renderHist()};
+    var mo=$("#histMore",box);if(mo)mo.onclick=function(){H.span+=30;renderHist()};
     if(H.day)fillDay(H.day);
   }
   var names=guards.map(function(g){
@@ -1022,9 +1022,9 @@ async function detail(id,day){
   var resumo=planNote+doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
     '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
   var historico='<div id="histBox"></div>';
-  /* Atenção: tudo o que pede ajuda fica aqui (assuntos com mais erro, contas em reforço, contas demoradas e fatos da Turbo). No Grátis, a análise por assunto é do VIP. */
+  /* Atenção: tudo o que pede ajuda fica aqui (assuntos com mais erro, contas em reforço, contas demoradas e fatos da Turbo). A aba inteira é do VIP. */
   var apoio='<div class="grid"><div class="col">'+weakHtml+'</div><div class="col"><div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>';
-  var dificuldades=free?apoio+vipLock("Onde a criança está com dificuldade","Com o VIP você vê, assunto por assunto, onde a criança erra mais e o que vale treinar em casa."):'<div class="panel"><div class="split"><div class="eyebrow">Assuntos que pedem atenção</div>'+
+  var dificuldades=free?vipLock("Onde a criança está com dificuldade","Com o VIP você vê, assunto por assunto, onde a criança erra mais, as contas que ela está reforçando, as que mais demoram e o que vale treinar em casa."):'<div class="panel"><div class="split"><div class="eyebrow">Assuntos que pedem atenção</div>'+
     '<label class="field inline dif-per"><span class="sr">Período</span><select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>'+apoio+turboAtencao(turbo);
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
