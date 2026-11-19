@@ -1057,3 +1057,12 @@ details.how>p{margin-top:10px}
 @media (max-width:520px){.album-head{grid-template-columns:96px minmax(0,1fr);gap:14px}.album-info h2{font-size:1.1rem}.album-info p{display:none}}
 .album-info .split b{white-space:nowrap}
 .alb-sum{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+/* Programa: seções com título e barra de salvar que gruda no pé quando há alteração */
+.pf-sec{font-size:1rem;margin:10px 0 -4px;padding-top:14px;border-top:1px solid var(--line)}
+.alb-pick{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.alb-pick .alb-sum{flex:1 1 240px;min-width:0}
+.save-bar{align-items:center}
+.save-bar.on{position:sticky;bottom:12px;z-index:30;background:var(--surface);padding:12px 14px;margin:0 -14px;border-radius:var(--r-md);box-shadow:var(--shadow-2,0 6px 20px rgba(0,0,0,.12))}
+.save-note{color:var(--reward-text);font-weight:500}
+@media (max-width:767px){.save-bar.on{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
+#pThemeSum{margin:0}
