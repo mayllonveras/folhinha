@@ -149,7 +149,7 @@ async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
   if(FC.turboUi&&isVip()){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
   home();
-  if(S.me.welcome_pending)showWelcome();
+  firstSteps();
 }
 function home(){
   FC.setKeys(null);cur=null;clearInterval(timerId);
@@ -191,7 +191,7 @@ function home(){
       '<li><b>Dias seguidos de estudo:</b> pacotinhos extras com 3, 7 e 14 dias, e depois a cada 30 dias. Faltar a um dia de estudo zera a sequência.</li></ul></section>'+
     '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
   var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Oi,</small><b>'+esc(m.name)+'</b></div>'+
-    '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
+    '<button type="button" class="iconbtn" id="helpBtn" aria-label="Ver o vídeo de boas-vindas">'+FC.icon("help")+'</button><button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
   FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
     {id:"inicio",label:"Início",icon:"home",html:inicio},
     {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
@@ -201,6 +201,7 @@ function home(){
   FC.nav.at("/"+FC.tabState.aluno);
   FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true},function(id){return "/"+id});FC.refreshInstall();
   $("#logout").onclick=logout;
+  $("#helpBtn").onclick=function(){showOnboarding({auto:true})};
   function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
@@ -802,6 +803,50 @@ function showAward(aw){
     setTimeout(function(){FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64});
       if(tier==="ultra")setTimeout(function(){FC.confetti({gold:true,n:70})},700)},350);
   },800);
+}
+/* ---------- vídeo de boas-vindas ----------
+   Abre uma vez por aluno e aparelho, antes de qualquer outra coisa (até antes do pacote de boas-vindas). A criança assiste ou pula;
+   o botão "?" do topo abre de novo quando ela quiser. "Já viu" fica no localStorage; se o aparelho não deixar guardar, só vale até fechar o app. */
+var OB={src:"video/boas-vindas.mp4",poster:"video/boas-vindas.jpg",vtt:"video/boas-vindas.vtt"};
+function obKey(){return "fc_onb_"+S.code}
+function obSeen(){try{return localStorage.getItem(obKey())==="1"}catch(e){return false}}
+function obMark(){try{localStorage.setItem(obKey(),"1")}catch(e){}}
+function firstSteps(){
+  var then=function(){if(S.me&&S.me.welcome_pending)showWelcome()};
+  if(!S.obShown&&!obSeen()){S.obShown=true;showOnboarding({first:true,then:then});return}
+  then();
+}
+function showOnboarding(o){
+  o=o||{};
+  var v=null,played=false,ended=false,failed=false;
+  var ov=FC.overlay('<h2>Conheça a Folhinha</h2>'+
+    '<div class="onb-video"><video id="obVid" playsinline preload="metadata" poster="'+OB.poster+'"><source src="'+OB.src+'" type="video/mp4"><track kind="captions" srclang="pt-BR" label="Português" src="'+OB.vtt+'"></video>'+
+    '<button type="button" class="onb-play" id="obPlay" aria-label="Assistir o vídeo">'+FC.icon("play")+'</button></div>'+
+    '<p class="muted small-t" id="obMsg">Um vídeo de 35 segundos mostra como tudo funciona.</p>',
+    {button:o.first?"Pular":"Fechar",cls:"onb",onClose:function(){
+      try{if(v)v.pause()}catch(e){}
+      obMark();
+      track("onboarding",{data:{acao:ended?"assistiu":played?"parou":"pulou",primeira:!!o.first}});
+      if(o.then)o.then();
+    }});
+  v=ov.el.querySelector("#obVid");
+  var play=ov.el.querySelector("#obPlay"),msg=ov.el.querySelector("#obMsg"),close=ov.el.querySelector("#ovClose"),acts=ov.el.querySelector(".ov-actions");
+  var again=document.createElement("button");again.type="button";again.className="btn ghost";again.textContent="Ver de novo";again.hidden=true;acts.insertBefore(again,close);
+  function start(){
+    if(failed)return;
+    played=true;ended=false;play.hidden=true;again.hidden=true;v.controls=true;msg.textContent="";
+    var p=v.play();if(p&&p.catch)p.catch(function(){play.hidden=false;v.controls=false;played=false});
+  }
+  /* sem som no app (botão do alto-falante): a legenda já vem ligada */
+  try{if(!FC.sfx.enabled()&&v.textTracks&&v.textTracks[0])v.textTracks[0].mode="showing"}catch(e){}
+  play.onclick=start;
+  again.onclick=function(){v.currentTime=0;start()};
+  v.onended=function(){ended=true;v.controls=false;again.hidden=false;msg.textContent="Quer ver de novo? Toque em Ver de novo.";close.textContent=o.first?"Começar":"Fechar"};
+  v.querySelector("source").addEventListener("error",function(){
+    failed=true;play.hidden=true;msg.textContent="Não deu para carregar o vídeo agora. Você pode ver depois no botão ? do topo.";close.textContent="Continuar";
+    track("onboarding",{data:{acao:"erro"}});
+  });
+  if(o.auto)start();
 }
 async function logout(){
   track("sair");await flush();

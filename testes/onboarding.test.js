@@ -1,37 +1,41 @@
-/* Primeiros passos do adulto (onboarding.js): passos do checklist, passeio guiado, estado salvo por conta e vídeo opcional. Rodar com: node testes/onboarding.test.js */
-global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
-global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
-global.navigator={};global.location={search:"",hash:"",origin:"",pathname:""};
-const mem={};global.localStorage={getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=String(v)}};
-global.supabase={createClient(){return{auth:{}}}};global.APP_CONFIG={SUPABASE_URL:"x",SUPABASE_ANON_KEY:"y"};global.matchMedia=()=>({matches:false});
-require('../core.js');require('../onboarding.js');
-const OB=global.FC.onboarding;let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
-const ids=s=>s.filter(x=>x.done).map(x=>x.id).join(",");
-/* checklist */
-let s=OB.steps({n:0,sheets:0,shared:false});
-ok(ids(s)==="","conta nova: nada feito");ok(OB.next(s).id==="aluno","o primeiro passo é cadastrar o aluno");
-s=OB.steps({n:1,sheets:0,shared:false});ok(ids(s)==="aluno","com aluno: só o cadastro feito");ok(OB.next(s).id==="link","depois vem enviar o link");
-s=OB.steps({n:1,sheets:0,shared:true});ok(ids(s)==="aluno,link","link enviado conta");ok(OB.next(s).id==="folha","depois vem a primeira folha");
-s=OB.steps({n:1,sheets:3,shared:false});ok(ids(s)==="aluno,link,folha","folha feita implica link enviado (o aluno já entrou)");ok(OB.next(s)===null,"tudo feito: sem próximo passo");
-s=OB.steps({n:0,sheets:2,shared:true});ok(ids(s)==="folha","sem aluno, link não conta como feito");
-const p=OB.progress(OB.steps({n:1,sheets:0,shared:false}));ok(p.done===1&&p.total===3&&p.pct===33,"progresso 1 de 3: "+JSON.stringify(p));
-/* passeio */
-const t0=OB.tour(false,"Mayllon Veras"),t1=OB.tour(true,"");
-ok(t0.length<=6&&t1.length<=7,"passeio curto: "+t0.length+" e "+t1.length+" passos");
-ok(t0[0].title==="Bem-vindo, Mayllon!"&&t1[0].title==="Bem-vindo!","saudação com o primeiro nome, se houver");
-ok(!t0.some(x=>x.sel===".card"||x.sel==="[data-qr]"),"sem alunos, o passeio não aponta cartão nem QR");
-ok(t1.some(x=>x.sel===".card")&&t1.some(x=>x.sel==="[data-qr]"),"com alunos, aponta cartão e QR");
-ok(!t0[0].sel&&!t0[t0.length-1].sel,"abre e fecha com cartão central");
-ok(t1.every(x=>x.title&&x.text&&x.text.length<=160),"cada passo tem título e texto curto (até 160 letras)");
-/* estado por conta */
-ok(JSON.stringify(OB.load("a"))==="{}","estado vazio no começo");
-OB.save("a",{passeio:"pulado"});OB.mark("a","shared");OB.save("a",{oculto:true});
-const e=OB.load("a");ok(e.passeio==="pulado"&&e.shared===true&&e.oculto===true,"salvar acumula campos: "+JSON.stringify(e));
-ok(JSON.stringify(OB.load("b"))==="{}","outra conta não herda o estado");
-OB.mark(null,"shared");ok(Object.keys(mem).length===1,"mark sem conta não grava nada");
-mem["fc_ob_c"]="{quebrado";ok(JSON.stringify(OB.load("c"))==="{}","estado corrompido volta vazio");
-/* vídeo */
-ok(OB.videoUrl()==="","sem ONBOARDING_VIDEO: sem vídeo");
-APP_CONFIG.ONBOARDING_VIDEO="http://x/v.mp4";ok(OB.videoUrl()==="","só aceita https");
-APP_CONFIG.ONBOARDING_VIDEO="https://x/v.mp4";ok(OB.videoUrl()==="https://x/v.mp4","aceita https");
-console.log(falhas?"\n"+falhas+" falha(s)":"onboarding: tudo certo");process.exit(falhas?1:0);
+/* Vídeo de boas-vindas: arquivos leves, aparece antes de tudo na primeira entrada, a criança pode pular e rever. Rodar com: node testes/onboarding.test.js */
+const fs=require("fs"),path=require("path");
+const root=path.join(__dirname,"..");let falhas=0;const ok=(c,m)=>{if(!c){falhas++;console.log("  FALHA",m)}};
+const rd=f=>fs.readFileSync(path.join(root,f),"utf8");
+const st=rd("student.js"),sw=rd("sw.js"),html=rd("index.html"),css=rd("style.css"),core=rd("core.js");
+
+/* arquivos do vídeo */
+["boas-vindas.mp4","boas-vindas.jpg","boas-vindas.vtt"].forEach(f=>ok(fs.existsSync(path.join(root,"video",f)),"falta video/"+f));
+const mb=fs.statSync(path.join(root,"video/boas-vindas.mp4")).size/1048576;
+ok(mb>0.3&&mb<4,"vídeo com "+mb.toFixed(1)+" MB (esperado entre 0,3 e 4: leve para o celular)");
+const vtt=rd("video/boas-vindas.vtt");
+ok(/^WEBVTT/.test(vtt),"legenda começa com WEBVTT");
+ok((vtt.match(/-->/g)||[]).length>=6,"legenda com as falas do vídeo");
+["mesa","gaveta","BNCC","Turbo","figurinha"].forEach(w=>ok(vtt.indexOf(w)>=0,"a legenda fala de "+w));
+
+/* aparece antes de qualquer coisa: o início da criança chama firstSteps, e é ele que decide entre vídeo e pacote de boas-vindas */
+const lh=/async function loadHome\(\)\{[\s\S]*?\n\}/.exec(st);
+ok(lh&&/firstSteps\(\)/.test(lh[0]),"loadHome chama firstSteps");
+ok(lh&&!/showWelcome\(\)/.test(lh[0]),"loadHome não abre o pacote de boas-vindas direto (o vídeo vem antes)");
+const fsx=/function firstSteps\(\)\{[\s\S]*?\n\}/.exec(st);
+ok(fsx&&/obSeen\(\)/.test(fsx[0])&&/showOnboarding\(\{first:true,then:then\}\)/.test(fsx[0]),"só mostra o vídeo a quem ainda não viu");
+ok(fsx&&/welcome_pending/.test(fsx[0])&&/showWelcome\(\)/.test(fsx[0]),"o pacote de boas-vindas vem depois do vídeo");
+ok(/S\.obShown/.test(st),"uma vez por abertura do app, mesmo se a tela inicial recarregar");
+
+/* assistir ou pular, e rever */
+ok(/button:o\.first\?"Pular":"Fechar"/.test(st),"primeira vez tem o botão Pular");
+ok(/onClose:function\(\)\{[\s\S]*?obMark\(\)[\s\S]*?if\(o\.then\)o\.then\(\)/.test(st),"fechar (de qualquer jeito) marca como visto e segue para o pacote de boas-vindas");
+ok(/Ver de novo/.test(st),"no fim há Ver de novo");
+ok(/id="helpBtn"/.test(st)&&/showOnboarding\(\{auto:true\}\)/.test(st),"botão ? do topo abre o vídeo de novo");
+ok(/localStorage\.getItem\(obKey\(\)\)/.test(st)&&/catch\(e\)\{return false\}/.test(st),"a marca de visto fica no aparelho e não quebra se o armazenamento falhar");
+ok(/textTracks\[0\]\.mode="showing"/.test(st),"sem som no app, a legenda já vem ligada");
+ok(/addEventListener\("error"/.test(st)&&/Não deu para carregar o vídeo/.test(st),"se o vídeo não carregar, a criança pode seguir");
+ok(/track\("onboarding"/.test(st),"registra se assistiu ou pulou");
+
+/* arquivos do app */
+ok(/id="i-help"/.test(html)&&/id="i-play"/.test(html),"ícones de ajuda e play");
+ok(/\.onb-video/.test(css)&&/\.onb-play/.test(css),"estilos do vídeo");
+ok(/indexOf\("\/video\/"\) === 0\) return/.test(sw),"o service worker deixa o vídeo para o navegador (pedaços do arquivo)");
+const v1=/FC\.VERSAO="(folhinha-v\d+)"/.exec(core),v2=/CACHE = "(folhinha-v\d+)"/.exec(sw);
+ok(v1&&v2&&v1[1]===v2[1],"versão do app igual ao cache do sw.js");
+console.log(falhas?"onboarding: "+falhas+" falha(s)":"onboarding: tudo certo");process.exit(falhas?1:0);
