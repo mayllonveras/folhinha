@@ -113,7 +113,6 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 .card{cursor:pointer;transition:box-shadow .15s,transform .15s}.card:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
 .cardwrap{position:relative;display:flex}
 .cardwrap .card{flex:1}
-.cardwrap .card-top{padding-right:38px}
 .card-open{position:absolute;top:10px;right:10px;width:32px;height:32px;display:grid;place-items:center;border-radius:99px;color:var(--muted);border:1px solid var(--line);background:var(--surface,var(--paper));z-index:1}
 .card-open:hover,.card-open:focus-visible{color:var(--primary);border-color:var(--primary)}
 .card-open svg.i{width:17px;height:17px}
@@ -1072,3 +1071,19 @@ details.how>p{margin-top:10px}
 .acc-row .btn{flex:0 0 auto}
 #qrBtn svg.i{width:18px;height:18px}
 details.danger-zone summary{color:var(--danger);font-weight:500}
+
+/* Lista de alunos: o cartão inteiro abre o aluno; QR Code e app da criança num rodapé, sem cobrir o texto */
+.cardwrap{flex-direction:column;background:var(--surface);border-radius:var(--r-md);overflow:hidden;transition:box-shadow .15s,transform .15s}
+.cardwrap:hover{box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.cardwrap .card{background:none;border:0;padding:18px 20px 14px;color:inherit;font:inherit;gap:8px}
+.cardwrap .card:hover{box-shadow:none;transform:none}
+.card-lv{font-weight:500}
+.card-today{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}
+.card-stamps{margin-top:4px}
+.cardwrap .bar{margin:0}
+.card-foot{display:flex;border-top:1px solid var(--line)}
+.card-foot .card-qr,.card-foot .card-open{position:static;width:auto;height:auto;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:0;border-radius:0;background:none;color:var(--muted);font:500 .85rem var(--font-body,inherit);text-decoration:none;cursor:pointer}
+.card-foot .card-open{border-left:1px solid var(--line)}
+.card-foot .card-qr:hover,.card-foot .card-open:hover,.card-foot .card-qr:focus-visible,.card-foot .card-open:focus-visible{color:var(--primary);background:var(--soft)}
+.cards:has(.cardwrap){grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.card-foot .card-qr,.card-foot .card-open{white-space:nowrap}
