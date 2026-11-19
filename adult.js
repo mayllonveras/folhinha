@@ -1047,12 +1047,17 @@ async function detail(id,day){
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>'+apoio+turboAtencao(turbo);
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions save-bar" id="saveBar"><button class="btn" id="fBtn" type="submit">Salvar programa</button><span class="small-t save-note" id="saveNote" hidden>Alterações ainda não salvas</span></div></form></div>';
-  var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
-    '<div class="actions gap"><button class="btn ghost small" id="rstPin">Redefinir PIN</button><button class="btn ghost small" id="newLink">Gerar novo link</button></div>'+
-    '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
-    '<div class="panel"><div class="eyebrow gap">Adultos com acesso</div><ul class="plain">'+names+'</ul>'+
+  /* Acesso: como a criança entra e quem acompanha (à esquerda); amigos e trocas (à direita); apagar o aluno no fim, separado. */
+  var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow">Como '+esc(s.name)+' entra no app</div>'+
+    '<p class="small-t gap">Abra este link no aparelho da criança ou mostre o QR Code para ela apontar a câmera. No primeiro acesso ela cria um PIN de 4 números.</p>'+
+    '<div class="linkrow gap"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
+    '<div class="actions gap"><button type="button" class="btn ghost small" id="qrBtn">'+FC.icon("qr")+' QR Code e compartilhar</button></div>'+
+    '<div class="acc-fix gap"><div class="acc-row"><span class="grow"><b>Esqueceu o PIN?</b><br><span class="muted small-t">A criança sai do app e cria um PIN novo no mesmo link.</span></span><button class="btn ghost small" id="rstPin">Redefinir PIN</button></div>'+
+    '<div class="acc-row"><span class="grow"><b>O link foi parar com outra pessoa?</b><br><span class="muted small-t">O link antigo para de funcionar e você envia o novo para a criança.</span></span><button class="btn ghost small" id="newLink">Gerar novo link</button></div></div></div>'+
+    '<div class="panel"><div class="eyebrow">Adultos que acompanham</div><ul class="plain gap">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
-    '<div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+'<div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div>'+(iAmOwner?'<div class="panel"><div class="eyebrow gap">Zona de risco</div><p class="muted small-t">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar aluno e todo o histórico</button></div></div>':'<div class="panel"><p class="muted">Só quem cadastrou o aluno pode apagá-lo.</p></div>')+'</div></div>';
+    '<div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+'<div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div></div></div>'+
+    (iAmOwner?'<details class="panel danger-zone"><summary>Apagar o aluno</summary><p class="muted small-t gap">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar '+esc(s.name)+' e todo o histórico</button></div></details>':'<p class="muted small-t">Só quem cadastrou o aluno pode apagá-lo.</p>');
   var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
@@ -1098,6 +1103,7 @@ async function detail(id,day){
   };
   loadSlow(id);loadTurboNow(id);loadFriends(id);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
+  $("#qrBtn").onclick=function(){showQr(s.name,link)};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
     var r=await sb.rpc("reset_pin",{p_student:id});
     FC.toast(r.error?FC.err(r.error):"PIN redefinido. O aluno cria um novo no link.",!!r.error);
@@ -1212,7 +1218,7 @@ async function loadTrades(id){
   var rows=r.data.map(function(x){
     var nms=function(l){return (l||[]).map(function(y){return nm(y.theme,y.slot)}).join(", ")};
     var st=x.status==="aceita"?"trocou":x.status==="recusada"?(x.sent?"pedido recusado por":"recusou o pedido de"):(x.sent?"pedido esperando resposta de":"pedido recebido de");
-    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">deu '+nms(x.gave)+' e '+(x.status==="aceita"?"recebeu ":"queria ")+nms(x.got)+'</span></span></li>'}).join("");
+    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">'+(x.status==="aceita"?'deu '+nms(x.gave)+' e recebeu '+nms(x.got):'trocaria '+nms(x.gave)+' por '+nms(x.got))+'</span></span></li>'}).join("");
   box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem trocas.</p>')+'<p class="muted small-t gap">Últimas 50. Só para consulta.</p>';
 }
 async function loadSlow(id){
