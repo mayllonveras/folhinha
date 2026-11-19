@@ -1066,3 +1066,9 @@ details.how>p{margin-top:10px}
 .save-note{color:var(--reward-text);font-weight:500}
 @media (max-width:767px){.save-bar.on{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
 #pThemeSum{margin:0}
+/* Acesso: ações de socorro em linhas, cada uma com a sua explicação; apagar o aluno fechado no fim */
+.acc-fix{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.acc-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.acc-row .btn{flex:0 0 auto}
+#qrBtn svg.i{width:18px;height:18px}
+details.danger-zone summary{color:var(--danger);font-weight:500}
