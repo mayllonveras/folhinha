@@ -370,7 +370,7 @@ function turboFields(s){
   var T=FC.turbo,cfg=s&&s._turbo,unl=(cfg&&cfg.unlocked)||["soma"],feito=!!(cfg&&cfg.placement),pula=!!(cfg&&cfg.skip_placement);
   var ops=T.ORDEM.map(function(o){
     return '<label class="chk"><input type="checkbox" name="tops" value="'+o+'"'+(o==="soma"||unl.indexOf(o)>=0?" checked":"")+(o==="soma"?" disabled":"")+'><span>'+esc(T.catalogo()[o].nome)+'</span></label>'}).join("");
-  return '<details class="adv" id="pTurbo"><summary>Trilha Turbo: nivelamento e operações</summary><div class="adv-body">'+
+  return '<h3 class="pf-sec">Trilha Turbo</h3><details class="adv" id="pTurbo"><summary>Nivelamento e operações que podem abrir</summary><div class="adv-body">'+
     '<label class="consent-chk"><input type="checkbox" id="pTurboSkip"'+(pula?" checked":"")+(feito?" disabled":"")+'><span>Pular o jogo de nivelamento da primeira entrada</span></label>'+
     '<small>'+(feito?"O nivelamento já foi feito.":"O jogo leva uns 5 minutos e descobre por onde a criança começa na Turbo. Se pular, ela começa do primeiro fato.")+'</small>'+
     '<fieldset class="field"><legend>Operações que a Turbo pode abrir</legend><div class="chks">'+ops+'</div>'+
@@ -572,7 +572,7 @@ function studyTimeText(levelIdx,perDay){
   var m=studyMinutes(levelIdx,perDay),L=m.L,lo=m.lo,hi=m.hi;
   return 'Tempo aproximado: '+(lo===hi?'<b>cerca de '+lo+' minuto'+(lo===1?'':'s')+'</b>':'de <b>'+lo+' a '+hi+' minutos</b>')+' de estudo por dia, no nível '+L.id+' (meta de '+FC.fmtTime(L.target)+' por folha). Muda conforme o nível dele.';
 }
-/* Nível escolhido no formulário: o do campo "Avançado" ou, se ficou em "Início do ano", o primeiro nível do ano escolhido. -1 = ainda sem ano. */
+/* Nível escolhido no formulário: o do campo da seção "Nível e limite" ou, se ficou em "Início do ano", o primeiro nível do ano escolhido. -1 = ainda sem ano. */
 function chosenLevel(){
   var lv=FC.$("#pLevel"),ano=FC.$("#pAno");if(!lv)return -1;
   if(lv.value!=="")return Number(lv.value);
@@ -586,11 +586,11 @@ function diasTxt(a){
   if(k.length===7)return "todos os dias";
   return k.map(function(i){return FC.DOW[i]}).join(", ");
 }
-/* Linha-resumo da tela normal: o que o padrão (ou a escolha da seção Avançado) significa na prática. */
+/* Linha-resumo da rotina: o que o padrão (ou a escolha da seção "Dias e folhas") significa na prática. */
 function resumoHtml(lv,per,sd,fd){
   var m=studyMinutes(Math.max(0,lv),per);
   return 'Estuda <b>'+diasTxt(sd)+'</b>, <b>'+per+' folhas</b> por dia (cerca de '+(m.lo===m.hi?m.lo+' min':m.lo+' a '+m.hi+' min')+'). '+
-    (fd.length?'<b>'+(fd.slice().sort(function(x,y){return x-y}).join()==="0,6"?"Fim de semana livre":"Dias livres: "+fd.slice().sort(function(x,y){return x-y}).map(function(i){return FC.DOW[i]}).join(", "))+'</b>: joga se quiser, sem perder a sequência. ':'Sem dias livres. ')+
+    (fd.length?'<b>'+(fd.slice().sort(function(x,y){return x-y}).join()==="0,6"?"Fim de semana livre":"Dias livres: "+fd.slice().sort(function(x,y){return x-y}).map(function(i){return FC.DOW[i]}).join(", "))+'</b>: joga se quiser, sem zerar os dias seguidos. ':'Sem dias livres. ')+
     '<button type="button" class="linkbtn" id="pMudar">Mudar</button>';
 }
 function checkedVals(name){return FC.$$('input[name="'+name+'"]:checked').map(function(c){return Number(c.value)})}
@@ -634,28 +634,36 @@ function programFields(s){
     to+='<option value="'+o[0]+'"'+(tt===String(o[0])?" selected":"")+'>'+o[1]+'</option>'});
   var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
   var lv0=s?v.level_idx:Math.max(0,FC.primeiroNivelDoAno(anosOk[0]));
-  /* Tela normal: só o essencial. O resto vai para a seção "Avançado", já com o padrão certo. */
+  var tetoNome=tt===""?"até "+pad+" ano"+(pad===1?"":"s")+" à frente":tt==="0"?"só o ano dele":tt==="99"?"sem limite":"até "+tt+" ano"+(tt==="1"?"":"s")+" à frente";
+  /* Em seções: aluno, rotina, álbuns, nível, Turbo e dados. O que quase não muda fica fechado, já com o padrão certo. */
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
     '<label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
+    '<h3 class="pf-sec">Rotina de estudo</h3>'+
     '<p class="resumo" id="pResumo">'+resumoHtml(lv0,v.sheets_per_day,v.study_days,fr)+'</p>'+
-    '<fieldset class="field" id="pThemes"><legend>Álbuns liberados para a criança</legend>'+
-      '<div class="alb-sum" id="pThemeSum"></div>'+
-      '<div class="actions"><button type="button" class="btn ghost" id="thOpen">Ver álbuns</button></div>'+
+    '<details class="adv" id="pAdv"><summary>Dias de estudo, dias livres e folhas por dia</summary><div class="adv-body">'+
+      '<div class="two"><label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label>'+
+      '<label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label></div>'+
+      '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
+      '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para os dias seguidos. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
+      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não zera os dias seguidos. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
+    '</div></details>'+
+    '<h3 class="pf-sec">Álbuns de figurinhas</h3>'+
+    '<fieldset class="field" id="pThemes"><legend class="sr">Álbuns liberados para a criança</legend>'+
+      '<div class="alb-pick"><div class="alb-sum" id="pThemeSum"></div>'+
+      '<button type="button" class="btn ghost small" id="thOpen">Ver álbuns</button></div>'+
       '<small id="pThemeHint"></small>'+(PF_FREE?'<small class="plan-note">No plano Grátis a criança tem '+albunsTxt()+'. Com o VIP, todos os álbuns.</small>':'')+
       '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
-    '<fieldset class="field consent" id="pConsentBox"><legend>Dados de estudo</legend>'+
-      '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s&&s.consent_at?" checked":"")+'><span>Autorizo guardar os dados de estudo do aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
-      '<small>Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e a autorização pode ser retirada a qualquer momento nesta tela.'+(s&&s.consent_at?' Autorizado em '+esc(new Date(s.consent_at).toLocaleDateString("pt-BR"))+'.':'')+'</small></fieldset>'+
-    '<details class="adv" id="pAdv"><summary>Avançado: nível, limite, dias e folhas por dia</summary><div class="adv-body">'+
+    '<h3 class="pf-sec">Nível e avanço</h3>'+
+    '<details class="adv" id="pNivel"><summary>'+(s?'Nível '+esc(FC.lv(v.level_idx))+' · pode avançar '+esc(tetoNome):'Nível inicial e limite de avanço')+'</summary><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
-      '<div class="two"><label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label>'+
-      '<label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label></div>'+
-      '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
-      '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
-      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não perde a sequência. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
-    '</div></details>'+turboFields(s)+
-    '<details class="adv"><summary>Ver como o aluno avança</summary>'+rulesBox()+'</details>';
+      rulesBox()+
+    '</div></details>'+
+    (s&&PF_FREE?'':turboFields(s))+
+    '<h3 class="pf-sec">Dados de estudo</h3>'+
+    '<fieldset class="field consent" id="pConsentBox"><legend class="sr">Dados de estudo</legend>'+
+      '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s&&s.consent_at?" checked":"")+'><span>Autorizo guardar os dados de estudo do aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
+      '<small>Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e a autorização pode ser retirada a qualquer momento nesta tela.'+(s&&s.consent_at?' Autorizado em '+esc(new Date(s.consent_at).toLocaleDateString("pt-BR"))+'.':'')+'</small></fieldset>';
 }
 function rulesBox(){
   var P=PUB||{},n=P.normal_acertos||80,need=P.stamps_needed||5,sj=P.salto_por_semana!=null?P.salto_por_semana:2;
@@ -718,6 +726,7 @@ function openAlbums(){
     if(!ids.length){hint();return}
     $$('#thStore input[name="themes"]').forEach(function(c){c.checked=ids.indexOf(c.value)>=0});
     themeSummary();ov.close();
+    var st=$("#thStore");if(st)st.dispatchEvent(new Event("change",{bubbles:true}));   // conta como alteração do formulário
   };
   hint();
 }
@@ -726,7 +735,7 @@ function bindProgram(){
   if($("#thOpen"))$("#thOpen").onclick=openAlbums;
   function upd(){
     var n=$$('input[name="days"]:checked').length;
-    $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana.":"Têm a cota de folhas e contam para a sequência de perseverança. Mínimo: "+MIN_DAYS+" dias por semana.";
+    $("#pDaysHint").textContent=n<MIN_DAYS?"Marque pelo menos "+MIN_DAYS+" dias de estudo por semana.":"Têm a cota de folhas e contam para os dias seguidos. Mínimo: "+MIN_DAYS+" dias por semana.";
     $("#pDaysHint").className=n<MIN_DAYS?"bad":"";
   }
   $$('input[name="days"]').forEach(function(c){c.onchange=upd});
@@ -1037,7 +1046,7 @@ async function detail(id,day){
     '<label class="field inline dif-per"><span class="sr">Período</span><select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>'+apoio+turboAtencao(turbo);
   var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
-    '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" id="fBtn" type="submit">Salvar programa</button></div></form></div>';
+    '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions save-bar" id="saveBar"><button class="btn" id="fBtn" type="submit">Salvar programa</button><span class="small-t save-note" id="saveNote" hidden>Alterações ainda não salvas</span></div></form></div>';
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow gap">Acesso do aluno</div><div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
     '<div class="actions gap"><button class="btn ghost small" id="rstPin">Redefinir PIN</button><button class="btn ghost small" id="newLink">Gerar novo link</button></div>'+
     '<p class="muted small-t">Redefinir o PIN desconecta o aluno; ele cria um novo PIN no mesmo link. Gerar novo link invalida o link antigo.</p></div>'+
@@ -1110,6 +1119,9 @@ async function detail(id,day){
     if(r.error)return FC.toast(FC.err(r.error),true);
     FC.toast("Aluno apagado.");if(!FC.nav.up("/"))dash();
   });
+  /* Mudou algo no programa? a barra de salvar gruda no pé da tela e avisa que falta salvar */
+  function dirty(){$("#saveBar").classList.add("on");$("#saveNote").hidden=false}
+  $("#edForm").addEventListener("input",dirty);$("#edForm").addEventListener("change",dirty);
   $("#edForm").onsubmit=async function(e){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
