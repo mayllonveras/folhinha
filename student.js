@@ -533,7 +533,7 @@ function dupsOf(m){
 }
 function isFull(m,id){return gotOf(m,id).length>=FC.ALBUM_SIZE}
 /* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai o pacotinho); gaveta = o resto que ainda não está completo. */
-function deskLimit(m){return m.desk_limit||2}
+function deskLimit(m){return m.desk_limit||1}
 function deskOf(m){
   var lib=themesOf(m);
   var d=(m.desk_themes||lib.slice(0,deskLimit(m))).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
