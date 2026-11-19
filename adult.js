@@ -176,9 +176,15 @@ function planHtml(){
     return '<li>'+FC.dm(p.due)+' · '+brl(p.value)+' · '+esc(payStatus(p.status))+(p.url?' · <a href="'+esc(p.url)+'" target="_blank" rel="noopener">fatura</a>':'')+'</li>'}).join("")+'</ul></details>';
   return h;
 }
+function consentHtml(){
+  var c=U.profile&&U.profile.data_consent,d=U.profile&&U.profile.data_consent_at?new Date(U.profile.data_consent_at).toLocaleDateString("pt-BR"):"";
+  return '<p class="gap">'+(c===true?'<b>Autorizado</b>'+(d?' em '+esc(d):''):c===false?'<b>Não autorizado</b>'+(d?' em '+esc(d):''):'<b>Ainda sem resposta</b>')+'</p>'+
+    '<p class="small-t muted">Vale para todos os alunos que você cadastrar, os de hoje e os futuros: tempo e acertos em cada conta, folhas feitas e uso do aplicativo, sem o nome do aluno. Só o administrador do sistema vê.</p>'+
+    '<div class="actions gap"><button type="button" class="btn ghost small" id="consentChange">'+(c===true?"Retirar a autorização":"Autorizar")+'</button></div>';
+}
 async function showProfile(){
   FC.render('<p class="loading">Carregando…</p>');
-  if(!U.profile){try{U.profile=await q(sb.from("profiles").select("name,role").eq("id",U.user.id).maybeSingle())}catch(e){}}
+  if(!U.profile||U.profile.data_consent===undefined){try{U.profile=await q(sb.from("profiles").select("name,role,data_consent,data_consent_at").eq("id",U.user.id).maybeSingle())}catch(e){}}
   await Promise.all([loadPlan(),loadBilling(),loadPerfil()]);
   paidReturn();
   var pf=PERFIL;
@@ -186,6 +192,7 @@ async function showProfile(){
     '<div class="section-head"><h1>Meu perfil</h1></div>'+
     '<div class="panel"><div class="eyebrow">Conta</div><dl class="pkv gap"><dt>Nome</dt><dd>'+esc((U.profile&&U.profile.name)||"—")+'</dd><dt>E-mail</dt><dd>'+esc(U.user.email||"—")+'</dd>'+
       '<dt>Perfil</dt><dd>'+((U.profile&&U.profile.role)==="professor"?"Professor(a)":"Pai, mãe ou responsável")+'</dd></dl></div>'+
+    '<div class="panel" id="consentBox"><div class="eyebrow">Dados de estudo</div>'+consentHtml()+'</div>'+
     '<div class="panel" id="payBox"><div class="eyebrow">Dados de pagamento</div>'+
       (pf?payDataHtml(pf)+'<div class="actions gap"><button type="button" class="btn ghost small" id="payEdit">Editar dados</button></div>':
         '<p class="small-t muted gap">Ainda sem dados de pagamento. Eles são pedidos na primeira assinatura, ou cadastre agora.</p><div class="actions"><button type="button" class="btn ghost small" id="payEdit">Cadastrar dados</button></div>')+
@@ -195,6 +202,12 @@ async function showProfile(){
   $("#back").onclick=function(){if(!FC.nav.up("/"))dash()};
   $$("[data-planos]").forEach(function(b){b.onclick=showPlans});
   $("#payEdit").onclick=function(){editPayData(pf)};
+  var cc=$("#consentChange"),cur=U.profile&&U.profile.data_consent;
+  async function changeConsent(v){
+    if(await saveConsent(v)){FC.toast(v?"Autorização registrada para todos os seus alunos.":"Autorização retirada de todos os seus alunos.");showProfile()}
+  }
+  if(cur===true)FC.confirmClick(cc,"Toque de novo para retirar",function(){changeConsent(false)});
+  else cc.onclick=function(){changeConsent(true)};
   var c=$("#planCancel");
   if(c)FC.confirmClick(c,"Toque de novo para cancelar",async function(){
     c.disabled=true;
@@ -442,6 +455,33 @@ function errScreen(e,retry){
   bindTop();$("#retry").onclick=retry||dash;
 }
 
+/* ---------- autorização dos dados de estudo (uma vez, vale para todos os alunos do responsável) ---------- */
+/* Pop-up com as duas respostas. Devolve true (autorizou), false (não autorizou) ou null (fechou sem responder). */
+function askConsent(later){
+  return new Promise(function(resolve){
+    var ov=FC.overlay('<h2>Dados de estudo dos seus alunos</h2>'+
+      '<p>Podemos guardar os dados de estudo das crianças que você cadastrar (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema?</p>'+
+      '<p class="muted small-t">Uma resposta só vale para todas as crianças, as de hoje e as futuras. Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e você muda a resposta quando quiser em Meu perfil.</p>'+
+      '<div class="actions"><button type="button" class="btn" id="cYes">Autorizo</button><button type="button" class="btn ghost" id="cNo">Não autorizo</button></div>',
+      {button:later||"Decidir depois",onClose:function(){resolve(null)}});
+    $("#cYes",ov.el).onclick=function(){ov.close();resolve(true)};
+    $("#cNo",ov.el).onclick=function(){ov.close();resolve(false)};
+  });
+}
+async function saveConsent(v){
+  var r=await sb.rpc("set_data_consent",{p_value:v});
+  if(r.error){FC.toast(FC.err(r.error),true);return false}
+  if(U.profile)U.profile.data_consent=v;
+  return true;
+}
+/* Conta antiga ou que ainda não respondeu: pergunta uma vez por visita ao painel */
+async function offerConsent(){
+  if(!U.profile||U.profile.data_consent!=null||U.consentAsked)return;
+  U.consentAsked=true;
+  var v=await askConsent("Decidir depois");
+  if(v!==null&&await saveConsent(v))FC.toast(v?"Autorização registrada.":"Certo, não guardaremos os dados de estudo.");
+}
+
 /* ---------- entrar / cadastrar ---------- */
 function showAuth(tab,msg,ok){
   FC.nav.reset();
@@ -471,7 +511,9 @@ function showAuth(tab,msg,ok){
       if(tab==="reg"){
         var name=$("#fName").value.trim();if(!name){btn.disabled=false;return say("Digite seu nome.")}
         var role=$('input[name="role"]:checked').value;
-        var r=await sb.auth.signUp({email:email,password:pass,options:{data:{name:name,role:role}}});
+        var cons=await askConsent("Voltar");   // pop-up do cadastro: a resposta vale para todos os alunos
+        if(cons===null){btn.disabled=false;return say("Responda sobre os dados de estudo para criar a conta.")}
+        var r=await sb.auth.signUp({email:email,password:pass,options:{data:{name:name,role:role,consent:cons}}});
         if(r.error)throw r.error;
         if(r.data.session){U.user=r.data.session.user;return dash()}
         btn.disabled=false;return say("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.",true);
@@ -512,7 +554,7 @@ async function dash(){
   try{
     if(!U.user){var g=await sb.auth.getUser();if(g.error||!g.data.user)return showAuth("login");U.user=g.data.user}
     var res=await Promise.all([
-      q(sb.from("profiles").select("name,role").eq("id",U.user.id).maybeSingle()),
+      q(sb.from("profiles").select("name,role,data_consent,data_consent_at").eq("id",U.user.id).maybeSingle()),
       q(sb.from("students").select("*").order("created_at")),
       q(sb.from("sheets").select("student_id,study_day").eq("status","done").gte("study_day",FC.addDays(FC.today(),-60)))]);
     prof=res[0];students=res[1];sheets=res[2];
@@ -548,7 +590,7 @@ async function dash(){
     (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
   U.detail=null;FC.nav.at("/");
-  bindTop();FC.refreshInstall();
+  bindTop();FC.refreshInstall();offerConsent();
   $("#newStudent").onclick=function(){
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
     if(PLAN&&PLAN.students>=PLAN.max_students){
@@ -670,9 +712,10 @@ function programFields(s){
     '</div></details>'+
     (s&&PF_FREE?'':turboFields(s))+
     '<h3 class="pf-sec">Dados de estudo</h3>'+
-    '<fieldset class="field consent" id="pConsentBox"><legend class="sr">Dados de estudo</legend>'+
-      '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s&&s.consent_at?" checked":"")+'><span>Autorizo guardar os dados de estudo do aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
-      '<small>Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e a autorização pode ser retirada a qualquer momento nesta tela.'+(s&&s.consent_at?' Autorizado em '+esc(new Date(s.consent_at).toLocaleDateString("pt-BR"))+'.':'')+'</small></fieldset>';
+    (s?'<fieldset class="field consent" id="pConsentBox"><legend class="sr">Dados de estudo</legend>'+
+      '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s.consent_at?" checked":"")+'><span>Guardar os dados de estudo deste aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
+      '<small>Os dados ficam sem o nome do aluno e só o administrador do sistema os vê.'+(s.consent_at?' Autorizado em '+esc(new Date(s.consent_at).toLocaleDateString("pt-BR"))+'.':'')+' A autorização geral fica em Meu perfil.</small></fieldset>':
+      '<p class="small-t muted">Este aluno segue a sua autorização geral dos dados de estudo'+(U.profile&&U.profile.data_consent===true?' (autorizado)':U.profile&&U.profile.data_consent===false?' (não autorizado)':'')+'. Para mudar, abra Meu perfil.</p>');
 }
 function rulesBox(){
   var P=PUB||{},n=P.normal_acertos||80,need=P.stamps_needed||5,sj=P.salto_por_semana!=null?P.salto_por_semana:2;
@@ -759,7 +802,7 @@ function readProgram(){
   var themes=$$('input[name="themes"]:checked').map(function(c){return c.value});
   if(!themes.length)return{error:"Marque pelo menos um álbum de figurinhas."};
   if(PF_FREE&&themes.length>planLim("albuns_gratis",1)&&themes.length>PF_ORIG)return{error:"No plano Grátis a criança tem "+albunsTxt()+". Com o VIP, todos os álbuns ficam liberados."};
-  var consent=!!($("#pConsent")&&$("#pConsent").checked);
+  var consent=$("#pConsent")?$("#pConsent").checked:undefined;   // só existe na edição: no cadastro vale a autorização do perfil
   var anoV=$("#pAno").value,tetoV=$("#pTeto").value;
   if(anoV==="")return{error:"Escolha o ano escolar."};
   var lvl=chosenLevel();
@@ -778,10 +821,9 @@ async function showForm(){
   $("#stForm").onsubmit=async function(e){
     e.preventDefault();var r=readProgram();
     if(r.error){$("#fMsg").textContent=r.error;return}
-    if(!r.v.consent){$("#fMsg").textContent="Para cadastrar, marque a autorização dos dados de estudo.";return}
     $("#fBtn").disabled=true;
     var res=await sb.rpc("create_student",{p_name:r.v.name,p_level:r.v.level_idx,p_start:r.v.start_date,p_days:r.v.study_days,
-      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days,p_consent:true});
+      p_per_day:r.v.sheets_per_day,p_close:0,p_goal:0,p_reward:"",p_repeat:"reforco",p_stamps:5,p_theme:r.v.sticker_theme,p_themes:r.v.sticker_themes,p_ano:r.v.ano_escolar,p_teto:r.v.teto_anos,p_free:r.v.free_days});
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
     if(r.turbo&&!(await saveTurbo(res.data.id,r.turbo)))FC.toast("Aluno cadastrado, mas não deu para salvar a opção da Turbo. Ajuste na aba Programa.",true);
     created(r.v.name,res.data.link_code,res.data.id);
@@ -1142,7 +1184,7 @@ async function detail(id,day){
     if(r.error){$("#fMsg").textContent=r.error;return}
     var patch=r.v;if(patch.level_idx!==s.level_idx){patch.stamps=0;patch.reached_by_jump=false;patch.dry_days=0}
     var cons=patch.consent;delete patch.consent;   // autorização dos dados de estudo: grava a data (o banco carimba) ou retira
-    if(cons&&!s.consent_at)patch.consent_at=new Date().toISOString();else if(!cons&&s.consent_at)patch.consent_at=null;
+    if(cons===true&&!s.consent_at)patch.consent_at=new Date().toISOString();else if(cons===false&&s.consent_at)patch.consent_at=null;
     $("#fBtn").disabled=true;
     var res=await sb.from("students").update(patch).eq("id",id);
     if(res.error){$("#fBtn").disabled=false;$("#fMsg").textContent=FC.err(res.error);return}
