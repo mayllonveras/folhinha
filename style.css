@@ -1089,6 +1089,30 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .cards:has(.cardwrap){grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .card-foot .card-qr,.card-foot .card-open{white-space:nowrap}
 
+
+/* ---------- primeiros passos e passeio guiado dos adultos (onboarding.js) ---------- */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ob-card{display:grid;gap:8px}
+.ob-card h2{font-size:1.1rem}
+.ob-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ob-list li{display:flex;gap:12px;align-items:flex-start}
+.ob-list li:not(.done):not(.next){color:var(--muted)}
+.ob-list p{margin:2px 0 8px}
+.ob-dot{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:var(--on-primary)}
+.ob-list .next .ob-dot{border-color:var(--primary)}
+.ob-list .done .ob-dot{background:var(--ok-fill);border-color:var(--ok-fill)}
+.ob-dot .i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ob-list .done b{color:var(--muted);font-weight:500}
+.ob-video{width:100%;max-height:70vh;border-radius:var(--r-md);background:#000}
+.ob-layer{position:fixed;inset:0;z-index:75}
+.ob-spot{position:fixed;border-radius:14px;box-shadow:0 0 0 100vmax rgba(8,14,26,.68);outline:3px solid var(--sun-500);pointer-events:none}
+.ob-layer:has(.ob-spot[hidden]){background:rgba(8,14,26,.68)}
+.ob-tip{position:fixed;background:var(--surface);color:var(--ink);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--shadow-3);display:grid;gap:8px;max-width:calc(100vw - 24px)}
+.ob-tip.center{top:50%;left:50%;transform:translate(-50%,-50%);width:min(380px,calc(100vw - 24px))}
+.ob-tip h2{font-size:1.15rem}.ob-tip p{margin:0}
+.ob-tip .actions{align-items:center;margin-top:4px}
+@media (prefers-reduced-motion:no-preference){.ob-spot{transition:top .2s,left .2s,width .2s,height .2s}}
+
 /* Vídeo de boas-vindas (student.js: showOnboarding) */
 .ov-card.onb{max-width:360px}
 .onb-video{position:relative;width:min(100%,calc(56vh*9/16));aspect-ratio:9/16;margin:0 auto;border-radius:16px;overflow:hidden;background:#1B2A52;box-shadow:var(--shadow-2)}
@@ -1097,3 +1121,4 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .onb-play svg.i{width:40px;height:40px;stroke:none;fill:currentColor;margin-left:4px}
 .onb-play[hidden]{display:none}
 @media (prefers-reduced-motion:no-preference){.onb-play{animation:onbPulse 1.3s ease-in-out infinite alternate}@keyframes onbPulse{from{transform:scale(1)}to{transform:scale(1.09)}}}
+

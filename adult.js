@@ -587,10 +587,11 @@ async function dash(){
       '<a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir o app da criança em outra aba" aria-label="Abrir o app de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'<span>App da criança</span></a></div></div>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
-    (students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
-    '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox());
+    FC.onboarding.boxHtml()+(students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
+    '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox()+FC.onboarding.footerHtml());
   U.detail=null;FC.nav.at("/");
   bindTop();FC.refreshInstall();offerConsent();
+  var obCtx={user:U.user,name:U.profile.name,students:students,sheets:sheets};   // checklist e passeio guiado (onboarding.js)
   $("#newStudent").onclick=function(){
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
     if(PLAN&&PLAN.students>=PLAN.max_students){
@@ -604,6 +605,7 @@ async function dash(){
   $$("[data-qr]").forEach(function(b){b.onclick=function(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-qr")})[0];if(s)showQr(s.name,linkFor(s.link_code));
   }});
+  FC.onboarding.mount(obCtx);
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
@@ -845,6 +847,7 @@ function qrPng(svg){
   });
 }
 function showQr(name,link){
+  FC.onboarding.mark(U.user&&U.user.id,"shared");
   var svg="";
   try{var qr=qrcode(0,"M");qr.addData(link);qr.make();svg=qr.createSvgTag({cellSize:6,margin:4,alt:"QR Code do link de "+name,title:"QR Code"})}
   catch(e){svg=""}
@@ -877,7 +880,7 @@ function created(name,code,id){
     '<div class="linkrow"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn" id="cp">Copiar link</button></div>'+
     '<p class="muted small-t">Guarde o link: é a porta de entrada do aluno. Se o link vazar, gere outro na página do aluno.</p>'+
     '<div class="actions"><button class="btn" id="go">Abrir página do aluno</button><button class="btn ghost" id="all">Ver todos os alunos</button></div></div>');
-  bindTop();$("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
+  bindTop();$("#cp").onclick=function(){FC.onboarding.mark(U.user&&U.user.id,"shared");FC.copy(link,$("#lnk"))};
   FC.nav.at("/cadastrado",true);   // troca a entrada do formulário: voltar não reabre o formulário já enviado
   $("#go").onclick=function(){openStudent(id)};$("#all").onclick=function(){if(!FC.nav.up("/"))dash()};
 }
