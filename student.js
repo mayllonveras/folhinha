@@ -622,9 +622,9 @@ function albumPane(m){
   }else{
     var rid=S.repOpen,list=by[rid],n=spareOf(list);
     body='<div class="pagehead"><button type="button" class="link crumb" data-repback>'+FC.icon("back")+'Repetidas</button></div>'+
-      '<div class="album-head">'+FC.themeCapa(rid)+'<div class="grow"><b>'+esc(FC.theme(rid).name)+'</b><div class="muted small-t">'+n+(n>1?' repetidas':' repetida')+' neste álbum</div></div></div>'+
-      '<div class="album gap">'+list.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>'+
-      '<div class="gap"><button type="button" class="btn reward" data-trocar>'+FC.icon("swap")+' Trocar</button></div>';
+      '<div class="album-head">'+FC.themeCapa(rid)+'<div class="grow"><b>'+esc(FC.theme(rid).name)+'</b><div class="muted small-t">'+n+(n>1?' repetidas':' repetida')+' neste álbum</div>'+
+        '<div class="gap"><button type="button" class="btn reward small" data-trocar>'+FC.icon("swap")+' Trocar</button></div></div></div>'+
+      '<div class="album gap">'+list.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>';
   }
   return head+'<section class="panel" id="albumBox">'+tabs+body+'</section>';
 }
