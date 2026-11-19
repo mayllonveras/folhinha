@@ -6,8 +6,8 @@ var U={user:null,profile:null};
 var PUB=null;   /* parâmetros do avanço (leitura): regras, virada do ano, teto padrão */
 async function ensurePub(){if(PUB)return;try{var r=await sb.rpc("app_public");if(!r.error&&r.data)PUB=r.data}catch(e){}}
 /* Etiqueta do ano: o que o aluno cursa e de que ano é o conteúdo que ele estuda. */
-function anoLine(s,L,today){
-  var a=FC.anoAluno(s,today,PUB),h=L.hab&&L.hab.length?" · "+L.hab.join(", "):"";   /* habilidades da BNCC do nível */
+function anoLine(s,L,today,semHab){
+  var a=FC.anoAluno(s,today,PUB),h=!semHab&&L.hab&&L.hab.length?" · "+L.hab.join(", "):"";   /* habilidades da BNCC do nível */
   if(!a)return "Conteúdo do "+FC.ordAno(L.ano)+h;
   var d=L.ano-a;
   return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"")+h;
@@ -299,22 +299,25 @@ function turboPanel(t,s,today){
   var pct={},bloq={},learning=0;
   T.ORDEM.forEach(function(o){var f=(ops[o]&&ops[o].firm)||0;pct[o]=f/cat[o].facts.length;learning+=(ops[o]&&ops[o].learning)||0});
   T.ORDEM.forEach(function(o){var req=T.REQ[o];bloq[o]=(o!=="soma"&&unl.indexOf(o)<0)||(!!req&&(bloq[req]||pct[req]<T.P.GATE))});
-  var rows=T.ORDEM.map(function(o){
-    var total=cat[o].facts.length,x=ops[o]||{},firm=x.firm||0,lrn=x.learning||0,req=T.REQ[o],nota="";
-    if(bloq[o])nota=(o!=="soma"&&unl.indexOf(o)<0)?"Não liberada para este aluno (aba Programa).":"Abre quando "+cat[req].nome+" chegar a "+gate+"% de fatos firmes (hoje "+Math.round(pct[req]*100)+"%).";
-    return '<div class="tp-row'+(bloq[o]?" off":"")+'"><div class="split"><b>'+esc(cat[o].nome)+'</b><span class="muted small-t num">'+firm+' de '+total+' firmes</span></div>'+
-      '<div class="tp-bar" role="img" aria-label="'+esc(cat[o].nome)+': '+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div>'+
-      (nota?'<small class="muted">'+esc(nota)+'</small>':'')+'</div>';
+  var rows=T.ORDEM.filter(function(o){return !bloq[o]}).map(function(o){
+    var total=cat[o].facts.length,x=ops[o]||{},firm=x.firm||0,lrn=x.learning||0;
+    return '<div class="tp-row"><div class="split"><b>'+esc(cat[o].nome)+'</b><span class="muted small-t num">'+firm+' de '+total+' firmes'+(lrn?' · '+lrn+' em treino':'')+'</span></div>'+
+      '<div class="tp-bar" role="img" aria-label="'+esc(cat[o].nome)+': '+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div></div>';
   }).join("");
+  /* operações fechadas: as que os pais não liberaram e as que esperam a base ficar firme, numa linha cada grupo */
+  function nomes(l){l=l.map(function(o){return cat[o].nome.toLowerCase()});return l.length>1?l.slice(0,-1).join(", ")+" e "+l[l.length-1]:l[0]}
+  var naoLib=T.ORDEM.filter(function(o){return bloq[o]&&o!=="soma"&&unl.indexOf(o)<0}),espera=T.ORDEM.filter(function(o){return bloq[o]&&naoLib.indexOf(o)<0});
+  var fechadas=(espera.length?'<p class="muted small-t gap">'+esc(nomes(espera).replace(/^./,function(c){return c.toUpperCase()}))+' '+(espera.length>1?'abrem':'abre')+' quando a operação de base chegar a '+gate+'% de fatos firmes.</p>':'')+
+    (naoLib.length?'<p class="muted small-t'+(espera.length?'':' gap')+'">'+esc(nomes(naoLib).replace(/^./,function(c){return c.toUpperCase()}))+': não '+(naoLib.length>1?'liberadas':'liberada')+' para este aluno (aba Programa).</p>':'');
   var recent=t.days.filter(function(d){return d.attempts>0}).slice(0,3);
   var alerta=recent.length===3&&learning>0&&recent.every(function(d){return d.promoted===0})
     ?'<div class="panel offer"><b>Nos últimos 3 dias de Turbo, nenhum fato novo ficou firme</b><p class="small-t">Isso acontece em algumas fases e não é motivo de preocupação. Se continuar por mais alguns dias, vale sentar com ele numa sessão e ver onde ele trava.</p></div>':"";
-  var devs=Object.keys(cfg.devices||{}).map(function(k){return '<span class="tag">'+esc(DEV_NOME[k]||k)+' · '+cfg.devices[k]+(cfg.devices[k]===1?' sessão':' sessões')+'</span>'}).join(" ");
+  var devs=Object.keys(cfg.devices||{}).map(function(k){return esc(DEV_NOME[k]||k)+' ('+cfg.devices[k]+')'}).join(", ");
   var comecou=T.ORDEM.some(function(o){return ops[o]&&ops[o].registered>0});
   return '<div class="panel" id="turboBox"><div class="split"><div class="eyebrow">Trilha Turbo</div>'+tag+'</div>'+alerta+
-    (comecou?rows:'<p class="muted gap">'+(cfg.placement||cfg.skip_placement?'Ele ainda não treinou nenhum fato na Turbo.':'Ele ainda não começou a Turbo. Na primeira vez, ela abre com um jogo rápido para descobrir por onde começar.')+'</p>')+
-    (devs?'<div class="gap"><div class="eyebrow">Aparelhos usados</div><div class="tp-chips">'+devs+'</div></div>':'')+
-    '<p class="muted small-t gap">'+esc(niv)+'. Fato firme é o que ele já responde sem pensar muito e que foi revisado em dias diferentes. A parte mais escura da barra mostra os firmes; a clara, os que estão em treino. As contas de cada dia ficam no Histórico; os fatos que pedem ajuda, na aba Atenção.</p></div>';
+    (comecou?rows+fechadas:'<p class="muted gap">'+(cfg.placement||cfg.skip_placement?'Ele ainda não treinou nenhum fato na Turbo.':'Ele ainda não começou a Turbo. Na primeira vez, ela abre com um jogo rápido para descobrir por onde começar.')+'</p>')+
+    '<details class="gap tp-more"><summary>Como ler este quadro</summary><p class="muted small-t">Fato firme é a conta que ele já responde sem pensar muito e que acertou em dias diferentes. Na barra, a parte escura são os firmes; a clara, os que estão em treino. As contas de cada dia ficam no Histórico, e os fatos que pedem ajuda, na aba Atenção.</p>'+
+    '<p class="muted small-t">'+esc(niv)+'.'+(devs?' Aparelhos usados (sessões): '+devs+'.':'')+'</p></details></div>';
 }
 /* ---------- Trilha Turbo no Histórico e na Atenção ----------
    Histórico: as contas de cada dia entram na página do dia. Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender
@@ -871,7 +874,6 @@ async function detail(id,day){
   var rewardPanel=doneNotice+'<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
     (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
     '<div id="albPane">'+albPaneHtml()+'</div></div>';
-  var streakHtml=FC.streakHtml({streak:sk,best_streak:s.best_streak,next_marco:FC.nextMarco(sk)},{adult:true});
 
   /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
   var by={carimbo:0,perseveranca:0,marco:0,boas_vindas:0};
@@ -1011,16 +1013,18 @@ async function detail(id,day){
   var todaySheets=sheets.filter(function(x){return x.study_day===today}),tdOk=0,tdTot=0;
   todaySheets.forEach(function(x){tdOk+=x.first_ok;tdTot+=x.total});
   var tdPct=tdTot?Math.round(100*tdOk/tdTot):null;
+  var nx=FC.nextMarco(sk);
   var stats='<div class="stats">'+
-    '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small><small class="ano-line">'+esc(anoLine(s,L,today))+'</small></div>'+
-    '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div></div>'+
-    '<div class="panel stat"><div class="eyebrow">Sequência</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>melhor: '+s.best_streak+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Hoje</div><div class="v">'+todaySheets.length+' <small>de '+(isStudyToday?quotaOf(s):0)+' folhas</small></div>'+
-      (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div></div>';
+      (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div>'+
+    '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small><small class="ano-line">'+esc(anoLine(s,L,today,true))+'</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div><small>com '+need+' ele sobe de nível</small></div>'+
+    '<div class="panel stat"><div class="eyebrow">Dias seguidos</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>próximo marco: '+nx.at+' dias ('+nx.packs+' pacotinhos)</small><small>melhor: '+s.best_streak+'</small></div></div>';
   var free=studentFree(s);
   var planNote=free?'<div class="panel plan-banner plan-free"><div class="grow"><b>Plano Grátis</b><p class="small-t">'+esc(s.name)+' faz '+quotaOf(s)+' folhas por dia, com 1 álbum. Trocas com amigos, Trilha Turbo e a aba Atenção são do VIP.</p></div><button type="button" class="btn small" data-plans>Ver planos</button></div>':'';
-  var resumo=planNote+doneNotice+notices+stats+turboPanel(turbo,s,today)+'<div class="grid"><div class="col"><div class="panel">'+streakHtml+'</div></div>'+
-    '<div class="col"><div class="panel rule"><b>Como o aluno avança</b><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho. Você vê o aviso no histórico. Para mudar o nível agora, use a aba Programa.</p></div></div></div>';
+  var resumo=planNote+doneNotice+notices+stats+(free?'':turboPanel(turbo,s,today))+   // no Grátis a Turbo é trancada: o quadro não aparece
+    
+    '<details class="panel rule how"><summary><b>Como o aluno avança</b></summary><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho; a mudança aparece no Histórico. Fechar todas as folhas de um dia de estudo soma 1 dia seguido; faltar a um dia de estudo zera a contagem. Para mudar o nível agora, use a aba Programa.</p></details>';
   var historico='<div id="histBox"></div>';
   /* Atenção: tudo o que pede ajuda fica aqui (assuntos com mais erro, contas em reforço, contas demoradas e fatos da Turbo). A aba inteira é do VIP. */
   var apoio='<div class="grid"><div class="col">'+weakHtml+'</div><div class="col"><div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>';

@@ -1035,3 +1035,14 @@ button.hday:hover,button.hday:focus-visible{background:color-mix(in srgb,var(--p
 #histBox>.eyebrow{margin-bottom:-10px}
 #histBox>.pagehead+.pagehead{margin-top:-8px}
 .hday .tag:not(.ok):not(.warn):not(.bad){background:var(--surface)}
+/* Resumo dos pais: textos de explicação fechados por padrão */
+details.how summary{list-style:none;display:flex;justify-content:space-between;align-items:center;color:var(--ink)}
+details.how summary::-webkit-details-marker{display:none}
+details.how summary::after{content:"+";font:700 1.2rem var(--font-display);color:var(--muted)}
+details.how[open] summary::after{content:"–"}
+.tp-more summary{font-size:.85rem}
+.tp-more p{margin:6px 0 0}
+.stat>small{display:block}
+.stat .tag{white-space:normal;text-align:center;max-width:100%}
+details.how summary b{line-height:1.3}
+details.how>p{margin-top:10px}
