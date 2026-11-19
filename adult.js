@@ -464,8 +464,8 @@ function askConsent(later){
       '<p class="muted small-t">Uma resposta só vale para todas as crianças, as de hoje e as futuras. Os dados ficam sem o nome do aluno, só o administrador do sistema os vê, e você muda a resposta quando quiser em Meu perfil.</p>'+
       '<div class="actions"><button type="button" class="btn" id="cYes">Autorizo</button><button type="button" class="btn ghost" id="cNo">Não autorizo</button></div>',
       {button:later||"Decidir depois",onClose:function(){resolve(null)}});
-    $("#cYes",ov.el).onclick=function(){ov.close();resolve(true)};
-    $("#cNo",ov.el).onclick=function(){ov.close();resolve(false)};
+    $("#cYes",ov.el).onclick=function(){resolve(true);ov.close()};
+    $("#cNo",ov.el).onclick=function(){resolve(false);ov.close()};
   });
 }
 async function saveConsent(v){
