@@ -848,39 +848,44 @@ async function detail(id,day){
   /* Os pais veem só a capa de cada álbum liberado e as figurinhas que a criança já conquistou: nunca as que ainda faltam
      (a criança pode pegar o celular do adulto e descobrir figurinhas antes de ganhar). */
   var doneNotice=s.albums_done_at?'<div class="panel offer"><b>'+esc(s.name)+' completou todos os álbuns!</b><p class="small-t">Ele não vai mais receber figurinhas, porque todos os álbuns liberados estão completos. Quer liberar outro álbum?</p><div class="actions"><button class="btn small" data-more="1">Liberar mais álbuns</button></div></div>':"";
-  /* Mesmo formato da criança: capas com "3 de 52", abas Mesa e Gaveta; tocar na capa abre o álbum (capa grande + só as já conquistadas). */
+  /* Capas com "3 de 52"; tocar na capa abre o álbum (capa pequena + só as figurinhas já conquistadas).
+     Sem as abas Mesa e Gaveta da criança: os pais veem todos os álbuns numa lista só, separados por onde estão só quando há mais de um lugar. */
   var gotBy={};
   themeIds.forEach(function(id){var seen={};gotBy[id]=awards.filter(function(a){if(a.kind!=="figurinha"||a.theme!==id||seen[a.slot])return false;seen[a.slot]=1;return true}).map(function(a){return{slot:a.slot,end:a.period_end}})});
   var fullIds=themeIds.filter(function(id){return gotBy[id].length>=FC.ALBUM_SIZE});
   var deskIds=(s.desk_themes&&s.desk_themes.length?s.desk_themes:themeIds.slice(0,2)).filter(function(id){return themeIds.indexOf(id)>=0&&fullIds.indexOf(id)<0});
   var drawerIds=themeIds.filter(function(id){return deskIds.indexOf(id)<0&&fullIds.indexOf(id)<0});
-  var AL={sub:"mesa",open:null};
+  var figs=themeIds.reduce(function(n,id){return n+gotBy[id].length},0),albFree=studentFree(s);
+  var AL={open:null};
   function cap(id){return '<button type="button" class="cover-card" data-aopen="'+id+'" aria-label="'+esc(FC.theme(id).name)+', '+gotBy[id].length+' de '+FC.ALBUM_SIZE+'">'+FC.themeCapa(id)+'<span class="cover-badge num">'+gotBy[id].length+' de '+FC.ALBUM_SIZE+'</span></button>'}
-  function grid(list,empty){return list.length?'<div class="cover-grid">'+list.map(cap).join("")+'</div>':'<p class="muted small-t">'+empty+'</p>'}
+  function grid(list){return '<div class="cover-grid">'+list.map(cap).join("")+'</div>'}
   function albPaneHtml(){
     if(AL.open){
       var id=AL.open,th=FC.theme(id),got=gotBy[id];
-      return '<div class="pagehead"><button type="button" class="link crumb" data-aback>'+FC.icon("back")+'Álbuns</button></div>'+
-        '<div class="album-big">'+FC.themeCapa(id)+'</div>'+
-        '<div class="split gap"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+(got.length>=FC.ALBUM_SIZE?' ✔':'')+'</span></div>'+
+      return '<div class="pagehead"><button type="button" class="link crumb" data-aback>'+FC.icon("back")+'Todos os álbuns</button></div>'+
+        '<div class="album-head gap"><div class="album-mini">'+FC.themeCapa(id)+'</div><div class="album-info">'+
+        '<h2>'+esc(th.name)+'</h2><div class="split"><span class="muted small-t">Figurinhas conquistadas</span><b class="num">'+got.length+' de '+FC.ALBUM_SIZE+(got.length>=FC.ALBUM_SIZE?' ✔':'')+'</b></div>'+
         '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-        '<p class="muted small-t gap">'+esc(th.desc)+'</p>'+
-        (got.length?'<p class="muted small-t">Aqui aparecem só as figurinhas que a criança já conquistou. Toque em uma figurinha para ver o verso.</p><div class="gap">'+FC.albumHtml(id,got,{adult:true,only:true})+'</div>':'<p class="muted small-t gap">A criança ainda não conquistou nenhuma figurinha deste álbum.</p>');
+        '<p class="muted small-t">'+esc(th.desc)+'</p></div></div>'+
+        (got.length?'<p class="muted small-t gap">Aqui aparecem só as figurinhas que a criança já conquistou. Toque em uma figurinha para ver o verso.</p><div class="gap">'+FC.albumHtml(id,got,{adult:true,only:true})+'</div>':'<p class="muted small-t gap">A criança ainda não conquistou nenhuma figurinha deste álbum.</p>');
     }
-    var tabs='<div class="album-tabs" role="tablist">'+[["mesa","Mesa ("+deskIds.length+")"],["gaveta","Gaveta ("+(drawerIds.length+fullIds.length)+")"]].map(function(t){
-      return '<button type="button" class="chip-btn'+(AL.sub===t[0]?" on":"")+'" role="tab" aria-selected="'+(AL.sub===t[0])+'" data-asub="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>';
-    return tabs+(AL.sub==="mesa"?grid(deskIds,"A mesa está vazia."):grid(drawerIds,"Nenhum álbum na gaveta.")+(fullIds.length?'<div class="eyebrow gap">Completos ('+fullIds.length+')</div>'+grid(fullIds,""):""));
+    var grupos=[["Na mesa",deskIds],["Na gaveta",drawerIds],["Completos",fullIds]].filter(function(g){return g[1].length});
+    var lista=grupos.length>1?grupos.map(function(g){return '<div class="eyebrow gap">'+g[0]+' ('+g[1].length+')</div>'+grid(g[1])}).join(""):grid(themeIds);
+    return '<div class="split"><div class="eyebrow">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
+      (albFree?'':'<button type="button" class="link small-t" data-more="1">Escolher álbuns</button>')+'</div>'+
+      '<p class="small-t alb-sum"><b>'+figs+'</b> figurinha'+(figs===1?'':'s')+' conquistada'+(figs===1?'':'s')+
+      (packsWaiting?' <span class="tag warn">'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+' para abrir</span>':'')+'</p>'+
+      lista+(drawerIds.length?'<p class="muted small-t gap">A mesa tem os álbuns que a criança está colando agora; a gaveta guarda os outros. Ela mesma escolhe o que fica na mesa.</p>':'');
   }
-  var rewardPanel=doneNotice+'<div class="panel"><div class="eyebrow gap">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
-    (packsWaiting?'<p class="small-t"><b>'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+'</b> esperando a criança escolher'+(themeIds.length>1?' o álbum':'')+'.</p>':'')+
-    '<div id="albPane">'+albPaneHtml()+'</div></div>';
+  var rewardPanel=doneNotice+'<div class="panel"><div id="albPane">'+albPaneHtml()+'</div></div>';
 
   /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
-  var by={carimbo:0,perseveranca:0,marco:0,boas_vindas:0};
-  awards.forEach(function(a){if(a.source&&by[a.source]!=null)by[a.source]++});
-  var packsHtml='<div class="panel"><div class="eyebrow gap">Pacotinhos ganhos</div><ul class="plain">'+
-    '<li><b>'+by.carimbo+'</b> pelo carimbo do dia</li><li><b>'+by.perseveranca+'</b> pela perseverança (dia fechado)</li><li><b>'+by.marco+'</b> pelos marcos de sequência</li>'+(by.boas_vindas?'<li><b>'+by.boas_vindas+'</b> no pacote de boas-vindas</li>':'')+'</ul>'+
-    '<p class="muted small-t">Total: <b>'+(by.carimbo+by.perseveranca+by.marco+by.boas_vindas)+'</b>. Melhor sequência: <b>'+s.best_streak+'</b> dia'+(s.best_streak===1?"":"s")+'.</p></div>';
+  var by={carimbo:0,perseveranca:0,marco:0,turbo:0,boas_vindas:0},byTot=0;   // "troca" é figurinha recebida de um amigo, não pacotinho
+  awards.forEach(function(a){if(a.source&&by[a.source]!=null){by[a.source]++;byTot++}});
+  var ORIGEM=[["carimbo","pelo carimbo do dia"],["perseveranca","por fechar todas as folhas do dia"],["marco","pelos marcos de dias seguidos"],["turbo","pela Trilha Turbo"],["boas_vindas","de boas-vindas"]];
+  var packsHtml='<div class="panel"><div class="split"><div class="eyebrow">Pacotinhos ganhos</div><b class="num">'+byTot+'</b></div>'+
+    (byTot?'<ul class="plain gap packs-by">'+ORIGEM.filter(function(o){return by[o[0]]}).map(function(o){return '<li><b class="num">'+by[o[0]]+'</b> '+o[1]+'</li>'}).join("")+'</ul>':'<p class="muted small-t gap">Ele ainda não ganhou nenhum pacotinho.</p>')+
+    '<p class="muted small-t gap">Cada pacotinho vira uma figurinha quando a criança abre.</p></div>';
 
   /* ---------- Histórico: um cartão por dia; tocar abre a página do dia, com as folhas, as contas erradas e a Turbo ---------- */
   var byDay={},moveBy={},oldest=sheets.length>=300?sheets[sheets.length-1].study_day:s.start_date;   // antes disso as folhas não foram baixadas
@@ -1066,15 +1071,15 @@ async function detail(id,day){
   function bindAlb(){
     var box=$("#albPane");if(!box)return;
     function redraw(){box.innerHTML=albPaneHtml();bindAlb()}
-    $$("[data-asub]",box).forEach(function(b){b.onclick=function(){AL.sub=b.getAttribute("data-asub");redraw()}});
-    $$("[data-aopen]",box).forEach(function(b){b.onclick=function(){AL.open=b.getAttribute("data-aopen");redraw()}});
-    $$("[data-aback]",box).forEach(function(b){b.onclick=function(){AL.open=null;redraw()}});
+    $$("[data-aopen]",box).forEach(function(b){b.onclick=function(){AL.open=b.getAttribute("data-aopen");redraw();window.scrollTo(0,0)}});
+    $$("[data-aback]",box).forEach(function(b){b.onclick=function(){AL.open=null;redraw();window.scrollTo(0,0)}});
+    bindMore(box);
   }
-  bindAlb();
-  $$("[data-more]").forEach(function(b){b.onclick=function(){
+  function bindMore(root){$$("[data-more]",root).forEach(function(b){b.onclick=function(){
     FC.tabState.pai="programa";try{sessionStorage.setItem("fc_tab_pai","programa")}catch(e){}
     detail(id).then(function(){var el=$("#pThemes");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})});
-  }});
+  }})}
+  bindAlb();bindMore(document);
   var anoOk=$("#anoOk");
   if(anoOk)anoOk.onclick=async function(){
     anoOk.disabled=true;
