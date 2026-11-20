@@ -391,11 +391,11 @@ function turboFields(s){
   var T=FC.turbo,cfg=s&&s._turbo,unl=(cfg&&cfg.unlocked)||["soma"],feito=!!(cfg&&cfg.placement),pula=!!(cfg&&cfg.skip_placement);
   var ops=T.ORDEM.map(function(o){
     return '<label class="chk"><input type="checkbox" name="tops" value="'+o+'"'+(o==="soma"||unl.indexOf(o)>=0?" checked":"")+(o==="soma"?" disabled":"")+'><span>'+esc(T.catalogo()[o].nome)+'</span></label>'}).join("");
-  return '<h3 class="pf-sec">Trilha Turbo</h3><details class="adv" id="pTurbo"><summary>Nivelamento e operações que podem abrir</summary><div class="adv-body">'+
+  return '<div class="adv-sec" id="pTurbo"><h4>Trilha Turbo: nivelamento e operações que podem abrir</h4><div class="adv-body">'+
     '<label class="consent-chk"><input type="checkbox" id="pTurboSkip"'+(pula?" checked":"")+(feito?" disabled":"")+'><span>Pular o jogo de nivelamento da primeira entrada</span></label>'+
     '<small>'+(feito?"O nivelamento já foi feito.":"O jogo leva uns 5 minutos e descobre por onde a criança começa na Turbo. Se pular, ela começa do primeiro fato.")+'</small>'+
     '<fieldset class="field"><legend>Operações que a Turbo pode abrir</legend><div class="chks">'+ops+'</div>'+
-    '<small>A soma é sempre liberada. Cada operação só abre quando a base dela está firme (85% dos fatos). Subtração, multiplicação e divisão ainda estão em teste.</small></fieldset></div></details>';
+    '<small>A soma é sempre liberada. Cada operação só abre quando a base dela está firme (85% dos fatos). Subtração, multiplicação e divisão ainda estão em teste.</small></fieldset></div></div>';
 }
 function readTurbo(){
   var box=$("#pTurbo");if(!box)return null;
@@ -671,7 +671,7 @@ function refreshProgramInfo(){
   if(h&&lv>=0)h.innerHTML=studyTimeText(lv,Number(per.value));
   if(r){
     r.innerHTML=resumoHtml(lv,Number(per.value),checkedVals("days"),checkedVals("free"));
-    var b=FC.$("#pMudar");if(b)b.onclick=function(){var d=FC.$("#pAdv");d.open=true;d.scrollIntoView({block:"start",behavior:"smooth"})};
+    var b=FC.$("#pMudar");if(b)b.onclick=function(){FC.$("#pAvancado").open=true;FC.$("#pAdv").scrollIntoView({block:"start",behavior:"smooth"})};
   }
 }
 document.addEventListener("change",function(e){
@@ -706,31 +706,32 @@ function programFields(s){
   var per="";for(var i=MIN_SHEETS;i<=10;i++)per+='<option value="'+i+'"'+(i===v.sheets_per_day?" selected":"")+'>'+i+'</option>';
   var lv0=s?v.level_idx:Math.max(0,FC.primeiroNivelDoAno(anosOk[0]));
   var tetoNome=tt===""?"até "+pad+" ano"+(pad===1?"":"s")+" à frente":tt==="0"?"só o ano dele":tt==="99"?"sem limite":"até "+tt+" ano"+(tt==="1"?"":"s")+" à frente";
-  /* Em seções: aluno, rotina, álbuns, nível, Turbo e dados. O que quase não muda fica fechado, já com o padrão certo. */
+  /* Em seções: aluno, rotina, álbuns, nível, Turbo e dados. O que quase não muda fica fechado na seção Avançado, já com o padrão certo. */
   return '<label class="field">Nome do aluno<input id="pName" maxlength="40" value="'+esc(v.name)+'" required></label>'+
     '<label class="field">Ano escolar<select id="pAno" required>'+ao+'</select><small>'+(s?'O ano é atualizado sozinho na virada do ano, sem mexer no nível dele.':'Ele começa pelo início desse ano e avança mais rápido se for dominando o conteúdo. O ano é atualizado sozinho na virada do ano.')+'</small></label>'+
     '<h3 class="pf-sec">Rotina de estudo</h3>'+
     '<p class="resumo" id="pResumo">'+resumoHtml(lv0,v.sheets_per_day,v.study_days,fr)+'</p>'+
-    '<details class="adv" id="pAdv"><summary>Dias de estudo, dias livres e folhas por dia</summary><div class="adv-body">'+
-      '<div class="two"><label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label>'+
-      '<label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label></div>'+
-      '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
-      '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para os dias seguidos. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
-      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não zera os dias seguidos. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
-    '</div></details>'+
     '<h3 class="pf-sec">Álbuns de figurinhas</h3>'+
     '<fieldset class="field" id="pThemes"><legend class="sr">Álbuns liberados para a criança</legend>'+
       '<div class="alb-pick"><div class="alb-sum" id="pThemeSum"></div>'+
       '<button type="button" class="btn ghost small" id="thOpen">Ver álbuns</button></div>'+
       '<small id="pThemeHint"></small>'+(PF_FREE?'<small class="plan-note">No plano Grátis a criança tem '+albunsTxt()+'. Com o VIP, todos os álbuns.</small>':'')+
       '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
-    '<h3 class="pf-sec">Nível e avanço</h3>'+
-    '<details class="adv" id="pNivel"><summary>'+(s?'Nível '+esc(FC.lv(v.level_idx))+' · pode avançar '+esc(tetoNome):'Nível inicial e limite de avanço')+'</summary><div class="adv-body">'+
+
+    '<details class="adv" id="pAvancado"><summary>Avançado</summary><div class="adv-body">'+
+    '<div class="adv-sec" id="pAdv"><h4>Dias de estudo, dias livres e folhas por dia</h4><div class="adv-body">'+
+      '<div class="two"><label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label>'+
+      '<label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label></div>'+
+      '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
+      '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para os dias seguidos. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
+      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não zera os dias seguidos. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
+    '</div></div>'+
+    '<div class="adv-sec" id="pNivel"><h4>'+(s?'Nível '+esc(FC.lv(v.level_idx))+' · pode avançar '+esc(tetoNome):'Nível inicial e limite de avanço')+'</h4><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
       rulesBox()+
-    '</div></details>'+
-    (s&&PF_FREE?'':turboFields(s))+
+    '</div></div>'+
+    (s&&PF_FREE?'':turboFields(s))+    '</div></details>'+
     '<h3 class="pf-sec">Dados de estudo</h3>'+
     (s?'<fieldset class="field consent" id="pConsentBox"><legend class="sr">Dados de estudo</legend>'+
       '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s.consent_at?" checked":"")+'><span>Guardar os dados de estudo deste aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
