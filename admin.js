@@ -5,7 +5,7 @@
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
 function catalogo(){return (FC.EX||[]).concat(FC.G1||[],FC.G2||[],FC.G3||[],FC.G4||[],FC.G5||[])}
 function porId(id){return catalogo().filter(function(e){return e.id===id})[0]}
-var DATA=null,SET=null,SETERR=null,LEV=null,CUP=null,CUPEDIT=null,TAB="alunos",FILTER="";
+var DATA=null,ADMS=[],SET=null,SETERR=null,LEV=null,CUP=null,CUPEDIT=null,TAB="alunos",FILTER="";
 
 function dt(s){if(!s)return "—";var d=new Date(s);return FC.pad(d.getDate())+"/"+FC.pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+FC.pad(d.getHours())+":"+FC.pad(d.getMinutes())}
 function dtDay(s){return s?dt(s).slice(0,10):"—"}
@@ -66,6 +66,8 @@ async function load(user){
   SET=sr.error?null:sr.data;SETERR=sr.error?FC.err(sr.error):null;
   var lr=await sb.rpc("admin_levels");   /* só existe depois da migração da etapa 4a */
   LEV=lr.error?null:lr.data;
+  var ar=await sb.rpc("admin_list_admins");   /* só existe depois da migração dos administradores */
+  ADMS=ar.error?null:ar.data;
   var cr=await sb.rpc("admin_coupons");   /* só existe depois da migração dos cupons */
   CUP=cr.error?null:cr.data;
   show(user);
@@ -259,8 +261,17 @@ function planCell(a){
 }
 function accountsTable(){
   var rows=DATA.accounts.filter(function(a){return match((a.email||"")+" "+(a.name||""))}).map(function(a){
-    return '<tr><td><b>'+esc(a.email||"")+'</b></td><td>'+esc(a.name||"—")+'</td><td>'+esc(a.role||"—")+'</td><td>'+a.students+'</td><td>'+planCell(a)+'</td><td>'+dt(a.last_sign_in_at)+'</td><td>'+dtDay(a.created_at)+'</td></tr>'});
-  return grantForm()+table(["E-mail","Nome","Perfil","Alunos","Plano","Último acesso","Criada em"],rows);
+    var ad=admOf(a.id);
+    return '<tr><td><b>'+esc(a.email||"")+'</b>'+(ad?' <span class="tag ok">admin</span>'+(ad.root?'':' <button type="button" class="link small-t" data-unadmin="'+a.id+'">tirar admin</button>'):'')+'</td><td>'+esc(a.name||"—")+'</td><td>'+esc(a.role||"—")+'</td><td>'+a.students+'</td><td>'+planCell(a)+'</td><td>'+dt(a.last_sign_in_at)+'</td><td>'+dtDay(a.created_at)+'</td></tr>'});
+  return grantForm()+adminForm()+table(["E-mail","Nome","Perfil","Alunos","Plano","Último acesso","Criada em"],rows);
+}
+function admOf(id){return (ADMS||[]).filter(function(x){return x.id===id})[0]}
+function adminForm(){
+  if(ADMS===null)return "";
+  return '<details class="panel"><summary>Dar acesso de administrador</summary><form id="admGrantForm" class="form" novalidate>'+
+    '<p class="small-t muted">A conta precisa já estar cadastrada. Quem recebe passa a ver o botão da área administrativa e tem os mesmos poderes que você, inclusive dar e tirar admin.</p>'+
+    '<label class="field">E-mail da conta<input id="gaEmail" type="email" autocomplete="off" required></label>'+
+    '<p class="msg bad" id="gaMsg" role="alert"></p><button class="btn" type="submit" id="gaBtn">Tornar administrador</button></form></details>';
 }
 function grantForm(){
   return '<details class="panel"><summary>Dar VIP para uma conta</summary><form id="vipForm" class="form" novalidate>'+
@@ -271,6 +282,23 @@ function grantForm(){
     '<p class="msg bad" id="vMsg" role="alert"></p><button class="btn" type="submit" id="vBtn">Dar VIP</button></form></details>';
 }
 function bindAccounts(user){
+  var ga=$("#admGrantForm");
+  if(ga)ga.onsubmit=async function(e){
+    e.preventDefault();
+    var email=$("#gaEmail").value.trim();
+    if(!email){$("#gaMsg").textContent="Digite o e-mail da conta.";return}
+    $("#gaBtn").disabled=true;
+    var r=await sb.rpc("admin_grant_admin",{p_email:email});
+    if(r.error){$("#gaBtn").disabled=false;$("#gaMsg").textContent=String(r.error.message||"").indexOf("conta_nao_encontrada")>=0?"Não há conta cadastrada com esse e-mail.":FC.err(r.error);return}
+    FC.toast(r.data.email+" agora é administrador.");load(user);
+  };
+  $$("[data-unadmin]").forEach(function(b){
+    FC.confirmClick(b,"tocar de novo para tirar",async function(){
+      var r=await sb.rpc("admin_revoke_admin",{p_user:b.getAttribute("data-unadmin")});
+      if(r.error)return FC.toast(FC.err(r.error),true);
+      FC.toast("Acesso de administrador retirado.");load(user);
+    });
+  });
   var f=$("#vipForm");
   if(f)f.onsubmit=async function(e){
     e.preventDefault();

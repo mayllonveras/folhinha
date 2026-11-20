@@ -101,6 +101,8 @@ FC.err=function(e){
     ["amigo_sem_vip","Seu amigo está no plano Grátis: amigos e trocas são do VIP."],
     ["plano_vip","Isso faz parte do plano VIP. Peça para seu responsável conhecer o VIP!"],
     ["conta_nao_encontrada","Não existe conta com esse e-mail."],
+    ["admin_raiz","A conta principal não pode perder o acesso de administrador."],
+    ["nao_e_admin","Essa conta não é administradora."],
     ["dias_invalidos","Escolha de 1 a 3650 dias (ou deixe em branco para vitalício)."],
     ["alunos_invalidos","O limite de alunos vai de 1 a 200."],
     ["Password should be","A senha precisa ter pelo menos 8 caracteres."],
