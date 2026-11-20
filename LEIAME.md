@@ -17,4 +17,5 @@ Tudo que é secreto fica no Supabase. O arquivo `config.js` só tem a chave púb
 ## Documentação de apoio
 
 - `docs/BASE-CIENTIFICA-TURBO.md`: pesquisa científica (ciclos 1 e 2) que fundamenta a Trilha Turbo, com fontes e o que é evidência x heurística.
+- `docs/COMUNICACAO-CIENTIFICA-TURBO.md`: guia para divulgar a metodologia com honestidade (o que pode e o que não pode ser dito).
 - `turbo/ESPECIFICACAO.md`: especificação do motor da Trilha Turbo.
