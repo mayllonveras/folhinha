@@ -1088,9 +1088,11 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .card-stamps{margin-top:4px}
 .cardwrap .bar{margin:0}
 .card-foot{display:flex;border-top:1px solid var(--line)}
-.card-foot .card-qr,.card-foot .card-open{position:static;width:auto;height:auto;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:0;border-radius:0;background:none;color:var(--muted);font:500 .85rem var(--font-body,inherit);text-decoration:none;cursor:pointer}
-.card-foot .card-open{border-left:1px solid var(--line)}
-.card-foot .card-qr:hover,.card-foot .card-open:hover,.card-foot .card-qr:focus-visible,.card-foot .card-open:focus-visible{color:var(--primary);background:var(--soft)}
+.card-foot .card-qr,.card-foot .card-share,.card-foot .card-open{position:static;width:auto;height:auto;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:0;border-radius:0;background:none;color:var(--muted);font:500 .85rem var(--font-body,inherit);text-decoration:none;cursor:pointer}
+.card-foot .card-open,.card-foot .card-share{border-left:1px solid var(--line)}
+.card-foot .card-share{flex:0 0 48px}
+.card-foot .card-share svg.i{width:17px;height:17px}
+.card-foot .card-qr:hover,.card-foot .card-share:hover,.card-foot .card-share:focus-visible,.card-foot .card-open:hover,.card-foot .card-qr:focus-visible,.card-foot .card-open:focus-visible{color:var(--primary);background:var(--soft)}
 .cards:has(.cardwrap){grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .card-foot .card-qr,.card-foot .card-open{white-space:nowrap}
 

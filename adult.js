@@ -613,6 +613,7 @@ async function dash(){
       (sk>0?'<div class="small-t muted">'+sk+' dia'+(sk===1?"":"s")+' seguido'+(sk===1?"":"s")+' de estudo</div>':'')+
       (s.albums_done_at?'<div class="tag ok card-done">Álbuns completos: liberar mais?</div>':'')+'</button>'+
       '<div class="card-foot"><button type="button" class="card-qr" data-qr="'+s.id+'" title="Mostrar o QR Code do aluno" aria-label="Mostrar o QR Code de '+esc(s.name)+'">'+FC.icon("qr")+'<span>QR Code</span></button>'+
+      '<button type="button" class="card-share" data-share="'+s.id+'" title="Compartilhar o link do aluno" aria-label="Compartilhar o link de '+esc(s.name)+'">'+FC.icon("share")+'</button>'+
       '<a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir o app da criança em outra aba" aria-label="Abrir o app de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'<span>App da criança</span></a></div></div>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
@@ -633,6 +634,9 @@ async function dash(){
   $$(".card").forEach(function(c){c.onclick=function(){openStudent(c.getAttribute("data-id"))}});
   $$("[data-qr]").forEach(function(b){b.onclick=function(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-qr")})[0];if(s)showQr(s.name,linkFor(s.link_code));
+  }});
+  $$("[data-share]").forEach(function(b){b.onclick=function(){
+    var s=students.filter(function(x){return x.id===b.getAttribute("data-share")})[0];if(s)shareStudent(s.name,linkFor(s.link_code));
   }});
   /* Primeiro a janela de autorização; só depois o checklist e o passeio guiado. */
   consentP.catch(function(){}).then(function(){FC.onboarding.mount(obCtx)});
@@ -893,30 +897,32 @@ function qrPng(svg){
     }catch(e){res(null)}
   });
 }
+function qrSvg(name,link){
+  try{var qr=qrcode(0,"M");qr.addData(link);qr.make();return qr.createSvgTag({cellSize:6,margin:4,alt:"QR Code do link de "+name,title:"QR Code"})}
+  catch(e){return ""}
+}
 function showQr(name,link){
   FC.onboarding.mark(U.user&&U.user.id,"shared");
-  var svg="";
-  try{var qr=qrcode(0,"M");qr.addData(link);qr.make();svg=qr.createSvgTag({cellSize:6,margin:4,alt:"QR Code do link de "+name,title:"QR Code"})}
-  catch(e){svg=""}
-  var text="Link da Folhinha VIP de "+name+": "+link,canShare=!!navigator.share;
+  var svg=qrSvg(name,link);
   FC.overlay('<h2>QR Code de '+esc(name)+'</h2>'+(svg?'<div class="qr-box">'+svg+'</div>':'<p class="msg bad">Não deu para gerar o QR Code. Use o link.</p>')+
     '<p class="muted small-t">O aluno aponta a câmera do celular para o QR Code e abre a página dele (depois digita o PIN). Quem tiver este QR Code chega à página do aluno, então mostre só a quem deve usar.</p>'+
-    '<div class="actions">'+(canShare?'<button class="btn" id="qrShare">'+FC.icon("share")+' Compartilhar</button>':
-      '<a class="btn" id="qrWa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(text)+'">WhatsApp</a><a class="btn ghost" id="qrMail" href="mailto:?subject='+encodeURIComponent("Folhinha VIP: "+name)+'&body='+encodeURIComponent(text)+'">E-mail</a>')+'</div>'+
     '<div class="linkrow"><input id="qrLnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="qrCp">Copiar link</button></div>',{button:"Fechar"});
   $("#qrCp").onclick=function(){FC.copy(link,$("#qrLnk"))};
-  if(canShare){
-    /* Compartilhar pelo celular (WhatsApp, e-mail, redes sociais...): manda a figura do QR Code junto, quando o aparelho aceita arquivos. */
-    var file=null;
-    if(svg)qrPng(svg).then(function(b){if(b)try{file=new File([b],"qrcode-"+name.replace(/[^A-Za-z0-9]+/g,"-")+".png",{type:"image/png"})}catch(e){}});
-    $("#qrShare").onclick=async function(){
-      var data={title:"Folhinha VIP: "+name,text:text};
-      if(file&&navigator.canShare&&navigator.canShare({files:[file]}))data.files=[file];
-      try{await navigator.share(data)}
-      catch(e){if(e&&e.name==="AbortError")return;   // a pessoa fechou a janela de compartilhar
-        try{await navigator.share({title:data.title,text:text})}catch(x){if(!x||x.name!=="AbortError")FC.copy(link,$("#qrLnk"))}}
-    };
+}
+/* Compartilhar o link do aluno pelo celular (WhatsApp, e-mail, redes sociais...): manda a figura do QR Code junto, quando o aparelho aceita arquivos. Sem compartilhamento nativo, copia o link. */
+async function shareStudent(name,link){
+  FC.onboarding.mark(U.user&&U.user.id,"shared");
+  var text="Link da Folhinha VIP de "+name+": "+link;
+  if(!navigator.share){FC.copy(link);return}
+  var data={title:"Folhinha VIP: "+name,text:text},svg=qrSvg(name,link);
+  if(svg){
+    var b=await qrPng(svg),file=null;
+    if(b)try{file=new File([b],"qrcode-"+name.replace(/[^A-Za-z0-9]+/g,"-")+".png",{type:"image/png"})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]}))data.files=[file];
   }
+  try{await navigator.share(data)}
+  catch(e){if(e&&e.name==="AbortError")return;   // a pessoa fechou a janela de compartilhar
+    try{await navigator.share({title:data.title,text:text})}catch(x){if(!x||x.name!=="AbortError")FC.copy(link)}}
 }
 function openStudent(id){FC.tabState.pai="resumo";try{sessionStorage.setItem("fc_tab_pai","resumo")}catch(e){}detail(id)}
 function linkFor(code){return location.origin+location.pathname+"?aluno="+FC.fmtCode(code)}
@@ -1152,7 +1158,7 @@ async function detail(id,day){
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow">Como '+esc(s.name)+' entra no app</div>'+
     '<p class="small-t gap">Abra este link no aparelho da criança ou mostre o QR Code para ela apontar a câmera. No primeiro acesso ela cria um PIN de 4 números.</p>'+
     '<div class="linkrow gap"><input id="lnk" readonly value="'+esc(link)+'" aria-label="Link do aluno"><button class="btn small" id="cp">Copiar</button></div>'+
-    '<div class="actions gap"><button type="button" class="btn ghost small" id="qrBtn">'+FC.icon("qr")+' QR Code e compartilhar</button></div>'+
+    '<div class="actions gap"><button type="button" class="btn ghost small" id="qrBtn">'+FC.icon("qr")+' QR Code</button></div>'+
     '<div class="acc-fix gap"><div class="acc-row"><span class="grow"><b>Esqueceu o PIN?</b><br><span class="muted small-t">A criança sai do app e cria um PIN novo no mesmo link.</span></span><button class="btn ghost small" id="rstPin">Redefinir PIN</button></div>'+
     '<div class="acc-row"><span class="grow"><b>O link foi parar com outra pessoa?</b><br><span class="muted small-t">O link antigo para de funcionar e você envia o novo para a criança.</span></span><button class="btn ghost small" id="newLink">Gerar novo link</button></div></div></div>'+
     '<div class="panel"><div class="eyebrow">Adultos que acompanham</div><ul class="plain gap">'+names+'</ul>'+
