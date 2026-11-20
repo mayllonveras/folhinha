@@ -668,7 +668,7 @@ var PF_FREE=false,PF_ORIG=0;   /* o formulário aberto é de um aluno do plano G
 function albunsTxt(){var n=planLim("albuns_gratis",1);return n+" álbum"+(n===1?"":"s")}
 function programFields(s){
   PF_FREE=s?studentFree(s):!!(PLAN&&!PLAN.vip);PF_ORIG=s&&s.sticker_themes?s.sticker_themes.length:0;
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:5,sticker_themes:["dinossauros"]};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:5,sticker_themes:["bandeiras"]};
   var lv=s?"":'<option value="" selected>Início do ano escolhido (recomendado)</option>',lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}
