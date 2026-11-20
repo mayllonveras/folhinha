@@ -36,6 +36,14 @@ function planName(){
   if(PLAN.source==="fundador")return "VIP Fundador até "+FC.dm(String(PLAN.until).slice(0,10));
   return "VIP até "+FC.dm(String(PLAN.until).slice(0,10));
 }
+/* Contagem regressiva do teste de 14 dias do VIP, na tela dos pais. Só aparece enquanto o teste está valendo. */
+function trialBanner(){
+  if(!PLAN||!PLAN.vip||PLAN.lifetime||PLAN.source!=="teste"||!PLAN.until)return "";
+  var n=daysLeft(PLAN.until);
+  return '<div class="panel plan-banner plan-vip" id="trialBox"><div class="grow"><b>'+(n<=1?"Último dia do teste do VIP":"Faltam "+n+" dias para o teste do VIP acabar")+'</b>'+
+    '<p class="small-t">Depois disso a conta passa para o plano Grátis. Nada do que a criança conquistou se perde, mas álbuns extras, trocas e Turbo ficam trancados.</p></div>'+
+    '<button type="button" class="btn small" id="trialSub">Assinar</button></div>';
+}
 function vipLock(title,text){
   return '<div class="panel vip-lock"><span class="vip-tag">VIP</span><b>'+esc(title)+'</b><p class="small-t muted">'+esc(text)+'</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div></div>';
 }
@@ -587,10 +595,10 @@ async function dash(){
       '<a class="card-open" href="'+esc(linkFor(s.link_code))+'" target="_blank" rel="noopener" title="Abrir o app da criança em outra aba" aria-label="Abrir o app de '+esc(s.name)+' em outra aba">'+FC.icon("external")+'<span>App da criança</span></a></div></div>';
   }).join("");
   FC.render(topbar()+'<div class="section-head"><h1>Meus alunos</h1><div class="actions"><button class="btn" id="newStudent">Cadastrar aluno</button></div></div>'+
-    FC.onboarding.boxHtml()+(students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
+    trialBanner()+FC.onboarding.boxHtml()+(students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox()+FC.onboarding.footerHtml());
   U.detail=null;FC.nav.at("/");
-  bindTop();FC.refreshInstall();offerConsent();
+  bindTop();FC.refreshInstall();offerConsent();var ts=$("#trialSub");if(ts)ts.onclick=showPlans;
   var obCtx={user:U.user,name:U.profile.name,students:students,sheets:sheets};   // checklist e passeio guiado (onboarding.js)
   $("#newStudent").onclick=function(){
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
