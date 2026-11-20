@@ -519,16 +519,16 @@ function showAuth(tab,msg,ok){
       if(tab==="reg"){
         var name=$("#fName").value.trim();if(!name){btn.disabled=false;return say("Digite seu nome.")}
         var role=$('input[name="role"]:checked').value;
-        var cons=await askConsent("Voltar");   // pop-up do cadastro: a resposta vale para todos os alunos
-        if(cons===null){btn.disabled=false;return say("Responda sobre os dados de estudo para criar a conta.")}
-        var r=await sb.auth.signUp({email:email,password:pass,options:{data:{name:name,role:role,consent:cons}}});
+        /* A autorização dos dados de estudo não é pedida aqui: o pop-up aparece no primeiro acesso (offerConsent). */
+        btn.textContent="Criando a conta…";
+        var r=await sb.auth.signUp({email:email,password:pass,options:{data:{name:name,role:role}}});
         if(r.error)throw r.error;
         if(r.data.session){U.user=r.data.session.user;return dash()}
-        btn.disabled=false;return say("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.",true);
+        return showConfirmEmail(email);
       }
       var l=await sb.auth.signInWithPassword({email:email,password:pass});
       if(l.error)throw l.error;U.user=l.data.user;dash();
-    }catch(err){btn.disabled=false;say(FC.err(err))}
+    }catch(err){btn.disabled=false;btn.textContent=tab==="reg"?"Criar conta":"Entrar";say(FC.err(err))}
   };
   var fg=$("#forgot");
   if(fg)fg.onclick=async function(){
@@ -538,6 +538,15 @@ function showAuth(tab,msg,ok){
     if(r.error)return say(FC.err(r.error));
     say("Se este e-mail tiver cadastro, enviamos um link para criar uma nova senha.",true);
   };
+}
+/* Logo depois de criar a conta: avisa para confirmar o e-mail, em vez de deixar o formulário parado. */
+function showConfirmEmail(email){
+  FC.nav.reset();
+  FC.render(topbar()+'<div class="panel authbox center"><h1>Confirme seu e-mail</h1>'+
+    '<p>Sua conta foi criada. Enviamos um link de confirmação para <b>'+esc(email)+'</b>.</p>'+
+    '<p class="muted small-t">Abra o e-mail, toque no link e depois entre com seu e-mail e senha. Se não achar a mensagem, olhe também a caixa de spam.</p>'+
+    '<div class="actions"><button type="button" class="btn" id="goLogin">Ir para o login</button></div></div>');
+  $("#goLogin").onclick=function(){showAuth("login")};
 }
 function showNewPassword(msg){
   FC.nav.reset();
