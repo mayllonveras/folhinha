@@ -671,7 +671,7 @@ function refreshProgramInfo(){
   if(h&&lv>=0)h.innerHTML=studyTimeText(lv,Number(per.value));
   if(r){
     r.innerHTML=resumoHtml(lv,Number(per.value),checkedVals("days"),checkedVals("free"));
-    var b=FC.$("#pMudar");if(b)b.onclick=function(){FC.$("#pAvancado").open=true;FC.$("#pAdv").scrollIntoView({block:"start",behavior:"smooth"})};
+    var b=FC.$("#pMudar");if(b)b.onclick=function(){openAdvanced(true)};
   }
 }
 document.addEventListener("change",function(e){
@@ -718,7 +718,7 @@ function programFields(s){
       '<small id="pThemeHint"></small>'+(PF_FREE?'<small class="plan-note">No plano Grátis a criança tem '+albunsTxt()+'. Com o VIP, todos os álbuns.</small>':'')+
       '<div id="thStore" hidden>'+FC.THEMES.map(function(t){return '<input type="checkbox" name="themes" value="'+t.id+'"'+(chosen.indexOf(t.id)>=0?" checked":"")+'>'}).join("")+'</div></fieldset>'+
 
-    '<details class="adv" id="pAvancado"><summary>Avançado</summary><div class="adv-body">'+
+    '<div id="pAvancado" hidden><div class="adv-body">'+
     '<div class="adv-sec" id="pAdv"><h4>Dias de estudo, dias livres e folhas por dia</h4><div class="adv-body">'+
       '<div class="two"><label class="field">Folhas por dia<select id="pPer">'+per+'</select><small>Mínimo: '+MIN_SHEETS+' folhas por dia.'+(PF_FREE?' No plano Grátis valem '+planLim("folhas_gratis",2)+' por dia; o programa completo volta com o VIP.':'')+'</small></label>'+
       '<label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label></div>'+
@@ -731,7 +731,7 @@ function programFields(s){
       '<label class="field">Quanto ele pode avançar<select id="pTeto">'+to+'</select><small>Limite de conteúdo à frente do ano escolar. Só vale se o ano for informado.</small></label>'+
       rulesBox()+
     '</div></div>'+
-    (s&&PF_FREE?'':turboFields(s))+    '</div></details>'+
+    (s&&PF_FREE?'':turboFields(s))+    '</div></div>'+
     '<h3 class="pf-sec">Dados de estudo</h3>'+
     (s?'<fieldset class="field consent" id="pConsentBox"><legend class="sr">Dados de estudo</legend>'+
       '<label class="consent-chk"><input type="checkbox" id="pConsent"'+(s.consent_at?" checked":"")+'><span>Guardar os dados de estudo deste aluno (tempo e acertos em cada conta, folhas feitas e uso do aplicativo) para melhorar o sistema.</span></label>'+
@@ -803,8 +803,24 @@ function openAlbums(){
   };
   hint();
 }
+/* "Avançado": os campos ficam escondidos no formulário e abrem numa janela própria. O bloco é movido (não copiado) para a janela
+   e volta ao formulário ao fechar, então os valores e as leituras por id continuam valendo. */
+function advButton(){return '<button type="button" class="btn ghost small" id="pAdvBtn">Avançado</button>'}
+function openAdvanced(toDays){
+  var box=$("#pAvancado");if(!box||box.dataset.open)return;
+  var home=box.parentNode,next=box.nextSibling,changed=false;
+  var ov=FC.overlay('<h2>Avançado</h2><div id="advHost"></div>',{wide:true,button:"Fechar",onClose:function(){
+    box.hidden=true;delete box.dataset.open;home.insertBefore(box,next);
+    var f=$("#edForm");if(changed&&f)f.dispatchEvent(new Event("change",{bubbles:true}));   // marca "alterações não salvas" na edição
+    refreshProgramInfo();
+  }});
+  box.hidden=false;box.dataset.open="1";$("#advHost",ov.el).appendChild(box);
+  ov.el.addEventListener("input",function(){changed=true});ov.el.addEventListener("change",function(){changed=true});
+  if(toDays){var d=$("#pAdv");if(d)d.scrollIntoView({block:"start"})}
+}
 function bindProgram(){
   themeSummary();
+  var ab=$("#pAdvBtn");if(ab)ab.onclick=function(){openAdvanced()};
   if($("#thOpen"))$("#thOpen").onclick=openAlbums;
   function upd(){
     var n=$$('input[name="days"]:checked').length;
@@ -835,7 +851,7 @@ function readProgram(){
 
 async function showForm(){
   await ensurePub();
-  FC.render(topbar("Novo aluno")+'<div class="panel"><form id="stForm" class="form" novalidate><h1>Cadastrar aluno</h1>'+programFields(null)+
+  FC.render(topbar("Novo aluno")+'<div class="panel"><form id="stForm" class="form" novalidate><div class="split"><h1>Cadastrar aluno</h1>'+advButton()+'</div>'+programFields(null)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="fBtn">Cadastrar e gerar link</button><button class="btn ghost" type="button" id="fBack">Voltar</button></div></form></div>');
   FC.nav.at("/novo");
   bindTop();bindProgram();$("#fBack").onclick=function(){if(!FC.nav.up("/"))dash()};
@@ -1118,7 +1134,7 @@ async function detail(id,day){
   var dificuldades=free?vipLock("Onde a criança está com dificuldade","Com o VIP você vê, assunto por assunto, onde a criança erra mais, as contas que ela está reforçando, as que mais demoram e o que vale treinar em casa."):'<div class="panel"><div class="split"><div class="eyebrow">Assuntos que pedem atenção</div>'+
     '<label class="field inline dif-per"><span class="sr">Período</span><select id="difPer"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="0">Tudo</option></select></label></div>'+
     '<div id="difBox"><p class="loading">Carregando…</p></div></div>'+apoio+turboAtencao(turbo);
-  var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="eyebrow">Programa de estudos</div>'+programFields(s)+
+  var programa='<div class="panel form-narrow"><form id="edForm" class="form" novalidate><div class="split"><div class="eyebrow">Programa de estudos</div>'+advButton()+'</div>'+programFields(s)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions save-bar" id="saveBar"><button class="btn" id="fBtn" type="submit">Salvar programa</button><span class="small-t save-note" id="saveNote" hidden>Alterações ainda não salvas</span></div></form></div>';
   /* Acesso: como a criança entra e quem acompanha (à esquerda); amigos e trocas (à direita); apagar o aluno no fim, separado. */
   var acesso='<div class="grid"><div class="col"><div class="panel"><div class="eyebrow">Como '+esc(s.name)+' entra no app</div>'+
