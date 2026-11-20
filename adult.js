@@ -2,7 +2,7 @@
 (function(){
 "use strict";
 var FC=window.FC,$=FC.$,$$=FC.$$,esc=FC.esc,sb=FC.sb;
-var U={user:null,profile:null};
+var U={user:null,profile:null,admin:false};
 var PUB=null;   /* parâmetros do avanço (leitura): regras, virada do ano, teto padrão */
 async function ensurePub(){if(PUB)return;try{var r=await sb.rpc("app_public");if(!r.error&&r.data)PUB=r.data}catch(e){}}
 /* Etiqueta do ano: o que o aluno cursa e de que ano é o conteúdo que ele estuda. */
@@ -21,6 +21,17 @@ async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
    A trava de verdade é no banco (migracoes/2026-11-17-plano-vip.sql). Aqui o painel só explica o plano e evita mandar o adulto a um erro.
    Se adult_plan falhar (banco sem a migração), PLAN fica nulo e o painel segue como antes, sem nada trancado. */
 var PLAN=null;
+/* Conta administradora: mostra o botão da área administrativa no cabeçalho. A trava de verdade é no banco; aqui só decide se o ícone aparece. */
+async function loadAdmin(){
+  try{var r=await sb.rpc("is_admin");U.admin=!r.error&&r.data===true}catch(e){U.admin=false}
+  var has=!!$("#admBtn"),who=$(".appbar .who");
+  if(U.admin&&!has&&who)who.insertBefore(adminLink(),$("#profileBtn")||null);
+  if(!U.admin&&has)$("#admBtn").remove();
+}
+function adminLink(){
+  var a=document.createElement("a");a.id="admBtn";a.className="iconbtn";a.href="/adm";a.title="Área administrativa";a.setAttribute("aria-label","Área administrativa");
+  a.innerHTML=FC.icon("shield");return a;
+}
 async function loadPlan(){try{var r=await sb.rpc("adult_plan");PLAN=r.error?null:r.data}catch(e){PLAN=null}return PLAN}
 function planLim(k,d){return PLAN&&PLAN.limits&&PLAN.limits[k]!=null?PLAN.limits[k]:d}
 /* O aluno segue o plano de quem o cadastrou. Aluno de outro adulto (convite): o painel não sabe o plano dele, então não tranca nada. */
@@ -455,7 +466,7 @@ FC.adultApp=async function(){
 function topbar(extra){
   var name=U.profile?esc(U.profile.name||"")+(U.profile.role==="professor"?" · professor(a)":" · responsável"):"";
   return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha VIP</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
-    (U.user?'<div class="who"><span class="who-name">'+name+'</span><button type="button" class="iconbtn" id="profileBtn" aria-label="Meu perfil" title="Meu perfil">'+FC.icon("user")+'</button><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
+    (U.user?'<div class="who"><span class="who-name">'+name+'</span>'+(U.admin?'<a class="iconbtn" id="admBtn" href="/adm" title="Área administrativa" aria-label="Área administrativa">'+FC.icon("shield")+'</a>':'')+'<button type="button" class="iconbtn" id="profileBtn" aria-label="Meu perfil" title="Meu perfil">'+FC.icon("user")+'</button><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
 }
 function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()};var pf=$("#profileBtn");if(pf)pf.onclick=showProfile}
 function errScreen(e,retry){
@@ -493,7 +504,7 @@ async function offerConsent(){
 /* ---------- entrar / cadastrar ---------- */
 function showAuth(tab,msg,ok){
   FC.nav.reset();
-  U.profile=null;
+  U.profile=null;U.admin=false;
   FC.render(topbar()+'<div class="panel authbox"><div class="tabs"><button class="tab'+(tab==="login"?" on":"")+'" data-t="login">Entrar</button>'+
     '<button class="tab'+(tab==="reg"?" on":"")+'" data-t="reg">Cadastrar</button></div>'+
     '<form id="authForm" class="form" novalidate>'+
@@ -570,6 +581,7 @@ async function dash(){
   var prof,students,sheets,tdays=null;
   try{
     if(!U.user){var g=await sb.auth.getUser();if(g.error||!g.data.user)return showAuth("login");U.user=g.data.user}
+    loadAdmin();
     var res=await Promise.all([
       q(sb.from("profiles").select("name,role,data_consent,data_consent_at").eq("id",U.user.id).maybeSingle()),
       q(sb.from("students").select("*").order("created_at")),
