@@ -6,6 +6,8 @@ A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas
 
 **Objetivo:** que a criança resolva contas de aritmética básica (+, −, ×, ÷) rapidamente ao olhar, isto é, por recuperação direta da memória.
 
+Base científica completa (ciclos 1 e 2 da pesquisa, com fontes): [`docs/BASE-CIENTIFICA-TURBO.md`](../docs/BASE-CIENTIFICA-TURBO.md).
+
 Cada parâmetro abaixo traz o **status da evidência**: *validado*, *heurística* (proposta coerente com a pesquisa, sem estudo específico em fatos aritméticos infantis) ou *a testar* (experimento no app).
 
 ## 1. O que é um fato

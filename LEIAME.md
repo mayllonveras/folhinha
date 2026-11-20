@@ -13,3 +13,8 @@ Site estático: não precisa de build. A pasta raiz é publicada como está.
 O arquivo `vercel.json` cuida de duas coisas: o endereço `/adm` (área de administração, sem link no site) e o cache do `sw.js` e do manifesto, que precisam ser sempre revalidados para o app atualizar.
 
 Tudo que é secreto fica no Supabase. O arquivo `config.js` só tem a chave pública “anon”, feita para ficar no navegador.
+
+## Documentação de apoio
+
+- `docs/BASE-CIENTIFICA-TURBO.md`: pesquisa científica (ciclos 1 e 2) que fundamenta a Trilha Turbo, com fontes e o que é evidência x heurística.
+- `turbo/ESPECIFICACAO.md`: especificação do motor da Trilha Turbo.
