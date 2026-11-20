@@ -157,6 +157,9 @@ details.adv{padding:10px 12px;border:1px dashed var(--line);border-radius:10px}
 details.adv select{box-sizing:border-box;min-width:0;max-width:100%}
 details.adv{margin-top:6px}
 .adv-body{display:flex;flex-direction:column;gap:14px}
+.adv-sec{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.adv-sec:first-child{border-top:0;padding-top:0}
+.adv-sec>h4{margin:0;font-size:1rem}
 .resumo{margin:0;padding:10px 12px;background:var(--soft);border-radius:10px;font-size:.9rem;line-height:1.45}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--accent,var(--ink));text-decoration:underline;cursor:pointer}
 .theme-pick.compact .to-txt small{display:none}
