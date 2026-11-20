@@ -279,6 +279,32 @@ function jogar(st,dia,o){
   const st5=aluno(),r5=jogar(st5,0,{acerto:.5,t1:1500}).res;ok(r5.concluida&&r5.premio,"o pacotinho vale pela sessão feita, não pela nota");
 }
 
+/* ---------- 11b. tempos impossíveis (abaixo de T1_MIN) ---------- */
+{
+  const dia=10;
+  const roda=(st,id,t1)=>{const sess=T.iniciarSessao(st,{dia,aparelho:"tablet",rnd:()=>.5});sess.aparelhoNovo=false;
+    T.registrar(st,sess,{id,tipo:"revisao",ok:true,resp:1,t1,total:t1+300,dica:"none",contou:false});return T.finalizarSessao(st,sess)};
+  const st=aluno();pôr(st,"+:0:1",{s:3,n:5,diasOk:3,boas:1,atingiu:true,due:dia});
+  roda(st,"+:0:1",40);
+  igual(st.fatos["+:0:1"].boas,1,"tempo impossível: não conta e não zera a sequência");
+  igual(st.fatos["+:0:1"].s,3,"tempo impossível: não promove");
+  igual(st.fatos["+:0:1"].due,dia+1,"tempo impossível: confere no dia seguinte");
+  ok(st.fatos["+:0:1"].lat==null||st.fatos["+:0:1"].lat>=P.T1_MIN,"tempo impossível não entra na latência do fato");
+  roda(st,"+:0:1",900);
+  igual(st.fatos["+:0:1"].s,4,"tempo válido depois: segunda sessão boa promove");
+  /* o log guarda o tempo cru, para análise */
+  const st2=aluno(),sess=T.iniciarSessao(st2,{dia,aparelho:"tablet",rnd:()=>.5});
+  T.registrar(st2,sess,{id:"+:0:0",tipo:"novo",ok:true,resp:0,t1:12,total:400,dica:"before",contou:false});
+  igual(sess.log[0].t1,12,"log guarda o t1 cru");
+  /* revisões embaralhadas: a ordem muda com a semente, mas o conjunto é o mesmo */
+  const st3=aluno();for(let k=0;k<11;k++)pôr(st3,"+:0:"+k,{s:3,n:5,diasOk:3,due:dia});
+  const ids=r=>T.iniciarSessao(st3,{dia,aparelho:"tablet",rnd:T.rng(r)}).fila.map(i=>i.id);
+  const a1=ids(1),a2=ids(2);
+  ok(a1.slice().sort().join()===a2.slice().sort().join(),"mesmas revisões");
+  ok(a1.join()!==a2.join(),"ordem embaralhada");
+  ok(a1.join()!==Array.from({length:11},(_,k)=>"+:0:"+k).join(),"não segue a ordem do catálogo");
+}
+
 /* ---------- 12. nivelamento da primeira entrada ---------- */
 {
   const N=T.nivelamento,n=T.catalogo().soma.fams.length;
@@ -308,6 +334,18 @@ function jogar(st,dia,o){
   const porDia={};fs.forEach(f=>{const x=st.fatos[f.id];if(x&&x.s>0)porDia[x.due]=(porDia[x.due]||0)+1});
   ok(Object.values(porDia).every(v=>v<=P.NIVELAMENTO_POR_DIA),"vencimentos espalhados: "+JSON.stringify(porDia));
   ok(Object.keys(porDia).every(d=>+d>=1),"nada vence no próprio dia do teste");
+  /* revisões espalhadas: as famílias lentas e as mais difíceis vêm primeiro, não a ordem do catálogo (0+0, 0+1, 0+2…) */
+  {
+    const st3=aluno(),nv3=N.inicio("soma",7);let i3;
+    while((i3=N.proximo(nv3)))N.registrar(nv3,i3.fam,i3.fam===4?"lento":"rapido");   // passa tudo; só a família 4 é lenta
+    N.aplicar(st3,nv3,0,T.rng(7));
+    const dia1=fs.filter(f=>st3.fatos[f.id]&&st3.fatos[f.id].due===1);
+    ok(dia1.length===P.NIVELAMENTO_POR_DIA,"primeiro dia: "+dia1.length+" revisões");
+    ok(dia1.every(f=>f.fam===4)||dia1.filter(f=>f.fam===4).length===fs.filter(f=>f.fam===4).length,"as lentas (família 4) vêm primeiro");
+    ok(!dia1.some(f=>f.fam===0),"o primeiro dia não é de somar zero");
+    const ord=fs.filter(f=>st3.fatos[f.id]&&st3.fatos[f.id].due<=2).map(f=>f.id);
+    ok(ord.length>0,"há revisões nos dois primeiros dias");
+  }
   /* idempotente: o que já tinha estado não é sobrescrito */
   const st2=aluno();pôr(st2,"+:0:0",{s:5,due:50});const nv2=N.inicio("soma",7);let i2;while((i2=N.proximo(nv2)))N.registrar(nv2,i2.fam,"rapido");N.aplicar(st2,nv2,0);
   igual(T.estado(st2,"+:0:0"),5,"não rebaixa fato que já era maduro");

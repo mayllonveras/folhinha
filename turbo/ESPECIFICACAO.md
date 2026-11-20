@@ -259,3 +259,16 @@ Em `adult.js`, sem nova aba (o menu do celular já tem 6). Decisão 5 do item 11
 - O teste de banco (`testes/banco/`) passou a simular a atualização do `last_seen` e a exigir que `student_turbo_get` e `student_turbo_save` sejam voláteis. Com a função estável de volta, o teste falha; com a correção, passa. O script de teste também passou a falhar quando alguma verificação dá `ERROR` (antes ele só contava as que terminavam, e uma verificação com erro de sintaxe passava como sucesso).
 - Se a Turbo falhar ao carregar, o cartão agora mostra "A Turbo não carregou" com **Tentar de novo**, em vez de sumir em silêncio. Só some de vez se o banco não tiver a Turbo. Com o consentimento dos pais ligado, o erro também vai para os dados de uso (`turbo_erro`).
 
+## 16. Ajuste de 20/11/2026: revisões do nivelamento previsíveis e tempos impossíveis
+
+**O que o professor viu:** o Samuel, que passou até a última família da soma no nivelamento, fazia só contas de 0 + e 1 +.
+
+**Causa:** o nivelamento espalha as revisões (15 por dia) na ordem do catálogo, então vinham 0+0, 0+1, 0+2… por dias seguidos. Como a ordem era previsível, o tempo até o primeiro toque saía de 0 a 70 ms (mediana de 317 ms), impossível para recuperação de memória, e contaminava o critério de domínio.
+
+**Mudanças (`turbo.js`):**
+
+- **Espalhamento do nivelamento:** as famílias que a criança passou devagar vêm primeiro, depois as mais difíceis; dentro de cada família a ordem é embaralhada.
+- **Sessão:** as revisões escolhidas são apresentadas em ordem embaralhada (quais entram continua pela prioridade de antes).
+- **`T1_MIN` = 250 ms:** tempo até o primeiro toque abaixo disso não vale. Um acerto só com tempos assim **não conta como sessão boa, não zera a sequência e não promove**; o fato volta a ser conferido no dia seguinte. O tempo não entra na latência do fato. O log de tentativas guarda o tempo cru, para análise.
+
+**Dados do Samuel não foram alterados:** os vencimentos já gravados continuam como estão; só a ordem de apresentação e a validade do tempo mudam daqui para frente.
