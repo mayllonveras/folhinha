@@ -607,7 +607,7 @@ async function dash(){
     trialBanner()+FC.onboarding.boxHtml()+(students.length?'<div class="cards">'+cards+'</div>':'<div class="panel center"><h2>Nenhum aluno ainda</h2><p class="muted">Cadastre o primeiro aluno, informe o nível dele e monte o programa de estudos. O sistema gera um link para ele entrar.</p></div>')+
     '<details class="panel"><summary>Tenho um convite de outro adulto</summary><form id="invForm" class="form inline"><label class="field grow">Código do convite<input id="invCode" maxlength="12" autocomplete="off" placeholder="Ex.: 3F9A1C20"></label><button class="btn" type="submit">Entrar no aluno</button></form><p class="msg bad" id="invMsg" role="alert"></p></details>'+FC.installBox()+FC.onboarding.footerHtml());
   U.detail=null;FC.nav.at("/");
-  bindTop();FC.refreshInstall();offerConsent();var ts=$("#trialSub");if(ts)ts.onclick=showPlans;
+  bindTop();FC.refreshInstall();var consentP=offerConsent();var ts=$("#trialSub");if(ts)ts.onclick=showPlans;
   var obCtx={user:U.user,name:U.profile.name,students:students,sheets:sheets};   // checklist e passeio guiado (onboarding.js)
   $("#newStudent").onclick=function(){
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
@@ -622,7 +622,8 @@ async function dash(){
   $$("[data-qr]").forEach(function(b){b.onclick=function(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-qr")})[0];if(s)showQr(s.name,linkFor(s.link_code));
   }});
-  FC.onboarding.mount(obCtx);
+  /* Primeiro a janela de autorização; só depois o checklist e o passeio guiado. */
+  consentP.catch(function(){}).then(function(){FC.onboarding.mount(obCtx)});
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
