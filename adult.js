@@ -941,7 +941,7 @@ function created(name,code,id){
 /* ---------- página do aluno ---------- */
 async function detail(id,day){
   FC.render('<p class="loading">Carregando…</p>');
-  var s,sheets,guards,profs,weak,awards,moves=[];
+  var s,sheets,guards,profs,weak,awards,moves=[],stampBy={};
   try{
     var res=await Promise.all([
       q(sb.from("students").select("*").eq("id",id).single()),
@@ -953,6 +953,8 @@ async function detail(id,day){
     await Promise.all([ensurePub(),loadPlan()]);
     var mv=await sb.from("level_moves").select("day,from_idx,to_idx,kind").eq("student_id",id).order("at",{ascending:false}).limit(8);
     if(!mv.error)moves=mv.data||[];
+    var ds=await sb.from("day_stamps").select("*").eq("student_id",id).order("study_day",{ascending:false}).limit(400);   // motivo do carimbo de cada dia
+    if(!ds.error)(ds.data||[]).forEach(function(r){stampBy[r.study_day]=r});
     profs=await q(sb.from("profiles").select("id,name,role").in("id",guards.map(function(g){return g.user_id})));
   }catch(e){return errScreen(e,function(){detail(id)})}
   var turbo=await turboLoad(id);s._turbo=turbo&&turbo.cfg;   // a Turbo nunca impede o painel de abrir
@@ -1014,12 +1016,49 @@ async function detail(id,day){
   function pl(n,um,varios){return n+" "+(n===1?um:varios)}
   function dayTags(d){
     var x=byDay[d],t=H.tlog&&H.tlog[d],mv=moveBy[d]||[],h="";
-    if(x&&x.stamp)h+='<span class="tag ok">carimbo do dia</span>';
     if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"ok")+'">'+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
     else if(x&&x.adv)h+='<span class="tag ok">subiu de nível</span>';
     if(x&&d<today&&s.study_days.indexOf(FC.dow(d))>=0&&x.sheets.length<quotaOf(s))h+='<span class="tag warn">'+(quotaOf(s)-x.sheets.length===1?"faltou 1 folha":"faltaram "+(quotaOf(s)-x.sheets.length)+" folhas")+'</span>';
     if(t)h+='<span class="tag">Turbo: '+t.ok+' de '+t.rows.length+'</span>';
     return h;
+  }
+  /* Carimbo do dia: a bola carimbada (ganhou) ou só o lugar tracejado (não ganhou). */
+  function dayWon(d){var r=stampBy[d],x=byDay[d];return r?!!r.stamp:!!(x&&x.stamp)}
+  function stampBall(d,sz){
+    var won=dayWon(d);
+    return '<span class="stamp dball'+(won?" on":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon("check"):"")+'</span>';
+  }
+  /* Por que ganhou ou não ganhou o carimbo: texto montado com o que ficou gravado no banco (limites e números do próprio dia). */
+  function stampWhy(d){
+    var r=stampBy[d],x=byDay[d],nome=esc(s.name);
+    if(!r){
+      if(x&&x.stamp)return '<p>'+nome+' ganhou o carimbo deste dia.</p><p class="muted small-t">O detalhe do cálculo deste dia não ficou guardado.</p>';
+      if(x)return '<p>'+nome+' não ganhou o carimbo deste dia.</p><p class="muted small-t">O detalhe do cálculo deste dia não ficou guardado.</p>';
+      return '<p>'+nome+' não estudou neste dia, então não há carimbo.</p>';
+    }
+    var meta=FC.fmtTime(r.target),med=FC.fmtTime(Number(r.avg_secs)),nv=esc(FC.lv(r.level_idx));
+    var ac=r.day_ok+' de '+r.day_total+' contas de primeira ('+r.day_pct+'%)';
+    var nota=r.estimated?'<p class="muted small-t">Este dia é anterior ao registro do motivo. A explicação foi recalculada a partir das folhas feitas, com os limites de hoje.</p>':'';
+    var base='<p class="muted small-t">Regra do carimbo: fechar todas as folhas do dia, acertar de primeira pelo menos <b>'+r.min_pct+'%</b> das contas e ter tempo médio por folha dentro da meta do nível (<b>'+meta+'</b> no nível '+nv+').</p>';
+    if(r.stamp){
+      var t=r.why==="salto"?
+          '<p><b>Ganhou o carimbo, e ainda pulou de nível.</b> Foi o primeiro dia dele no nível '+nv+', e ele fechou as '+r.done+' folhas do dia acertando '+ac+' (o mínimo para pular é '+r.salto_pct+'%), com tempo médio de '+med+' por folha (o máximo para pular é '+FC.fmtTime(r.target*r.salto_tempo/100)+', '+r.salto_tempo+'% da meta).</p>'
+        :r.why==="ouro"?
+          '<p><b>Ganhou o carimbo, e foi dia de ouro: valeu '+r.gained+' carimbos.</b> Ele fechou as '+r.done+' folhas do dia acertando '+ac+' (para o ouro, o mínimo é '+r.ouro_pct+'%), com tempo médio de '+med+' por folha (para o ouro, o máximo é '+FC.fmtTime(r.target*r.ouro_tempo/100)+', '+r.ouro_tempo+'% da meta).</p>'
+        :'<p><b>Ganhou o carimbo.</b> Ele fechou as '+r.done+' folhas do dia, acertou '+ac+' e teve tempo médio de '+med+' por folha, dentro da meta de '+meta+'.</p>';
+      return t+base+nota;
+    }
+    if(r.why==="incompleto"){
+      var falta=r.quota-r.done;
+      return '<p><b>Sem carimbo neste dia.</b> '+nome+' fez '+pl(r.done,"folha","folhas")+' de '+r.quota+', então '+(falta===1?"faltou 1 folha":"faltaram "+falta+" folhas")+' para fechar o dia.</p>'+
+        '<p class="muted small-t">O carimbo só é dado quando a última folha do dia é entregue, e só vale se ele também alcançar o mínimo de acertos e o tempo de cada folha. Enquanto o dia não fecha, ele não é avaliado.</p>'+base+nota;
+    }
+    var fa=r.why!=="tempo",ft=r.why!=="acertos";
+    var lista='<ul class="plain">'+
+      '<li>'+(fa?'Acertos: <b>'+r.day_pct+'%</b> de primeira ('+r.day_ok+' de '+r.day_total+'). Faltou chegar a '+r.min_pct+'%.':'Acertos: <b>'+r.day_pct+'%</b> de primeira. Esta parte estava boa (mínimo de '+r.min_pct+'%).')+'</li>'+
+      '<li>'+(ft?'Tempo: média de <b>'+med+'</b> por folha. A meta do nível '+nv+' é de '+meta+'.':'Tempo: média de <b>'+med+'</b> por folha, dentro da meta de '+meta+'. Esta parte estava boa.')+'</li></ul>';
+    return '<p><b>Sem carimbo neste dia.</b> '+nome+' fechou as '+r.done+' folhas, mas '+(r.why==="acertos_tempo"?"não alcançou nem os acertos nem o tempo":r.why==="acertos"?"não alcançou o mínimo de acertos":"passou do tempo")+' que o carimbo pede.</p>'+lista+
+      '<p class="muted small-t">Fechar o dia, mesmo sem carimbo, vale o pacotinho da perseverança. Amanhã tem outra chance, e as contas erradas voltam nas próximas folhas.</p>'+nota;
   }
   function weekOf(d){return FC.addDays(d,-((FC.dow(d)+6)%7))}
   function histList(){
@@ -1034,11 +1073,11 @@ async function detail(id,day){
       var w=weekOf(d);
       if(w!==wk){wk=w;list+='<div class="eyebrow hweek">'+(w===thisWk?"Esta semana":w===FC.addDays(thisWk,-7)?"Semana passada":"Semana de "+FC.dm(w))+'</div>'}
       var dia='<span class="hday-d"><b>'+FC.DOW[FC.dow(d)]+'</b><small class="num">'+FC.dm(d)+'</small></span>';
-      if(!x&&!t){list+='<div class="hday off">'+dia+'<span class="hday-m"><span class="muted">Não estudou</span></span></div>';continue}
+      if(!x&&!t){list+='<div class="hday off">'+dia+'<span class="hday-m"><span class="muted">Não estudou</span></span>'+stampBall(d,30)+'</div>';continue}
       var pct=x&&x.tot?Math.round(100*x.ok/x.tot):null;
       list+='<button type="button" class="hday" data-day="'+d+'" aria-label="Abrir o dia '+esc(FC.dayLabel(d))+'">'+dia+
         '<span class="hday-m"><b>'+(x?pl(x.sheets.length,"folha","folhas")+' <span class="muted small-t num">· '+FC.fmtTime(x.secs)+'</span>':'Só a Trilha Turbo')+'</b><span class="hday-tags">'+dayTags(d)+'</span></span>'+
-        (pct!=null?'<span class="hday-pct '+(pct>=80?"ok":"warn")+'"><b class="num">'+pct+'%</b><small>de primeira</small></span>':'')+FC.icon("back","hday-go")+'</button>';
+        (pct!=null?'<span class="hday-pct '+(pct>=80?"ok":"warn")+'"><b class="num">'+pct+'%</b><small>de primeira</small></span>':'')+stampBall(d,34)+FC.icon("back","hday-go")+'</button>';
     }
     var stats='<div class="stats fit">'+
       '<div class="panel stat"><div class="eyebrow">Dias com estudo</div><div class="v">'+st.dias+' <small>de '+st.previstos+'</small></div><small>dias previstos no programa</small></div>'+
@@ -1056,6 +1095,9 @@ async function detail(id,day){
     var head='<div class="pagehead"><button type="button" class="link crumb" data-hback>'+FC.icon("back")+'Todos os dias</button></div>'+
       '<div class="pagehead"><h2 class="hd-title">'+esc(FC.dayLabel(d))+'</h2><span class="hday-tags">'+dayTags(d).replace(/<span class="tag">Turbo:[^<]*<\/span>/,"")+'</span></div>';
     if(!x&&!t)return head+'<div class="panel"><p class="muted">'+(H.tlog===null&&turboOn?"Carregando…":"Nenhum registro de estudo neste dia.")+'</p></div>';
+    var won=dayWon(d);
+    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
+      '<button type="button" class="iconbtn" data-why="'+d+'" aria-label="Por que '+(won?"ganhou":"não ganhou")+' o carimbo neste dia?">'+FC.icon("help")+'</button></div>';
     var stats='<div class="stats fit">'+
       '<div class="panel stat"><div class="eyebrow">Folhas</div><div class="v">'+(x?x.sheets.length:0)+'</div></div>'+
       '<div class="panel stat"><div class="eyebrow">Acertos de primeira</div><div class="v">'+(x?x.ok+' <small>de '+x.tot+'</small>':"–")+'</div>'+(pct!=null?'<span class="tag '+(pct>=80?"ok":"warn")+'">'+pct+'%</span>':'')+'</div>'+
@@ -1075,7 +1117,7 @@ async function detail(id,day){
         (bad.length?'<ul class="errlist cols">'+bad.map(li).join("")+'</ul>':'')+
         '<details class="hs-full"><summary>Ver todas as '+t.rows.length+' contas, na ordem em que ele fez</summary><ul class="errlist cols">'+t.rows.map(li).join("")+'</ul></details></div>';
     }
-    return head+stats+folhas+turbo;
+    return head+carimbo+stats+folhas+turbo;
   }
   /* Contas e respostas das folhas do dia: baixa uma vez por dia aberto. */
   async function fillDay(d){
@@ -1103,6 +1145,10 @@ async function detail(id,day){
     var bk=$("[data-hback]",box);
     if(bk)bk.onclick=function(){if(FC.nav.up("/aluno/"+id+"/historico"))return;H.day=null;renderHist();window.scrollTo(0,0);FC.nav.at("/aluno/"+id+"/historico")};
     var mo=$("#histMore",box);if(mo)mo.onclick=function(){H.span+=30;renderHist()};
+    $$("[data-why]",box).forEach(function(b){b.onclick=function(){
+      var d=b.getAttribute("data-why");
+      FC.overlay('<div class="dstamp-why"><div class="dstamp-top">'+stampBall(d,64)+'<div><div class="eyebrow">'+esc(FC.dayLabel(d))+'</div><h2>'+(dayWon(d)?"Por que ganhou o carimbo":"Por que não ganhou o carimbo")+'</h2></div></div>'+stampWhy(d)+'</div>',{button:"Entendi"});
+    }});
     if(H.day)fillDay(H.day);
   }
   var names=guards.map(function(g){

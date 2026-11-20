@@ -1129,3 +1129,16 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .onb-play[hidden]{display:none}
 @media (prefers-reduced-motion:no-preference){.onb-play{animation:onbPulse 1.3s ease-in-out infinite alternate}@keyframes onbPulse{from{transform:scale(1)}to{transform:scale(1.09)}}}
 
+
+/* Carimbo do dia no histórico dos pais: bola carimbada ou só o lugar tracejado */
+.stamp.dball{flex:0 0 auto;display:inline-grid;place-items:center}
+.stamp.dball.on{transform:rotate(-8deg);box-shadow:0 0 0 3px color-mix(in srgb,var(--mint-500) 28%,transparent)}
+.stamp.dball .i{width:60%;height:60%;stroke-width:3}
+.hday>.stamp.dball{margin-left:2px}
+.dstamp-panel{display:flex;align-items:center;gap:14px}
+.dstamp-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dstamp-t b{font-size:1.05rem}
+.dstamp-top{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.dstamp-top h2{margin:0;font-size:1.25rem}
+.dstamp-why p{margin:0 0 10px}
+.dstamp-why ul.plain{margin:0 0 10px}
