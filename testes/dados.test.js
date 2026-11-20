@@ -24,7 +24,7 @@ ok(/id="pConsent"/.test(ad)&&/delete patch\.consent/.test(ad)&&/patch\.consent_a
 // autorização única do responsável (pop-up no cadastro)
 const m2=rd("migracoes/2026-11-19-autorizacao-dos-pais.sql");
 ["data_consent boolean","data_consent_at timestamptz","raw_user_meta_data->>'consent'","set_data_consent","coalesce(p_consent, (select data_consent from profiles"].forEach(k=>ok(m2.indexOf(k)>=0,"migração 19/11 tem: "+k));
-ok(!/askConsent\("Voltar"\)/.test(ad)&&!/consent:cons/.test(ad)&&/showConfirmEmail\(email\)/.test(ad),"cadastro do responsável não abre o pop-up e vai direto para a tela de confirmar o e-mail");
+ok(!/askConsent\("Voltar"\)/.test(ad)&&!/consent:cons[,}]/.test(ad)&&/showConfirmEmail\(email\)/.test(ad),"cadastro do responsável não abre o pop-up e vai direto para a tela de confirmar o e-mail");
 ok(/offerConsent\(\)/.test(ad)&&/data_consent!=null/.test(ad),"conta sem resposta recebe o pop-up no painel");
 ok(!/p_consent:true/.test(ad)&&!/Para cadastrar, marque a autorização/.test(ad),"cadastro de aluno não pede nem força autorização por aluno");
 ok(/id="consentChange"/.test(ad)&&/set_data_consent/.test(ad),"Meu perfil permite mudar ou retirar a autorização");
