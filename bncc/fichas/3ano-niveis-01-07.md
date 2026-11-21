@@ -47,7 +47,7 @@ A numeração do app para estes níveis é 77 a 83 (os números 1 a 7 abaixo sã
   3. **O zero:** números com zero em alguma casa (`3 005`, `3 450`, `3 000`) em cerca de 30% das contas; nesses casos a pergunta pode ter o zero como resposta ("quantas placas de 100 tem o 3 005?" → 0).
 - **Resposta:** digitada.
 - **Contas diferentes:** milhares.
-- **Meta de tempo:** 120 s.
+- **Meta de tempo:** 130 s (era 120; subiu em 21/11/2026 porque o aluno-piloto fez média de 126 e 127 s com 94% e 88% de acertos).
 - **Testes específicos:** o desenho tem exatamente os cubos, placas, barras e quadradinhos do número; cada placa tem 100 divisões e cada barra, 10; a resposta é recalculada; o zero só é resposta quando a pergunta é sobre a casa vazia;
   nada passa da largura do celular.
 

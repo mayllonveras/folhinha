@@ -950,7 +950,7 @@ function gTabGraf(){
 
 FC.G3=[
   {nivel:1,id:"g3n01",nome:"Nível 1 — Ler e escrever números até 9999",hab:["EF03MA01"],meta:130,gen:gLer,ano:3},
-  {nivel:2,id:"g3n02",nome:"Nível 2 — Milhares, centenas, dezenas e unidades (material dourado)",hab:["EF03MA02"],meta:120,gen:gMaterial3,ano:3},
+  {nivel:2,id:"g3n02",nome:"Nível 2 — Milhares, centenas, dezenas e unidades (material dourado)",hab:["EF03MA02"],meta:130,gen:gMaterial3,ano:3},
   {nivel:3,id:"g3n03",nome:"Nível 3 — Valor posicional e o zero",hab:["EF03MA01","EF03MA02"],meta:120,gen:gPosicional3,ano:3},
   {nivel:4,id:"g3n04",nome:"Nível 4 — Decompor números até 9999",hab:["EF03MA02"],meta:120,gen:gDecompor4,ano:3},
   {nivel:5,id:"g3n05",nome:"Nível 5 — Comparar e ordenar números até 9999",hab:["EF03MA01"],meta:110,gen:gOrdem4,ano:3},
