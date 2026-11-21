@@ -15,8 +15,8 @@ function bar(email){
 }
 function bindBar(){var b=$("#logout");if(b)b.onclick=async function(){await sb.auth.signOut();login()}}
 
-/* Endereços da administração: #/ (alunos), #/contas, #/cupons, #/parametros, #/exercicios. */
-var TABS_ADM=["alunos","contas","cupons","parametros","exercicios"],ADMU=null;
+/* Endereços da administração: #/ (alunos), #/contas, #/cupons, #/parametros, #/exercicios, #/folhas. */
+var TABS_ADM=["alunos","contas","cupons","parametros","exercicios","folhas"],ADMU=null;
 function admPath(tab){return tab==="alunos"?"/":"/"+tab}
 function admRoute(path){
   var t=path==="/"?"alunos":path.slice(1);
@@ -104,23 +104,109 @@ function exDump(n){
   });
   return "[\n"+out.join(",\n")+"\n]";
 }
+/* Copia um texto para a área de transferência; se o navegador não deixar, mostra o texto já selecionado. */
+function copiar(txt,box,msg){
+  function manual(){
+    box.innerHTML='<textarea id="exTxt" class="adm-dump" readonly rows="8" aria-label="Texto para copiar"></textarea>';
+    var ta=$("#exTxt");ta.value=txt;ta.focus();ta.select();
+    FC.toast("Não consegui copiar sozinho: o texto está selecionado, é só copiar (Ctrl+C).",true);
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){box.innerHTML="";FC.toast(msg)},manual);
+  else manual();
+}
 function bindEx(){
   var cp=$("#exCopy");
   if(cp)cp.onclick=function(){
-    var n=Number($("#exN").value)||5,txt=exDump(n),box=$("#exOut");
-    function manual(){
-      box.innerHTML='<textarea id="exTxt" class="adm-dump" readonly rows="8" aria-label="Dados dos exercícios"></textarea>';
-      var ta=$("#exTxt");ta.value=txt;ta.focus();ta.select();
-      FC.toast("Não consegui copiar sozinho: o texto está selecionado, é só copiar (Ctrl+C).",true);
-    }
-    var msg="Copiado: "+catalogo().length+" geradores, até "+n+" exemplos de cada ("+Math.round(txt.length/1024)+" KB).";
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){box.innerHTML="";FC.toast(msg)},manual);
-    else manual();
+    var n=Number($("#exN").value)||5,txt=exDump(n);
+    copiar(txt,$("#exOut"),"Copiado: "+catalogo().length+" geradores, até "+n+" exemplos de cada ("+Math.round(txt.length/1024)+" KB).");
   };
   $$("[data-again]").forEach(function(b){b.onclick=function(){
     var e=porId(b.getAttribute("data-again"));if(!e)return;
     b.closest(".adm-excard").innerHTML=exCard(e);bindEx();
   }});
+}
+
+/* ---------- gerador de folhas: as contas de cada nível, como o aluno vai ver, e a rampa de dificuldade ----------
+   Usa FC.makeItems, o mesmo motor da folha do aluno. Cada conta tem uma nota de dificuldade em percentil dentro do próprio nível
+   (0% = a mais fácil que o nível sorteia, 100% = a mais difícil). A folha do dia vai de 1 a 5 e cada uma tem uma faixa de dificuldade:
+   a 1ª sorteia das mais fáceis, a 5ª das mais difíceis (FC.plano.BANDAS). Dentro da folha as contas vão do mais fácil ao mais difícil. */
+var FOLHA={lv:0,rev:false,sheet:0,sheets:null};
+function pcN(p){return Math.round(p*100)}
+function bandaTxt(k){var b=FC.plano.BANDAS[k];return pcN(b[0])+"% a "+pcN(b[1])+"%"}
+function nivelTipo(L,it){try{var t=L.espec.tipos[L.espec.tipo(it)];return t||""}catch(e){return ""}}
+function gerarFolhas(idx,rev){
+  var out=[];
+  for(var k=0;k<FC.plano.CICLO;k++)out.push(FC.makeItems(idx,null,{sheetNo:k,semRevisao:!rev}));
+  return out;
+}
+/* Colunas da rampa: altura = dificuldade. Conta de revisão (de outro nível) fica tracejada, sem altura. */
+function rampa(items,alto,numerar){
+  return '<span class="adm-strip'+(numerar?" big":"")+'" style="height:'+alto+'px">'+items.map(function(it,i){
+    var h=it._p==null?null:Math.max(3,Math.round(it._p*(alto-(numerar?18:0))));
+    return '<span class="adm-col"><i'+(h==null?' class="rev" style="height:'+Math.round(alto*.3)+'px"':' style="height:'+h+'px"')+' title="'+(i+1)+'ª conta: '+(h==null?"revisão":pcN(it._p)+"%")+'"></i>'+(numerar?'<em>'+(i+1)+'</em>':'')+'</span>'}).join("")+'</span>';
+}
+function folhasOpcoes(){
+  var out="",ano=null;
+  FC.LEVELS.forEach(function(l,i){
+    if(l.ano!==ano){out+=(ano!==null?'</optgroup>':'')+'<optgroup label="'+esc(FC.ordAno(l.ano))+'">';ano=l.ano}
+    out+='<option value="'+i+'"'+(i===FOLHA.lv?" selected":"")+'>Nível '+esc(l.id)+' — '+esc(l.name)+'</option>';
+  });
+  return out+'</optgroup>';
+}
+function folhasHtml(){
+  if(!FC.LEVELS.length||!FC.plano)return '<p class="msg bad">A grade de níveis não carregou.</p>';
+  return '<p class="muted small-t">Escolha o nível e toque em “Gerar folha”: aparecem as 10 contas, com a resposta certa, a dificuldade de cada uma e a rampa da folha. '+
+    'A dificuldade é um percentil dentro do próprio nível: 0% é a conta mais fácil que o nível sorteia e 100% a mais difícil. '+
+    'No app a folha do dia vai de 1 a 5, cada vez mais difícil; por isso o botão gera as 5 de uma vez e você alterna entre elas.</p>'+
+    '<div class="adm-extools"><label class="field">Nível<select id="fLv">'+folhasOpcoes()+'</select></label>'+
+      '<label class="inline-chk"><input type="checkbox" id="fRev"'+(FOLHA.rev?" checked":"")+'> Com 2 contas de revisão, como no app</label>'+
+      '<button class="btn" id="fGo" type="button">Gerar folha</button></div>'+
+    '<div id="fOut">'+folhaSaida()+'</div>';
+}
+function folhaSaida(){
+  if(!FOLHA.sheets)return "";
+  var L=FC.LEVELS[FOLHA.lv],k=FOLHA.sheet,items=FOLHA.sheets[k];
+  var nav=FOLHA.sheets.map(function(s,i){
+    return '<button type="button" class="adm-sheetrow'+(i===k?" on":"")+'" data-fs="'+i+'" aria-pressed="'+(i===k)+'" aria-label="Folha '+(i+1)+' do dia, faixa '+bandaTxt(i)+'">'+
+      '<b>Folha '+(i+1)+'</b>'+rampa(s,34,false)+'<small class="muted">faixa '+bandaTxt(i)+'</small></button>'}).join("");
+  var cards=items.map(function(it,i){
+    var tipo=it._rev?"":nivelTipo(L,it);
+    return '<section class="panel adm-q"><div class="adm-qh"><b class="adm-qn">'+(i+1)+'</b>'+
+      (it._rev?'<span class="tag">revisão de nível anterior</span>':(tipo?'<span class="tag">'+esc(tipo)+'</span>':''))+
+      (it._p==null?'':'<span class="adm-diff" title="Dificuldade dentro do nível"><span class="adm-bar"><i style="width:'+pcN(it._p)+'%"></i></span><em>'+pcN(it._p)+'%</em></span>')+'</div>'+
+      FC.itemStatic(it)+'</section>'}).join("");
+  return '<div class="panel adm-folha"><div class="eyebrow">Nível '+esc(L.id)+' · '+esc(FC.ordAno(L.ano))+' · '+esc(L.group)+'</div><h2>'+esc(L.name)+'</h2>'+
+    '<p class="small-t muted">Meta de tempo: '+L.target+' s para as 10 contas'+(L.hab&&L.hab.length?' · Habilidades: '+esc(L.hab.join(" · ")):'')+'</p>'+
+    (L.hint?'<p class="small-t">Dica que o aluno vê: '+esc(L.hint)+'</p>':'')+
+    (L.intro?'<p class="small-t">Texto de abertura da folha: '+esc(L.intro)+'</p>':'')+'</div>'+
+    '<h3>Rampa de dificuldade</h3><p class="muted small-t">Cada coluna é uma conta, na ordem da folha; quanto mais alta, mais difícil dentro do nível. Toque numa folha para ver as contas dela.</p>'+
+    '<div class="adm-sheets">'+nav+'</div>'+
+    '<div class="panel adm-folha"><div class="adm-qtop"><div><b>Folha '+(k+1)+' do dia</b> <span class="muted small-t">faixa de dificuldade sorteada: '+bandaTxt(k)+'</span></div>'+
+      '<div class="actions"><button class="btn ghost small" id="fAgain" type="button">Gerar de novo</button><button class="btn ghost small" id="fCopy" type="button">Copiar em texto</button></div></div>'+
+      rampa(items,110,true)+'</div><div id="fTxt"></div><div class="adm-qs">'+cards+'</div>';
+}
+/* Dados da folha em texto (JSON, uma conta por linha), para colar numa conversa e conferir. */
+function folhaDump(){
+  var L=FC.LEVELS[FOLHA.lv],items=FOLHA.sheets[FOLHA.sheet];
+  return '{"nivel":'+JSON.stringify(L.id)+',"nome":'+JSON.stringify(L.name)+',"folha":'+(FOLHA.sheet+1)+',"faixa":'+JSON.stringify(bandaTxt(FOLHA.sheet))+',"contas":[\n'+items.map(function(it,i){
+    var o={n:i+1};
+    if(it._rev)o.revisao=true;else{var t=nivelTipo(L,it);if(t)o.tipo=t;if(it._p!=null)o.dificuldade=pcN(it._p)+"%"}
+    o.pre=it.pre;if(it.post)o.post=it.post;o.a=it.a;
+    if(it.extra&&it.extra.opts)o.certa=FC.answerText(it,it.a);
+    if(it.extra)o.extra=it.extra;
+    return "  "+JSON.stringify(o)}).join(",\n")+'\n]}';
+}
+function bindFolhas(){
+  var go=$("#fGo");if(!go)return;
+  function pinta(){$("#fOut").innerHTML=folhaSaida();bindFolhas()}
+  function gera(){
+    FOLHA.lv=Number($("#fLv").value)||0;FOLHA.rev=$("#fRev").checked;
+    FOLHA.sheets=gerarFolhas(FOLHA.lv,FOLHA.rev);pinta();
+  }
+  go.onclick=function(){FOLHA.sheet=0;gera()};
+  $$("[data-fs]").forEach(function(b){b.onclick=function(){FOLHA.sheet=Number(b.getAttribute("data-fs"));pinta()}});
+  var ag=$("#fAgain");if(ag)ag.onclick=gera;
+  var cp=$("#fCopy");if(cp)cp.onclick=function(){var txt=folhaDump();copiar(txt,$("#fTxt"),"Folha copiada ("+Math.round(txt.length/1024*10)/10+" KB).")};
 }
 
 /* ---------- parâmetros do avanço (valem para todos os alunos) ---------- */
@@ -398,14 +484,15 @@ function show(user){
       '<button class="tab'+(TAB==="contas"?" on":"")+'" data-t="contas">Contas ('+DATA.accounts.length+')</button>'+
       (CUP?'<button class="tab'+(TAB==="cupons"?" on":"")+'" data-t="cupons">Cupons ('+CUP.length+')</button>':'')+
       '<button class="tab'+(TAB==="parametros"?" on":"")+'" data-t="parametros">Parâmetros</button>'+
-      '<button class="tab'+(TAB==="exercicios"?" on":"")+'" data-t="exercicios">Exercícios</button></div>'+
-    (TAB==="parametros"?paramsHtml():TAB==="exercicios"?exHtml():TAB==="cupons"?cuponsHtml():
+      '<button class="tab'+(TAB==="exercicios"?" on":"")+'" data-t="exercicios">Exercícios</button>'+
+      '<button class="tab'+(TAB==="folhas"?" on":"")+'" data-t="folhas">Folhas</button></div>'+
+    (TAB==="parametros"?paramsHtml():TAB==="exercicios"?exHtml():TAB==="folhas"?folhasHtml():TAB==="cupons"?cuponsHtml():
     '<label class="field">Buscar<input id="aFind" type="search" autocomplete="off" value="'+esc(FILTER)+'" placeholder="nome ou e-mail"></label>'+
     '<div id="admBody">'+(TAB==="alunos"?studentsTable():accountsTable())+'</div>')+'</div>');
   bindBar();
   $("#reload").onclick=function(){load(user)};
   $$(".tab").forEach(function(b){b.onclick=function(){TAB=b.getAttribute("data-t");show(user)}});
-  bindParams(user);bindLevels();bindEx();bindAccounts(user);bindCupons(user);
+  bindParams(user);bindLevels();bindEx();bindFolhas();bindAccounts(user);bindCupons(user);
   if($("#aFind"))$("#aFind").oninput=function(){FILTER=this.value.trim().toLowerCase();$("#admBody").innerHTML=TAB==="alunos"?studentsTable():accountsTable();bindAccounts(user)};
 }
 })();

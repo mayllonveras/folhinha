@@ -641,6 +641,27 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .figsvg{color:var(--ink)}
 .adm-extools{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:10px 0 4px}
 .adm-dump{width:100%;font-family:var(--font-num);font-size:.8rem;margin-top:8px}
+.adm-folha{margin-top:10px}
+.adm-qtop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.adm-sheets{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}
+.adm-sheetrow{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:var(--surface);border:2px solid transparent;border-radius:14px;padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit;text-align:left}
+.adm-sheetrow.on{border-color:var(--primary)}
+.adm-strip{display:inline-flex;align-items:flex-end;gap:3px}
+.adm-strip.big{display:flex;gap:6px;width:100%}
+.adm-strip.big .adm-col{flex:1;min-width:0}
+.adm-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.adm-col i{display:block;width:9px;background:var(--primary);border-radius:3px 3px 0 0}
+.adm-strip.big .adm-col i{width:100%;max-width:34px}
+.adm-col i.rev{background:transparent;border:2px dashed var(--muted)}
+.adm-col em{font-style:normal;font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1}
+.adm-qs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.adm-q{display:flex;flex-direction:column;gap:6px}
+.adm-qh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.adm-qn{font-size:1.1rem}
+.adm-diff{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.adm-diff em{font-style:normal;font-size:.8rem;font-weight:600;min-width:2.6em;text-align:right}
+.adm-bar{display:inline-block;width:70px;height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.adm-bar i{display:block;height:100%;background:var(--primary)}
 
 /* resumo do pacote de boas-vindas: 10 figurinhas em 3 colunas, sem os detalhes */
 .welcome-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:48vh;overflow:auto}

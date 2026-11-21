@@ -195,10 +195,10 @@ function reviewLevel(levelIdx,teto){
   return Math.floor(Math.random()*levelIdx);
 }
 FC.reviewLevel=reviewLevel;
-/* levelIdx: nível atual; keep: contas de reforço (até 4); opts.teto: folha de revisão do teto. */
+/* levelIdx: nível atual; keep: contas de reforço (até 4); opts.teto: folha de revisão do teto; opts.semRevisao: as 10 contas são do nível (só a administração usa, para conferir o nível). */
 FC.makeItems=function(levelIdx,keep,opts){
   opts=opts||{};
-  var teto=!!opts.teto&&levelIdx>0,revN=teto?10:(levelIdx>0?2:0);
+  var teto=!!opts.teto&&levelIdx>0,revN=teto?10:(levelIdx>0&&!opts.semRevisao?2:0);
   var items=(keep||[]).slice(0,teto?4:10-revN-2).map(FC.plainItem),seen={},g=0,tries=0;
   items.forEach(function(p){seen[itemKey(p)]=1});
   var added=0;
