@@ -1138,7 +1138,7 @@ function showQ(i){
     next.textContent=corr?(pos>=pend.length-1||pos<0?"Conferir correções":"Próxima"):(i>=n-1?"Revisar":"Próxima");
   }
   updateMapa();saveDraftSoon();window.scrollTo(0,0);
-  if(i<n){startDwell(i);setTimeout(function(){if(cur&&cur.q===i&&!cur.pauseAt)focusItem(i)},30)}
+  if(i<n){startDwell(i);if(!cur.pauseAt)focusItem(i);setTimeout(function(){if(cur&&cur.q===i&&!cur.pauseAt&&document.activeElement!==$("#in"+i))focusItem(i)},30)}   // foco já na conta, no mesmo toque (o teclado abre sem o aluno clicar)
 }
 function stepNext(){
   if(!cur||cur.modo!=="uma")return;
@@ -1223,7 +1223,7 @@ function renderSheet(){
 function focusItem(i){
   var it=cur&&cur.items[i];if(!it)return;
   var el=(it.extra&&it.extra.opts)?$("#r"+i+" .opt"):$("#in"+i);
-  if(el&&el.focus)el.focus();
+  if(el&&el.focus){try{el.focus({preventScroll:true})}catch(e){el.focus()}}
 }
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
