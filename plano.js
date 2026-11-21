@@ -31,7 +31,7 @@ FC.makeItems=function(levelIdx,keep,opts){
   var L=FC.LEVELS[levelIdx];
   if(!L||!L.espec||opts.teto||typeof opts.sheetNo!=="number")return base(levelIdx,keep,opts);
   var E=L.espec,T=E.tipos.length,k=((opts.sheetNo%CICLO)+CICLO)%CICLO,banda=BANDAS[k],itemKey=FC.itemKey;
-  var revN=levelIdx>0?2:0,extras=(keep||[]).slice(0,10-revN-2).map(FC.plainItem),seen={},cnt={},g=0;
+  var revN=levelIdx>0&&!opts.semRevisao?2:0,extras=(keep||[]).slice(0,10-revN-2).map(FC.plainItem),seen={},cnt={},g=0;
   extras.forEach(function(p){seen[itemKey(p)]=1});
   var rev=[];
   while(rev.length<revN&&g++<revN*40){
