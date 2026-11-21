@@ -72,6 +72,7 @@ FC.err=function(e){
     ["amizade_invalida","Essa amizade não existe mais."],
     ["sem_repetida","Você não tem mais essa figurinha repetida."],
     ["amigo_ja_tem","Seu amigo já conseguiu essa figurinha."],
+    ["destino_fora_da_mesa","A figurinha só pode chegar em um álbum que está na mesa. Troque o álbum de destino ou mude a mesa."],
     ["amigo_sem_repetida","Seu amigo não tem mais essa repetida."],
     ["voce_ja_tem","Você já conseguiu essa figurinha."],
     ["pedido_repetido","Você já fez esse mesmo pedido de troca."],
@@ -132,7 +133,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v100";
+FC.VERSAO="folhinha-v101";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){

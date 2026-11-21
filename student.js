@@ -321,7 +321,9 @@ async function friendView(id){
 }
 /* ---------- trocas de figurinhas repetidas ---------- */
 /* Fluxo: Trocas > Nova troca > escolher o amigo > escolher uma repetida minha que ele ainda não tem (e cujo álbum ele tem)
-   > escolher uma repetida dele que ainda não tenho (e cujo álbum eu tenho) > pedir. O amigo aceita ou recusa na aba Trocas.
+   > escolher uma repetida dele que ainda não tenho > pedir. O amigo aceita ou recusa na aba Trocas.
+   Conversão por número: os álbuns dos dois podem ser diferentes. Vale o NÚMERO da figurinha: a repetida vira a mesma nº no álbum de quem recebe
+   (item {theme, slot, to}: theme = álbum de origem, to = álbum de destino; sem to = o mesmo álbum).
    O aviso chega em tempo real, mas só aparece ENTRE as folhas (nunca com a folha aberta). */
 var TR={sub:"repetidas",step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
 function stk(t,sl,badge){return FC.stickerHtml(t,sl,{noflip:true,badge:badge||0})}
@@ -329,16 +331,23 @@ function tradesPane(){return '<div id="trBox"><p class="loading">Carregando…</
 function canNotify(){return !busy&&(!cur||cur.secs!=null)}
 /* Valor de cada figurinha na troca: comum 1, rara 2, ultrarrara 3. Precisa bater com public._tier_value no banco. */
 var TR_VAL={comum:1,rara:2,ultra:3};
-function valOf(x){return TR_VAL[FC.tierOf(x.theme,x.slot)]||1}
+/* O valor é o da carta que CHEGA (álbum de destino), o mesmo que public._trade_side/_tier_value usam no banco. */
+function dstOf(x){return x.to||x.theme}
+function valOf(x){return TR_VAL[FC.tierOf(dstOf(x),x.slot)]||1}
 function sumVal(list){return (list||[]).reduce(function(a,x){return a+valOf(x)},0)}
-function setHtml(list,label){
-  return '<div class="tr-set"><div class="muted small-t center">'+label+' · valor '+sumVal(list)+'</div><div class="tr-set-row">'+list.map(function(x){return stk(x.theme,x.slot)}).join("")+'</div></div>';
+/* recv: a carta aparece como ficará no meu álbum (destino). give: é a minha carta de origem. Convertidas ganham a linha "nº 15: Gatinhos → Bandeiras". */
+function convNote(list){
+  var c=(list||[]).filter(function(x){return dstOf(x)!==x.theme});
+  return c.length?'<div class="muted small-t center tr-conv">'+c.map(function(x){return 'nº '+(x.slot+1)+': '+esc(FC.theme(x.theme).name)+' → '+esc(FC.theme(dstOf(x)).name)}).join('<br>')+'</div>':"";
 }
-/* recv e give são listas de {theme,slot}. */
+function setHtml(list,label,recv){
+  return '<div class="tr-set"><div class="muted small-t center">'+label+' · valor '+sumVal(list)+'</div><div class="tr-set-row">'+list.map(function(x){return recv?stk(dstOf(x),x.slot):stk(x.theme,x.slot)}).join("")+'</div>'+convNote(list)+'</div>';
+}
+/* recv e give são listas de {theme,slot,to}. */
 function pairHtml(recv,give){
-  return '<div class="tr-swap">'+setHtml(recv,"Você recebe")+FC.icon("swap")+setHtml(give,"Você dá")+'</div>';
+  return '<div class="tr-swap">'+setHtml(recv,"Você recebe",true)+FC.icon("swap")+setHtml(give,"Você dá",false)+'</div>';
 }
-function namesOf(list){return (list||[]).map(function(x){return nameOf(x.theme,x.slot)}).join(", ")}
+function namesOf(list,recv){return (list||[]).map(function(x){return nameOf(recv?dstOf(x):x.theme,x.slot)}).join(", ")}
 function nameOf(t,sl){return FC.stickerInfo(t,sl).name}
 async function trLoad(){
   if(!S.token)return;
@@ -404,7 +413,7 @@ async function trAnnounce(){
   if(d.answers.length){
     var got=0;
     d.answers.forEach(function(a){
-      if(a.status==="aceita"){got++;FC.toast(a.name+" aceitou a troca! Você ganhou "+namesOf(a.wants)+".")}
+      if(a.status==="aceita"){got++;FC.toast(a.name+" aceitou a troca! Você ganhou "+namesOf(a.wants,true)+".")}
       else if(a.status==="recusada")FC.toast(a.name+" não quis trocar desta vez.");
       else FC.toast("A troca com "+a.name+" não valeu mais.",true);
     });
@@ -432,7 +441,7 @@ function trRender(){
   var rep=dups.length?'<div class="album gap">'+dups.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>':
     '<p class="muted small-t gap">Você ainda não tem repetidas. Quando um pacotinho trouxer uma figurinha que você já tem, ela aparece aqui, pronta para trocar.</p>';
   box.innerHTML=
-    '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
+    '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem. Os álbuns podem ser diferentes: vale o número da figurinha.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
     '<section class="panel"><div class="album-tabs" role="tablist">'+
       '<button type="button" class="chip-btn'+(TR.sub==="pedidos"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="pedidos")+'" data-trsub="pedidos">Pedidos ('+(d.incoming.length+d.outgoing.length)+')'+(d.incoming.length?'<span class="tr-dot">'+d.incoming.length+'</span>':'')+'</button>'+
@@ -459,7 +468,7 @@ function histHtml(){
   return h.map(function(x){
     return '<div class="tr-req"><div class="muted small-t">'+FC.dm(String(x.at).slice(0,10))+' · com <b>'+esc(x.friend)+'</b></div>'+
       pairHtml(x.got,x.gave)+
-      '<div class="muted small-t center">Você deu '+esc(namesOf(x.gave))+' e recebeu '+esc(namesOf(x.got))+'.</div></div>'}).join("");
+      '<div class="muted small-t center">Você deu '+esc(namesOf(x.gave))+' e recebeu '+esc(namesOf(x.got,true))+'.</div></div>'}).join("");
 }
 async function trAnswer(id,ok,btn){
   $$("#trBox button").forEach(function(b){b.disabled=true});
@@ -491,27 +500,41 @@ function trFlow(){
   if(TR.step==="friend"||!o)return;
   if(!o.give.length||!o.get.length){
     box.innerHTML=back("Escolher outro amigo")+'<section class="panel"><b>Ainda não dá para trocar com '+nm+'</b><p class="muted small-t gap">'+
-      (!o.give.length?'Nenhuma das suas repetidas serve para '+nm+': ele já tem todas, ou não tem o álbum delas. ':'')+
-      (!o.get.length?nm+' não tem repetidas que faltam para você, nos álbuns que vocês dois têm. ':'')+'Volte depois de abrir mais pacotinhos.</p></section>';
+      (!o.give.length?'Nenhuma das suas repetidas serve para '+nm+': ele já tem o número de todas elas nos álbuns da mesa dele. ':'')+
+      (!o.get.length?nm+' não tem repetidas com números que faltam nos álbuns da sua mesa. ':'')+'Volte depois de abrir mais pacotinhos.</p></section>';
     $("#trBack").onclick=function(){TR.step="friend";trFlow()};return;
   }
-  /* Monta a troca: escolhe-se 1 ou mais figurinhas de cada lado (até 6); os dois lados precisam valer o mesmo. */
+  /* Monta a troca: escolhe-se 1 ou mais figurinhas de cada lado (até 6); os dois lados precisam valer o mesmo.
+     TR.sel[lado][tema|nº]=álbum de destino escolhido (o do mesmo tema vem primeiro; se houver mais de um destino, aparece um seletor). */
   TR.sel=TR.sel||{give:{},want:{}};
-  function grid(side,list){
-    return '<div class="album gap">'+list.map(function(x,i){
-      var on=TR.sel[side][x.theme+"|"+x.slot];
-      return '<button type="button" class="tr-pick'+(on?" on":"")+'" data-side="'+side+'" data-i="'+i+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+(side==="give"?"Oferecer ":"Pedir ")+esc(nameOf(x.theme,x.slot))+', valor '+valOf(x)+'">'+stk(x.theme,x.slot,x.spare)+'</button>'}).join("")+'</div>';
+  var KEY=function(x){return x.theme+"|"+x.slot};
+  var listOf=function(side){return side==="give"?o.give:o.get};
+  function asItem(x,dst){return {theme:x.theme,slot:x.slot,to:dst}}
+  function chosen(side){return listOf(side).filter(function(x){return TR.sel[side][KEY(x)]}).map(function(x){return asItem(x,TR.sel[side][KEY(x)])})}
+  /* destino livre: o primeiro da lista que nenhuma outra carta escolhida deste lado já usa nesse número */
+  function freeDst(side,x){
+    var used={};listOf(side).forEach(function(y){var d=TR.sel[side][KEY(y)];if(d&&y.slot===x.slot&&KEY(y)!==KEY(x))used[d]=1});
+    for(var i=0;i<x.to.length;i++)if(!used[x.to[i]])return x.to[i];
+    return null;
   }
+  function tile(side,x,i){
+    var d=TR.sel[side][KEY(x)],on=!!d,dd=d||x.to[0],v=valOf(asItem(x,dd)),conv=dd!==x.theme;
+    var sel=on&&x.to.length>1?'<label class="tr-dest small-t">Vira no álbum: <select data-side="'+side+'" data-i="'+i+'">'+x.to.map(function(t){return '<option value="'+esc(t)+'"'+(t===dd?" selected":"")+'>'+esc(FC.theme(t).name)+'</option>'}).join("")+'</select></label>':"";
+    return '<div class="tr-cell"><button type="button" class="tr-pick'+(on?" on":"")+'" data-side="'+side+'" data-i="'+i+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+(side==="give"?"Oferecer ":"Pedir ")+esc(nameOf(x.theme,x.slot))+', número '+(x.slot+1)+(conv?', vira número '+(x.slot+1)+' do álbum '+esc(FC.theme(dd).name):"")+', valor '+v+'">'+stk(x.theme,x.slot,x.spare)+'</button>'+
+      '<div class="muted small-t center tr-cv">'+(conv?'vira nº '+(x.slot+1)+' de '+esc(FC.theme(dd).name)+' · ':'')+'vale '+v+'</div>'+sel+'</div>';
+  }
+  function grid(side){return '<div class="album gap tr-grid">'+listOf(side).map(function(x,i){return tile(side,x,i)}).join("")+'</div>'}
   box.innerHTML=back("Escolher outro amigo")+
-    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Valores: <b>comum vale 1</b>, <b>rara vale 2</b> e <b>ultrarrara vale 3</b>. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 2 comuns.</p></section>'+
-    '<section class="panel"><b>1. O que você oferece</b><p class="muted small-t">Suas repetidas que '+nm+' ainda não tem.</p>'+grid("give",o.give)+'</section>'+
-    '<section class="panel"><b>2. O que você quer de '+nm+'</b><p class="muted small-t">Repetidas dele que ainda faltam para você.</p>'+grid("want",o.get)+'</section>'+
+    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Os álbuns de vocês podem ser diferentes: vale o <b>número</b> da figurinha. Se você der a nº 15 de um álbum, ela vira a nº 15 no álbum de '+nm+' (e o contrário). A figurinha que chega só entra em álbum que está na <b>mesa</b>, não na gaveta. Valores: <b>comum vale 1</b>, <b>rara vale 2</b> e <b>ultrarrara vale 3</b>, contando a figurinha que chega. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 2 comuns.</p></section>'+
+    '<section class="panel"><b>1. O que você oferece</b><p class="muted small-t">Suas repetidas (de qualquer álbum) com um número que '+nm+' ainda não tem na mesa dele.</p><div id="trGive"></div></section>'+
+    '<section class="panel"><b>2. O que você quer de '+nm+'</b><p class="muted small-t">Repetidas dele com um número que ainda falta nos álbuns da sua mesa.</p><div id="trWant"></div></section>'+
     '<section class="panel center tr-sum" id="trSum"></section>';
   $("#trBack").onclick=function(){TR.sel=null;TR.step="friend";trFlow()};
-  function chosen(side,list){return list.filter(function(x){return TR.sel[side][x.theme+"|"+x.slot]})}
   function summary(){
-    var g=chosen("give",o.give),w=chosen("want",o.get),vg=sumVal(g),vw=sumVal(w),ok=vg>0&&vg===vw,msg;
-    if(!g.length&&!w.length)msg="Escolha as figurinhas dos dois lados.";
+    var g=chosen("give"),w=chosen("want"),vg=sumVal(g),vw=sumVal(w),ok=vg>0&&vg===vw,msg;
+    var dup=function(l){var k={};return l.some(function(x){var z=x.to+"|"+x.slot;if(k[z])return true;k[z]=1;return false})};
+    if(dup(g)||dup(w)){ok=false;msg="Duas figurinhas cairiam na mesma posição do mesmo álbum. Troque o álbum de destino de uma delas."}
+    else if(!g.length&&!w.length)msg="Escolha as figurinhas dos dois lados.";
     else if(!g.length)msg="Escolha o que você oferece.";
     else if(!w.length)msg="Escolha o que você quer.";
     else if(vg>vw)msg="Você oferece "+(vg-vw)+" ponto"+(vg-vw>1?"s":"")+" a mais. Peça mais figurinhas para igualar.";
@@ -523,23 +546,29 @@ function trFlow(){
       '<p class="muted small-t">'+nm+' vai receber o aviso e pode aceitar ou recusar. O pedido vale por 7 dias.</p>';
     $("#trSend").onclick=async function(){
       this.disabled=true;
-      var pick=function(l){return l.map(function(x){return{theme:x.theme,slot:x.slot}})};
       try{
-        await rpc("student_trade_propose",{p_token:S.token,p_friendship:TR.fid,p_gives:pick(g),p_wants:pick(w)});
+        await rpc("student_trade_propose",{p_token:S.token,p_friendship:TR.fid,p_gives:g,p_wants:w});
         FC.toast("Pedido enviado para "+TR.fname+"!");TR.step="home";TR.sel=null;
       }catch(e){FC.toast(FC.err(e),true);this.disabled=false;return}
       trLoad();trRender();
     };
   }
-  $$(".tr-pick",box).forEach(function(b){b.onclick=function(){
-    var side=b.getAttribute("data-side"),x=(side==="give"?o.give:o.get)[Number(b.getAttribute("data-i"))],k=x.theme+"|"+x.slot;
-    if(TR.sel[side][k]){delete TR.sel[side][k]}
-    else if(Object.keys(TR.sel[side]).length>=6){FC.toast("No máximo 6 figurinhas de cada lado.",true);return}
-    else TR.sel[side][k]=1;
-    b.classList.toggle("on",!!TR.sel[side][k]);b.setAttribute("aria-pressed",TR.sel[side][k]?"true":"false");
+  function paint(){
+    $("#trGive").innerHTML=grid("give");$("#trWant").innerHTML=grid("want");
+    $$(".tr-pick",box).forEach(function(b){b.onclick=function(){
+      var side=b.getAttribute("data-side"),x=listOf(side)[Number(b.getAttribute("data-i"))],k=KEY(x);
+      if(TR.sel[side][k])delete TR.sel[side][k];
+      else if(Object.keys(TR.sel[side]).length>=6){FC.toast("No máximo 6 figurinhas de cada lado.",true);return}
+      else TR.sel[side][k]=freeDst(side,x)||x.to[0];
+      paint();
+    }});
+    $$(".tr-dest select",box).forEach(function(se){se.onchange=function(){
+      var side=se.getAttribute("data-side"),x=listOf(side)[Number(se.getAttribute("data-i"))];
+      TR.sel[side][KEY(x)]=se.value;paint();
+    }});
     summary();
-  }});
-  summary();
+  }
+  paint();
 }
 /* ---------- álbuns e pacotinhos ---------- */
 function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}
