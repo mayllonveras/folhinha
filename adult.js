@@ -12,8 +12,8 @@ function anoLine(s,L,today,semHab){
   var d=L.ano-a;
   return "Cursa o "+FC.ordAno(a)+" · estudando o "+FC.ordAno(L.ano)+(d>0?" (+"+d+")":d<0?" (−"+(-d)+")":"")+h;
 }
-/* Limites mínimos do programa: 5 folhas por dia e 3 dias por semana. */
-var MIN_SHEETS=5,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
+/* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
+var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
 function deskLimit(){return (PUB&&PUB.limite_mesa)||1}
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
@@ -702,7 +702,7 @@ var PF_FREE=false,PF_ORIG=0;   /* o formulário aberto é de um aluno do plano G
 function albunsTxt(){var n=planLim("albuns_gratis",1);return n+" álbum"+(n===1?"":"s")}
 function programFields(s){
   PF_FREE=s?studentFree(s):!!(PLAN&&!PLAN.vip);PF_ORIG=s&&s.sticker_themes?s.sticker_themes.length:0;
-  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:5,sticker_themes:["bandeiras"]};
+  var v=s||{name:"",level_idx:0,start_date:FC.today(),study_days:[1,2,3,4,5],sheets_per_day:3,sticker_themes:["bandeiras"]};
   var lv=s?"":'<option value="" selected>Início do ano escolhido (recomendado)</option>',lastG=null;
   FC.LEVELS.forEach(function(l,i){
     if(l.group!==lastG){if(lastG!==null)lv+="</optgroup>";lv+='<optgroup label="'+esc(l.group)+'">';lastG=l.group}

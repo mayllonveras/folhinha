@@ -619,7 +619,7 @@ begin
     return new;
   end if;
   select count(distinct d) into dias from unnest(new.study_days) d;
-  if new.sheets_per_day < 5 then raise exception 'min_folhas'; end if;
+  if new.sheets_per_day < 3 then raise exception 'min_folhas'; end if;
   if dias < 3 then raise exception 'min_dias'; end if;
   return new;
 end $function$
