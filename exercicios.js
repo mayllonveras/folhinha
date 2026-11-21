@@ -728,4 +728,130 @@ FC.EXBY={};FC.EX.forEach(function(e){FC.EXBY[e.id]=e});
 /* Auxiliares para os geradores da grade nova (grade1.js). */
 FC.exh={milh:milh,rnd:rnd,pick:pick,choice:choice,typed:typed,uniq:uniq,OBJ:OBJ,NAMES:NAMES,formaGeom:formaGeom,TRI:TRI,same:same};
 FC.SHAPE_NAMES=Object.keys(SHAPES);
+/* ===== Desafios dos níveis de abertura de cada ano (ver o comentário abaixo) ===== */
+/* Desafios para os níveis de abertura de cada ano (2º ao 5º), para a folha não ficar só em "ler e escrever por extenso" ou "completar a fila".
+   Cada fábrica devolve uma conta {pre, post, a, extra?} como os geradores de exercicios.js, com _info.tipo para a rampa (ver os ESPEC dos grade*.js):
+   - numeros(nd): 3º ao 5º ano, números de nd algarismos (4, 5 ou 6): pistas, formar o maior/menor, problema "quanto falta" e saltos grandes;
+   - contagem2(): 2º ano, contar de 2 em 2, de 5 em 5 e de 10 em 10 fora da fila: situações do dia a dia, pulos e "qual não faz parte".
+   nota(it): quanto maior, mais difícil, na mesma escala dos geradores antigos do nível (0 a 8 mais ou menos). */
+(function(){
+"use strict";
+var FC=window.FC,X=FC.exh,rnd=X.rnd,pick=X.pick,choice=X.choice,typed=X.typed,fmt=X.milh;
+
+function emb(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(0,i),t=a[i];a[i]=a[j];a[j]=t}return a}
+function junta(p){return p.length<2?p.join(""):p.slice(0,-1).join(", ")+" e "+p[p.length-1]}
+function ds(n){return String(n).split("").map(Number)}
+
+/* Nome da casa (0 = unidades) com o número na frente: "1 dezena", "4 milhares", "3 dezenas de milhar". */
+var SING=["unidade","dezena","centena"],PLUR=["unidades","dezenas","centenas"];
+function casa(pos,q,nd){
+  if(pos<3)return q+" "+(q===1?SING[pos]:PLUR[pos]);
+  if(pos===3&&nd===4)return q+" "+(q===1?"milhar":"milhares");
+  var b=SING[pos-3],p=PLUR[pos-3];return q+" "+(q===1?b:p)+" de milhar";
+}
+
+/* ---------- 3º ao 5º ano ---------- */
+/* Pistas: "Sou o número que tem 4 milhares, 3 dezenas e 7 unidades." A casa vazia fica de fora: o zero é a armadilha. */
+function gPistas(nd){
+  var d=[rnd(1,9)],i,zs=Math.random()<.55?rnd(1,Math.min(2,nd-2)):0,vazias=[];
+  for(i=1;i<nd;i++)d.push(rnd(1,9));
+  var pos=[];for(i=1;i<nd;i++)pos.push(i);
+  emb(pos).slice(0,zs).forEach(function(p){d[p]=0;vazias.push(p)});
+  var partes=[];
+  for(i=0;i<nd;i++)if(d[i]>0)partes.push({pos:nd-1-i,txt:casa(nd-1-i,d[i],nd)});
+  if(Math.random()<.4)partes.reverse();                     /* às vezes das unidades para a maior casa */
+  var n=+d.join(""),it=typed("Sou o número que tem "+junta(partes.map(function(p){return p.txt}))+". Quem sou eu?",n);
+  it.key="pistas|"+n;it.limits=[["n1:p",2]];it._info={tipo:"pistas",n:n,zeros:zs,nd:nd};
+  return it;
+}
+/* Formar: "Com os cartões 3, 7, 0 e 5, qual é o maior número de 4 algarismos que dá para formar?" (usa todos os cartões). */
+function gFormar(nd){
+  var all=[0,1,2,3,4,5,6,7,8,9],comZero=Math.random()<.5,pool=emb(all.filter(function(x){return comZero||x>0})),c=pool.slice(0,nd);
+  if(comZero&&c.indexOf(0)<0)c[rnd(0,nd-1)]=0;
+  c=emb(c);var maior=Math.random()<.5,s=c.slice().sort(function(a,b){return a-b}),r;
+  if(maior)r=s.slice().reverse();
+  else{r=s.slice();if(r[0]===0){var k=1;while(r[k]===0)k++;var t=r[k];r.splice(k,1);r.unshift(t)}}
+  var n=+r.join(""),zero=c.indexOf(0)>=0;
+  var it=typed("Com os cartões "+junta(c)+", qual é o "+(maior?"maior":"menor")+" número de "+nd+" algarismos que dá para formar? Use todos os cartões.",n);
+  it.key="formar|"+s.join("")+"|"+(maior?1:0);it.limits=[["n1:f",2]];it._info={tipo:"formar",n:n,maior:maior,zero:zero,nd:nd};
+  return it;
+}
+/* Problema: "Uma cidade tem 3 750 moradores. Quantos faltam para chegar a 4 000?" */
+var CTX=[["Um estádio recebeu","torcedores"],["Uma cidade tem","moradores"],["A biblioteca tem","livros"],["Um museu recebeu","visitantes"],["Uma fábrica fez","brinquedos"],["Uma escola tem","alunos"]];
+function gProblema(nd){
+  var us={4:[100,1000],5:[1000,10000],6:[10000,100000]}[nd],u=pick(us),min=Math.pow(10,nd-1),max=Math.pow(10,nd)-1,
+      T=rnd(Math.ceil((min+u)/u),Math.floor(max/u))*u,gap=Math.random()<.6?u/10*rnd(1,9):rnd(1,u-1),c=pick(CTX);
+  if(gap>=u)gap=u-1;
+  var n=T-gap,it=typed(c[0]+" "+fmt(n)+" "+c[1]+". Quantos faltam para chegar a "+fmt(T)+"?",gap);
+  it.key="problema|"+n+"|"+T;it.limits=[["n1:q",2]];it._info={tipo:"problema",n:gap,tot:n,T:T,u:u,gap:gap,nd:nd};
+  return it;
+}
+/* Saltos: "De 1 000 em 1 000: 3 450  4 450  _  6 450" */
+function gSaltos(nd){
+  var passo=pick({4:[100,1000],5:[1000,10000],6:[10000,100000]}[nd]),sobe=Math.random()<.7,min=Math.pow(10,nd-1),max=Math.pow(10,nd)-1,s,v=[],i,k=rnd(1,3);
+  s=sobe?rnd(min,max-4*passo):rnd(min+4*passo,max);
+  for(i=0;i<5;i++)v.push(sobe?s+i*passo:s-i*passo);
+  var it=typed("De "+fmt(passo)+" em "+fmt(passo)+": "+v.slice(0,k).map(fmt).join(" → ")+" →",v[k],null,"→ "+v.slice(k+1).map(fmt).join(" → "));
+  it.key="saltos|"+passo+"|"+v[0]+"|"+(sobe?1:0)+"|"+k;it.limits=[["n1:s",2]];it._info={tipo:"saltos",n:v[k],passo:passo,k:k,sobe:sobe,nd:nd};
+  return it;
+}
+var NOVOS=["pistas","formar","problema","saltos"];
+function numeros(nd){var f=pick([gPistas,gFormar,gProblema,gSaltos]);return f(nd)}
+
+/* ---------- 2º ano: contar de 2 em 2, de 5 em 5 e de 10 em 10 ---------- */
+/* Situação do dia a dia: cada grupo tem passo itens; "Quantos lápis há em 6 caixas de 10?" */
+var SIT=[
+  {p:2,t:function(q){return "Em "+q+" pares de meias, quantas meias há?"}},
+  {p:2,t:function(q){return "Cada dupla leva 2 livros. Quantos livros levam "+q+" duplas?"}},
+  {p:2,t:function(q){return "Quantos olhos têm "+q+" crianças?"}},
+  {p:5,t:function(q){return "Quantos dedos há em "+q+" mãos?"}},
+  {p:5,t:function(q){return "Você tem "+q+" moedas de 5 centavos. Quantos centavos são?"}},
+  {p:5,t:function(q){return "Cada pacote tem 5 figurinhas. Quantas figurinhas há em "+q+" pacotes?"}},
+  {p:10,t:function(q){return "Cada caixa tem 10 lápis. Quantos lápis há em "+q+" caixas?"}},
+  {p:10,t:function(q){return "Você tem "+q+" cédulas de 10 reais. Quantos reais são?"}},
+  {p:10,t:function(q){return "Uma dezena tem 10 unidades. Quantas unidades há em "+q+" dezenas?"}}];
+function gSituacao(){
+  var s=pick(SIT),q=rnd(3,Math.min(10,Math.floor(100/s.p)));
+  var it=typed(s.t(q),s.p*q);it.key="sit|"+s.t(q);it.limits=[["n1:s",3]];it._info={tipo:"situacao",passo:s.p,q:q,n:s.p*q};
+  return it;
+}
+/* Pulos: "Você está no 20 e pula de 5 em 5. Onde chega depois de 4 pulos?" */
+function gPulos(){
+  var passo=pick([2,5,10]),pulos=rnd(3,passo===10?8:7),sobe=Math.random()<.75,s;
+  if(sobe)s=passo*rnd(0,Math.floor((100-pulos*passo)/passo));else s=passo*rnd(pulos,Math.floor(100/passo));
+  var n=sobe?s+pulos*passo:s-pulos*passo,it=typed("Você está no "+s+" e "+(sobe?"pula":"volta")+" de "+passo+" em "+passo+". Onde chega depois de "+pulos+" "+(sobe?"pulos":"pulos para trás")+"?",n);
+  it.key="pulos|"+s+"|"+passo+"|"+pulos+"|"+(sobe?1:0);it.limits=[["n1:u",3]];it._info={tipo:"pulos",passo:passo,pulos:pulos,sobe:sobe,n:n};
+  return it;
+}
+/* Qual não faz parte: "Contando de 5 em 5 a partir do 15, qual destes números NÃO aparece?" */
+function gNaoFaz(){
+  var passo=pick([2,5,10]),ini=passo*rnd(1,Math.floor(40/passo)),v=[],i,cand=[];
+  for(i=0;i<5;i++)v.push(ini+i*passo);
+  var deltas={2:[-1,1],5:[-2,-1,1,2],10:[-5,-3,-1,1,3,5]}[passo];
+  v.forEach(function(t){deltas.forEach(function(dl){var x=t+dl;if(x>=1&&x<=100&&v.indexOf(x)<0&&cand.indexOf(x)<0)cand.push(x)})});
+  var errado=pick(cand),certos=emb(v).slice(0,3);
+  var it=choice("Contando de "+passo+" em "+passo+" a partir do "+ini+", qual destes números NÃO aparece?",String(errado),certos.map(String),null);
+  it.key="naofaz|"+passo+"|"+ini+"|"+errado;it.limits=[["n1:v",3]];it._info={tipo:"naofaz",passo:passo,n:errado,perto:Math.min.apply(null,v.map(function(t){return Math.abs(t-errado)}))};
+  return it;
+}
+function contagem2(){return pick([gSituacao,gPulos,gNaoFaz])()}
+
+/* ---------- nota de dificuldade (na escala dos geradores antigos do nível) ---------- */
+function digitosDe(x){return String(Math.abs(x)).length}
+function nota(it){
+  var i=it._info;
+  switch(i.tipo){
+    case "pistas":return 2+2*i.zeros+(i.nd-4)*.5;
+    case "formar":return 2+(i.maior?0:1)+(i.zero?2:0)+(i.nd-4)*.5;
+    case "problema":return 2+digitosDe(i.gap)+(i.gap%(i.u/10)?1:0);
+    case "saltos":return 1+(i.sobe?0:2)+(i.k-1)*.5+(i.n%i.passo?1:0);
+    case "situacao":return {2:0,10:2,5:3}[i.passo]*.7+(i.q>6?1:0);
+    case "pulos":return ({2:0,10:2,5:3}[i.passo]||1)+i.pulos*.4+(i.sobe?0:2);
+    case "naofaz":return {2:0,10:1.5,5:3}[i.passo]+(i.perto===1?2:0);
+  }
+  return 0;
+}
+FC.abertura={numeros:numeros,contagem2:contagem2,nota:nota,NOVOS:NOVOS,
+  pistas:gPistas,formar:gFormar,problema:gProblema,saltos:gSaltos,situacao:gSituacao,pulos:gPulos,naofaz:gNaoFaz};
+})();
 })();

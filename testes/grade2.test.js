@@ -15,7 +15,7 @@ const cnt=(html,cls)=>(html.match(new RegExp('class="'+cls+'"','g'))||[]).length
 
 /* ---- Níveis 1 e 6: filas com um espaço ---- */
 function filaTest(nivel,passos,lo,hi,pesos,min30){
-  const its=draw(G["g2n0"+nivel]);let sobe=0,cruza={},tot={};const porPasso={};
+  const its=draw(G["g2n0"+nivel]).filter(p=>!p._info.tipo),M=its.length;   /* só a fila: os desafios novos do nível 1 têm teste próprio (aberturas.test.js) */let sobe=0,cruza={},tot={};const porPasso={};
   for(const p of its){
     const m=p.pre.match(/^De (\d+) em (\d+): ([\d ]*)$/);if(!m||m[1]!==m[2]){falha(nivel,"pergunta fora do formato: "+p.pre);continue}
     const passo=Number(m[1]),esq=nums(m[3]),dir=nums(p.post),v=[...esq,p.a,...dir];
@@ -29,9 +29,9 @@ function filaTest(nivel,passos,lo,hi,pesos,min30){
     porPasso[passo]=(porPasso[passo]||0)+1;if(d>0)sobe++;
     if(nivel===6&&passo<100){tot[passo]=(tot[passo]||0)+1;if(Math.floor(v[0]/(10*passo))!==Math.floor(v[4]/(10*passo)))cruza[passo]=(cruza[passo]||0)+1}
   }
-  console.log("nível "+nivel+": passos",JSON.stringify(porPasso),"crescentes",(100*sobe/N).toFixed(0)+"%",nivel===6?"travessias "+JSON.stringify(cruza):"");
-  if(Math.abs(sobe/N-.7)>.04)falha(nivel,"proporção de crescentes");
-  for(const k of Object.keys(pesos))if(Math.abs((porPasso[k]||0)/N-pesos[k])>.04)falha(nivel,"proporção do passo "+k);
+  console.log("nível "+nivel+": passos",JSON.stringify(porPasso),"crescentes",(100*sobe/M).toFixed(0)+"%",nivel===6?"travessias "+JSON.stringify(cruza):"");
+  if(Math.abs(sobe/M-.7)>.04)falha(nivel,"proporção de crescentes");
+  for(const k of Object.keys(pesos))if(Math.abs((porPasso[k]||0)/M-pesos[k])>.04)falha(nivel,"proporção do passo "+k);
   if(min30)for(const k of Object.keys(tot))if((cruza[k]||0)/tot[k]<.3)falha(nivel,"travessias abaixo de 30% no passo "+k);
 }
 filaTest(1,[2,5,10],0,100,{2:1/3,5:1/3,10:1/3},false);

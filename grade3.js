@@ -51,6 +51,9 @@ function gLer(){
   return it;
 }
 
+/* 40% das contas do nível 1 são ler e escrever por extenso; o resto são desafios (FC.abertura.numeros): pistas, formar o maior ou o menor, quanto falta e saltos. */
+function gLerMisto(){return Math.random()<.4?gLer():FC.abertura.numeros(4)}
+
 /* Nível 2 — Milhares, centenas, dezenas e unidades com o material dourado (EF03MA02). */
 function legenda3(){return "Cada cubo grande vale 1000, cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1. "}
 function gMaterial3(){
@@ -949,7 +952,7 @@ function gTabGraf(){
 }
 
 FC.G3=[
-  {nivel:1,id:"g3n01",nome:"Nível 1 — Ler e escrever números até 9999",hab:["EF03MA01"],meta:130,gen:gLer,ano:3},
+  {nivel:1,id:"g3n01",nome:"Nível 1 — Números até 9999: ler, escrever e desafios",hab:["EF03MA01","EF03MA02"],meta:130,gen:gLerMisto,ano:3},
   {nivel:2,id:"g3n02",nome:"Nível 2 — Milhares, centenas, dezenas e unidades (material dourado)",hab:["EF03MA02"],meta:130,gen:gMaterial3,ano:3},
   {nivel:3,id:"g3n03",nome:"Nível 3 — Valor posicional e o zero",hab:["EF03MA01","EF03MA02"],meta:120,gen:gPosicional3,ano:3},
   {nivel:4,id:"g3n04",nome:"Nível 4 — Decompor números até 9999",hab:["EF03MA02"],meta:120,gen:gDecompor4,ano:3},
@@ -1016,8 +1019,8 @@ function porNum(rotulos,ranks,extra,campo){
     nota:function(it){var i=it._info[campo]-1;return (ranks[i]||0)*2+(extra?extra(it,it._info):0)}};
 }
 var ESPEC3={
- 1:{tipos:["extenso → algarismos","algarismos → extenso"],tipo:function(it){return it._info.tipo==="algarismos"?0:1},
-    nota:function(it){var n=it._info.n,r=n%1000;return 2*String(n).replace(/[^0]/g,"").length+((r&&!(r<100||r%100===0))?1:0)+(it._info.tipo==="extenso"?1:0)}},
+ 1:{tipos:["extenso → algarismos","algarismos → extenso","pistas","formar com cartões","quanto falta","saltos"],tipo:function(it){var t=it._info.tipo;return t==="algarismos"?0:t==="extenso"?1:2+FC.abertura.NOVOS.indexOf(t)},
+    nota:function(it){var n=it._info.n,r=n%1000,t=it._info.tipo;if(t!=="algarismos"&&t!=="extenso")return FC.abertura.nota(it);return 2*String(n).replace(/[^0]/g,"").length+((r&&!(r<100||r%100===0))?1:0)+(t==="extenso"?1:0)}},
  2:{tipos:["valor da figura","quantas peças","casa vazia"],tipo:function(it){return +g03(it,"n2:t").slice(4)-1},
     nota:function(it){var t=+g03(it,"n2:t").slice(4);return t===1?nz3(it.a)*2+(it.a>=5000?1:0):t===2?2+nz3(maxN3(it)):4}},
  3:porNum(["montar o número","valor do algarismo","ordem do algarismo","casa vazia"],[0,1,2,3],function(it){return 2*nz3(maxN3(it))}),
@@ -1068,13 +1071,13 @@ var ESPEC3={
  42:porNum(["ler um valor","mais ou menos votos","diferença entre dois"],[0,1,2],function(it,i){return (i.tab?1:0)+dg3(it.a)})
 };
 /* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia sempre cubram todos os tipos. */
-var ORDEM3={"1":[0,1],"2":[0,1,2],"3":[0,1,2,3],"4":[0,4,3,2,5,1],"5":[0,1,2],"6":[0,1,2],"7":[0,1,2],"8":[0,2,1,3],"9":[0],"10":[0],"11":[0,2,1,3],"12":[0,1,2,3],"13":[0,1,3,2,5,4],"14":[0,1,3,2,5,4],"15":[0,1,2],"16":[0,1],"17":[0,1,2],"18":[0,1,2],"19":[0,3,1,2],"20":[0,1,3,2],"21":[0,1,3,2],"22":[0,3,1,2],"23":[0,1,2],"24":[0,1,2,3],"25":[0,1,2],"26":[0,2,1],"27":[1,0,2],"28":[0,1,2],"29":[0,1,2],"30":[0,1,2,3],"31":[0,1,2],"32":[0,1,2],"33":[0,1],"34":[0,1,2],"35":[0,1,2],"36":[0,1,2],"37":[0,1,2],"38":[0,1,2],"39":[0,1,2],"40":[0,1,2],"41":[0,1,2],"42":[0,1,2]};
+var ORDEM3={"1":[0,1,5,3,2,4],"2":[0,1,2],"3":[0,1,2,3],"4":[0,4,3,2,5,1],"5":[0,1,2],"6":[0,1,2],"7":[0,1,2],"8":[0,2,1,3],"9":[0],"10":[0],"11":[0,2,1,3],"12":[0,1,2,3],"13":[0,1,3,2,5,4],"14":[0,1,3,2,5,4],"15":[0,1,2],"16":[0,1],"17":[0,1,2],"18":[0,1,2],"19":[0,3,1,2],"20":[0,1,3,2],"21":[0,1,3,2],"22":[0,3,1,2],"23":[0,1,2],"24":[0,1,2,3],"25":[0,1,2],"26":[0,2,1],"27":[1,0,2],"28":[0,1,2],"29":[0,1,2],"30":[0,1,2,3],"31":[0,1,2],"32":[0,1,2],"33":[0,1],"34":[0,1,2],"35":[0,1,2],"36":[0,1,2],"37":[0,1,2],"38":[0,1,2],"39":[0,1,2],"40":[0,1,2],"41":[0,1,2],"42":[0,1,2]};
 Object.keys(ORDEM3).forEach(function(n){ESPEC3[n].ordem=ORDEM3[n]});
 /* ===================== O 3º ano na grade do app: FC.LEVELS (a trilha é uma só: os níveis do 3º ano seguem os 76 dos dois primeiros anos) ===================== */
 /* Os números das fichas (1 a 42) são do 3º ano; no app o aluno vê a numeração corrida, de 77 a 118. */
 var BASE3=FC.LEVELS.length;                          /* 76 */
 var BLOCOS3=[[7,"Números até 9999"],[15,"Adição e subtração até 9999"],[24,"Multiplicação e tabuadas"],[30,"Divisão e problemas"],[33,"Sólidos, figuras e congruência"],[40,"Medidas, horas e dinheiro"],[42,"Chances, tabelas e gráficos"]];
-var DICAS3={1:"Leia e escreva números até 9999, inclusive por extenso.",2:"Cada cubo grande vale 1000, cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo, a ordem em que ele está e o que o zero faz.",
+var DICAS3={1:"Números até 9999: leia e escreva por extenso, ache o número pelas pistas, forme números com cartões, veja quanto falta e complete as sequências.",2:"Cada cubo grande vale 1000, cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo, a ordem em que ele está e o que o zero faz.",
   4:"Decomponha o número, como 3 456 = 3 000 + 400 + 50 + 6.",5:"Compare números de quatro algarismos: maior, menor, ordem e sinais.",6:"Leia os números na reta, ache o ponto certo e veja quanto falta de um ponto ao outro.",
   7:"Descubra a regra da sequência, complete-a e ache o número errado.",8:"Quanto falta para 100 e para 1000? Faça de cabeça.",9:"Somas de três algarismos com \"vai um\", como 358 + 267.",10:"Subtrações de três algarismos com \"empresta\", como 502 − 247.",
   11:"Somas e subtrações até 999, misturadas.",12:"Somas e subtrações com quatro algarismos, como 6 000 − 2 348.",13:"Problemas de juntar, acrescentar, separar, retirar, comparar e completar, até 999.",14:"Os mesmos problemas, com números até 9999.",

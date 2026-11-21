@@ -61,6 +61,9 @@ function gLer(){
   return it;
 }
 
+/* 40% das contas do nível 1 são ler e escrever por extenso; o resto são desafios (FC.abertura.numeros). */
+function gLerMisto(){return Math.random()<.4?gLer():FC.abertura.numeros(5)}
+
 /* Nível 2 — Valor posicional e decomposição com potências de dez (EF04MA02). */
 var POT=["10\u202F000","1\u202F000","100","10","1"];
 function gDecompor(){
@@ -590,7 +593,7 @@ function gTabGraf46(){
 
 /* ===================== A GRADE ===================== */
 FC.G4=[
-  {nivel:1,id:"g4n01",nome:"Nível 1 — Ler e escrever números até 99 999",hab:["EF04MA01"],meta:130,gen:gLer,ano:4},
+  {nivel:1,id:"g4n01",nome:"Nível 1 — Números até 99 999: ler, escrever e desafios",hab:["EF04MA01","EF04MA02"],meta:130,gen:gLerMisto,ano:4},
   {nivel:2,id:"g4n02",nome:"Nível 2 — Valor posicional e decomposição",hab:["EF04MA02"],meta:120,gen:gDecompor,ano:4},
   {nivel:3,id:"g4n03",nome:"Nível 3 — Comparar e ordenar números até 99 999",hab:["EF04MA01"],meta:120,gen:gOrdem,ano:4},
   {nivel:4,id:"g4n04",nome:"Nível 4 — Arredondar para a dezena, a centena e o milhar",hab:["EF04MA03"],meta:120,gen:gArredonda,ano:4},
@@ -648,8 +651,8 @@ function maxN(it){return Math.max.apply(null,nums(it).map(Number).concat([0]))}
 function grupo0(it,pref){var l=(it.limits||[]).filter(function(x){return x[0].indexOf(pref)===0})[0];return l?l[0]:""}
 function kk(it){return (it._info.k||it._info.tipo||it._info.f)-1}
 var ESPEC={
- 1:{tipos:["extenso → algarismos","algarismos → extenso"],tipo:function(it){return it._info.tipo==="algarismos"?0:1},
-    nota:function(it){var n=it._info.n,r=n%1000;return 2*String(n).replace(/[^0]/g,"").length+((r&&!(r<100||r%100===0))?1:0)+(it._info.tipo==="extenso"?1:0)}},
+ 1:{tipos:["extenso → algarismos","algarismos → extenso","pistas","formar com cartões","quanto falta","saltos"],tipo:function(it){var t=it._info.tipo;return t==="algarismos"?0:t==="extenso"?1:2+FC.abertura.NOVOS.indexOf(t)},
+    nota:function(it){var n=it._info.n,r=n%1000,t=it._info.tipo;if(t!=="algarismos"&&t!=="extenso")return FC.abertura.nota(it);return 2*String(n).replace(/[^0]/g,"").length+((r&&!(r<100||r%100===0))?1:0)+(t==="extenso"?1:0)}},
  2:{tipos:["termo escondido","valor do algarismo","algarismo da casa","montar o número"],tipo:kk,
     nota:function(it){var n=it._info.tipo===4?it.a:+(nums(it).filter(function(x){return x.length>=5})[0]||it.a);return 2*String(n).replace(/[^0]/g,"").length+(it._info.tipo===1?1:0)}},
  3:{tipos:["maior","menor","sinal","número vizinho"],tipo:function(it){return +grupo0(it,"n3:t").slice(4)-1},
@@ -704,12 +707,12 @@ var ESPEC={
  46:{tipos:["ler um valor","soma de valores","diferença entre dois","total"],tipo:kk,nota:function(it){var f=it.extra.fig;return kk(it)*2+(f.t==="tabela2"?1:0)+dg(it.a)}}
 };
 /* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia, montadas em momentos diferentes, sempre cubram todos os tipos. */
-var ORDEM={"1":[0,1],"2":[2,3,1,0],"3":[0,1,3,2],"4":[0,1,2],"5":[0],"6":[0,1],"7":[0,1],"8":[0,1],"9":[1,0,2,3,4,5],"10":[0,1,2],"11":[1,0,2,3],"12":[0,1,2],"13":[0,1,2],"14":[0],"15":[0],"16":[0],"17":[0],"18":[1,0],"19":[0],"20":[2,0,1],"21":[0,1],"22":[0,1],"23":[1,0,2],"24":[0,2,1],"25":[1,0],"26":[0,1,2,3],"27":[0,1,2,3],"28":[0,1,2],"29":[0,1,2,3,4],"30":[0,1,2],"31":[0,1,3,2,4],"32":[1,0,2],"33":[0,3,1,2],"34":[0,3,1,2],"35":[0,1,2,3],"36":[0,1],"37":[1,2,0],"38":[2,0,1],"39":[0,2,1],"40":[0,1,2],"41":[0,1,2],"42":[3,0,2,1],"43":[0,3,1,2],"44":[0,1,2,3],"45":[1,0,2],"46":[0,1,2,3]};
+var ORDEM={"1":[0,1,5,3,2,4],"2":[2,3,1,0],"3":[0,1,3,2],"4":[0,1,2],"5":[0],"6":[0,1],"7":[0,1],"8":[0,1],"9":[1,0,2,3,4,5],"10":[0,1,2],"11":[1,0,2,3],"12":[0,1,2],"13":[0,1,2],"14":[0],"15":[0],"16":[0],"17":[0],"18":[1,0],"19":[0],"20":[2,0,1],"21":[0,1],"22":[0,1],"23":[1,0,2],"24":[0,2,1],"25":[1,0],"26":[0,1,2,3],"27":[0,1,2,3],"28":[0,1,2],"29":[0,1,2,3,4],"30":[0,1,2],"31":[0,1,3,2,4],"32":[1,0,2],"33":[0,3,1,2],"34":[0,3,1,2],"35":[0,1,2,3],"36":[0,1],"37":[1,2,0],"38":[2,0,1],"39":[0,2,1],"40":[0,1,2],"41":[0,1,2],"42":[3,0,2,1],"43":[0,3,1,2],"44":[0,1,2,3],"45":[1,0,2],"46":[0,1,2,3]};
 Object.keys(ORDEM).forEach(function(n){ESPEC[n].ordem=ORDEM[n]});
 /* ===================== O 4º ano na grade do app: FC.LEVELS (os níveis seguem os 118 dos três primeiros anos; o aluno vê a numeração corrida, de 119 a 164) ===================== */
 var BASE4=FC.LEVELS.length;                          /* 118 */
 var BLOCOS4=[[4,"Números até 99 999"],[10,"Adição e subtração até 99 999"],[21,"Multiplicação"],[27,"Divisão, múltiplos e restos"],[30,"Igualdades e problemas"],[34,"Frações e decimais"],[38,"Ângulos, sólidos e simetria"],[44,"Perímetro, área, tempo e dinheiro"],[46,"Acaso, tabelas e gráficos"]];
-var DICAS4={1:"Leia e escreva números até 99 999, inclusive por extenso.",2:"34 567 = 3 × 10 000 + 4 × 1 000 + 5 × 100 + 6 × 10 + 7.",3:"Compare números de cinco algarismos: comece pela maior ordem.",4:"Arredonde olhando o algarismo da direita: 5 ou mais sobe, menos de 5 fica.",
+var DICAS4={1:"Números até 99 999: leia e escreva por extenso, ache o número pelas pistas, forme números com cartões, veja quanto falta e complete as sequências.",2:"34 567 = 3 × 10 000 + 4 × 1 000 + 5 × 100 + 6 × 10 + 7.",3:"Compare números de cinco algarismos: comece pela maior ordem.",4:"Arredonde olhando o algarismo da direita: 5 ou mais sobe, menos de 5 fica.",
   5:"Somas de quatro algarismos com \"vai um\". Se quiser, faça no papel.",6:"Subtrações de quatro algarismos, com \"empresta\" e zeros. Se quiser, faça no papel.",7:"Somas e subtrações até 99 999.",8:"Arredonde os números antes e faça a conta de cabeça: é só uma estimativa.",
   9:"Leia o problema, escolha somar ou subtrair e confira se o resultado é razoável.",10:"Para tirar a prova, use a operação inversa: se 4 500 + 2 300 = 6 800, então 6 800 − 2 300 = 4 500.",11:"8 × 15 = 8 × 10 + 8 × 5. Trocar a ordem ou o agrupamento não muda o resultado.",
   12:"Multiplicar por 10, 100 ou 1000 é acrescentar zeros ao número.",13:"30 × 40: faça 3 × 4 = 12 e acrescente os dois zeros: 1 200.",14:"Multiplique cada algarismo por vez, como 312 × 3.",15:"47 × 6: 40 × 6 = 240 e 7 × 6 = 42; some tudo.",
