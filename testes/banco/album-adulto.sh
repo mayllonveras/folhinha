@@ -12,7 +12,7 @@ run() { $PSQL -v ON_ERROR_STOP=1 -q "$@"; }
 run -d postgres -c "drop database if exists adulto_test" -c "create database adulto_test" 2>/dev/null
 for f in replica/0-supabase.sql replica/1-esquema.sql replica/2-permissoes.sql replica/3-config.sql planos-antes.sql \
          ../../migracoes/2026-11-17-plano-vip.sql ../../migracoes/2026-11-19-autorizacao-dos-pais.sql ../../migracoes/2026-11-19-mesa-um-album.sql \
-         ../../migracoes/2026-11-20-admins.sql ../../migracoes/2026-11-21-album-do-adulto.sql ../../migracoes/2026-11-21-responsavel-removido.sql; do
+         ../../migracoes/2026-11-20-admins.sql ../../migracoes/2026-11-21-album-do-adulto.sql ../../migracoes/2026-11-21-responsavel-removido.sql ../../migracoes/2026-11-21-amigo-pelo-adulto.sql; do
   run -d adulto_test -f "$f" >/dev/null
 done
 saida="$($PSQL -q -d adulto_test -f album-adulto.test.sql 2>&1 | grep -E "FALHOU|TOTAL|ERROR" || true)"

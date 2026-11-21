@@ -425,7 +425,7 @@ async function saveTurbo(id,t){
 }
 
 /* Endereços da área dos pais: #/ (lista), #/novo, #/cadastrado, #/aluno/ID/ABA e #/aluno/ID/historico/AAAA-MM-DD (um dia do Histórico). */
-var PAI_TABS=["resumo","album","historico","dificuldades","programa","acesso"];
+var PAI_TABS=["resumo","album","amigos","historico","dificuldades","programa","acesso"];
 function route(path){
   if(!U.user)return;
   var m=/^\/aluno\/([A-Za-z0-9_-]{1,64})(?:\/([a-z]+)(?:\/(\d{4}-\d\d-\d\d))?)?$/.exec(path);
@@ -1209,13 +1209,18 @@ async function detail(id,day){
     '<div class="acc-row"><span class="grow"><b>O link foi parar com outra pessoa?</b><br><span class="muted small-t">O link antigo para de funcionar e você envia o novo para a criança.</span></span><button class="btn ghost small" id="newLink">Gerar novo link</button></div></div></div>'+
     '<div class="panel"><div class="eyebrow">Adultos que acompanham</div><ul class="plain gap">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
-    '<div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+'<div class="panel" id="mirBox"><div class="eyebrow gap">Seu álbum com '+esc(s.name)+'</div><p class="muted">Carregando…</p></div><div class="panel" id="frBox"><div class="eyebrow gap">Amigos do aluno</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div></div></div>'+
+    '</div>'+
     (iAmOwner?'<details class="panel danger-zone"><summary>Apagar o aluno</summary><p class="muted small-t gap">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar '+esc(s.name)+' e todo o histórico</button></div></details>':'<p class="muted small-t">Só quem cadastrou o aluno pode apagá-lo.</p>');
+  /* Amigos: o álbum do adulto com a criança (à esquerda); os amigos dela, com convite e código, e as trocas (à direita). */
+  var amigos='<div class="grid"><div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+
+    '<div class="panel" id="mirBox"><div class="eyebrow gap">Seu álbum com '+esc(s.name)+'</div><p class="muted">Carregando…</p></div></div>'+
+    '<div class="col"><div class="panel" id="frBox"><div class="eyebrow gap">Amigos de '+esc(s.name)+'</div><p class="muted">Carregando…</p></div><div class="panel" id="trAdBox"><div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Carregando…</p></div></div></div>';
   var head=topbar("Aluno")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Todos os alunos</button></div>'+
     '<div class="pagehead"><h1>'+esc(s.name)+'</h1><span class="lvlchip">Nível '+L.id+'</span></div>';
   FC.render(FC.tabsShell({scope:"pai",head:head,tabs:[
     {id:"resumo",label:"Resumo",icon:"resumo",html:resumo},
     {id:"album",label:"Álbum",icon:"album",html:rewardPanel+packsHtml},
+    {id:"amigos",label:"Amigos",icon:"friends",html:amigos},
     {id:"historico",label:"Histórico",icon:"history",html:historico},
     {id:"dificuldades",label:"Atenção",icon:"progress",html:dificuldades},
     {id:"programa",label:"Programa",icon:"program",html:programa},
@@ -1254,7 +1259,7 @@ async function detail(id,day){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadTurboNow(id);loadMirror(id,s.name);loadFriends(id);loadTrades(id);loadAnalise(id);
+  loadSlow(id);loadTurboNow(id);loadMirror(id,s.name,free);loadFriends(id,s.name,free);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   $("#qrBtn").onclick=function(){showQr(s.name,link)};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
@@ -1347,26 +1352,39 @@ function renderDif(){
 }
 /* Contas em que o aluno mais demora, nas últimas 20 folhas: média do tempo na conta contra o tempo esperado do nível. */
 /* Amigos do aluno: o adulto vê com quem ele é amigo e pode desfazer qualquer amizade. */
-async function loadFriends(id){
+async function loadFriends(id,sname,free){
   var box=$("#frBox");if(!box)return;
   var r=await sb.rpc("adult_friends",{p_student:id});
-  if(r.error){box.innerHTML='<div class="eyebrow gap">Amigos do aluno</div><p class="muted">Não deu para carregar.</p>';return}
+  if(r.error){box.innerHTML='<div class="eyebrow gap">Amigos</div><p class="muted">Não deu para carregar.</p>';return}
   var d=r.data,rows=d.friends.map(function(x){
-    if(x.mirror)return '<li class="fr-row"><span class="grow"><b>'+esc(x.name)+'</b> <span class="muted small-t">· responsável (para desfazer, desligue no cartão acima)</span></span></li>';
+    if(x.mirror)return '<li class="fr-row"><span class="grow"><b>'+esc(x.name)+'</b> <span class="muted small-t">· responsável (para desfazer, desligue em "Seu álbum")</span></span></li>';
     var st=x.status==="aceita"?"amigo":(x.sent?"convite enviado, esperando resposta":"convidou o aluno, esperando resposta");
     return '<li class="fr-row"><span class="grow"><b>'+esc(x.name)+'</b> <span class="muted small-t">· '+st+'</span></span><button class="btn ghost small" data-unf="'+x.id+'">'+(x.status==="aceita"?"Desfazer":"Remover")+'</button></li>'}).join("");
-  box.innerHTML='<div class="eyebrow gap">Amigos do aluno</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem amigos.</p>')+
-    '<p class="muted small-t gap">Código de amigo do aluno: <b class="code">'+esc(FC.fmtCode(d.code))+'</b>. Os amigos veem só o nível, os carimbos e as figurinhas dele.</p>';
+  var n=esc(sname);
+  box.innerHTML='<div class="eyebrow gap">Amigos de '+n+'</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem amigos.</p>')+
+    '<div class="gap"><div class="eyebrow">Código de amigo de '+n+'</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(d.code))+'</div>'+
+    '<p class="muted small-t">Passe este código para os pais de outra criança, para ela convidar '+n+'. Os amigos veem só o nível, os carimbos e as figurinhas.</p>'+
+    '<button type="button" class="btn ghost small" id="frCopy">Copiar código</button></div>'+
+    '<form class="fr-add gap" id="frForm" novalidate><label class="field"><span>Fazer um amigo para '+n+'</span><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código do amigo (ABC-DEF)"></label>'+
+    '<div class="actions"><button class="btn" type="submit"'+(free?' disabled':'')+'>Enviar convite</button></div>'+
+    '<p class="muted small-t">O convite fica esperando a outra criança aceitar. Os dois precisam estar no VIP.</p></form>';
+  $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(d.code);i.value=fc;FC.copy(fc,i,"código")};
+  $("#frForm").onsubmit=async function(e){
+    e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
+    var x=await sb.rpc("adult_friend_invite",{p_student:id,p_code:c});
+    if(x.error)return FC.toast(FC.err(x.error),true);
+    FC.toast(x.data.state==="aceito"?"Agora "+sname+" e "+x.data.name+" são amigos!":"Convite enviado para "+x.data.name+".");loadFriends(id,sname,free);
+  };
   $$("[data-unf]",box).forEach(function(b){FC.confirmClick(b,"Toque de novo para confirmar",async function(){
     var x=await sb.rpc("adult_friend_remove",{p_student:id,p_id:b.getAttribute("data-unf")});
     if(x.error)return FC.toast(FC.err(x.error),true);
-    FC.toast("Pronto.");loadFriends(id);
+    FC.toast("Pronto.");loadFriends(id,sname,free);
   })});
 }
 /* Álbum do adulto: o responsável vira amigo da criança e ganha, do mesmo álbum, a mesma quantidade de pacotinhos que ela abre
    (migracoes/2026-11-21-album-do-adulto.sql). Ao ligar, recebe de uma vez o que a criança já abriu. As trocas entre os dois
    acontecem no álbum do responsável, que abre na tela do app do aluno em modo responsável. */
-async function loadMirror(id,sname){
+async function loadMirror(id,sname,free){
   var box=$("#mirBox");if(!box)return;
   var n=esc(sname),head='<div class="eyebrow gap">Seu álbum com '+n+'</div>';
   var r=await sb.rpc("adult_mirror_info",{p_student:id});
@@ -1391,7 +1409,7 @@ async function loadMirror(id,sname){
       var x=await sb.rpc("adult_mirror_enable",{p_student:id,p_name:$("#mirName").value});
       if(x.error)return failIt(x.error,b);
       FC.toast(x.data.delivered>0?"Pronto! Você recebeu "+x.data.delivered+" pacotinho"+(x.data.delivered>1?"s":"")+" para abrir.":"Pronto! Vocês agora são amigos.");
-      loadMirror(id,sname);loadFriends(id);
+      loadMirror(id,sname,free);loadFriends(id,sname,free);
     };
   }else{
     box.innerHTML=head+'<p class="small-t">Você é amigo de <b>'+n+'</b> no app como <b>'+esc(d.name)+'</b>.</p>'+
@@ -1402,7 +1420,7 @@ async function loadMirror(id,sname){
     FC.confirmClick($("#mirOff"),"Toque de novo para confirmar",async function(){
       var x=await sb.rpc("adult_mirror_disable",{p_student:id});
       if(x.error)return FC.toast(FC.err(x.error),true);
-      FC.toast("Pronto. Seu álbum continua guardado.");loadMirror(id,sname);loadFriends(id);
+      FC.toast("Pronto. Seu álbum continua guardado.");loadMirror(id,sname,free);loadFriends(id,sname,free);
     });
   }
   bindLocks();

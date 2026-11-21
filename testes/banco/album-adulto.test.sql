@@ -206,6 +206,19 @@ select pg_temp.abre('Caio', 'espaco', 1);
 select pg_temp.t('removido: não recebe mais pacotinho e guarda o que tinha', (select count(*)=:pc0 from awards where student_id=(select id from students where mirror_of=pg_temp.sid('Caio') and mirror_user='00000000-0000-0000-0000-0000000000a1') and kind='pacote'));
 select pg_temp.t('removido: não entra mais no álbum', pg_temp.err(format('select public.adult_mirror_enter(%L)', pg_temp.sid('Caio'))) like '%sem_permissao%');
 
+-- ---------- o adulto convida um amigo para a criança ----------
+select pg_temp.como('00000000-0000-0000-0000-0000000000b1');
+select pg_temp.err(pg_temp.aluno('Duda', '{espaco}')) as e5 \gset
+select friend_code as fcd from students where id = pg_temp.sid('Duda') \gset
+select public.adult_friend_invite(pg_temp.sid('Caio'), :'fcd') as inv \gset
+select pg_temp.t('adulto convida pelo código: fica pendente', (:'inv'::jsonb)->>'state'='enviado' and (select count(*)=1 from friendships where requester=pg_temp.sid('Caio') and addressee=pg_temp.sid('Duda') and status='pendente'));
+select pg_temp.t('convite repetido é recusado', pg_temp.err(format('select public.adult_friend_invite(%L, %L)', pg_temp.sid('Caio'), :'fcd')) like '%convite_pendente%');
+select pg_temp.t('código do espelho não vale', pg_temp.err(format('select public.adult_friend_invite(%L, %L)', pg_temp.sid('Duda'), (select friend_code from students where mirror_of=pg_temp.sid('Caio') limit 1))) like '%codigo_invalido%');
+select pg_temp.t('código inexistente é recusado', pg_temp.err(format('select public.adult_friend_invite(%L, %L)', pg_temp.sid('Caio'), 'ZZZZZZ')) like '%codigo_invalido%');
+select pg_temp.t('o próprio código é recusado', pg_temp.err(format('select public.adult_friend_invite(%L, %L)', pg_temp.sid('Caio'), (select friend_code from students where id=pg_temp.sid('Caio')))) like '%proprio_codigo%');
+select pg_temp.como('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.t('quem não é responsável não convida', pg_temp.err(format('select public.adult_friend_invite(%L, %L)', pg_temp.sid('Caio'), :'fcd')) like '%sem_permissao%');
+
 -- ---------- convites e administração ----------
 select friend_code as fcm from students where id = pg_temp.espelho('Ana') \gset
 select pg_temp.t('outra criança não consegue convidar o espelho pelo código', pg_temp.err(format('select public.student_friend_invite(%L, %L)', pg_temp.tok('Beto'), :'fcm')) like '%codigo_invalido%');
