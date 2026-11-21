@@ -26,9 +26,10 @@ ok(!hab.has("EF04MA24")&&!hab.has("EF04MA28"),"EF04MA24 e EF04MA28 ficam de fora
 // nível 1: o extenso vai e volta, "mil" nunca é "um mil"
 const ext=new Map();for(let n=1;n<=99999;n++){const e=FC.extenso4(n);if(ext.has(e))falha("extenso repetido: "+n+" e "+ext.get(e));ext.set(e,n);if(/^um mil/.test(e))falha("um mil em "+n)}
 ok(FC.extenso4(34567)==="trinta e quatro mil, quinhentos e sessenta e sete"&&FC.extenso4(20005)==="vinte mil e cinco"&&FC.extenso4(1000)==="mil"&&FC.extenso4(21100)==="vinte e um mil e cem"&&FC.extenso4(10110)==="dez mil, cento e dez","exemplos do extenso");
-let zeros=0;
-gera(1,(it)=>{const i=it._info;if(i.tipo==="algarismos"){const e=it.pre.replace(/^Escreva em algarismos: /,"").replace(/\.$/,"");if(ext.get(e)!==it.a)falha("n1: ida e volta de "+e)}else{const o=it.extra.opts;if(new Set(o.map(String)).size!==o.length)falha("n1: opções repetidas")}if(/0/.test(String(i.n)))zeros++;if(i.n<10000||i.n>99999)falha("n1: fora de 10 000 a 99 999")});
-ok(zeros/N>.2&&zeros/N<.5,"n1: zero em 20% a 50% dos números ("+(zeros/N).toFixed(2)+")");
+let zeros=0,velhas=0;
+gera(1,(it)=>{const i=it._info;if(i.tipo!=="algarismos"&&i.tipo!=="extenso")return;velhas++;   /* os desafios novos têm teste próprio (aberturas.test.js) */
+  if(i.tipo==="algarismos"){const e=it.pre.replace(/^Escreva em algarismos: /,"").replace(/\.$/,"");if(ext.get(e)!==it.a)falha("n1: ida e volta de "+e)}else{const o=it.extra.opts;if(new Set(o.map(String)).size!==o.length)falha("n1: opções repetidas")}if(/0/.test(String(i.n)))zeros++;if(i.n<10000||i.n>99999)falha("n1: fora de 10 000 a 99 999")});
+ok(zeros/velhas>.2&&zeros/velhas<.5,"n1: zero em 20% a 50% dos números ("+(zeros/velhas).toFixed(2)+")");
 // nível 2 e 3
 gera(2,(it)=>{if(!Number.isInteger(it.a)||it.a<0)falha("n2: "+it.pre);const m=it.pre.match(/^No número ([\d ]+), quanto vale o algarismo (\d)\?$/);if(m){const n=num(m[1]),d=+m[2],pos=String(n).indexOf(String(d));if(String(n).split(d).length!==2)falha("n2: algarismo repetido em "+n);if(d*Math.pow(10,String(n).length-1-pos)!==it.a)falha("n2: valor errado "+it.pre)}
   const q=it.pre.match(/^Qual é o número (.*)\?$/);if(q){const v=eval(q[1].replace(/ /g,"").replace(/×/g,"*"));if(v!==it.a)falha("n2: montar "+it.pre)}

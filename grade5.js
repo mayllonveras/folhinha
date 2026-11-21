@@ -44,7 +44,9 @@ function parecidos6(n){
 }
 var CASAS6=["das centenas de milhar","das dezenas de milhar","das unidades de milhar","das centenas","das dezenas","das unidades"];
 function gLer(){
-  var k=pick([1,2,3,3,4]),n,it,d,t;
+  /* 40% ler e escrever por extenso (k 1 e 2), 20% valor posicional (k 3 e 4), 40% desafios (k 5 a 8: FC.abertura.numeros) */
+  var k=pick([1,1,2,2,3,4,5,6,7,8]),n,it,d,t;
+  if(k>=5){it=FC.abertura.numeros(6);it._info.k=k;it._info.k=5+FC.abertura.NOVOS.indexOf(it._info.tipo);return it}
   if(k===1){n=num6(Math.random()<.3);it=typed("Escreva em algarismos: "+ext(n)+".",n);it.limits=[["n1:t1",3]]}
   else if(k===2){
     n=num6(Math.random()<.3);var wr=emb(parecidos6(n)),outros=[],ex=[ext(n)];
@@ -697,8 +699,8 @@ function kk(it){return it._info.k-1}
 function cpLen(a,b){a=String(a);b=String(b);var c=0;while(c<a.length&&a[c]===b[c])c++;return c}
 function dec3(c,d){return d>=8?2:0}
 var ESPEC={
- 1:{tipos:["extenso → algarismos","algarismos → extenso","valor do algarismo","algarismo da casa"],tipo:kk,
-    nota:function(it){var n=it._info.n,z=(String(n).match(/0/g)||[]).length,r=n%1000;return 2*z+((kk(it)<=1&&r&&!(r<100||r%100===0))?1:0)+[0,1,1,0][kk(it)]}},
+ 1:{tipos:["extenso → algarismos","algarismos → extenso","valor do algarismo","algarismo da casa","pistas","formar com cartões","quanto falta","saltos"],tipo:kk,
+    nota:function(it){if(kk(it)>=4)return FC.abertura.nota(it);var n=it._info.n,z=(String(n).match(/0/g)||[]).length,r=n%1000;return 2*z+((kk(it)<=1&&r&&!(r<100||r%100===0))?1:0)+[0,1,1,0][kk(it)]}},
  2:{tipos:["maior","menor","sinal","número vizinho","lista em ordem"],tipo:kk,
     nota:function(it){var k=kk(it),v=it._info.v.slice().sort(function(x,y){return x-y}),cp=Math.max(cpLen(v[0],v[1]),cpLen(v[1],v[2])),n=nums(it);
       if(k===2)return cpLen(n[0],n[1])+(n[0]===n[1]?2:0);
@@ -756,12 +758,12 @@ var ESPEC={
  47:{tipos:["colunas","linhas","maior valor","diferença"],tipo:kk,nota:function(it){return [0,1,1,3][kk(it)]*2+(it._info.v?Math.max.apply(null,it._info.v)/40:0)}}
 };
 /* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia, montadas em momentos diferentes, sempre cubram todos os tipos. */
-var ORDEM={"1":[3,0,1,2],"2":[1,0,3,2,4],"3":[0,1,2,3],"4":[0,1],"5":[0,1],"6":[1,0,2,3,4,5],"7":[0,1,2,3],"8":[1,0],"9":[1,0],"10":[1,0,3,2],"11":[0,1,3,2],"12":[0,1,2,3],"13":[2,0,1],"14":[1,0,2],"15":[0,1,2,3],"16":[3,0,1,2],"17":[0,1,2,4,3],"18":[0,1,2,3],"19":[0,1,2,3],"20":[0,1,2,3],"21":[0,1,2,3],"22":[1,0,2,3],"23":[0,1,2,3],"24":[1,0,2],"25":[3,0,2,1],"26":[1,2,0,3],"27":[0,1,2,3],"28":[0,1,2,3],"29":[0,1,3,2],"30":[0,2,1,3],"31":[0,1,2,3],"32":[1,0,2,3],"33":[0,1,2,3],"34":[2,0,1,3],"35":[0,4,1,2,3],"36":[0,1,2,3],"37":[0,1,3,2],"38":[2,1,0,3],"39":[2,0,3,1],"40":[0,2,1,3],"41":[2,0,1,3],"42":[1,2,0,3],"43":[3,1,2,0],"44":[0,2,1,3],"45":[0,1,2,3],"46":[0,1,3,2],"47":[0,1,2,3]};
+var ORDEM={"1":[3,0,1,2,5,4,7,6],"2":[1,0,3,2,4],"3":[0,1,2,3],"4":[0,1],"5":[0,1],"6":[1,0,2,3,4,5],"7":[0,1,2,3],"8":[1,0],"9":[1,0],"10":[1,0,3,2],"11":[0,1,3,2],"12":[0,1,2,3],"13":[2,0,1],"14":[1,0,2],"15":[0,1,2,3],"16":[3,0,1,2],"17":[0,1,2,4,3],"18":[0,1,2,3],"19":[0,1,2,3],"20":[0,1,2,3],"21":[0,1,2,3],"22":[1,0,2,3],"23":[0,1,2,3],"24":[1,0,2],"25":[3,0,2,1],"26":[1,2,0,3],"27":[0,1,2,3],"28":[0,1,2,3],"29":[0,1,3,2],"30":[0,2,1,3],"31":[0,1,2,3],"32":[1,0,2,3],"33":[0,1,2,3],"34":[2,0,1,3],"35":[0,4,1,2,3],"36":[0,1,2,3],"37":[0,1,3,2],"38":[2,1,0,3],"39":[2,0,3,1],"40":[0,2,1,3],"41":[2,0,1,3],"42":[1,2,0,3],"43":[3,1,2,0],"44":[0,2,1,3],"45":[0,1,2,3],"46":[0,1,3,2],"47":[0,1,2,3]};
 Object.keys(ORDEM).forEach(function(n){ESPEC[n].ordem=ORDEM[n]});
 
 /* ===================== A GRADE ===================== */
 FC.G5=[
-  {nivel:1,id:"g5n01",nome:"Nível 1 — Ler, escrever e valor posicional até 999 999",hab:["EF05MA01"],meta:130,gen:gLer,ano:5},
+  {nivel:1,id:"g5n01",nome:"Nível 1 — Números até 999 999: ler, escrever e desafios",hab:["EF05MA01"],meta:130,gen:gLer,ano:5},
   {nivel:2,id:"g5n02",nome:"Nível 2 — Comparar e ordenar números até 999 999",hab:["EF05MA01"],meta:120,gen:gOrdem,ano:5},
   {nivel:3,id:"g5n03",nome:"Nível 3 — Arredondar e estimar",hab:["EF05MA01","EF05MA07"],meta:120,gen:gArredonda,ano:5},
   {nivel:4,id:"g5n04",nome:"Nível 4 — Somas até 999 999",hab:["EF05MA07"],meta:140,gen:gSoma6,ano:5},
@@ -813,7 +815,7 @@ FC.G5BY={};FC.G5.forEach(function(e){FC.G5BY[e.id]=e});
 /* ===================== O 5º ano na grade do app: FC.LEVELS (os níveis seguem os 164 dos quatro primeiros anos; o aluno vê a numeração corrida, de 165 a 211) ===================== */
 var BASE5=FC.LEVELS.length;                          /* 164 */
 var BLOCOS5=[[3,"Números até 999 999"],[6,"Adição e subtração até 999 999"],[11,"Multiplicação por dois algarismos"],[16,"Divisão por dois algarismos"],[21,"Álgebra e proporção"],[27,"Frações maiores e menores que 1"],[36,"Decimais e porcentagem"],[41,"Plano cartesiano, sólidos e polígonos"],[45,"Unidades, tempo, área e volume"],[47,"Probabilidade e gráficos de linhas"]];
-var DICAS5={1:"Leia e escreva números até 999 999, em algarismos e por extenso.",2:"Compare números de seis algarismos: comece pela maior ordem, a das centenas de milhar.",3:"Arredonde olhando o algarismo da direita: 5 ou mais sobe, menos de 5 fica.",
+var DICAS5={1:"Números até 999 999: leia e escreva, diga o valor dos algarismos, ache o número pelas pistas, forme números com cartões, veja quanto falta e complete as sequências.",2:"Compare números de seis algarismos: comece pela maior ordem, a das centenas de milhar.",3:"Arredonde olhando o algarismo da direita: 5 ou mais sobe, menos de 5 fica.",
   4:"Somas com \"vai um\" em várias ordens. Faça no papel se precisar.",5:"Subtrações com \"empresta\" e zeros. Faça no papel se precisar.",6:"Leia o problema, escolha somar ou subtrair e confira se o resultado é razoável.",
   7:"Multiplicar por 10, 100 ou 1 000 é acrescentar zeros. 300 × 40: faça 3 × 4 = 12 e acrescente os três zeros.",8:"234 × 25 = 234 × 20 + 234 × 5. Multiplique pela dezena e pela unidade e some.",9:"Com milhares, vá devagar: 1 258 × 14 = 1 258 × 10 + 1 258 × 4. O papel ajuda.",
   10:"Grupos iguais, fileiras, área de retângulo e velocidade: tudo é multiplicação.",11:"3 camisas e 2 bermudas dão 3 × 2 = 6 combinações. Na árvore, conte as pontas.",12:"Divida o dezena de milhar, o milhar, a centena, a dezena e a unidade, uma de cada vez.",
