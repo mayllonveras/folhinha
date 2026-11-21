@@ -33,6 +33,8 @@ window.addEventListener("pagehide",function(){saveDraft();flush()});
 
 /* Endereços da criança: #/inicio, #/album, #/trocas, #/amigos, #/progresso (abas), #/folha e #/resultado. Voltar durante a folha pergunta antes de sair. */
 var TABS=["inicio","album","trocas","amigos","progresso"];
+var MIRROR_TABS=["album","trocas","amigos"];   // modo responsável (álbum do adulto): só estas abas
+function isMirror(){return !!(S.me&&S.me.mirror)}
 function homePath(){return "/"+(FC.tabState.aluno||"inicio")}
 function goHome(){if(FC.nav.up(homePath()))return Promise.resolve();return loadHome()}
 function leaveSheet(path){
@@ -55,6 +57,7 @@ function route(path){
   }
   var m=/^\/([a-z]+)$/.exec(path),tab=m&&TABS.indexOf(m[1])>=0?m[1]:null;
   if(!tab){tab=FC.tabState.aluno||"inicio";FC.nav.at("/"+tab,true)}   // "/folha" ou "/resultado" ao avançar ou recarregar, ou endereço desconhecido: tela inicial
+  if(isMirror()&&MIRROR_TABS.indexOf(tab)<0){tab="album";FC.nav.at("/album",true)}   // o responsável não tem Início nem Progresso
   FC.tabState.aluno=tab;try{sessionStorage.setItem("fc_tab_aluno",tab)}catch(e){}
   if(FC.$('.shell[data-scope="aluno"]'))return FC.gotoTab(tab,true);
   loadHome().catch(fail);
@@ -147,11 +150,33 @@ function turboCtx(){
 }
 async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
+  if(isMirror()){mirrorHome();return}
   if(FC.turboUi&&isVip()){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
   home();
   firstSteps();
 }
+/* Modo responsável: o adulto que virou amigo da criança (painel dos pais > Acesso) entra aqui com uma sessão criada pelo painel.
+   Só aparecem o álbum dele, as trocas e a criança como amiga. Não há folha, nível, Turbo nem progresso. */
+function mirrorHome(){
+  FC.setKeys(null);cur=null;clearInterval(timerId);
+  var m=S.me,vip=isVip();
+  var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Álbum de</small><b>'+esc(m.name)+'</b></div>'+
+    '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="mirBack" aria-label="Voltar ao painel dos pais">'+FC.icon("back")+'</button></header>';
+  FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
+    {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
+    {id:"trocas",label:"Trocas",icon:"swap",html:vip?tradesPane():vipLockKid("Trocas com "+(m.mirror_child||"a criança"),"As trocas fazem parte do plano VIP. Volte ao painel dos pais para ver o seu plano.")},
+    {id:"amigos",label:"Amigos",icon:"friends",html:vip?'<div id="frBox"><p class="loading">Carregando…</p></div>':vipLockKid("Amigos","Ser amigo de "+(m.mirror_child||"a criança")+" faz parte do plano VIP. Volte ao painel dos pais para ver o seu plano.")}]})+'</div>');
+  FC.nav.at("/"+FC.tabState.aluno);
+  FC.bindTabs("aluno",null,function(id){return "/"+id});
+  $("#mirBack").onclick=function(){location.href="./"};
+  function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
+  sndLabel();
+  $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
+  bindPack();bindAlbum();
+  if(vip){friendsLoad();TR.step="home";trLoad()}
+}
 function home(){
+  if(isMirror())return mirrorHome();   // vários pontos do app chamam home() para redesenhar (ex.: ao fechar a figurinha nova)
   FC.setKeys(null);cur=null;clearInterval(timerId);
   var m=S.me,L=FC.LEVELS[m.level_idx],today=FC.today(),left=m.quota-m.done_today;
   var status,canStart=false;
@@ -251,21 +276,25 @@ function friendsList(){
     return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">esperando a resposta</div></div><button class="btn ghost small" data-rm="'+x.id+'">Cancelar</button></div>'}).join("");
   var fr=f.friends.map(function(x){
     var L=FC.LEVELS[x.level_idx];
-    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+' · '+x.stamps+' de 5 carimbos</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+    var sub=x.mirror?"Responsável":"Nível "+L.id+" · "+x.stamps+" de 5 carimbos";   // o responsável não estuda: não tem nível nem carimbos
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">'+sub+'</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+  var mir=isMirror();   // o responsável só tem a criança como amiga: sem código nem convites
   box.innerHTML=
-    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
+    (mir?"":'<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
       '<p class="muted small-t">Passe este código para quem você quer como amigo.</p><button class="btn ghost small" id="frCopy">Copiar código</button></section>'+
     '<section class="panel"><b>Convidar um amigo</b><p class="muted small-t">Digite o código que ele passou para você.</p>'+
-      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>'+
+      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>')+
     (inc?'<section class="panel"><b>Convites para você</b>'+inc+'</section>':'')+
-    '<section class="panel"><b>Seus amigos</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
-      '<p class="muted small-t gap">Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.</p></section>'+
+    '<section class="panel"><b>'+(mir?"Seu amigo":"Seus amigos")+'</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
+      '<p class="muted small-t gap">'+(mir?"Você é amigo de "+esc(S.me.mirror_child||"a criança")+" enquanto a opção estiver ligada no painel dos pais. Quem desliga lá deixa de ser amigo.":"Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.")+'</p></section>'+
     (out?'<section class="panel"><b>Convites enviados</b>'+out+'</section>':'');
-  $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
-  $("#frForm").onsubmit=function(e){
-    e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
-    friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
-  };
+  if(!mir){
+    $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
+    $("#frForm").onsubmit=function(e){
+      e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
+      friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
+    };
+  }
   $$("[data-ans]",box).forEach(function(b){b.onclick=function(){
     var ok=!!b.getAttribute("data-ok");
     friendsAct("student_friend_answer",{p_token:S.token,p_id:b.getAttribute("data-ans"),p_accept:ok},ok?"Amizade feita!":"Convite recusado.")}});
@@ -280,15 +309,15 @@ async function friendView(id){
   var got=gotOf(v,tid),th=FC.theme(tid);
   var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
   box.innerHTML='<div class="pagehead"><button type="button" class="link crumb" id="frBack">'+FC.icon("back")+'Amigos</button></div>'+
-    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
-      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>'+
+    '<section class="panel"><h2>'+esc(v.name)+'</h2>'+(v.mirror?'<div class="muted">Responsável</div></section>':'<div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
+      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>')+
     '<section class="panel">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
       '<div class="gap">'+FC.albumHtml(tid,got)+'</div>'+
-      '<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p></section>';
+      (v.mirror||isMirror()?'<p class="muted small-t gap">Esta amizade é do painel dos pais: quem liga e desliga é o responsável.</p>':'<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p>')+'</section>';
   $("#frBack").onclick=friendsLoad;
   $$("[data-ft]",box).forEach(function(b){b.onclick=function(){S.frTheme=b.getAttribute("data-ft");friendView(id)}});
-  FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
+  if($("#frUn"))FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
 }
 /* ---------- trocas de figurinhas repetidas ---------- */
 /* Fluxo: Trocas > Nova troca > escolher o amigo > escolher uma repetida minha que ele ainda não tem (e cujo álbum ele tem)
@@ -449,7 +478,7 @@ function trFlow(){
   if(TR.step==="friend"){
     var fr=(S.fr&&S.fr.friends)||[];
     box.innerHTML=back("Trocas")+'<section class="panel"><b>Com quem você quer trocar?</b>'+fr.map(function(x){
-      var L=FC.LEVELS[x.level_idx];return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+'</div></div><button class="btn small" data-tf="'+x.id+'" data-nm="'+esc(x.name)+'">Escolher</button></div>'}).join("")+'</section>';
+      var L=FC.LEVELS[x.level_idx];return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">'+(x.mirror?"Responsável":"Nível "+L.id)+'</div></div><button class="btn small" data-tf="'+x.id+'" data-nm="'+esc(x.name)+'">Escolher</button></div>'}).join("")+'</section>';
     $("#trBack").onclick=function(){trBack("home")};
     $$("[data-tf]",box).forEach(function(b){b.onclick=async function(){
       b.disabled=true;TR.fid=b.getAttribute("data-tf");TR.fname=b.getAttribute("data-nm");
@@ -534,9 +563,10 @@ function dupsOf(m){
 }
 function isFull(m,id){return gotOf(m,id).length>=FC.ALBUM_SIZE}
 /* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai o pacotinho); gaveta = o resto que ainda não está completo. */
-function deskLimit(m){return m.desk_limit||1}
+function deskLimit(m){return m.mirror?99:(m.desk_limit||1)}
 function deskOf(m){
   var lib=themesOf(m);
+  if(m.mirror)return lib.filter(function(x){return !isFull(m,x)});   // álbum do responsável: sem mesa, todos os álbuns que faltam ficam à mostra
   var d=(m.desk_themes||lib.slice(0,deskLimit(m))).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
   return d;
 }
@@ -569,7 +599,21 @@ async function moveAlbum(id,to){
     if(await setDesk(d.filter(function(x){return x!==out}).concat([id])))afterDesk();
   }});
 }
+/* Álbum do responsável: cada pacotinho já vem com o álbum do pacotinho que a criança abriu (pending_by_theme). */
+function mirrorOpen(m){
+  var by=m.pending_by_theme||{};
+  return themesOf(m).filter(function(x){return (by[x]||0)>0&&!isFull(m,x)});
+}
+function mirrorPackPanel(m){
+  var by=m.pending_by_theme||{},ids=mirrorOpen(m),n=ids.reduce(function(a,x){return a+by[x]},0);
+  if(!n)return "";
+  var who=esc(m.mirror_child||"a criança");
+  return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+    '<div class="muted small-t">São os mesmos pacotinhos que '+who+' abriu, do mesmo álbum.'+(ids.length>1?' Escolha de qual álbum abrir.':'')+'</div></div>'+
+    '<button class="btn reward" data-pack>Abrir pacotinho</button></section>';
+}
 function packPanel(m){
+  if(m.mirror)return mirrorPackPanel(m);
   var n=m.pending_packs||0;
   var open=deskOf(m);
   if(m.albums_done&&themesOf(m).every(function(x){return isFull(m,x)}))
@@ -597,24 +641,27 @@ function albumPane(m){
   /* álbum aberto (de Mesa ou Gaveta): capa grande e todas as figurinhas, as ganhas e as que faltam */
   if(sub!=="repetidas"&&S.albOpen){
     var id=S.albOpen,th=FC.theme(id),got=gotOf(m,id),onDesk=d.indexOf(id)>=0,full=isFull(m,id);
-    var mv=full?"":onDesk?'<button type="button" class="btn ghost small" data-move="'+id+'" data-to="gaveta">Guardar na gaveta</button>':'<button type="button" class="btn small" data-move="'+id+'" data-to="mesa">Pôr na mesa</button>';
+    var mv=(full||m.mirror)?"":onDesk?'<button type="button" class="btn ghost small" data-move="'+id+'" data-to="gaveta">Guardar na gaveta</button>':'<button type="button" class="btn small" data-move="'+id+'" data-to="mesa">Pôr na mesa</button>';
     return head+'<section class="panel" id="albumBox"><div class="pagehead"><button type="button" class="link crumb" data-albback>'+FC.icon("back")+'Álbuns</button></div>'+
       '<div class="album-big">'+FC.themeCapa(id)+'</div>'+
       '<div class="split gap"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-      '<div class="split gap"><span class="muted small-t">'+(full?"Álbum completo!":onDesk?"Está na mesa":"Está na gaveta")+'</span>'+mv+'</div>'+
-      '<p class="muted small-t gap">'+(full?'Álbum completo! Parabéns! As repetidas ficam na aba Repetidas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. As figurinhas que faltam aparecem com um ponto de interrogação.')+'</p>'+
+      '<div class="split gap"><span class="muted small-t">'+(full?"Álbum completo!":m.mirror?"":onDesk?"Está na mesa":"Está na gaveta")+'</span>'+mv+'</div>'+
+      '<p class="muted small-t gap">'+(full?'Álbum completo! Parabéns! As repetidas ficam na aba Repetidas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':m.mirror?'Os pacotinhos chegam quando '+esc(m.mirror_child||"a criança")+' abre os dela. As figurinhas que faltam aparecem com um ponto de interrogação.':'Feche as folhas do dia para ganhar o primeiro pacotinho. As figurinhas que faltam aparecem com um ponto de interrogação.')+'</p>'+
       '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
   }
   var tabs='<div class="album-tabs" role="tablist">'+
-    [["mesa","Mesa ("+d.length+")"],["gaveta","Gaveta ("+(g.length+fu.length)+")"],["repetidas","Repetidas ("+total+")"]].map(function(t){
+    [["mesa",m.mirror?"Álbuns ("+d.length+")":"Mesa ("+d.length+")"],["gaveta",m.mirror?"Completos ("+fu.length+")":"Gaveta ("+(g.length+fu.length)+")"],["repetidas","Repetidas ("+total+")"]].map(function(t){
       return '<button type="button" class="chip-btn'+(sub===t[0]?" on":"")+'" role="tab" aria-selected="'+(sub===t[0])+'" data-albsub="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>';
   var body;
   if(sub==="mesa"){
-    body=(d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">A mesa está vazia. Coloque um álbum da gaveta aqui.</p>')+
+    body=m.mirror?
+      (d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">Todos os seus álbuns estão completos!</p>')+
+      '<p class="muted small-t gap">Cada pacotinho que '+esc(m.mirror_child||"a criança")+' abre vale um pacotinho para você, do mesmo álbum. As repetidas de vocês dois podem ser trocadas na aba Trocas.</p>':
+      (d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">A mesa está vazia. Coloque um álbum da gaveta aqui.</p>')+
       '<p class="muted small-t gap">A mesa cabe '+lim+' álbum'+(lim>1?'s':'')+'. É dela que saem os seus pacotinhos.'+(d.length<lim&&g.length?' Tem lugar! Escolha um álbum na gaveta.':'')+'</p>';
   }else if(sub==="gaveta"){
-    body=(g.length?'<div class="cover-grid">'+g.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">Nenhum álbum na gaveta.</p>')+
+    body=(g.length?'<div class="cover-grid">'+g.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':m.mirror?(fu.length?'':'<p class="muted small-t">Nenhum álbum completo ainda.</p>'):'<p class="muted small-t">Nenhum álbum na gaveta.</p>')+
       (fu.length?'<div class="eyebrow gap">Completos ('+fu.length+')</div><div class="cover-grid">'+fu.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':"");
   }else if(!S.repOpen){
     var withDup=ids.filter(function(x){return by[x]});
@@ -666,6 +713,17 @@ function bindAlbum(){
 /* Ganhou pacotinho: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
+  if(m.mirror){   // álbum do responsável: o pacotinho já tem álbum, então não há mesa nem gaveta
+    var mo=mirrorOpen(m),by=m.pending_by_theme||{};
+    if(!mo.length){FC.toast("Seus pacotinhos são de álbuns que já estão completos.");return}
+    if(mo.length===1)return openPack(mo[0]);
+    var mv=FC.overlay('<h2>Escolha o pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa, do mesmo álbum que '+esc(m.mirror_child||"a criança")+' abriu.</p>'+
+      '<div class="pack-choices">'+mo.map(function(id){
+        return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(FC.theme(id).name)+'</b><small>'+by[id]+' pacotinho'+(by[id]>1?'s':'')+'</small></button>';
+      }).join("")+'</div>',{button:"Agora não"});
+    $$(".pack-choice",mv.el).forEach(function(b){b.onclick=function(){mv.close();openPack(b.getAttribute("data-t"))}});
+    return;
+  }
   var open=deskOf(m);
   if(!isVip()&&m.free_album){   // plano Grátis: o pacotinho abre só no álbum principal
     open=open.filter(function(x){return x===m.free_album});
@@ -694,6 +752,7 @@ async function openPack(theme){
   catch(e){S.opening=false;FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
   S.opening=false;
   m.pending_packs=res.pending;
+  if(m.mirror&&m.pending_by_theme&&m.pending_by_theme[res.theme])m.pending_by_theme[res.theme]--;
   track("pacote_aberto",{data:{album:res.theme,raridade:res.tier,repetida:!!res.repeated}});
   if(res.desk)m.desk_themes=res.desk;if(res.albums_done!=null)m.albums_done=res.albums_done;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
@@ -775,7 +834,7 @@ function showWelcome(){
 function completedMsg(m,id){
   var th=FC.theme(id),all=themesOf(m).every(function(x){return isFull(m,x)});
   return '<p class="tier-msg">🎉 Você completou o álbum '+esc(th.name)+'! Ele saiu da mesa e foi para os completos.'+
-    (all?' Você completou TODOS os seus álbuns! Peça aos seus pais para liberarem um álbum novo.':drawerOf(m).length?' Na aba Álbum, escolha outro álbum da gaveta para colocar na mesa.':'')+'</p>';
+    (m.mirror?'':all?' Você completou TODOS os seus álbuns! Peça aos seus pais para liberarem um álbum novo.':drawerOf(m).length?' Na aba Álbum, escolha outro álbum da gaveta para colocar na mesa.':'')+'</p>';
 }
 /* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
 function showAward(aw){

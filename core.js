@@ -100,6 +100,9 @@ FC.err=function(e){
     ["plano_alunos","Você chegou ao limite de alunos do seu plano. No VIP, a família cadastra até 4 crianças."],
     ["amigo_sem_vip","Seu amigo está no plano Grátis: amigos e trocas são do VIP."],
     ["plano_vip","Isso faz parte do plano VIP. Peça para seu responsável conhecer o VIP!"],
+    ["amizade_do_responsavel","Essa amizade é do responsável: quem liga e desliga é ele, no painel dos pais."],
+    ["espelho_inexistente","Ligue primeiro a opção de ser amigo da criança."],
+    ["nome_invalido","Escreva um nome de 1 a 40 letras para a criança ver."],
     ["conta_nao_encontrada","Não existe conta com esse e-mail."],
     ["admin_raiz","A conta principal não pode perder o acesso de administrador."],
     ["nao_e_admin","Essa conta não é administradora."],
@@ -129,7 +132,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v95";
+FC.VERSAO="folhinha-v99";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
