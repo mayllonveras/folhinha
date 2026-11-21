@@ -12,11 +12,12 @@ create function pg_temp.tok(nome text) returns text language sql as $$ select 't
 create function pg_temp.sessao(nome text) returns void language sql as $$
   insert into student_sessions(token_hash, student_id) values (encode(extensions.digest('tok-'||nome, 'sha256'), 'hex'), pg_temp.sid(nome)) $$;
 -- a criança abre n pacotinhos no álbum (ganha n pacotinhos de dias diferentes e abre)
+create temp sequence dias;
 create function pg_temp.abre(nome text, album text, n int) returns void language plpgsql as $$
 declare i int; dia date;
 begin
   for i in 1..n loop
-    dia := current_date - (select count(*) from awards where student_id = pg_temp.sid(nome) and source = 'carimbo')::int - 1;
+    dia := current_date - nextval('pg_temp.dias')::int;   -- um dia novo a cada pacotinho (o índice não aceita dois no mesmo dia)
     perform public._give_packs(pg_temp.sid(nome), dia, 'carimbo', 1);
     perform public.student_open_pack(pg_temp.tok(nome), album);
   end loop;
@@ -193,6 +194,17 @@ select pg_temp.t('espelho com álbum completo', (select count(distinct slot)=52 
 update students set desk_themes='{espaco}', sticker_themes='{espaco}' where id=pg_temp.sid('Beto');
 select pg_temp.abre('Beto', 'espaco', 1);
 select pg_temp.t('álbum completo do espelho: não entrega pacotinho', pg_temp.pend(pg_temp.espelho('Beto'))=0);
+
+-- ---------- responsável removido: o espelho dele para ----------
+select pg_temp.como('00000000-0000-0000-0000-0000000000a1');
+select count(*) as pc0 from awards where student_id = (select id from students where mirror_of=pg_temp.sid('Caio') and mirror_user='00000000-0000-0000-0000-0000000000a1') and kind='pacote' \gset
+delete from guardians where student_id=pg_temp.sid('Caio') and user_id='00000000-0000-0000-0000-0000000000a1';
+select pg_temp.t('removido: espelho inativo e sem amizade', (select not mirror_active from students where mirror_of=pg_temp.sid('Caio') and mirror_user='00000000-0000-0000-0000-0000000000a1')
+  and (select count(*)=0 from friendships f join students m on m.id in (f.requester,f.addressee) where m.mirror_user='00000000-0000-0000-0000-0000000000a1' and m.mirror_of=pg_temp.sid('Caio')));
+select pg_temp.t('removido: o outro responsável segue ligado', (select mirror_active from students where mirror_of=pg_temp.sid('Caio') and mirror_user='00000000-0000-0000-0000-0000000000b1'));
+select pg_temp.abre('Caio', 'espaco', 1);
+select pg_temp.t('removido: não recebe mais pacotinho e guarda o que tinha', (select count(*)=:pc0 from awards where student_id=(select id from students where mirror_of=pg_temp.sid('Caio') and mirror_user='00000000-0000-0000-0000-0000000000a1') and kind='pacote'));
+select pg_temp.t('removido: não entra mais no álbum', pg_temp.err(format('select public.adult_mirror_enter(%L)', pg_temp.sid('Caio'))) like '%sem_permissao%');
 
 -- ---------- convites e administração ----------
 select friend_code as fcm from students where id = pg_temp.espelho('Ana') \gset
