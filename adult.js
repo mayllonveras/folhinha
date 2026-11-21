@@ -1441,9 +1441,9 @@ async function loadTrades(id){
   if(r.error){box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div><p class="muted">Não deu para carregar.</p>';return}
   var nm=function(t,sl){return esc(FC.stickerInfo(t,sl).name)+' <span class="muted small-t">('+esc(FC.theme(t).name)+')</span>'};
   var rows=r.data.map(function(x){
-    var nms=function(l){return (l||[]).map(function(y){return nm(y.theme,y.slot)}).join(", ")};
+    var nms=function(l,recv){return (l||[]).map(function(y){return nm(recv?(y.to||y.theme):y.theme,y.slot)}).join(", ")};   // o que chega vem convertido para o álbum de destino
     var st=x.status==="aceita"?"trocou":x.status==="recusada"?(x.sent?"pedido recusado por":"recusou o pedido de"):(x.sent?"pedido esperando resposta de":"pedido recebido de");
-    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">'+(x.status==="aceita"?'deu '+nms(x.gave)+' e recebeu '+nms(x.got):'trocaria '+nms(x.gave)+' por '+nms(x.got))+'</span></span></li>'}).join("");
+    return '<li class="fr-row"><span class="grow"><b>'+FC.dm(String(x.at).slice(0,10))+'</b> · '+st+' <b>'+esc(x.friend)+'</b><br><span class="small-t">'+(x.status==="aceita"?'deu '+nms(x.gave)+' e recebeu '+nms(x.got,1):'trocaria '+nms(x.gave)+' por '+nms(x.got,1))+'</span></span></li>'}).join("");
   box.innerHTML='<div class="eyebrow gap">Trocas de figurinhas</div>'+(rows?'<ul class="plain">'+rows+'</ul>':'<p class="muted">Ainda sem trocas.</p>')+'<p class="muted small-t gap">Últimas 50. Só para consulta.</p>';
 }
 async function loadSlow(id){
