@@ -23,11 +23,17 @@ L.forEach((l,i)=>{
 const grupos=L.map(l=>l.group);for(let i=1;i<grupos.length;i++)if(grupos[i]!==grupos[i-1]&&grupos.indexOf(grupos[i])<i)falha("grupo "+grupos[i]+" aparece em dois pedaços");
 if(!L[15].intro||!/mão esquerda/.test(L[15].intro))falha("o nível 16 precisa do lembrete das mãos");
 for(const [id,re] of [[64,/mão esquerda/],[65,/para cima/],[68,/zero da régua/],[77,/mil.*sozinho|sozinho.*1000/],[103,/resto/],[107,/planificação/],[109,/congruentes/]])if(!L[id-1].intro||!re.test(L[id-1].intro))falha("o nível "+id+" precisa do seu lembrete");
-// metas iguais às das migrações do banco (1º ano: 35 níveis; 2º ano: 41 acrescentados; 3º ano: 42 acrescentados)
+// metas iguais às das migrações do banco (1º ano: 35 níveis; 2º ano: 41 acrescentados; 3º ano: 42 acrescentados; depois, as migrações que só mudam metas)
 const linhas=[];
 for(const f of ['2026-11-14-grade-1ano.sql','2026-11-14-grade-2ano.sql','2026-11-15-grade-3ano.sql','2026-11-15-grade-4ano.sql','2026-11-17-grade-5ano.sql']){
   const sql=fs.readFileSync(__dirname+'/../migracoes/'+f,'utf8');
   linhas.push(...[...sql.matchAll(/\((\d+), '(\d+)', (\d+), (\d+)\)/g)].map(m=>({idx:+m[1],code:m[2],target:+m[3],ano:+m[4]})));
+}
+// migrações posteriores que só mudam a meta de um nível ("update public.levels set target = N where idx = X and code = 'C'"), na ordem das datas
+for(const f of fs.readdirSync(__dirname+'/../migracoes').filter(f=>/^\d{4}-\d\d-\d\d-.*\.sql$/.test(f)).sort()){
+  const sql=fs.readFileSync(__dirname+'/../migracoes/'+f,'utf8');
+  for(const m of sql.matchAll(/update public\.levels set target = (\d+) where idx = (\d+) and code = '(\d+)'/g)){
+    const r=linhas.find(x=>x.idx===+m[2]&&x.code===m[3]);if(!r)falha("migração "+f+" muda um nível que não existe: "+m[0]);else r.target=+m[1]}
 }
 if(linhas.length!==211)falha("as migrações têm "+linhas.length+" níveis");
 linhas.forEach((r,i)=>{if(r.idx!==i)falha("idx fora de ordem na migração: "+r.idx);const l=L[r.idx];if(!l||l.id!==r.code||l.target!==r.target||l.ano!==r.ano)falha("migração diverge no nível "+r.code+": "+JSON.stringify(r)+" x "+(l&&l.id+","+l.target+","+l.ano))});
