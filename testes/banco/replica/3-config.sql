@@ -62,7 +62,7 @@ insert into public.levels select * from jsonb_populate_record(null::public.level
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 2, "idx": 74, "code": "75", "target": 100, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 2, "idx": 75, "code": "76", "target": 130, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 76, "code": "77", "target": 130, "stamps_needed": null}');
-insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 77, "code": "78", "target": 120, "stamps_needed": null}');
+insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 77, "code": "78", "target": 130, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 78, "code": "79", "target": 120, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 79, "code": "80", "target": 120, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 80, "code": "81", "target": 110, "stamps_needed": null}');
