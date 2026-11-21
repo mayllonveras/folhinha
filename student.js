@@ -958,10 +958,10 @@ async function buildSheet(){
     items=plan.repeat.map(FC.plainItem);
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
   }else if(plan&&plan.mode==="reforco"&&plan.weak&&plan.weak.length){
-    items=ordena(FC.makeItems(m.level_idx,plan.weak,{teto:teto,sheetNo:m.done_today}));
+    items=ordena(FC.makeItems(m.level_idx,plan.weak,{teto:teto,sheetNo:m.done_today,folhas:m.quota}));
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
-  }else{items=ordena(FC.makeItems(m.level_idx,null,{teto:teto,sheetNo:m.done_today}))}
+  }else{items=ordena(FC.makeItems(m.level_idx,null,{teto:teto,sheetNo:m.done_today,folhas:m.quota}))}
   var Lv=FC.LEVELS[m.level_idx];if(Lv&&Lv.intro)intro=Lv.intro+" "+intro;
   if(teto)intro="Você já concluiu tudo o que dá para avançar por enquanto. Hoje é folha de revisão: contas dos níveis que você já fez. "+intro;
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
