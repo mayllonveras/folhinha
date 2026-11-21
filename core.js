@@ -50,7 +50,7 @@ FC.err=function(e){
     ["User already registered","Este e-mail já tem cadastro. Entre com a senha."],
     ["sessao_invalida","Sessão expirada."],
     ["sem_folha_hoje","Hoje não é dia de folha para este aluno."],
-    ["min_folhas","O mínimo é de 5 folhas por dia."],
+    ["min_folhas","O mínimo é de 3 folhas por dia."],
     ["min_dias","O mínimo é de 3 dias de estudo por semana."],
     ["min_meta","A meta precisa ser de pelo menos 70% do máximo de pontos da semana."],
     ["sem_pacote","Você não tem pacotinho para abrir agora."],
