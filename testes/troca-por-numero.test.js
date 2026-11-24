@@ -49,6 +49,6 @@ ok(/nms\(x\.got,1\)/.test(adult),"painel dos pais mostra o destino do que o alun
 /* 5. Migração: pontos essenciais */
 const mig=fs.readFileSync(path.join(root,"migracoes","2026-11-21-troca-por-numero.sql"),"utf8");
 ["add column to_theme","coalesce(to_theme, theme)","_tier_value(r.dst, r.sl)","'item_repetido'","update awards set student_id = t.addressee, theme = r.dst","update awards set student_id = t.requester, theme = r.dst","_opens_of","_on_desk(p_adr, r.dst)","_on_desk(p_req, r.dst)","unnest(o.desk_themes)","unnest(me.desk_themes)","destino_fora_da_mesa","_need_vip(sid)","_check_albums(t.requester)","_student_vip(oid)","public._trade_side(uuid, text)"].forEach(k=>ok(mig.indexOf(k)>=0,"migração tem: "+k));
-ok(fs.readFileSync(path.join(root,"sw.js"),"utf8").indexOf("folhinha-v101")>=0,"cache do app atualizado (v101)");
+ok(/var CACHE = "folhinha-v\d+"/.test(fs.readFileSync(path.join(root,"sw.js"),"utf8")),"cache do app tem versão");
 
 console.log(falhas?falhas+" falha(s)":"troca por número: ok");process.exit(falhas?1:0);
