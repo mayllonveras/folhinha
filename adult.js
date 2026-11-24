@@ -14,7 +14,7 @@ function anoLine(s,L,today,semHab){
 }
 /* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
 var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
-function deskLimit(){return (PUB&&PUB.limite_mesa)||1}
+function deskLimit(){return 1}   // a mesa tem um álbum só
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 /* ---------- plano (Grátis ou VIP) ----------
@@ -60,7 +60,7 @@ function vipLock(title,text){
 }
 function bindLocks(){$$("[data-plans]").forEach(function(b){b.onclick=showPlans})}
 var PLAN_ROWS=[["Crianças por conta","1","até 4 (família)"],["Folhas do dia","2 por dia","as do programa (5 ou mais)"],["Todos os anos (1º ao 5º) e vídeos","✓","✓"],
-  ["Álbuns de figurinhas","1","todos"],["Pacotinhos","boas-vindas e dias seguidos","+ carimbo, perseverança e Turbo"],
+  ["Álbuns de figurinhas","1","todos"],["Figurinhas ganhas","boas-vindas e dias seguidos","+ carimbo, perseverança e Turbo"],
   ["Amigos e trocas de figurinhas","—","✓"],["Trilha Turbo","—","✓"],["Painel dos pais","resumo e histórico","completo, com a aba Atenção"]];
 /* ---------- assinatura (migracoes/2026-11-18-assinatura.sql e supabase/functions/assinatura) ----------
    Sem a migração (adult_billing falha), a tela segue com "a assinatura chega em breve". */
@@ -740,7 +740,7 @@ function programFields(s){
       '<label class="field">Começa a estudar em<input id="pStart" type="date" value="'+v.start_date+'" required></label></div>'+
       '<small id="pTime">'+studyTimeText(lv0,v.sheets_per_day)+'</small>'+
       '<fieldset class="field"><legend>Dias de estudo</legend><div class="chks">'+days+'</div><small id="pDaysHint">Têm a cota de folhas e contam para os dias seguidos. Mínimo: '+MIN_DAYS+' dias por semana.</small></fieldset>'+
-      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não zera os dias seguidos. Carimbo e pacotinhos valem normalmente.</small></fieldset>'+
+      '<fieldset class="field"><legend>Dias livres</legend><div class="chks">'+free+'</div><small>Nesses dias a criança pode jogar, com a mesma cota, mas não precisa: faltar não zera os dias seguidos. Carimbo e figurinhas valem normalmente.</small></fieldset>'+
     '</div></div>'+
     '<div class="adv-sec" id="pNivel"><h4>'+(s?'Nível '+esc(FC.lv(v.level_idx))+' · pode avançar '+esc(tetoNome):'Nível inicial e limite de avanço')+'</h4><div class="adv-body">'+
       '<label class="field">Nível em que ele está<select id="pLevel">'+lv+'</select><small>'+(s?'Só mude para corrigir o ponto em que ele está. Ao mudar, os carimbos do nível voltam a zero.':'Deixe em "Início do ano" na maioria dos casos. Só escolha outro nível se souber que ele já domina o conteúdo anterior.')+'</small></label>'+
@@ -763,9 +763,9 @@ function rulesBox(){
     (sj>0?'<li><b>Dia de salto:</b> no 1º dia de um nível, '+(P.salto_acertos||98)+'% ou mais e tempo médio até '+(P.salto_tempo||60)+'% da meta fazem ele <b>subir direto</b> (no máximo '+sj+' por semana). Se for mal no nível novo, o app oferece a ele voltar e treinar mais; ele decide.</li>':'')+
     '<li>O aluno só avança até o <b>limite de anos à frente</b> definido acima. Ao chegar nele, continua praticando e você pode liberar mais.</li>'+
     '<li>As contas que ele erra voltam nas próximas folhas, até 4 por folha, e continuam voltando no nível seguinte até ele acertar 2 vezes seguidas.</li>'+
-    '<li>Cada <b>carimbo</b> vale <b>1 pacotinho</b> de figurinhas.</li>'+
-    '<li>Fechar <b>todas as folhas do dia</b>, com ou sem carimbo, vale mais <b>1 pacotinho</b> (perseverança). A cota precisa fechar no mesmo dia.</li>'+
-    '<li>Dias de estudo seguidos com a cota fechada dão pacotinhos extras aos <b>3, 7 e 14 dias</b> (2, 3 e 5 pacotinhos) e depois <b>a cada 30 dias</b> (5 pacotinhos). Faltar a um dia de estudo zera a sequência.</li></ul></div>';
+    '<li>Cada <b>carimbo</b> vale <b>1 figurinha</b>.</li>'+
+    '<li>Fechar <b>todas as folhas do dia</b>, com ou sem carimbo, vale mais <b>1 figurinha</b> (perseverança). A cota precisa fechar no mesmo dia.</li>'+
+    '<li>Dias de estudo seguidos com a cota fechada dão figurinhas extras aos <b>3, 7 e 14 dias</b> (2, 3 e 5 figurinhas) e depois <b>a cada 30 dias</b> (5 figurinhas). Faltar a um dia de estudo zera a sequência.</li></ul></div>';
 }
 /* Resumo dos álbuns liberados na tela do programa (a escolha fica na tela "Ver álbuns", para não poluir o formulário). */
 function themeSummary(){
@@ -783,12 +783,12 @@ function albumDetail(id){
   FC.overlay('<h2>'+esc(th.name)+'</h2><div class="album-head">'+FC.themeCapa(th.id)+'<p class="grow">'+esc(th.desc)+'</p></div>'+
     '<h3 class="gap">O que aparece em cada carta</h3><ul class="plain">'+FC.cardFields(th.id).map(function(f){return '<li>'+esc(f)+'</li>'}).join("")+'</ul>'+
     '<h3 class="gap">Algumas cartas de exemplo</h3><div class="album sample">'+cells+'</div>'+
-    '<p class="muted small-t gap">O álbum tem '+FC.ALBUM_SIZE+' figurinhas. Estas são só uma amostra: a criança descobre as outras, inclusive as raras, ao ganhar os pacotinhos.</p>',{wide:true});
+    '<p class="muted small-t gap">O álbum tem '+FC.ALBUM_SIZE+' figurinhas. Estas são só uma amostra: a criança descobre as outras, inclusive as raras, ao ganhar as figurinhas.</p>',{wide:true});
 }
 /* Tela "Ver álbuns": grade de capas para marcar os álbuns liberados (quantos quiser, pelo menos 1). Só vale ao tocar em Pronto. */
 function openAlbums(){
   var cur=$$('#thStore input[name="themes"]:checked').map(function(c){return c.value});
-  var ov=FC.overlay('<h2>Álbuns da criança</h2><p class="muted small-t">Marque os álbuns que a criança poderá conquistar, quantos quiser (pelo menos 1). Ela escolhe quais ficam na mesa (até '+deskLimit()+' por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</p>'+
+  var ov=FC.overlay('<h2>Álbuns da criança</h2><p class="muted small-t">Marque os álbuns que a criança poderá conquistar, quantos quiser (pelo menos 1). Ela escolhe qual fica na mesa (só um por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</p>'+
     (FC.THEMES.length>THEME_SEARCH_FROM?'<div class="theme-filter"><input type="search" id="thQ" placeholder="Buscar álbum" aria-label="Buscar álbum"><select id="thCat" aria-label="Categoria"><option value="">Todas as categorias</option>'+
       FC.THEMES.map(function(t){return FC.catOf(t.id)}).filter(function(c,i,a){return a.indexOf(c)===i}).map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>':"")+
     '<div class="album-grid" id="thGrid">'+FC.THEMES.map(function(t){
@@ -992,18 +992,18 @@ async function detail(id,day){
     return '<div class="split"><div class="eyebrow">Álbuns'+(themeIds.length>1?' ('+themeIds.length+')':'')+'</div>'+
       (albFree?'':'<button type="button" class="link small-t" data-more="1">Escolher álbuns</button>')+'</div>'+
       '<p class="small-t alb-sum"><b>'+figs+'</b> figurinha'+(figs===1?'':'s')+' conquistada'+(figs===1?'':'s')+
-      (packsWaiting?' <span class="tag warn">'+packsWaiting+' pacotinho'+(packsWaiting>1?'s':'')+' para abrir</span>':'')+'</p>'+
+      (packsWaiting?' <span class="tag warn">'+packsWaiting+' figurinha'+(packsWaiting>1?'s':'')+' para abrir</span>':'')+'</p>'+
       lista+(drawerIds.length?'<p class="muted small-t gap">A mesa tem os álbuns que a criança está colando agora; a gaveta guarda os outros. Ela mesma escolhe o que fica na mesa.</p>':'');
   }
   var rewardPanel=doneNotice+'<div class="panel"><div id="albPane">'+albPaneHtml()+'</div></div>';
 
-  /* pacotinhos ganhos, por origem (cada um ainda fechado ou já aberto em figurinha) */
-  var by={carimbo:0,perseveranca:0,marco:0,turbo:0,boas_vindas:0},byTot=0;   // "troca" é figurinha recebida de um amigo, não pacotinho
+  /* figurinhas ganhas, por origem (cada uma ainda fechada ou já aberta) */
+  var by={carimbo:0,perseveranca:0,marco:0,turbo:0,boas_vindas:0},byTot=0;   // "troca" é figurinha recebida de um amigo, não ganha por mérito
   awards.forEach(function(a){if(a.source&&by[a.source]!=null){by[a.source]++;byTot++}});
   var ORIGEM=[["carimbo","pelo carimbo do dia"],["perseveranca","por fechar todas as folhas do dia"],["marco","pelos marcos de dias seguidos"],["turbo","pela Trilha Turbo"],["boas_vindas","de boas-vindas"]];
-  var packsHtml='<div class="panel"><div class="split"><div class="eyebrow">Pacotinhos ganhos</div><b class="num">'+byTot+'</b></div>'+
-    (byTot?'<ul class="plain gap packs-by">'+ORIGEM.filter(function(o){return by[o[0]]}).map(function(o){return '<li><b class="num">'+by[o[0]]+'</b> '+o[1]+'</li>'}).join("")+'</ul>':'<p class="muted small-t gap">Ele ainda não ganhou nenhum pacotinho.</p>')+
-    '<p class="muted small-t gap">Cada pacotinho vira uma figurinha quando a criança abre.</p></div>';
+  var packsHtml='<div class="panel"><div class="split"><div class="eyebrow">Figurinhas ganhas</div><b class="num">'+byTot+'</b></div>'+
+    (byTot?'<ul class="plain gap packs-by">'+ORIGEM.filter(function(o){return by[o[0]]}).map(function(o){return '<li><b class="num">'+by[o[0]]+'</b> '+o[1]+'</li>'}).join("")+'</ul>':'<p class="muted small-t gap">Ele ainda não ganhou nenhuma figurinha.</p>')+
+    '<p class="muted small-t gap">Cada figurinha ganha fica esperando até a criança abrir.</p></div>';
 
   /* ---------- Histórico: um cartão por dia; tocar abre a página do dia, com as folhas, as contas erradas e a Turbo ---------- */
   var byDay={},moveBy={},oldest=sheets.length>=300?sheets[sheets.length-1].study_day:s.start_date;   // antes disso as folhas não foram baixadas
@@ -1058,7 +1058,7 @@ async function detail(id,day){
       '<li>'+(fa?'Acertos: <b>'+r.day_pct+'%</b> de primeira ('+r.day_ok+' de '+r.day_total+'). Faltou chegar a '+r.min_pct+'%.':'Acertos: <b>'+r.day_pct+'%</b> de primeira. Esta parte estava boa (mínimo de '+r.min_pct+'%).')+'</li>'+
       '<li>'+(ft?'Tempo: média de <b>'+med+'</b> por folha. A meta do nível '+nv+' é de '+meta+'.':'Tempo: média de <b>'+med+'</b> por folha, dentro da meta de '+meta+'. Esta parte estava boa.')+'</li></ul>';
     return '<p><b>Sem carimbo neste dia.</b> '+nome+' fechou as '+r.done+' folhas, mas '+(r.why==="acertos_tempo"?"não alcançou nem os acertos nem o tempo":r.why==="acertos"?"não alcançou o mínimo de acertos":"passou do tempo")+' que o carimbo pede.</p>'+lista+
-      '<p class="muted small-t">Fechar o dia, mesmo sem carimbo, vale o pacotinho da perseverança. Amanhã tem outra chance, e as contas erradas voltam nas próximas folhas.</p>'+nota;
+      '<p class="muted small-t">Fechar o dia, mesmo sem carimbo, vale a figurinha da perseverança. Amanhã tem outra chance, e as contas erradas voltam nas próximas folhas.</p>'+nota;
   }
   function weekOf(d){return FC.addDays(d,-((FC.dow(d)+6)%7))}
   function histList(){
@@ -1186,12 +1186,12 @@ async function detail(id,day){
       (tdPct!=null?'<span class="tag '+(tdPct>=80?'ok':'warn')+'">'+tdPct+'% de acerto de primeira</span>':'<small>'+(isStudyToday?(todayKind==='free'?'dia livre, ainda sem folhas':'ainda sem folhas hoje'):'hoje é descanso')+'</small>')+'</div>'+
     '<div class="panel stat"><div class="eyebrow">Nível</div><div class="v">'+L.id+' <small>de '+FC.LEVELS.length+'</small></div><small>'+esc(L.name)+'</small><small class="ano-line">'+esc(anoLine(s,L,today,true))+'</small></div>'+
     '<div class="panel stat"><div class="eyebrow">Carimbos</div><div class="v">'+Math.min(s.stamps,need)+' <small>de '+need+'</small></div><div class="stamps">'+stamps+'</div><small>com '+need+' ele sobe de nível</small></div>'+
-    '<div class="panel stat"><div class="eyebrow">Dias seguidos</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>próximo marco: '+nx.at+' dias ('+nx.packs+' pacotinhos)</small><small>melhor: '+s.best_streak+'</small></div></div>';
+    '<div class="panel stat"><div class="eyebrow">Dias seguidos</div><div class="v">'+sk+' <small>dia'+(sk===1?"":"s")+'</small></div><small>próximo marco: '+nx.at+' dias ('+nx.packs+' figurinhas)</small><small>melhor: '+s.best_streak+'</small></div></div>';
   var free=studentFree(s);
   var planNote=free?'<div class="panel plan-banner plan-free"><div class="grow"><b>Plano Grátis</b><p class="small-t">'+esc(s.name)+' faz '+quotaOf(s)+' folhas por dia, com 1 álbum. Trocas com amigos, Trilha Turbo e a aba Atenção são do VIP.</p></div><button type="button" class="btn small" data-plans>Ver planos</button></div>':'';
   var resumo=planNote+doneNotice+notices+stats+(free?'':turboPanel(turbo,s,today))+   // no Grátis a Turbo é trancada: o quadro não aparece
     
-    '<details class="panel rule how"><summary><b>Como o aluno avança</b></summary><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 pacotinho. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 pacotinho. Com '+need+' carimbos ele sobe de nível sozinho; a mudança aparece no Histórico. Fechar todas as folhas de um dia de estudo soma 1 dia seguido; faltar a um dia de estudo zera a contagem. Para mudar o nível agora, use a aba Programa.</p></details>';
+    '<details class="panel rule how"><summary><b>Como o aluno avança</b></summary><p class="small-t">Cada dia com '+((PUB&&PUB.normal_acertos)||80)+'% ou mais de acertos de primeira e tempo médio dentro da meta vale 1 carimbo e 1 figurinha. Dia de ouro vale '+((PUB&&PUB.ouro_carimbos)||2)+' carimbos, e um dia de salto faz o aluno subir direto de nível. Fechar todas as folhas do dia, com ou sem carimbo, vale mais 1 figurinha. Com '+need+' carimbos ele sobe de nível sozinho; a mudança aparece no Histórico. Fechar todas as folhas de um dia de estudo soma 1 dia seguido; faltar a um dia de estudo zera a contagem. Para mudar o nível agora, use a aba Programa.</p></details>';
   var historico='<div id="histBox"></div>';
   /* Atenção: tudo o que pede ajuda fica aqui (assuntos com mais erro, contas em reforço, contas demoradas e fatos da Turbo). A aba inteira é do VIP. */
   var apoio='<div class="grid"><div class="col">'+weakHtml+'</div><div class="col"><div class="panel" id="slowBox"><div class="eyebrow gap">Contas mais demoradas</div><p class="muted">Carregando…</p></div></div></div>';
@@ -1210,7 +1210,7 @@ async function detail(id,day){
     '<div class="panel"><div class="eyebrow">Adultos que acompanham</div><ul class="plain gap">'+names+'</ul>'+
     (iAmOwner?'<div class="actions gap"><button class="btn ghost small" id="invite">Convidar outro adulto</button></div><div id="inviteOut"></div>':'')+'</div></div>'+
     '</div>'+
-    (iAmOwner?'<details class="panel danger-zone"><summary>Apagar o aluno</summary><p class="muted small-t gap">Apagar o aluno remove todo o histórico, as figurinhas e os pacotinhos. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar '+esc(s.name)+' e todo o histórico</button></div></details>':'<p class="muted small-t">Só quem cadastrou o aluno pode apagá-lo.</p>');
+    (iAmOwner?'<details class="panel danger-zone"><summary>Apagar o aluno</summary><p class="muted small-t gap">Apagar o aluno remove todo o histórico, as figurinhas. Isso não tem volta.</p><div class="actions gap"><button class="btn danger small" id="del">Apagar '+esc(s.name)+' e todo o histórico</button></div></details>':'<p class="muted small-t">Só quem cadastrou o aluno pode apagá-lo.</p>');
   /* Amigos: o álbum do adulto com a criança (à esquerda); os amigos dela, com convite e código, e as trocas (à direita). */
   var amigos='<div class="grid"><div class="col">'+(free?vipLock("Amigos e trocas","No VIP a criança faz amigos pelo código e troca figurinhas repetidas com eles. As amizades que já existem continuam guardadas."):'')+
     '<div class="panel" id="mirBox"><div class="eyebrow gap">Seu álbum com '+esc(s.name)+'</div><p class="muted">Carregando…</p></div></div>'+
@@ -1381,7 +1381,7 @@ async function loadFriends(id,sname,free){
     FC.toast("Pronto.");loadFriends(id,sname,free);
   })});
 }
-/* Álbum do adulto: o responsável vira amigo da criança e ganha, do mesmo álbum, a mesma quantidade de pacotinhos que ela abre
+/* Álbum do adulto: o responsável vira amigo da criança e ganha, do mesmo álbum, a mesma quantidade de figurinhas que ela abre
    (migracoes/2026-11-21-album-do-adulto.sql). Ao ligar, recebe de uma vez o que a criança já abriu. As trocas entre os dois
    acontecem no álbum do responsável, que abre na tela do app do aluno em modo responsável. */
 async function loadMirror(id,sname,free){
@@ -1393,13 +1393,13 @@ async function loadMirror(id,sname,free){
   function nameField(){return '<label class="field"><span>Como '+n+' vai ver você no app</span><input id="mirName" maxlength="40" autocomplete="off" value="'+esc(d.name||d.default_name||"")+'"></label>'}
   function failIt(e,btn){btn.disabled=false;FC.toast(FC.err(e),true)}
   if(!d.exists&&!d.vip){
-    box.innerHTML=head+'<p class="small-t">Você pode virar amigo de '+n+' no app: cada pacotinho que ele abrir, você também ganha um, do mesmo álbum. Isso faz parte do plano VIP.</p>'+
+    box.innerHTML=head+'<p class="small-t">Você pode virar amigo de '+n+' no app: cada figurinha que ele abrir, você também ganha uma, do mesmo álbum. Isso faz parte do plano VIP.</p>'+
       '<div class="actions gap"><button type="button" class="btn small" data-plans>Ver planos</button></div>';
     bindLocks();return;
   }
   if(!d.exists||!d.active){
     box.innerHTML=head+(d.exists?'<p class="small-t">Você deixou de ser amigo de '+n+'. O seu álbum continua guardado, com as figurinhas que você já ganhou.</p>':
-      '<p class="small-t">Vire amigo de '+n+' no app. Cada pacotinho que '+n+' abrir, você também ganha um, <b>do mesmo álbum</b>. Como o sorteio é separado, os dois terão figurinhas repetidas e podem trocar entre si, sem esperar '+n+' fazer outros amigos.</p>')+
+      '<p class="small-t">Vire amigo de '+n+' no app. Cada figurinha que '+n+' abrir, você também ganha uma, <b>do mesmo álbum</b>. Como o sorteio é separado, os dois terão figurinhas repetidas e podem trocar entre si, sem esperar '+n+' fazer outros amigos.</p>')+
       '<p class="small-t gap">Ao ligar, você já recebe a mesma quantidade de figurinhas que '+n+' abriu até agora, álbum por álbum.</p>'+
       '<form id="mirForm" class="form gap" novalidate>'+nameField()+'<div class="actions"><button class="btn" type="submit" id="mirOn"'+(d.vip?'':' disabled')+'>'+(d.exists?"Voltar a ser amigo de ":"Quero ser amigo de ")+n+'</button>'+
       (d.exists?'<button type="button" class="btn ghost" id="mirOpen">Abrir meu álbum</button>':'')+'</div></form>'+
@@ -1408,14 +1408,14 @@ async function loadMirror(id,sname,free){
       e.preventDefault();var b=$("#mirOn");b.disabled=true;
       var x=await sb.rpc("adult_mirror_enable",{p_student:id,p_name:$("#mirName").value});
       if(x.error)return failIt(x.error,b);
-      FC.toast(x.data.delivered>0?"Pronto! Você recebeu "+x.data.delivered+" pacotinho"+(x.data.delivered>1?"s":"")+" para abrir.":"Pronto! Vocês agora são amigos.");
+      FC.toast(x.data.delivered>0?"Pronto! Você recebeu "+x.data.delivered+" figurinha"+(x.data.delivered>1?"s":"")+" para abrir.":"Pronto! Vocês agora são amigos.");
       loadMirror(id,sname,free);loadFriends(id,sname,free);
     };
   }else{
     box.innerHTML=head+'<p class="small-t">Você é amigo de <b>'+n+'</b> no app como <b>'+esc(d.name)+'</b>.</p>'+
-      '<div class="stats gap"><div class="panel stat"><div class="eyebrow">Pacotinhos para abrir</div><div class="v">'+d.packs+'</div></div><div class="panel stat"><div class="eyebrow">Figurinhas no seu álbum</div><div class="v">'+d.stickers+'</div></div></div>'+
-      '<p class="small-t muted gap">A cada pacotinho que '+n+' abre, você recebe um do mesmo álbum. As trocas entre vocês são por valor: comum vale 1, rara 2 e ultrarrara 3.</p>'+
-      (d.vip?'':'<p class="small-t gap">O seu plano VIP acabou: o que você já ganhou fica guardado, mas novos pacotinhos e trocas voltam quando você renovar.</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div>')+
+      '<div class="stats gap"><div class="panel stat"><div class="eyebrow">Figurinhas para abrir</div><div class="v">'+d.packs+'</div></div><div class="panel stat"><div class="eyebrow">Figurinhas no seu álbum</div><div class="v">'+d.stickers+'</div></div></div>'+
+      '<p class="small-t muted gap">A cada figurinha que '+n+' abre, você recebe uma do mesmo álbum. As trocas entre vocês são por valor: comum vale 1, rara 2 e ultrarrara 3.</p>'+
+      (d.vip?'':'<p class="small-t gap">O seu plano VIP acabou: o que você já ganhou fica guardado, mas novas figurinhas e trocas voltam quando você renovar.</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div>')+
       '<div class="actions gap"><button type="button" class="btn" id="mirOpen">Abrir meu álbum</button><button type="button" class="btn ghost small" id="mirOff">Deixar de ser amigo</button></div>';
     FC.confirmClick($("#mirOff"),"Toque de novo para confirmar",async function(){
       var x=await sb.rpc("adult_mirror_disable",{p_student:id});
