@@ -45,29 +45,37 @@ function studyWeekday(m,from,k){
 }
 /* Tela de dias seguidos, depois do resultado do dia fechado: a trilha em fileiras de 7 dias, com a figurinha da meta
    (a capa do pacote do álbum que está na mesa) em cima do dia em que ela sai. Segue as mesmas metas de FC.nextMarco. */
-function streakScreen(res,pk){
-  var st=res.streak,reached=(pk.marco||0)>0,nx=res.next_marco||FC.nextMarco(st);
-  var g=reached?res.marco_streak:nx.at,qty=reached?pk.marco:nx.packs;
+function streakBody(m,st,g,qty,reached,nx,from){
   var r=Math.floor((g-st)/7),end=g-7*r,start=end-6;
   if(start<1){start=1;end=Math.min(g,7)}
-  var n=end-start+1,isGoalRow=end===g,today=FC.today(),dn=Math.min(st,end)-start;
-  var dId=deskOf(S.me)[0],art=dId?FC.themePack(dId):FC.packSvg(),pw=46;
+  var n=end-start+1,isGoalRow=end===g,dn=Math.min(st,end)-start;
+  var dId=deskOf(m)[0],art=dId?FC.themePack(dId):FC.packSvg(),pw=46;
   var check='<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
   function figs(q){return q+" figurinha"+(q===1?"":"s")}
   var days="";
   for(var d=start;d<=end;d++){
     var cls="sk-d"+(d<=st?" done":"")+(d===st?" today":"")+(d===g?" goal":"");
     var prize=(d===g)?'<div class="sk-prize'+(n>=5?" right":"")+(reached?" open":"")+'" style="--pw:'+pw+'px"><span class="sk-pill">+'+figs(qty)+'</span><span class="sk-art">'+art+'</span></div>':"";
-    days+='<div class="'+cls+'">'+prize+'<span class="sk-wd">'+studyWeekday(S.me,today,d-st)+'</span><span class="sk-dot">'+(d<=st?check:d)+'</span></div>';
+    days+='<div class="'+cls+'">'+prize+'<span class="sk-wd">'+studyWeekday(m,from,d-st)+'</span><span class="sk-dot">'+(d<=st?check:d)+'</span></div>';
   }
   var left=g-st,msg=reached?'Meta alcançada! Você ganhou <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!':
     'Faltam <b>'+left+' dia'+(left===1?"":"s")+'</b> de estudo para ganhar <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!';
   var hint=reached?'Próxima meta: <b>'+nx.at+' dias</b> seguidos (+'+nx.packs+')':
     (isGoalRow?'':'A meta fica no dia '+g+'. ')+'Só contam os dias de estudo.<br>Faltar a um deles zera a sequência.';
-  FC.nav.at("/sequencia",true);
-  FC.render('<div class="sk"><div class="sk-hero"><div class="eyebrow">Perseverança</div><div class="sk-num">'+st+'<div class="sk-unit">'+(st===1?"dia seguido":"dias seguidos")+'</div></div></div>'+
+  return '<div class="sk-hero"><div class="eyebrow">Perseverança</div><div class="sk-num">'+st+'<div class="sk-unit">'+(st===1?"dia seguido":"dias seguidos")+'</div></div></div>'+
     '<div class="sk-trail"'+(isGoalRow?'':' style="padding-top:22px"')+'><div class="sk-days" role="img" aria-label="'+st+' de '+g+' dias seguidos" style="--n:'+n+';--p:'+(n>1?Math.max(0,dn)/(n-1):0)+'">'+days+'</div></div>'+
-    '<p class="sk-msg">'+msg+'</p><p class="sk-hint">'+hint+'</p>'+
+    '<p class="sk-msg">'+msg+'</p><p class="sk-hint">'+hint+'</p>';
+}
+/* Card da tela inicial: a mesma trilha da tela de dias seguidos, a partir do último dia que fechou a sequência. */
+function streakCard(m){
+  var st=m.streak||0,nx=m.next_marco||FC.nextMarco(st);
+  return '<div class="sk sk-card">'+streakBody(m,st,nx.at,nx.packs,false,nx,st>0&&m.last_streak_day?m.last_streak_day:FC.today())+
+    '<p class="muted small-t sk-best">Melhor sequência: <b>'+(m.best_streak||0)+'</b> dia'+((m.best_streak||0)===1?"":"s")+'.</p></div>';
+}
+function streakScreen(res,pk){
+  var st=res.streak,reached=(pk.marco||0)>0,nx=res.next_marco||FC.nextMarco(st);
+  FC.nav.at("/sequencia",true);
+  FC.render('<div class="sk">'+streakBody(S.me,st,reached?res.marco_streak:nx.at,reached?pk.marco:nx.packs,reached,nx,FC.today())+
     '<button class="btn block" id="skGo">Continuar</button></div>');
   if(reached){FC.sfx.pack();FC.confetti({gold:true,n:60})}
   $("#skGo").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
@@ -239,7 +247,7 @@ function home(){
   var inicio=offerHtml(m,L)+'<div class="duo">'+hero+turboCard+'</div>'+packPanel(m)+
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
     '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. '+(vip?'Cada carimbo vale uma figurinha. ':'')+'Com '+need+' carimbos você sobe de nível.</p></section>'+
-    '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
+    '<section class="panel">'+streakCard(m)+'</section>'+FC.installBox();
   var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
     '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
     '<div class="stamps">'+stamps+'<span>'+Math.min(m.stamps,need)+' de '+need+'</span></div></section>'+
