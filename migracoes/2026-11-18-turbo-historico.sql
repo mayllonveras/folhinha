@@ -19,7 +19,8 @@ create table public.turbo_log (
   fact_id text not null check (fact_id ~ '^(\+|-|×|÷):[0-9]{1,2}:[0-9]{1,2}$'),
   kind text not null check (kind in ('revisao','novo','reinsercao','nivelamento','aquecimento')),
   ok boolean not null,
-  answer smallint check (answer is null or answer between 0 and 9999)   -- nulo = "não sei" (ou tentativa antiga, sem a resposta guardada)
+  answer smallint check (answer is null or answer between 0 and 9999),  -- nulo = "não sei" (ou tentativa antiga, sem a resposta guardada)
+  t1_ms integer check (t1_ms is null or t1_ms between 0 and 600000)     -- tempo até o primeiro toque, em ms (nulo = tentativa antiga ou sem medida)
 );
 create index turbo_log_aluno on public.turbo_log(student_id, study_day desc, id desc);
 
@@ -29,8 +30,8 @@ grant select on table public.turbo_log to authenticated;
 create policy turbo_log_adulto_sel on public.turbo_log for select to authenticated using (exists (select 1 from public.students s where s.id = turbo_log.student_id));
 create policy turbo_log_admin on public.turbo_log for select to authenticated using (public.is_admin());
 
-insert into public.turbo_log(student_id, study_day, at, fact_id, kind, ok)
-  select student_id, study_day, at, fact_id, kind, ok from public.turbo_attempts where student_id is not null order by id;
+insert into public.turbo_log(student_id, study_day, at, fact_id, kind, ok, t1_ms)
+  select student_id, study_day, at, fact_id, kind, ok, t1_ms from public.turbo_attempts where student_id is not null order by id;
 
 create or replace function public.student_turbo_save(p_token text, p_day date, p_session jsonb)
  returns jsonb
@@ -104,9 +105,10 @@ begin
 
   -- histórico para os pais: SEMPRE gravado (acertos e erros, com a resposta digitada), sem depender do consentimento.
   -- É dado do próprio aluno, visível só aos adultos responsáveis (RLS de students). turbo_attempts continua só com consentimento e anônima.
-  insert into turbo_log(student_id, study_day, fact_id, kind, ok, answer)
+  insert into turbo_log(student_id, study_day, fact_id, kind, ok, answer, t1_ms)
   select sid, p_day, a->>'fact', a->>'kind', (a->>'ok')::boolean,
-         case when a->>'answer' ~ '^[0-9]{1,4}$' then (a->>'answer')::smallint end
+         case when a->>'answer' ~ '^[0-9]{1,4}$' then (a->>'answer')::smallint end,
+         case when a->>'t1' ~ '^[0-9]{1,6}(\.[0-9]+)?$' then least((a->>'t1')::numeric, 600000)::int end
     from jsonb_array_elements(coalesce(p_session->'attempts', '[]'::jsonb)) a;
 
   -- tentativas, só com consentimento dos responsáveis
