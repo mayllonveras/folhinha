@@ -69,7 +69,7 @@ function streakBody(m,st,g,qty,reached,nx,from){
 /* Card da tela inicial: a mesma trilha da tela de dias seguidos, a partir do último dia que fechou a sequência. */
 function streakCard(m){
   var st=m.streak||0,nx=m.next_marco||FC.nextMarco(st);
-  return '<div class="sk sk-card">'+streakBody(m,st,nx.at,nx.packs,false,nx,st>0&&m.last_streak_day?m.last_streak_day:FC.today())+
+  return '<div class="sk sk-card">'+streakBody(m,st,nx.at,nx.packs,false,nx,st>0?(m.last_streak_day||FC.lastStreakDay(m,FC.today())):FC.today())+
     '<p class="muted small-t sk-best">Melhor sequência: <b>'+(m.best_streak||0)+'</b> dia'+((m.best_streak||0)===1?"":"s")+'.</p></div>';
 }
 function streakScreen(res,pk){

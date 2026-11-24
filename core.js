@@ -415,6 +415,15 @@ FC.streakNow=function(s,today){
   if(ref===today&&s.last_streak_day===prev(ref))return s.streak;
   return 0;
 };
+/* Último dia de estudo que entrou na sequência (o dia em que está o último cheque da trilha).
+   A sequência que o banco devolve na tela inicial é a "viva": se hoje é dia de estudo e a cota ainda não fechou,
+   ela termina no dia de estudo anterior, e não hoje. m = {study_days,start_date,done_today,quota}. */
+FC.lastStreakDay=function(m,today){
+  function isStudy(d){return m.study_days.indexOf(FC.dow(d))>=0&&d>=m.start_date}
+  if(isStudy(today)&&(m.done_today||0)>=(m.quota||0)&&(m.quota||0)>0)return today;
+  for(var i=1;i<=14;i++){var x=FC.addDays(today,-i);if(x<m.start_date)break;if(isStudy(x))return x}
+  return today;
+};
 /* Perseverança: sequência de dias de estudo com a cota fechada e o caminho até o próximo marco.
    i = {streak,best_streak,next_marco}. */
 /* Carimbos do nível: uma fileira de bolas, uma por carimbo. */
