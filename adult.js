@@ -316,7 +316,16 @@ async function turboLoad(id){
       sb.from("turbo_days").select("study_day,status,attempts,promoted").eq("student_id",id).order("study_day",{ascending:false}).limit(14)]);
     if(r[0].error||r[1].error||r[2].error){TURBO_OK=false;return null}
     TURBO_OK=true;
-    return{sum:r[0].data||{},cfg:r[1].data,days:r[2].data||[]};
+    var days=r[2].data||[],acc=null;
+    /* acerto dos 3 últimos dias com Turbo, só se nenhum fato subiu de degrau (é quando o aviso pode aparecer). Falhou ou sem turbo_log: acc fica nulo e o aviso é neutro. */
+    var rec=days.filter(function(d){return d.attempts>0}).slice(0,3);
+    if(rec.length===3&&rec.every(function(d){return d.promoted===0})){
+      try{
+        var lg=await sb.from("turbo_log").select("ok").eq("student_id",id).in("study_day",rec.map(function(d){return d.study_day})).limit(2000);
+        if(!lg.error&&lg.data&&lg.data.length)acc={total:lg.data.length,ok:lg.data.filter(function(l){return l.ok}).length};
+      }catch(e){}
+    }
+    return{sum:r[0].data||{},cfg:r[1].data,days:days,acc:acc};
   }catch(e){TURBO_OK=false;return null}
 }
 var DEV_NOME={celular:"Celular",tablet:"Tablet",computador:"Computador"};
@@ -342,8 +351,17 @@ function turboPanel(t,s,today){
   var fechadas=(espera.length?'<p class="muted small-t gap">'+esc(nomes(espera).replace(/^./,function(c){return c.toUpperCase()}))+' '+(espera.length>1?'abrem':'abre')+' quando a operação de base chegar a '+gate+'% de fatos firmes.</p>':'')+
     (naoLib.length?'<p class="muted small-t'+(espera.length?'':' gap')+'">'+esc(nomes(naoLib).replace(/^./,function(c){return c.toUpperCase()}))+': não '+(naoLib.length>1?'liberadas':'liberada')+' para este aluno (aba Programa).</p>':'');
   var recent=t.days.filter(function(d){return d.attempts>0}).slice(0,3);
-  var alerta=recent.length===3&&learning>0&&recent.every(function(d){return d.promoted===0})
-    ?'<div class="panel offer"><b>Nos últimos 3 dias de Turbo, nenhum fato novo ficou firme</b><p class="small-t">Isso acontece em algumas fases e não é motivo de preocupação. Se continuar por mais alguns dias, vale sentar com ele numa sessão e ver onde ele trava.</p></div>':"";
+  /* Nenhum fato subiu de degrau em 3 dias. Subir exige sessão sem erro, sem dica, dentro da meta de tempo e, depois, o calendário de revisão (1, 3, 7, 14 e 30 dias). Por isso quem acerta tudo também pode ficar parado.
+     Só vira alerta se o acerto estiver baixo; com acerto bom, é uma nota que explica o motivo; sem o dado de acerto, a nota neutra. */
+  var alerta="";
+  if(recent.length===3&&learning>0&&recent.every(function(d){return d.promoted===0})){
+    var acc=t.acc,taxa=acc?acc.ok/acc.total:null,pc=acc?Math.round(100*taxa):null;
+    if(taxa!==null&&taxa<T.P.ACERTO_MIN)
+      alerta='<div class="panel offer"><b>Nos últimos 3 dias de Turbo, ele acertou '+pc+'% e nenhum fato novo ficou firme</b><p class="small-t">Vale sentar com ele numa sessão e ver onde ele trava. A aba Atenção mostra os fatos que mais pedem ajuda.</p></div>';
+    else
+      alerta='<div class="panel"><b>Nos últimos 3 dias de Turbo, nenhum fato subiu de degrau'+(taxa!==null?', mas ele acertou '+pc+'%':'')+'</b><p class="small-t muted">'+
+        (taxa!==null?'Ele está indo bem. ':'')+'Para subir, o fato precisa de uma sessão sem erro, sem dica e dentro da meta de tempo; depois, as revisões nos dias 1, 3, 7, 14 e 30. Acertar não basta: se as respostas estão um pouco lentas ou os fatos esperam a próxima revisão, nada sobe nesses dias. Não é motivo de preocupação.</p></div>';
+  }
   var devs=Object.keys(cfg.devices||{}).map(function(k){return esc(DEV_NOME[k]||k)+' ('+cfg.devices[k]+')'}).join(", ");
   var comecou=T.ORDEM.some(function(o){return ops[o]&&ops[o].registered>0});
   return '<div class="panel" id="turboBox"><div class="split"><div class="eyebrow">Trilha Turbo</div>'+tag+'</div>'+alerta+
