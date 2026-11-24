@@ -968,7 +968,7 @@ details.adv{border:0;background:var(--soft)}
 .row.bad .ans input{background:var(--t-coral);color:var(--t-coral-ink)}
 
 /* resultado */
-.seal{border-color:var(--danger-fill);color:var(--danger);font-family:var(--font-display);font-weight:800;outline:1.5px solid var(--danger-fill);outline-offset:-9px}
+.seal{border-color:var(--ok-fill);color:var(--ok);font-family:var(--font-display);font-weight:800;outline:1.5px solid var(--ok-fill);outline-offset:-9px}
 .seal.no{border-color:var(--line);color:var(--muted);outline:0}
 .kv{gap:0;background:var(--surface);border-radius:var(--r-md);overflow:hidden}
 .kv div{background:none;border-radius:0;text-align:center}
@@ -1168,3 +1168,42 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .dstamp-top h2{margin:0;font-size:1.25rem}
 .dstamp-why p{margin:0 0 10px}
 .dstamp-why ul.plain{margin:0 0 10px}
+
+/* resultado: só tempo e figurinhas (os dias seguidos têm tela própria) */
+.res .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* tela de dias seguidos: depois do resultado, com a figurinha da meta em cima do dia em que ela sai */
+.sk{max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:18px;min-height:calc(100dvh - 90px)}
+.sk-hero{text-align:center;margin-top:8px}
+.sk-hero .eyebrow{color:var(--muted)}
+.sk-num{font-family:var(--font-display);font-weight:800;font-size:6rem;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}
+.sk-unit{font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:var(--muted)}
+.sk-trail{background:var(--surface);border-radius:var(--r-lg);padding:122px 8px 16px}
+.sk-days{--n:7;--p:0;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;position:relative}
+.sk-days:before,.sk-days:after{content:"";position:absolute;left:calc(100%/var(--n)/2);top:calc(1.1rem + 7px + 15px);height:5px;border-radius:9px;background:var(--line)}
+.sk-days:before{right:calc(100%/var(--n)/2)}
+.sk-days:after{width:calc((100% - 100%/var(--n))*var(--p));background:var(--ball-sun)}
+.sk-d{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px}
+.sk-wd{font-size:.72rem;font-weight:600;color:var(--muted)}
+.sk-d.today .sk-wd{color:var(--ink)}
+.sk-dot{position:relative;z-index:1;width:32px;height:32px;border-radius:50%;background:var(--line);color:var(--muted);display:grid;place-items:center;font-weight:700;font-size:.8rem}
+.sk-dot svg{width:17px;height:17px;stroke:var(--on-ball-sun);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sk-d.done .sk-dot{background:var(--ball-sun);color:var(--on-ball-sun)}
+.sk-d.today .sk-dot{box-shadow:0 0 0 3px var(--surface),0 0 0 6px var(--primary)}
+.sk-d.goal .sk-dot{background:var(--surface);border:2.5px dashed var(--muted)}
+.sk-d.goal.done .sk-dot{border:0;background:var(--ball-sun)}
+.sk-prize{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.sk-prize.right{left:auto;right:calc(50% - var(--pw)/2);transform:none;align-items:flex-end}
+.sk-pill{position:relative;background:var(--primary);color:var(--on-primary);border-radius:999px;padding:3px 10px;font-weight:700;font-size:.78rem;white-space:nowrap}
+.sk-pill:after{content:"";position:absolute;bottom:-5px;left:50%;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:var(--primary)}
+.sk-prize.right .sk-pill:after{left:auto;right:calc(var(--pw)/2 - 5px);margin-left:0}
+.sk-art{width:var(--pw);height:67px;margin-top:8px;display:flex;justify-content:center}
+.sk-art .pack-img,.sk-art .pack-svg{width:auto;height:100%;max-width:100%;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+.sk-prize.open .pack-img,.sk-prize.open .pack-svg{filter:drop-shadow(0 0 10px var(--ball-sun))}
+.sk-msg{text-align:center;font-weight:600;font-size:1.15rem;line-height:1.35;text-wrap:balance}
+.sk-msg b{font-size:1.3rem}
+.sk-hint{text-align:center;font-size:.85rem;color:var(--muted);margin-top:-6px}
+.sk .btn{margin-top:auto}
+@media (prefers-reduced-motion:no-preference){
+  .sk-prize.open .sk-art{animation:skBounce 1s ease-in-out infinite alternate}
+  @keyframes skBounce{to{transform:translateY(-4px) scale(1.06)}}
+}

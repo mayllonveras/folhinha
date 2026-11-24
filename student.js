@@ -37,6 +37,41 @@ var MIRROR_TABS=["album","trocas","amigos"];   // modo responsável (álbum do a
 function isMirror(){return !!(S.me&&S.me.mirror)}
 function homePath(){return "/"+(FC.tabState.aluno||"inicio")}
 function goHome(){if(FC.nav.up(homePath()))return Promise.resolve();return loadHome()}
+/* Dia da semana do dia de estudo que fica k dias de estudo depois de from (k negativo = antes). */
+function studyWeekday(m,from,k){
+  var d=from,step=k<0?-1:1,n=Math.abs(k);
+  for(var g=0;n>0&&g<800;g++){d=FC.addDays(d,step);if(m.study_days.indexOf(FC.dow(d))>=0)n--}
+  return FC.DOW[FC.dow(d)];
+}
+/* Tela de dias seguidos, depois do resultado do dia fechado: a trilha em fileiras de 7 dias, com a figurinha da meta
+   (a capa do pacote do álbum que está na mesa) em cima do dia em que ela sai. Segue as mesmas metas de FC.nextMarco. */
+function streakScreen(res,pk){
+  var st=res.streak,reached=(pk.marco||0)>0,nx=res.next_marco||FC.nextMarco(st);
+  var g=reached?res.marco_streak:nx.at,qty=reached?pk.marco:nx.packs;
+  var r=Math.floor((g-st)/7),end=g-7*r,start=end-6;
+  if(start<1){start=1;end=Math.min(g,7)}
+  var n=end-start+1,isGoalRow=end===g,today=FC.today(),dn=Math.min(st,end)-start;
+  var dId=deskOf(S.me)[0],art=dId?FC.themePack(dId):FC.packSvg(),pw=46;
+  var check='<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+  function figs(q){return q+" figurinha"+(q===1?"":"s")}
+  var days="";
+  for(var d=start;d<=end;d++){
+    var cls="sk-d"+(d<=st?" done":"")+(d===st?" today":"")+(d===g?" goal":"");
+    var prize=(d===g)?'<div class="sk-prize'+(n>=5?" right":"")+(reached?" open":"")+'" style="--pw:'+pw+'px"><span class="sk-pill">+'+figs(qty)+'</span><span class="sk-art">'+art+'</span></div>':"";
+    days+='<div class="'+cls+'">'+prize+'<span class="sk-wd">'+studyWeekday(S.me,today,d-st)+'</span><span class="sk-dot">'+(d<=st?check:d)+'</span></div>';
+  }
+  var left=g-st,msg=reached?'Meta alcançada! Você ganhou <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!':
+    'Faltam <b>'+left+' dia'+(left===1?"":"s")+'</b> de estudo para ganhar <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!';
+  var hint=reached?'Próxima meta: <b>'+nx.at+' dias</b> seguidos (+'+nx.packs+')':
+    (isGoalRow?'':'A meta fica no dia '+g+'. ')+'Só contam os dias de estudo.<br>Faltar a um deles zera a sequência.';
+  FC.nav.at("/sequencia",true);
+  FC.render('<div class="sk"><div class="sk-hero"><div class="eyebrow">Perseverança</div><div class="sk-num">'+st+'<div class="sk-unit">'+(st===1?"dia seguido":"dias seguidos")+'</div></div></div>'+
+    '<div class="sk-trail"'+(isGoalRow?'':' style="padding-top:22px"')+'><div class="sk-days" role="img" aria-label="'+st+' de '+g+' dias seguidos" style="--n:'+n+';--p:'+(n>1?Math.max(0,dn)/(n-1):0)+'">'+days+'</div></div>'+
+    '<p class="sk-msg">'+msg+'</p><p class="sk-hint">'+hint+'</p>'+
+    '<button class="btn block" id="skGo">Continuar</button></div>');
+  if(reached){FC.sfx.pack();FC.confetti({gold:true,n:60})}
+  $("#skGo").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
+}
 function leaveSheet(path){
   saveDraft();
   if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
@@ -1309,6 +1344,7 @@ async function send(payload,score){
   S.me.offer_back=res.offer_back;S.me.streak=res.streak;S.me.best_streak=res.best_streak;S.me.next_marco=res.next_marco;S.me.pending_packs=res.pending_packs;
   var pk=res.packs||{},got=(pk.carimbo||0)+(pk.perseveranca||0)+(pk.marco||0);
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row=FC.stampSet(need,shown,(res.stamp&&!res.advanced)?shown-(res.gained||1):null);
+  var showSeq=res.day_closed&&!res.free_day&&res.streak>0;   // a sequência só anda ao fechar um dia de estudo
   var seal=res.day_closed?(res.tier==="salto"?"Salto!":res.tier==="ouro"?"Ouro!":res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
   FC.nav.at("/resultado",true);   // a folha vira o resultado: voltar leva para a tela inicial, não para a folha entregue
   FC.render('<div class="res panel">'+
@@ -1316,13 +1352,12 @@ async function send(payload,score){
     '<div class="grow"><h2>'+(res.tier==="salto"?"Salto de nível":res.tier==="ouro"?"Dia de ouro":res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
     '<div><b>'+(res.day_closed?"+"+got:"–")+'</b><span>'+(res.day_closed?"figurinha"+(got===1?"":"s")+" ganha"+(got===1?"":"s")+" hoje":"figurinhas saem ao fechar o dia")+'</span></div>'+
-    '<div><b>'+res.streak+'</b><span>dia'+(res.streak===1?"":"s")+' seguido'+(res.streak===1?"":"s")+' de estudo</span></div></div>'+
+    '</div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.teto?'<div class="panel offer"><b>Você completou os carimbos deste nível!</b><div class="muted small-t">Peça ao seu responsável para liberar os próximos níveis. Enquanto isso, continue treinando e ganhando figurinhas.</div></div>':'')+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">'+(res.tier==="salto"?"Você pulou direto de nível!":"Você subiu de nível!")+'</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'. As contas que você ainda errou vêm junto para as próximas folhas.</div></div></div>':'')+
-    '<div class="trailbox">'+FC.streakHtml(res)+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para fechar o dia.":"Dia fechado. Até o próximo dia de estudo!")+'</p>'+
-    '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
+    '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':showSeq?'<button class="btn" id="resSeq">Continuar</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   if(got>0){
     var why=[];
     if(pk.carimbo)why.push("1 pelo carimbo do dia");
@@ -1338,6 +1373,7 @@ async function send(payload,score){
   setTimeout(trAnnounce,2500);   // entre uma folha e outra a criança pode receber o aviso de troca
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}
+  if(showSeq)$("#resSeq").onclick=function(){streakScreen(res,pk)};
   $("#resHome").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
 }
 })();
