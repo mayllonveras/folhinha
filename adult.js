@@ -375,17 +375,31 @@ function turboPanel(t,s,today){
    Atenção: fatos teimosos, fatos mais demorados e o que está em treino agora. */
 var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
 var TURBO_OP={"+":"soma","-":"sub","×":"mult","÷":"div"};
+function turboTempo(ms,meta){
+  if(ms==null)return "";
+  return ' <span class="muted small-t">'+FC.fmtSec(ms)+'</span>'+(meta&&ms>meta*1.5?' <span class="tag warn">lenta</span>':'');
+}
 function turboConta(fid,ans,ok){
   var f=FC.turbo.porId(fid);if(!f)return esc(fid);
   return '<span class="num">'+esc(f.eq)+' = '+(ok?'<b>'+f.res+'</b> <span class="turbo-ok" aria-label="acertou">✓</span>':'<s>'+(ans==null?"–":ans)+'</s> <b>'+f.res+'</b>'+(ans==null?' <span class="muted small-t">(não sei)</span>':''))+'</span>';
+}
+/* Meta de tempo até o primeiro toque, em ms: a mesma conta do motor (metaDe), com a idade e os fatos já firmes do aluno. Sem dados, null. */
+async function turboMeta(id){
+  try{
+    var r=await Promise.all([sb.from("turbo_students").select("age").eq("student_id",id).maybeSingle(),
+      sb.from("turbo_facts").select("fact_id,state,lat_ms").eq("student_id",id).gte("state",4)]);
+    if(r[0].error||r[1].error)return null;
+    var fatos={};(r[1].data||[]).forEach(function(f){fatos[f.fact_id]={s:f.state,lat:f.lat_ms}});
+    return FC.turbo.metaDe({idade:(r[0].data&&r[0].data.age)||8,fatos:fatos});
+  }catch(e){return null}
 }
 /* Devolve {dia: {rows:[contas na ordem em que ele fez], ok:acertos}} ou null se não houver registro da Turbo. */
 async function loadTurboLog(id){
   if(!FC.turbo||TURBO_OK===false)return null;
   try{
-    var r=await sb.from("turbo_log").select("id,study_day,fact_id,kind,ok,answer").eq("student_id",id).order("id",{ascending:false}).limit(1000);
+    var r=await sb.from("turbo_log").select("id,study_day,fact_id,kind,ok,answer,t1_ms").eq("student_id",id).order("id",{ascending:false}).limit(1000);
     if(r.error)return null;
-    var by={};
+    var by={meta:await turboMeta(id)};   /* by.meta: meta de tempo em ms (ou null); as demais chaves são datas */
     r.data.slice().reverse().forEach(function(x){var d=by[x.study_day]||(by[x.study_day]={rows:[],ok:0});d.rows.push(x);if(x.ok)d.ok++});
     return by;
   }catch(e){return null}
@@ -1129,9 +1143,11 @@ async function detail(id,day){
     }).join("")+'</div>':'';
     var turbo="";
     if(t){
-      var bad=t.rows.filter(function(r){return !r.ok}),li=function(r){return '<li>'+turboConta(r.fact_id,r.answer,r.ok)+(r.kind==="nivelamento"?' <span class="muted small-t">· nivelamento</span>':'')+'</li>'};
+      var bad=t.rows.filter(function(r){return !r.ok}),li=function(r){return '<li>'+turboConta(r.fact_id,r.answer,r.ok)+turboTempo(r.t1_ms,meta)+(r.kind==="nivelamento"?' <span class="muted small-t">· nivelamento</span>':'')+'</li>'};
+      var meta=H.tlog&&H.tlog.meta;
       turbo='<div class="panel"><div class="split"><b>Trilha Turbo</b>'+(bad.length?'<span class="tag bad">'+pl(bad.length,"erro","erros")+'</span>':'<span class="tag ok">tudo certo</span>')+'</div>'+
-        '<p class="muted small-t">'+t.ok+' de '+t.rows.length+' contas certas ('+Math.round(100*t.ok/t.rows.length)+'%).'+(bad.length?' A resposta dele aparece riscada.':'')+'</p>'+
+        (meta?'<p class="small-t"><b>Meta de tempo por conta:</b> até '+FC.fmtSec(meta)+' para começar a responder.</p>':'')+
+        '<p class="muted small-t">'+t.ok+' de '+t.rows.length+' contas certas ('+Math.round(100*t.ok/t.rows.length)+'%).'+(bad.length?' A resposta dele aparece riscada.':'')+' O tempo ao lado de cada conta é até o primeiro toque.</p>'+
         (bad.length?'<ul class="errlist cols">'+bad.map(li).join("")+'</ul>':'')+
         '<details class="hs-full"><summary>Ver todas as '+t.rows.length+' contas, na ordem em que ele fez</summary><ul class="errlist cols">'+t.rows.map(li).join("")+'</ul></details></div>';
     }
