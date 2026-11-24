@@ -1,147 +1,62 @@
-<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Proposta · Tela de dias seguidos</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Lexend:wght@400;500;600;700&display=swap">
 <style>
-:root{--navy-900:#0B1326;--blue-500:#2457D6;--blue-700:#173F9F;--sun-300:#FFD45A;--sun-500:#FFB92B;--sun-700:#8A5A00;--mint-400:#46DBA9;--mint-500:#1CA97B;--mint-700:#107A58;
---bg:#F3F5FA;--surface:#fff;--soft:#E8EDF7;--line:#D3DBEA;--ink:#16223F;--muted:#5A6984;--primary:var(--blue-500);--ok:var(--mint-700);--ok-fill:var(--mint-500);--ball-sun:#FFB92B}
-*{box-sizing:border-box}
-body{margin:0;background:#dfe5f1;font-family:Lexend,system-ui,sans-serif;color:var(--ink);padding:28px 16px}
-h1{font-family:"Bricolage Grotesque",Lexend,sans-serif;font-size:1.4rem;margin:0 0 4px;text-align:center}
-.sub{text-align:center;color:var(--muted);font-size:.9rem;margin:0 auto 24px;max-width:760px}
-.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start}
-figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
-figcaption{font-size:.82rem;color:var(--muted);text-align:center;max-width:330px}
-figcaption b{color:var(--ink)}
-.phone{width:360px;height:700px;background:var(--bg);border-radius:32px;border:8px solid #16223F;overflow:hidden;display:flex;flex-direction:column;padding:26px 20px 22px}
-.phone.warm{background:linear-gradient(#FFF1D6,var(--bg) 70%)}
-.panel{background:var(--surface);border-radius:22px;padding:18px}
-.score{display:flex;align-items:center;gap:16px}
-.big{font-family:"Bricolage Grotesque";font-weight:800;font-size:3.2rem;line-height:1}
+.light{--bg:#F3F5FA;--surface:#fff;--soft:#E8EDF7;--line:#D3DBEA;--ink:#16223F;--muted:#5A6984;--primary:#2457D6;--primary-edge:#173F9F;--on-primary:#fff;--ok:#107A58;--ok-fill:#1CA97B;--ball:#FFB92B;--on-ball:#16223F;--off:#D3DBEA;--page:#dfe5f1}
+.dark{--bg:#0A1123;--surface:#131D36;--soft:#1B2947;--line:#283A60;--ink:#EAF0FB;--muted:#94A5C2;--primary:#7EA2FF;--primary-edge:#4F73C9;--on-primary:#0A1123;--ok:#46DBA9;--ok-fill:#46DBA9;--ball:#FFC94A;--on-ball:#0A1123;--off:#283A60;--page:#05080F}
+*{box-sizing:border-box}body{margin:0;font-family:Lexend,system-ui,sans-serif;padding:24px 16px;background:#cfd6e6}
+h1{font-family:"Bricolage Grotesque";font-size:1.4rem;margin:0 0 4px;text-align:center;color:#16223F}.sub{text-align:center;color:#5A6984;font-size:.9rem;margin:0 auto 20px}
+section.theme{background:var(--page);border-radius:24px;padding:22px 12px;margin:0 auto 22px;max-width:1620px}
+section.theme>h3{margin:0 0 16px;text-align:center;font-family:"Bricolage Grotesque";color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}figcaption{font-size:.8rem;color:var(--muted);text-align:center;max-width:330px}figcaption b{color:var(--ink)}
+.phone{width:360px;height:660px;background:var(--bg);color:var(--ink);border-radius:32px;border:8px solid #16223F;overflow:hidden;display:flex;flex-direction:column;padding:26px 20px 22px}
+.dark .phone{border-color:#283A60}
+.panel{background:var(--surface);border-radius:22px;padding:18px}h2{font-family:"Bricolage Grotesque";margin:14px 0 4px;font-size:1.2rem}
+.score{display:flex;align-items:center;gap:16px}.big{font-family:"Bricolage Grotesque";font-weight:800;font-size:3.2rem;line-height:1}
 .seal{width:88px;height:88px;border-radius:50%;border:4px solid var(--ok-fill);color:var(--ok);display:grid;place-items:center;font-family:"Bricolage Grotesque";font-weight:800;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;transform:rotate(-10deg);outline:1.5px solid var(--ok-fill);outline-offset:-9px}
-.seal.old{border-color:#F2503F;color:#C8382A;outline-color:#F2503F}
-.tag{font-size:.72rem;font-weight:600;color:#C8382A;text-align:center;margin-top:6px}
-.tag.n{color:var(--ok)}
-.muted{color:var(--muted)}.sm{font-size:.85rem}
-.kv{display:flex;gap:10px;margin-top:14px}.kv div{flex:1;background:var(--soft);border-radius:14px;padding:10px;text-align:center}
-.kv b{display:block;font-family:"Bricolage Grotesque";font-size:1.2rem}.kv span{font-size:.7rem;color:var(--muted)}
-.btn{border:0;border-radius:999px;padding:15px 22px;font:600 1.05rem Lexend;background:var(--primary);color:#fff;box-shadow:0 3px 0 var(--blue-700);width:100%;margin-top:auto}
+.muted{color:var(--muted)}.sm{font-size:.85rem}.c{text-align:center;margin-top:14px}
+.kv{display:flex;gap:10px;margin-top:14px}.kv div{flex:1;background:var(--soft);border-radius:14px;padding:10px;text-align:center}.kv b{display:block;font-family:"Bricolage Grotesque";font-size:1.2rem}.kv span{font-size:.7rem;color:var(--muted)}
+.btn{border:0;border-radius:999px;padding:15px 22px;font:600 1.05rem Lexend;background:var(--primary);color:var(--on-primary);box-shadow:0 3px 0 var(--primary-edge);width:100%;margin-top:auto}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
-/* ---- tela de dias seguidos ---- */
-.hero{text-align:center;margin-top:18px}
-.eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sun-700)}
-.num{font-family:"Bricolage Grotesque";font-weight:800;font-size:6.4rem;line-height:1;color:var(--sun-700);margin-top:6px}
-.num small{display:block;font-size:1.5rem;letter-spacing:-.01em;margin-top:2px}
-.trail{margin-top:10px;background:rgba(255,255,255,.75);border-radius:22px;padding:96px 8px 14px;position:relative}
+.hero{text-align:center;margin-top:18px}.eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.num{font-family:"Bricolage Grotesque";font-weight:800;font-size:6.4rem;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}.num small{display:block;font-size:1.5rem;color:var(--muted);margin-top:2px}
+.trail{margin-top:10px;background:var(--surface);border-radius:22px;padding:96px 8px 14px;position:relative}
 .days{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;position:relative}
-.d{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
-.d .wd{font-size:.72rem;font-weight:600;color:var(--muted)}
-.d.today .wd{color:var(--sun-700)}
-.dot{width:32px;height:32px;border-radius:50%;background:#C9CCD6;display:grid;place-items:center;color:#fff;font-weight:700;font-size:.8rem;position:relative;z-index:1}
-.d.done .dot{background:var(--ball-sun);color:#fff}
-.d.today .dot{background:var(--ball-sun);box-shadow:0 0 0 4px #fff,0 0 0 7px var(--sun-300)}
-.d .dot svg{width:17px;height:17px;stroke:#fff;stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.d.goal .dot{background:#fff;border:2.5px dashed var(--sun-700);color:var(--sun-700)}
-.d.goal.done .dot{border:0;background:var(--ball-sun);color:#fff}
-/* linha que liga os dias */
-.days:before{content:"";position:absolute;left:calc(100%/var(--n)/2);right:calc(100%/var(--n)/2);top:calc(1.1rem + 7px + 15px);height:5px;background:#C9CCD6;border-radius:9px}
-.days:after{content:"";position:absolute;left:calc(100%/var(--n)/2);width:calc((100% - 100%/var(--n))*var(--p));top:calc(1.1rem + 7px + 15px);height:5px;background:var(--ball-sun);border-radius:9px}
-/* objetivo em cima do dia da meta */
+.d{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}.d .wd{font-size:.72rem;font-weight:600;color:var(--muted)}.d.today .wd{color:var(--ink)}
+.dot{width:32px;height:32px;border-radius:50%;background:var(--off);display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:.8rem;position:relative;z-index:1}
+.d.done .dot{background:var(--ball);color:var(--on-ball)}.d.today .dot{box-shadow:0 0 0 3px var(--surface),0 0 0 6px var(--primary)}
+.dot svg{width:17px;height:17px;stroke:var(--on-ball);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.d.goal .dot{background:none;border:2.5px dashed var(--muted);color:var(--muted)}.d.goal.done .dot{border:0;background:var(--ball)}
+.days:before,.days:after{content:"";position:absolute;left:calc(100%/var(--n)/2);top:calc(1.1rem + 7px + 15px);height:5px;border-radius:9px;background:var(--off)}.days:before{right:calc(100%/var(--n)/2)}
+.days:after{width:calc((100% - 100%/var(--n))*var(--p));background:var(--ball)}
 .prize{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
-.prize .pill{background:var(--primary);color:#fff;border-radius:999px;padding:3px 10px;font-weight:700;font-size:.78rem;white-space:nowrap;box-shadow:0 2px 0 var(--blue-700)}
-.prize .pill:after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:var(--primary)}
-.prize svg{width:38px;height:44px;margin-top:8px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
-.prize.open svg{filter:drop-shadow(0 0 10px var(--sun-500));animation:b 1s ease-in-out infinite alternate}
-@keyframes b{to{transform:translateY(-4px) scale(1.06)}}
-.msg{text-align:center;font-weight:600;color:var(--sun-700);font-size:1.15rem;margin-top:22px;line-height:1.35;text-wrap:balance}
-.msg b{font-size:1.3rem}
+.pill{position:relative;background:var(--primary);color:var(--on-primary);border-radius:999px;padding:3px 10px;font-weight:700;font-size:.78rem;white-space:nowrap}
+.pill:after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:var(--primary)}
+.prize svg{width:38px;height:44px;margin-top:8px}.prize.open svg{filter:drop-shadow(0 0 10px var(--ball))}
+.msg{text-align:center;font-weight:600;font-size:1.15rem;margin-top:22px;line-height:1.35;text-wrap:balance}.msg b{font-size:1.3rem}
 .hint{text-align:center;font-size:.8rem;color:var(--muted);margin-top:10px}
-.hint i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#B8BCC8;margin:0 3px 0 6px;vertical-align:-1px}
-.hint i:first-child{margin-left:0}
 .conf i{position:absolute;width:9px;height:14px;border-radius:2px;opacity:.9}
-.nav{display:flex;gap:6px;justify-content:center;margin:2px 0 0}.nav i{width:7px;height:7px;border-radius:50%;background:#C9CCD6}.nav i.on{background:var(--sun-700)}
 </style></head><body>
-<h1>Proposta de interface · dias seguidos</h1>
-<p class="sub">Fluxo: <b>Resultado da folha</b> (carimbo verde) → toque em <b>Continuar</b> → <b>Tela de dias seguidos</b>, com o pacotinho em cima do dia em que ele será ganho.</p>
-
-<div class="row">
-
-<!-- 1 · resultado com carimbo verde -->
-<figure>
-<div class="phone">
-  <div class="panel">
-    <div class="score"><div><div class="big">10/10</div></div>
-      <div><div class="seal">Carimbo</div></div></div>
-    <h2 style="font-family:'Bricolage Grotesque';margin:14px 0 4px;font-size:1.2rem">Muito bem, Ana</h2>
-    <div class="muted sm">Dia fechado com carimbo e perseverança! Você acertou 10 de 10 contas de primeira (100%).</div>
-    <div class="kv"><div><b>1:12</b><span>seu tempo</span></div><div><b>+2</b><span>pacotinhos hoje</span></div></div>
-  </div>
-  <div class="muted sm" style="text-align:center;margin-top:14px">Dia fechado. Até o próximo dia de estudo!</div>
-  <button class="btn">Continuar</button>
-  <button class="btn ghost">Ir ao início</button>
-</div>
-<figcaption><b>1 · Resultado.</b> O carimbo passa de vermelho a <b>verde</b>. O número de dias seguidos sai daqui e vai para a tela seguinte; o botão principal passa a ser <b>Continuar</b>.</figcaption>
-</figure>
-
-<!-- 2 · primeiro dia, meta 3 -->
-<figure>
-<div class="phone warm">
-  <div class="hero"><div class="eyebrow">Perseverança</div>
-    <div class="num">1<small>dia seguido</small></div></div>
-  <div class="trail"><div class="days" style="--n:3;--p:0">
-    <div class="d today done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d"><span class="wd">Ter</span><span class="dot">2</span></div>
-    <div class="d goal"><div class="prize"><span class="pill" style="position:relative">+2 pacotinhos</span>__PACK__</div><span class="wd">Qua</span><span class="dot">3</span></div>
-  </div></div>
-  <div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>2 pacotinhos</b> extras!</div>
-  <div class="hint">Só contam os dias de estudo. <br>Faltar a um deles zera a sequência.</div>
-  <button class="btn">Continuar</button>
-</div>
-<figcaption><b>2 · Começando.</b> O objetivo (pacotinho + quantidade) fica <b>em cima do dia da meta</b>. Hoje tem anel dourado; dias que faltam, cinza.</figcaption>
-</figure>
-
-<!-- 3 · meta de 7 dias -->
-<figure>
-<div class="phone warm">
-  <div class="hero"><div class="eyebrow">Perseverança</div>
-    <div class="num">5<small>dias seguidos</small></div></div>
-  <div class="trail" style="padding-left:2px;padding-right:2px"><div class="days" style="--n:7;--p:.667">
-    <div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d done"><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d done"><span class="wd">Qui</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d today done"><span class="wd">Sex</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d"><span class="wd">Seg</span><span class="dot">6</span></div>
-    <div class="d goal"><div class="prize" style="left:auto;right:-6px;transform:none;align-items:flex-end"><span class="pill" style="position:relative">+3 pacotinhos</span><span style="margin-right:2px">__PACK__</span></div><span class="wd">Ter</span><span class="dot">7</span></div>
-  </div></div>
-  <div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>3 pacotinhos</b> extras!</div>
-  <div class="hint">Melhor sequência: <b>5 dias</b></div>
-  <button class="btn">Continuar</button>
-</div>
-<figcaption><b>3 · Meta de 7 dias.</b> Mesma tela: uma linha liga os dias e se enche de dourado. Metas de 14 e 30 dias usam fileiras de 7 dias, mostrando só a fileira atual.</figcaption>
-</figure>
-
-<!-- 4 · meta atingida -->
-<figure>
-<div class="phone warm" style="position:relative">
-  <div class="conf"><i style="left:30px;top:50px;background:#FFB92B;transform:rotate(20deg)"></i><i style="left:90px;top:110px;background:#2457D6;transform:rotate(-30deg)"></i><i style="left:300px;top:70px;background:#1CA97B;transform:rotate(50deg)"></i><i style="left:250px;top:140px;background:#F2503F;transform:rotate(10deg)"></i><i style="left:60px;top:200px;background:#1CA97B;transform:rotate(70deg)"></i><i style="left:310px;top:210px;background:#FFB92B;transform:rotate(-20deg)"></i></div>
-  <div class="hero"><div class="eyebrow">Perseverança</div>
-    <div class="num">3<small>dias seguidos</small></div></div>
-  <div class="trail"><div class="days" style="--n:3;--p:1">
-    <div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-    <div class="d goal done today"><div class="prize open"><span class="pill" style="position:relative">+2 pacotinhos</span>__PACK__</div><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div>
-  </div></div>
-  <div class="msg">Meta alcançada! Você ganhou <b>2 pacotinhos</b> extras!</div>
-  <div class="hint">Próxima meta: <b>7 dias</b> seguidos (+3)</div>
-  <button class="btn" style="background:var(--sun-500);color:#16223F;box-shadow:0 3px 0 #C98A12">Continuar</button>
-</div>
-<figcaption><b>4 · Dia da meta.</b> O pacotinho brilha e pula, cai confete e o botão fica dourado. Depois, o app mostra o aviso de pacotinhos que já existe hoje.</figcaption>
-</figure>
-
-</div>
-<script>
-var pack='<svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg>';
-document.body.innerHTML=document.body.innerHTML.replace(/__PACK__/g,pack);
-</script>
+<h1>Proposta · dias seguidos, tema claro e escuro</h1><p class="sub">Só cores do app: fundo liso, cartões, botão azul e o dourado apenas nas bolinhas dos dias.</p>
+<section class="theme light"><h3>Tema claro</h3><div class="row"><figure><div class="phone"><div class="panel"><div class="score"><div class="big">10/10</div><div class="seal">Carimbo</div></div>
+<h2>Muito bem, Ana</h2><div class="muted sm">Dia fechado com carimbo e perseverança! Você acertou 10 de 10 contas de primeira (100%).</div>
+<div class="kv"><div><b>1:12</b><span>seu tempo</span></div><div><b>+2</b><span>pacotinhos hoje</span></div></div></div>
+<div class="muted sm c">Dia fechado. Até o próximo dia de estudo!</div><button class="btn">Continuar</button><button class="btn ghost">Ir ao início</button></div><figcaption><b>1 · Resultado.</b> Carimbo verde; o botão principal passa a ser Continuar.</figcaption></figure><figure><div class="phone"><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">1<small>dia seguido</small></div></div><div class="trail"><div class="days" style="--n:3;--p:0">
+<div class="d today done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d "><span class="wd">Ter</span><span class="dot">2</span></div><div class="d goal"><div class="prize"><span class="pill">+2 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Qua</span><span class="dot">3</span></div></div></div>
+<div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>2 pacotinhos</b> extras!</div>
+<div class="hint">Só contam os dias de estudo.<br>Faltar a um deles zera a sequência.</div><button class="btn">Continuar</button></div><figcaption><b>2 · Começando.</b> Pacotinho e quantidade em cima do dia da meta.</figcaption></figure><figure><div class="phone"><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">5<small>dias seguidos</small></div></div><div class="trail" style="padding-left:2px;padding-right:2px"><div class="days" style="--n:7;--p:.667"><div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Qui</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d today done"><span class="wd">Sex</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d "><span class="wd">Seg</span><span class="dot">6</span></div><div class="d goal"><div class="prize" style="left:auto;right:-6px;transform:none;align-items:flex-end"><span class="pill">+3 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Ter</span><span class="dot">7</span></div></div></div>
+<div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>3 pacotinhos</b> extras!</div><div class="hint">Melhor sequência: <b>5 dias</b></div><button class="btn">Continuar</button></div><figcaption><b>3 · Meta de 7 dias.</b> A linha liga os dias; metas longas usam fileiras de 7.</figcaption></figure><figure><div class="phone" style="position:relative"><div class="conf"><i style="left:30px;top:50px;background:#FFB92B;transform:rotate(20deg)"></i><i style="left:90px;top:110px;background:#2457D6;transform:rotate(-30deg)"></i><i style="left:300px;top:70px;background:#1CA97B;transform:rotate(50deg)"></i><i style="left:250px;top:140px;background:#F2503F;transform:rotate(10deg)"></i><i style="left:60px;top:200px;background:#1CA97B;transform:rotate(70deg)"></i></div><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">3<small>dias seguidos</small></div></div><div class="trail"><div class="days" style="--n:3;--p:1">
+<div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d goal done today"><div class="prize open"><span class="pill">+2 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div></div></div>
+<div class="msg">Meta alcançada! Você ganhou <b>2 pacotinhos</b> extras!</div><div class="hint">Próxima meta: <b>7 dias</b> seguidos (+3)</div><button class="btn">Continuar</button></div><figcaption><b>4 · Dia da meta.</b> O pacotinho brilha e pula, cai confete.</figcaption></figure></div></section>
+<section class="theme dark"><h3>Tema escuro</h3><div class="row"><figure><div class="phone"><div class="panel"><div class="score"><div class="big">10/10</div><div class="seal">Carimbo</div></div>
+<h2>Muito bem, Ana</h2><div class="muted sm">Dia fechado com carimbo e perseverança! Você acertou 10 de 10 contas de primeira (100%).</div>
+<div class="kv"><div><b>1:12</b><span>seu tempo</span></div><div><b>+2</b><span>pacotinhos hoje</span></div></div></div>
+<div class="muted sm c">Dia fechado. Até o próximo dia de estudo!</div><button class="btn">Continuar</button><button class="btn ghost">Ir ao início</button></div><figcaption><b>1 · Resultado.</b> Carimbo verde; o botão principal passa a ser Continuar.</figcaption></figure><figure><div class="phone"><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">1<small>dia seguido</small></div></div><div class="trail"><div class="days" style="--n:3;--p:0">
+<div class="d today done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d "><span class="wd">Ter</span><span class="dot">2</span></div><div class="d goal"><div class="prize"><span class="pill">+2 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Qua</span><span class="dot">3</span></div></div></div>
+<div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>2 pacotinhos</b> extras!</div>
+<div class="hint">Só contam os dias de estudo.<br>Faltar a um deles zera a sequência.</div><button class="btn">Continuar</button></div><figcaption><b>2 · Começando.</b> Pacotinho e quantidade em cima do dia da meta.</figcaption></figure><figure><div class="phone"><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">5<small>dias seguidos</small></div></div><div class="trail" style="padding-left:2px;padding-right:2px"><div class="days" style="--n:7;--p:.667"><div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Qui</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d today done"><span class="wd">Sex</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d "><span class="wd">Seg</span><span class="dot">6</span></div><div class="d goal"><div class="prize" style="left:auto;right:-6px;transform:none;align-items:flex-end"><span class="pill">+3 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Ter</span><span class="dot">7</span></div></div></div>
+<div class="msg">Faltam <b>2 dias</b> de estudo para ganhar <b>3 pacotinhos</b> extras!</div><div class="hint">Melhor sequência: <b>5 dias</b></div><button class="btn">Continuar</button></div><figcaption><b>3 · Meta de 7 dias.</b> A linha liga os dias; metas longas usam fileiras de 7.</figcaption></figure><figure><div class="phone" style="position:relative"><div class="conf"><i style="left:30px;top:50px;background:#FFB92B;transform:rotate(20deg)"></i><i style="left:90px;top:110px;background:#2457D6;transform:rotate(-30deg)"></i><i style="left:300px;top:70px;background:#1CA97B;transform:rotate(50deg)"></i><i style="left:250px;top:140px;background:#F2503F;transform:rotate(10deg)"></i><i style="left:60px;top:200px;background:#1CA97B;transform:rotate(70deg)"></i></div><div class="hero"><div class="eyebrow">Perseverança</div><div class="num">3<small>dias seguidos</small></div></div><div class="trail"><div class="days" style="--n:3;--p:1">
+<div class="d done"><span class="wd">Seg</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d done"><span class="wd">Ter</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div><div class="d goal done today"><div class="prize open"><span class="pill">+2 pacotinhos</span><svg viewBox="0 0 64 76"><path d="M8 4l5 5 5-5 5 5 5-5 5 5 5-5 5 5 5-5v62l-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="#1B47BD"/><path d="M12 8h14L18 66h-6z" fill="#fff" opacity=".18"/><circle cx="32" cy="36" r="14" fill="#FFB92B"/><path d="M32 27l3 6.4 7 .8-5.2 4.8 1.4 6.9L32 42.4l-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill="#fff"/></svg></div><span class="wd">Qua</span><span class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span></div></div></div>
+<div class="msg">Meta alcançada! Você ganhou <b>2 pacotinhos</b> extras!</div><div class="hint">Próxima meta: <b>7 dias</b> seguidos (+3)</div><button class="btn">Continuar</button></div><figcaption><b>4 · Dia da meta.</b> O pacotinho brilha e pula, cai confete.</figcaption></figure></div></section>
 </body></html>
