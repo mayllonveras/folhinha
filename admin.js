@@ -233,8 +233,6 @@ var GROUPS=[
     ["pausas_max","Pausas por folha",0,10,"pausas"]]},
   {t:"Modo da folha",d:"1 = uma conta por vez na tela (o tempo de cada conta é o tempo em que ela está visível, bem mais confiável); 0 = todas as contas na tela, como era antes. Cada folha guarda o modo em que foi feita, para comparar acertos e tempos.",f:[
     ["modo_folha","Modo da folha (0 ou 1)",0,1,""]]},
-  {t:"Álbuns de figurinhas",d:"Os pais liberam quantos álbuns quiserem. A criança mantém alguns na mesa (são os álbuns de onde ela escolhe a figurinha ao abrir um pacotinho) e os outros ficam na gaveta.",f:[
-    ["limite_mesa","Álbuns na mesa ao mesmo tempo",1,5,"álbuns"]]},
   {t:"Ano escolar",d:"O ano de cada aluno é calculado a partir do ano informado pelos pais; a virada não muda o nível do aluno.",f:[
     ["teto_anos_padrao","Anos à frente do ano escolar que o aluno pode alcançar (padrão)",0,9,"anos"],
     ["virada_mes","Virada do ano escolar: mês",1,12,"mês"],

@@ -53,8 +53,8 @@ vm.createContext(ctx);vm.runInContext(blk+";this.api={themesOf,gotOf,isFull,desk
 const A=ctx.api;
 const mk=(lib,desk,full,extra)=>{const st=[];(full||[]).forEach(t=>{for(let i=0;i<52;i++)st.push({theme:t,slot:i})});return Object.assign({sticker_themes:lib,desk_themes:desk,stickers:st},extra||{})};
 let m=mk(["a","b","c","d"],["a","b"]);
-ok(JSON.stringify(A.deskOf(m))==='["a","b"]',"mesa");
-ok(JSON.stringify(A.drawerOf(m))==='["c","d"]',"gaveta");
+ok(JSON.stringify(A.deskOf(m))==='["a"]',"mesa de um álbum só, mesmo que o banco guarde dois");
+ok(JSON.stringify(A.drawerOf(m))==='["b","c","d"]',"gaveta");
 m=mk(["a","b","c","d"],["a","b"],["a"]);
 ok(JSON.stringify(A.deskOf(m))==='["b"]',"álbum completo sai da mesa");
 ok(JSON.stringify(A.drawerOf(m))==='["c","d"]',"completo não vai para a gaveta");
@@ -66,12 +66,14 @@ ok(JSON.stringify(A.deskOf(m))==='["a"]',"banco antigo (sem desk_themes): usa os
 m=mk(["a","b","c"],undefined,[],{desk_limit:1});
 ok(JSON.stringify(A.deskOf(m))==='["a"]',"limite vindo do banco (1 na mesa)");
 ok(A.deskLimit({})===1,"limite padrão 1");
+ok(A.deskLimit({desk_limit:3})===1,"a mesa é de um álbum só, qualquer que seja o limite do banco");
+ok(A.deskLimit({mirror:true})===99,"álbum do responsável não tem mesa");
 ok(/p_desk:desk/.test(src)&&/student_set_desk/.test(src),"boas-vindas e troca de mesa chamam o banco");
 ok(src.indexOf("if(desk)gift();else pickDesk();")>=0&&src.indexOf("ok.onclick=function(){desk=sel.slice();gift()}")>=0,"primeiro acesso: escolhe a mesa e só depois mostra o pacote de boas-vindas");
 const pk=src.slice(src.indexOf("function pickDesk()"),src.indexOf("/* 2) só depois"));
 ok(pk.indexOf("pacote de boas-vindas")<0&&pk.indexOf("figurinhas")<0,"a tela de escolher a mesa não fala do pacote nem das figurinhas");
 ok(/5 figurinhas de cada álbum/.test(src),"boas-vindas: 5 figurinhas de cada álbum da mesa");
-ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura do pacotinho");
+ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura da figurinha");
 
 /* 5. Migração: pontos essenciais */
 const mig=fs.readFileSync(path.join(root,"migracoes","2026-11-15-mesa-gaveta.sql"),"utf8");

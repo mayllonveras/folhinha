@@ -49,7 +49,7 @@ const hash=()=>loc.hash;
   const o2={id:2,closeByBack(){}};N.openOverlay(o2);await sleep(5);
   const posAntes=pos;N.closedOverlay(o2);await sleep(30);
   ok(pos===posAntes-1&&!(entries[pos].state&&entries[pos].state.ov),"fechar a janela pelo botão tira a entrada do histórico");
-  /* fechar a janela e abrir outra logo em seguida (escolha de pacotinho): a segunda não pode ser fechada à toa */
+  /* fechar a janela e abrir outra logo em seguida (escolha de figurinha): a segunda não pode ser fechada à toa */
   const o3={id:3,closeByBack(){}};N.openOverlay(o3);await sleep(5);
   const o4={id:4,closeByBack(){}};
   N.closedOverlay(o3);N.openOverlay(o4);await sleep(40);

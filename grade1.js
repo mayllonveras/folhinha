@@ -621,7 +621,7 @@ function gDinheiro(){
 var FRASES={
   "Com certeza":["Depois do sábado vem o domingo.","Lançar um dado comum e sair um número de 1 a 6.","Uma semana tem sete dias.","Todo ano tem doze meses.","Se hoje é segunda-feira, amanhã é terça-feira.","Ao soltar uma pedra do alto, ela cai.","A noite vem depois da tarde.","Dois mais dois é igual a quatro."],
   "Impossível":["Uma pessoa viva ter 300 anos de idade.","Uma pessoa nascer com 10 anos de idade.","Uma semana ter dez dias.","Sair o número 7 ao lançar um dado comum.","Um dado comum mostrar o número zero.","Depois da segunda-feira vir a quinta-feira.","O dia ter trinta e cinco horas.","Um mês do calendário ter 40 dias."],
-  "Talvez":["Chover amanhã.","Sair cara ao lançar uma moeda.","Sortear um menino numa turma de meninos e meninas.","Encontrar um amigo no parque.","Sair o número 3 ao lançar um dado.","Ganhar um jogo de cartas.","Fazer sol no sábado.","Tirar uma figurinha repetida do pacotinho."]
+  "Talvez":["Chover amanhã.","Sair cara ao lançar uma moeda.","Sortear um menino numa turma de meninos e meninas.","Encontrar um amigo no parque.","Sair o número 3 ao lançar um dado.","Ganhar um jogo de cartas.","Fazer sol no sábado.","Tirar uma figurinha repetida do pacote."]
 };
 var ACASO=["Com certeza","Talvez","Impossível"];
 function gAcaso(){
