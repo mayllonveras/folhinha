@@ -627,12 +627,12 @@ function dupsOf(m){
 }
 function isFull(m,id){return gotOf(m,id).length>=FC.ALBUM_SIZE}
 /* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai a figurinha); gaveta = o resto que ainda não está completo. */
-function deskLimit(m){return m.mirror?99:(m.desk_limit||1)}
+function deskLimit(m){return m.mirror?99:1}   // a mesa tem um álbum só (o limite do banco não vale mais)
 function deskOf(m){
   var lib=themesOf(m);
   if(m.mirror)return lib.filter(function(x){return !isFull(m,x)});   // álbum do responsável: sem mesa, todos os álbuns que faltam ficam à mostra
-  var d=(m.desk_themes||lib.slice(0,deskLimit(m))).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
-  return d;
+  var d=(m.desk_themes||lib).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
+  return d.slice(0,deskLimit(m));
 }
 function drawerOf(m){var d=deskOf(m);return themesOf(m).filter(function(x){return d.indexOf(x)<0&&!isFull(m,x)})}
 function doneAlbums(m){return themesOf(m).filter(function(x){return isFull(m,x)})}

@@ -14,7 +14,7 @@ function anoLine(s,L,today,semHab){
 }
 /* Limites mínimos do programa: 3 folhas por dia e 3 dias por semana. */
 var MIN_SHEETS=3,MIN_DAYS=3,THEME_SEARCH_FROM=10;   // acima de 10 álbuns aparecem a busca e o filtro por categoria
-function deskLimit(){return (PUB&&PUB.limite_mesa)||1}
+function deskLimit(){return 1}   // a mesa tem um álbum só
 async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
 
 /* ---------- plano (Grátis ou VIP) ----------
@@ -788,7 +788,7 @@ function albumDetail(id){
 /* Tela "Ver álbuns": grade de capas para marcar os álbuns liberados (quantos quiser, pelo menos 1). Só vale ao tocar em Pronto. */
 function openAlbums(){
   var cur=$$('#thStore input[name="themes"]:checked').map(function(c){return c.value});
-  var ov=FC.overlay('<h2>Álbuns da criança</h2><p class="muted small-t">Marque os álbuns que a criança poderá conquistar, quantos quiser (pelo menos 1). Ela escolhe quais ficam na mesa (até '+deskLimit()+' por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</p>'+
+  var ov=FC.overlay('<h2>Álbuns da criança</h2><p class="muted small-t">Marque os álbuns que a criança poderá conquistar, quantos quiser (pelo menos 1). Ela escolhe qual fica na mesa (só um por vez) e os outros esperam na gaveta. Toque em Detalhes para entender cada álbum.</p>'+
     (FC.THEMES.length>THEME_SEARCH_FROM?'<div class="theme-filter"><input type="search" id="thQ" placeholder="Buscar álbum" aria-label="Buscar álbum"><select id="thCat" aria-label="Categoria"><option value="">Todas as categorias</option>'+
       FC.THEMES.map(function(t){return FC.catOf(t.id)}).filter(function(c,i,a){return a.indexOf(c)===i}).map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>':"")+
     '<div class="album-grid" id="thGrid">'+FC.THEMES.map(function(t){
