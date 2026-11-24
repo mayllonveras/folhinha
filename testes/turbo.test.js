@@ -259,24 +259,24 @@ function jogar(st,dia,o){
 /* ---------- 11. recompensa do Turbo do dia ---------- */
 {
   const st=aluno(),a=jogar(st,0,{acerto:1,t1:900});
-  ok(a.res.concluida&&a.res.premio&&a.res.premio.tipo==="pacote"&&a.res.premio.fonte==="turbo","sessão concluída dá 1 pacotinho de origem 'turbo'");
-  const b=jogar(st,0,{acerto:1,t1:900});ok(b.res.premio===null,"só 1 pacotinho por dia");
-  const c=jogar(st,1,{acerto:1,t1:900});ok(c.res.premio&&c.res.premio.dia===1,"no dia seguinte, outro pacotinho");
+  ok(a.res.concluida&&a.res.premio&&a.res.premio.tipo==="pacote"&&a.res.premio.fonte==="turbo","sessão concluída dá 1 figurinha de origem 'turbo'");
+  const b=jogar(st,0,{acerto:1,t1:900});ok(b.res.premio===null,"só 1 figurinha por dia");
+  const c=jogar(st,1,{acerto:1,t1:900});ok(c.res.premio&&c.res.premio.dia===1,"no dia seguinte, outro figurinha");
   /* parou no meio: sem prêmio, mas o progresso fica */
   const st2=aluno(),s2=T.iniciarSessao(st2,{dia:0,aparelho:"tablet",rnd:T.rng(9)});
   const it=T.proximo(st2,s2);T.registrar(st2,s2,{id:it.id,ok:true,t1:900,total:1500});
-  const r2=T.finalizarSessao(st2,s2);ok(!r2.concluida&&r2.premio===null,"parou no meio: sem pacotinho");
+  const r2=T.finalizarSessao(st2,s2);ok(!r2.concluida&&r2.premio===null,"parou no meio: sem figurinha");
   igual(T.fato(st2,it.id).s,2,"mas o fato avançou");
   /* sessão de chute: muitas respostas erradas e rápidas demais */
   const st3=aluno(),s3=T.iniciarSessao(st3,{dia:0,aparelho:"tablet",rnd:T.rng(9)});
   let x;while((x=T.proximo(st3,s3)))T.registrar(st3,s3,{id:x.id,ok:false,t1:200,total:300});
-  const r3=T.finalizarSessao(st3,s3);ok(r3.chute&&r3.premio===null,"chute não dá pacotinho");
-  /* nada a fazer: sem pacotinho */
+  const r3=T.finalizarSessao(st3,s3);ok(r3.chute&&r3.premio===null,"chute não dá figurinha");
+  /* nada a fazer: sem figurinha */
   const st4=aluno();T.catalogo().soma.facts.forEach(f=>pôr(st4,f.id,{s:5,due:999,rev:5}));
   const s4=T.iniciarSessao(st4,{dia:0,aparelho:"tablet",rnd:T.rng(1)});
-  const r4=T.finalizarSessao(st4,s4);ok(s4.semTarefa&&r4.semTarefa&&r4.premio===null,"sem tarefa: sem pacotinho");
+  const r4=T.finalizarSessao(st4,s4);ok(s4.semTarefa&&r4.semTarefa&&r4.premio===null,"sem tarefa: sem figurinha");
   /* a recompensa não depende de acertar tudo */
-  const st5=aluno(),r5=jogar(st5,0,{acerto:.5,t1:1500}).res;ok(r5.concluida&&r5.premio,"o pacotinho vale pela sessão feita, não pela nota");
+  const st5=aluno(),r5=jogar(st5,0,{acerto:.5,t1:1500}).res;ok(r5.concluida&&r5.premio,"a figurinha vale pela sessão feita, não pela nota");
 }
 
 /* ---------- 11b. tempos impossíveis (abaixo de T1_MIN) ---------- */
@@ -380,7 +380,7 @@ function jogar(st,dia,o){
     if(d===119)console.log("  simulação:",JSON.stringify(Object.fromEntries(T.ORDEM.map(o=>[o,Math.round(100*T.resumo(st).ops[o].pct)+"% firmes"]))),"| prêmios:",premios.length,"| máx tentativas:",maxTent);
   }
   ok(maxTent<=P.TETO_TENT,"nenhuma sessão passou de "+P.TETO_TENT+" tentativas");
-  ok(premios.length>100,"quase todo dia dá o pacotinho (dias com tarefa): "+premios.length);
+  ok(premios.length>100,"quase todo dia dá a figurinha (dias com tarefa): "+premios.length);
   const rs=T.resumo(st);
   ok(rs.ops.soma.pct>=.5,"em 120 dias a criança boa leva a soma a pelo menos 50% firme: "+Math.round(rs.ops.soma.pct*100)+"%");
   /* intervalos respeitados: de provável a maduro leva ao menos 1+3+7+14+30 dias */
@@ -416,10 +416,10 @@ function jogar(st,dia,o){
   let difere=0;ids.forEach(id=>{const a=st.fatos[id],b=volta.fatos[id];["s","n","diasOk","ultimoDiaOk","boas","rev","due","stub","atingiu"].forEach(k=>{if(a[k]!==b[k])difere++});if((a.lat==null?null:Math.round(a.lat))!==b.lat)difere++});
   igual(difere,0,"estado igual depois de ida e volta pelo formato do banco");
   igual(T.iniciarSessao(st,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,T.iniciarSessao(volta,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,"mesma fila do dia");
-  /* pacotinho de hoje já entregue vira premio no motor */
+  /* figurinha de hoje já entregue vira premio no motor */
   const v2=T.deBanco({age:8,unlocked:["soma"],devices:{},today:{pack_given:true},facts:[]},hoje);igual(v2.premios[hoje],1,"pack_given vira prêmio do dia");
   const s2=T.iniciarSessao(v2,{dia:hoje,aparelho:"tablet",rnd:T.rng(1)});let x;while((x=T.proximo(v2,s2)))T.registrar(v2,s2,{id:x.id,tipo:x.tipo,ok:true,t1:900,total:1500,dica:x.dica});
-  ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º pacotinho do dia, mesmo depois de recarregar");
+  ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º figurinha do dia, mesmo depois de recarregar");
   /* registro das tentativas para o banco */
   const s3=T.iniciarSessao(aluno(),{dia:hoje,aparelho:"tablet",rnd:T.rng(2)}),st3=aluno();
   const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,resp:T.porId(it.id).res,t1:850,total:1400,dica:it.dica,contou:false});

@@ -53,10 +53,10 @@ FC.err=function(e){
     ["min_folhas","O mínimo é de 3 folhas por dia."],
     ["min_dias","O mínimo é de 3 dias de estudo por semana."],
     ["min_meta","A meta precisa ser de pelo menos 70% do máximo de pontos da semana."],
-    ["sem_pacote","Você não tem pacotinho para abrir agora."],
+    ["sem_pacote","Você não tem figurinha para abrir agora."],
     ["album_completo","Este álbum já está completo. Escolha outro."],
     ["album_invalido","Este álbum não está disponível para você."],
-    ["album_fora_da_mesa","Este álbum está na gaveta. Coloque-o na mesa para abrir o pacotinho."],
+    ["album_fora_da_mesa","Este álbum está na gaveta. Coloque-o na mesa para abrir a figurinha."],
     ["mesa_cheia","A mesa está cheia. Guarde um álbum na gaveta antes."],
     ["mesa_vazia","Escolha pelo menos um álbum para a mesa."],
     ["sem_album","Marque pelo menos um álbum para a criança."],
@@ -97,7 +97,7 @@ FC.err=function(e){
     ["cupom_em_uso","Esse cupom já foi usado: dá para mudar validade, limite e observação, mas não o tipo nem o valor."],
     ["cupom_codigo_invalido","O código do cupom tem de 3 a 30 letras, números ou hífen, sem espaço."],
     ["plano_albuns","No plano Grátis a criança tem 1 álbum. Com o VIP, todos os álbuns ficam liberados."],
-    ["plano_album","No plano Grátis os pacotinhos abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
+    ["plano_album","No plano Grátis as figurinhas abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
     ["plano_alunos","Você chegou ao limite de alunos do seu plano. No VIP, a família cadastra até 4 crianças."],
     ["amigo_sem_vip","Seu amigo está no plano Grátis: amigos e trocas são do VIP."],
     ["plano_vip","Isso faz parte do plano VIP. Peça para seu responsável conhecer o VIP!"],
@@ -277,7 +277,7 @@ FC.sfx={
     [1046.5,1318.5,1568,2093].forEach(function(f){tone(f,0.85,1.1,"sine",0.14)});tone(261.6,0.85,1.1,"sawtooth",0.06);
   },
   flip:function(){if(!FC.sfx.enabled())return;tone(420,0,0.09,"triangle",0.1);tone(760,0.07,0.12,"sine",0.09)},
-  pack:function(){   // rasgar o pacotinho e revelar
+  pack:function(){   // rasgar a figurinha e revelar
     if(!FC.sfx.enabled())return;
     tone(260,0,0.1,"sawtooth",0.08);tone(420,0.06,0.1,"sawtooth",0.07);tone(640,0.12,0.1,"sawtooth",0.06);
     [1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.5+i*0.08,0.3,"sine",0.15)});
@@ -429,8 +429,8 @@ FC.streakHtml=function(i,o){
   var pct=Math.max(0,Math.min(100,(st-base)/(nx.at-base)*100)),left=nx.at-st,span=nx.at-base,dots="";
   if(span<=14){var dn=Math.max(0,Math.min(span,st-base));for(var d=0;d<span;d++)dots+='<i class="'+(d<dn?"on":"")+(d===span-1?" goal":"")+'"></i>'}
   else dots='<div class="fill" style="width:'+pct.toFixed(1)+'%"></div>';
-  var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" pacotinhos extras.":
-    "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" pacotinhos extras.";
+  var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" figurinhas extras.":
+    "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" figurinhas extras.";
   return '<div class="trail"><div class="eyebrow">Perseverança</div>'+
     '<div class="big-pts">'+st+'<span> '+(st===1?"dia seguido":"dias seguidos")+'</span></div>'+
     '<div class="trail-line"><div class="'+(span<=14?"sdots":"track")+'" role="progressbar" aria-label="Caminho até o próximo marco de sequência" aria-valuemin="0" aria-valuemax="'+nx.at+'" aria-valuenow="'+st+'">'+dots+

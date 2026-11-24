@@ -37,7 +37,7 @@ FC.themeCapa=function(id){
 };
 FC.themePack=function(id){
   var t=FC.theme(id);
-  return '<img class="pack-img" src="stickers/pacotes/'+id+'.webp" alt="Pacotinho do álbum '+FC.esc(t.name)+'" onerror="this.outerHTML=FC.packSvg()">';
+  return '<img class="pack-img" src="stickers/pacotes/'+id+'.webp" alt="Figurinha do álbum '+FC.esc(t.name)+'" onerror="this.outerHTML=FC.packSvg()">';
 };
 FC.tierOf=function(themeId,slot){var t=FC.theme(themeId);return (t.rarity&&t.rarity[slot])||"comum"};
 FC.tierName=function(tier){return tier==="ultra"?"Ultrarrara":tier==="rara"?"Rara":"Comum"};

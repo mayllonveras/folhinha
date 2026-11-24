@@ -2,7 +2,7 @@
 
 Estado: **decisões do professor registradas (17/11/2026), motor escrito e testado, ainda não ligado ao app**. O motor está em `turbo.js` e os testes em `testes/turbo.test.js` (`node testes/turbo.test.js`). Faltam banco, telas e painel (item 12). A página de apresentação com dados de exemplo é o artefato "Trilha Turbo" (claude.ai).
 
-A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível nem sequência de dias da trilha BNCC. **Ao concluir a sessão do dia, a criança ganha 1 pacotinho de figurinha** (item 6.1).
+A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível nem sequência de dias da trilha BNCC. **Ao concluir a sessão do dia, a criança ganha 1 figurinha** (item 6.1).
 
 **Objetivo:** que a criança resolva contas de aritmética básica (+, −, ×, ÷) rapidamente ao olhar, isto é, por recuperação direta da memória.
 
@@ -134,12 +134,12 @@ Status: *validado* para prática de recuperação e feedback imediato; *heuríst
 
 Decisão do professor (17/11/2026): **concluir a sessão do dia dá uma figurinha.**
 
-Como o app já entrega figurinha por "pacotinho" que a criança abre, o Turbo do dia dá **1 pacotinho** com origem nova, `turbo`:
+Como o app já entrega figurinha a cada abertura que a criança faz, o Turbo do dia dá **1 figurinha** com origem nova, `turbo`:
 
 - **No máximo 1 por dia.** O índice único `awards_pack_once` (aluno, dia, origem, posição) já garante isso.
-- **Vale pela sessão concluída, não pela nota.** Concluída quer dizer: a fila do dia acabou, ou bateu o teto de 40 tentativas ou 5 minutos. Acertar menos não tira o pacotinho, para a criança não ter motivo para ter pressa.
+- **Vale pela sessão concluída, não pela nota.** Concluída quer dizer: a fila do dia acabou, ou bateu o teto de 40 tentativas ou 5 minutos. Acertar menos não tira a figurinha, para a criança não ter motivo para ter pressa.
 - **Não ganha** quem parou no meio, quem não tinha nada a fazer naquele dia e quem "chutou" (8 tentativas ou mais com metade ou mais errada e respondida em menos de 0,5 s). Isso é heurística.
-- **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e o pacotinho da BNCC continua independente.
+- **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e a figurinha da BNCC continua independente.
 - A figurinha vem do mesmo álbum e das mesmas regras de abertura que o app já tem (`student_open_pack`).
 
 Efeito no banco: a restrição `awards.source` agora aceita `turbo` (migração `2026-11-17-trilha-turbo.sql`, aplicada em produção em 17/11/2026).
@@ -199,7 +199,7 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 1. **Teste da primeira entrada:** roda por padrão, e os pais podem pular no cadastro. O aquecimento de 6 toques vale para todos.
 2. **Parte B (pré-requisitos):** só para os pequenos (até cerca de 7 anos) ou para quem for mal na sondagem de fatos.
 3. **Primeiro corte do app:** só a soma liberada. O motor já nasce com as quatro operações; as demais ficam bloqueadas (`liberadas` no estado do aluno) até os dados mostrarem que o portão funciona.
-4. **Recompensa:** **1 figurinha (pacotinho) ao concluir o Turbo do dia**, no lugar do selo próprio que eu tinha proposto. Detalhes no item 6.1.
+4. **Recompensa:** **1 figurinha ao concluir o Turbo do dia**, no lugar do selo próprio que eu tinha proposto. Detalhes no item 6.1.
 5. **Painel dos pais, o mínimo útil:** se a Turbo de hoje foi feita; barra de fatos firmes por operação; os 3 fatos mais teimosos ou lentos; aparelhos usados; aviso neutro quando a criança passa 3 sessões sem progresso. Sem milissegundos crus, sem comparação com outras crianças, sem ranking.
 
 ## 12. Estado da implementação
@@ -210,18 +210,18 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
 | Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** **Corrigida no mesmo dia** (item 15: `student_turbo_get` passou a volátil). Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
-| Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e pacotinho | **feitas e testadas no navegador** (item 13) |
+| Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e figurinha | **feitas e testadas no navegador** (item 13) |
 | Painel dos pais (`adult.js`): resumo da Turbo na aba Resumo, linha "Turbo de hoje" na lista de alunos, opções no cadastro e na aba Programa | **feito e testado** (item 14) |
 
 ## 13. Telas do aluno: o que foram e o que ficou de fora
 
 Arquivo `turbo-aluno.js`, ligado ao `student.js` por `FC.turboUi` (o `student.js` só ganhou o contexto, o cartão e o botão voltar).
 
-**Tela inicial:** a trilha BNCC e a Turbo aparecem em dois cartões, lado a lado no tablet e empilhados no celular. A criança escolhe a ordem. O cartão da Turbo muda conforme o dia: convite para o nivelamento, "Turbo do dia" (revisões, fatos novos e minutos), "Continue a Turbo", "concluída" (com o pacotinho), "nada para treinar hoje" e "sem Turbo hoje" em dia de descanso. Se o banco não responder, o cartão não aparece e a BNCC segue normal.
+**Tela inicial:** a trilha BNCC e a Turbo aparecem em dois cartões, lado a lado no tablet e empilhados no celular. A criança escolhe a ordem. O cartão da Turbo muda conforme o dia: convite para o nivelamento, "Turbo do dia" (revisões, fatos novos e minutos), "Continue a Turbo", "concluída" (com a figurinha), "nada para treinar hoje" e "sem Turbo hoje" em dia de descanso. Se o banco não responder, o cartão não aparece e a BNCC segue normal.
 
 **Sessão do dia:** uma conta por vez, com o teclado numérico do PIN (e o teclado do aparelho). O tempo até o primeiro toque é medido no toque do dedo. Não há relógio na tela. Dica antes da tentativa só na primeira exposição; em erro, a resposta aparece por 1,8 s, a dica vem depois e a criança tenta de novo na hora (essa segunda tentativa não conta nas regras); "Dica" sob demanda e "Não sei". Voltar ou sair no meio pergunta antes e guarda o que foi feito. Se sair do aplicativo no meio de uma conta, o tempo daquela conta recomeça.
 
-**Fim da sessão:** resultado, botão **Abrir pacotinho** (usa o fluxo de figurinhas que já existe) e volta ao início. Se não houver conexão ao enviar, a sessão fica guardada no aparelho e sobe na próxima vez.
+**Fim da sessão:** resultado, botão **Abrir figurinha** (usa o fluxo de figurinhas que já existe) e volta ao início. Se não houver conexão ao enviar, a sessão fica guardada no aparelho e sobe na próxima vez.
 
 **Nivelamento (primeira entrada):** aquecimento de 6 números; jogos de pré-requisito (6 comparações, 4 de pontinhos, 3 de contagem) só até 7 anos, ou depois da sondagem para quem não passou nem na primeira família; sondagem de fatos por busca binária, sem mostrar acerto ou erro. Falhar nos pré-requisitos (menos de 60% de acertos) liga a carga reduzida de 1 a 2 fatos novos por sessão.
 

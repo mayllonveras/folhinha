@@ -385,7 +385,7 @@ details.adv[open] summary{margin-bottom:10px}
   @keyframes ultraGlow{from{box-shadow:0 0 0 3px #f5c432,0 0 40px 6px rgba(245,196,50,.45)}to{box-shadow:0 0 0 3px #ffe27a,0 0 80px 18px rgba(245,196,50,.8)}}
 }
 
-/* vários álbuns: pacotinho para abrir, lista de álbuns e escolha do pacotinho */
+/* vários álbuns: figurinha para abrir, lista de álbuns e escolha da figurinha */
 .packbox{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid var(--chest-gold)}
 .packbox .goalicon{width:54px}
 .albums-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}

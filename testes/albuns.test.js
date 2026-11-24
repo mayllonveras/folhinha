@@ -71,7 +71,7 @@ ok(src.indexOf("if(desk)gift();else pickDesk();")>=0&&src.indexOf("ok.onclick=fu
 const pk=src.slice(src.indexOf("function pickDesk()"),src.indexOf("/* 2) só depois"));
 ok(pk.indexOf("pacote de boas-vindas")<0&&pk.indexOf("figurinhas")<0,"a tela de escolher a mesa não fala do pacote nem das figurinhas");
 ok(/5 figurinhas de cada álbum/.test(src),"boas-vindas: 5 figurinhas de cada álbum da mesa");
-ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura do pacotinho");
+ok(/S\.opening/.test(src),"troca da mesa bloqueada durante a abertura da figurinha");
 
 /* 5. Migração: pontos essenciais */
 const mig=fs.readFileSync(path.join(root,"migracoes","2026-11-15-mesa-gaveta.sql"),"utf8");

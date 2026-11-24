@@ -316,7 +316,7 @@ function nivelamentoAplicar(st,nv,dia,rnd){
 /* O motor conta dias como números (dias desde 1970-01-01); o banco guarda datas AAAA-MM-DD. */
 function diaDe(s){if(s==null)return null;var p=String(s).slice(0,10).split("-");return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/86400000)}
 function dataDe(n){return n==null?null:new Date(n*86400000).toISOString().slice(0,10)}
-/* Resposta de student_turbo_get -> estado do motor. dia = hoje (número); se o pacotinho de hoje já saiu, o motor sabe. */
+/* Resposta de student_turbo_get -> estado do motor. dia = hoje (número); se a figurinha de hoje já saiu, o motor sabe. */
 function deBanco(d,dia){
   var st=novoAluno({idade:d.age,liberadas:d.unlocked});
   st.aparelhos=Object.assign({},d.devices||{});
