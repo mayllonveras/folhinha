@@ -20,7 +20,7 @@ const A=ctx.api;
 let U=-1;for(let i=0;i<FC.ALBUM_SIZE;i++)if(FC.tierOf("bandeiras",i)==="ultra"&&FC.tierOf("pets",i)==="comum"){U=i;break}
 ok(U>=0,"pré-condição: existe um número ultrarrara em Bandeiras e comum em Gatinhos");
 ok(A.valOf({theme:"pets",slot:U})===1,"sem destino: vale a raridade da própria carta (comum = 1)");
-ok(A.valOf({theme:"pets",slot:U,to:"bandeiras"})===3,"convertida para Bandeiras (ultrarrara): vale 3");
+ok(A.valOf({theme:"pets",slot:U,to:"bandeiras"})===12,"convertida para Bandeiras (ultrarrara): vale 12");
 ok(A.valOf({theme:"bandeiras",slot:U,to:"pets"})===1,"ultrarrara que vira comum no álbum de destino: vale 1");
 ok(A.sumVal([{theme:"pets",slot:30,to:"bandeiras"},{theme:"pets",slot:32,to:"bandeiras"}])===2,"soma dos valores");
 ok(A.dstOf({theme:"pets",slot:1})==="pets"&&A.dstOf({theme:"pets",slot:1,to:"espaco"})==="espaco","destino padrão = o próprio álbum");

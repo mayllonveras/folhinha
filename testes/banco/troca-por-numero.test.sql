@@ -46,7 +46,7 @@ select pg_temp.amigos('Ana', 'Caio') as f_ac \gset
 
 -- números escolhidos são comuns nos dois álbuns (30, 31, 32, 33); o 0 de Bandeiras é ultrarrara
 select pg_temp.t('números 30 a 33 são comuns em pets e bandeiras', (select bool_and(public._tier_value(a, s) = 1) from unnest('{pets,bandeiras}'::text[]) a, generate_series(30,33) s));
-select pg_temp.t('o nº 1 de Bandeiras (slot 0) vale 3', public._tier_value('bandeiras', 0) = 3);
+select pg_temp.t('o nº 1 de Bandeiras (slot 0) vale 12', public._tier_value('bandeiras', 0) = 12);
 
 -- Ana: pets nº30 e nº32 repetidas, espaço nº30 repetida (gaveta) | Beto: bandeiras nº31 e nº33 repetidas
 select pg_temp.da('Ana', 'espaco', 30, 2); select pg_temp.da('Ana', 'pets', 30, 2); select pg_temp.da('Ana', 'pets', 32, 2); select pg_temp.da('Ana', 'pets', 36, 1);
