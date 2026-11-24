@@ -1203,6 +1203,12 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .sk-msg b{font-size:1.3rem}
 .sk-hint{text-align:center;font-size:.85rem;color:var(--muted);margin-top:-6px}
 .sk .btn{margin-top:auto}
+.sk-card{min-height:0;max-width:none;margin:0}
+.sk-card .sk-trail{background:var(--soft)}
+.sk-card .sk-d.today .sk-dot{box-shadow:0 0 0 3px var(--soft),0 0 0 6px var(--primary)}
+.sk-card .sk-d.goal .sk-dot{background:var(--soft)}
+.sk-card .sk-num{font-size:4.5rem}
+.sk-best{text-align:center;margin:0}
 @media (prefers-reduced-motion:no-preference){
   .sk-prize.open .sk-art{animation:skBounce 1s ease-in-out infinite alternate}
   @keyframes skBounce{to{transform:translateY(-4px) scale(1.06)}}
