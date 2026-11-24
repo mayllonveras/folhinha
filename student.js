@@ -364,8 +364,8 @@ var TR={sub:"repetidas",step:"home",fid:null,fname:"",opts:null,give:null,want:n
 function stk(t,sl,badge){return FC.stickerHtml(t,sl,{noflip:true,badge:badge||0})}
 function tradesPane(){return '<div id="trBox"><p class="loading">Carregando…</p></div>'}
 function canNotify(){return !busy&&(!cur||cur.secs!=null)}
-/* Valor de cada figurinha na troca: comum 1, rara 2, ultrarrara 3. Precisa bater com public._tier_value no banco. */
-var TR_VAL={comum:1,rara:2,ultra:3};
+/* Valor de cada figurinha na troca: comum 1, rara 4, ultrarrara 12. Precisa bater com public._tier_value no banco. */
+var TR_VAL={comum:1,rara:4,ultra:12};
 /* O valor é o da carta que CHEGA (álbum de destino), o mesmo que public._trade_side/_tier_value usam no banco. */
 function dstOf(x){return x.to||x.theme}
 function valOf(x){return TR_VAL[FC.tierOf(dstOf(x),x.slot)]||1}
@@ -560,7 +560,7 @@ function trFlow(){
   }
   function grid(side){return '<div class="album gap tr-grid">'+listOf(side).map(function(x,i){return tile(side,x,i)}).join("")+'</div>'}
   box.innerHTML=back("Escolher outro amigo")+
-    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Os álbuns de vocês podem ser diferentes: vale o <b>número</b> da figurinha. Se você der a nº 15 de um álbum, ela vira a nº 15 no álbum de '+nm+' (e o contrário). A figurinha que chega só entra em álbum que está na <b>mesa</b>, não na gaveta. Valores: <b>comum vale 1</b>, <b>rara vale 2</b> e <b>ultrarrara vale 3</b>, contando a figurinha que chega. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 2 comuns.</p></section>'+
+    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Os álbuns de vocês podem ser diferentes: vale o <b>número</b> da figurinha. Se você der a nº 15 de um álbum, ela vira a nº 15 no álbum de '+nm+' (e o contrário). A figurinha que chega só entra em álbum que está na <b>mesa</b>, não na gaveta. Valores: <b>comum vale 1</b>, <b>rara vale 4</b> e <b>ultrarrara vale 12</b>, contando a figurinha que chega. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 4 comuns. Como cada lado leva até 6 figurinhas, uma ultrarrara só se troca por raras ou outra ultrarrara.</p></section>'+
     '<section class="panel"><b>1. O que você oferece</b><p class="muted small-t">Suas repetidas (de qualquer álbum) com um número que '+nm+' ainda não tem na mesa dele.</p><div id="trGive"></div></section>'+
     '<section class="panel"><b>2. O que você quer de '+nm+'</b><p class="muted small-t">Repetidas dele com um número que ainda falta nos álbuns da sua mesa.</p><div id="trWant"></div></section>'+
     '<section class="panel center tr-sum" id="trSum"></section>';

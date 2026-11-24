@@ -1414,7 +1414,7 @@ async function loadMirror(id,sname,free){
   }else{
     box.innerHTML=head+'<p class="small-t">Você é amigo de <b>'+n+'</b> no app como <b>'+esc(d.name)+'</b>.</p>'+
       '<div class="stats gap"><div class="panel stat"><div class="eyebrow">Figurinhas para abrir</div><div class="v">'+d.packs+'</div></div><div class="panel stat"><div class="eyebrow">Figurinhas no seu álbum</div><div class="v">'+d.stickers+'</div></div></div>'+
-      '<p class="small-t muted gap">A cada figurinha que '+n+' abre, você recebe uma do mesmo álbum. As trocas entre vocês são por valor: comum vale 1, rara 2 e ultrarrara 3.</p>'+
+      '<p class="small-t muted gap">A cada figurinha que '+n+' abre, você recebe uma do mesmo álbum. As trocas entre vocês são por valor: comum vale 1, rara 4 e ultrarrara 12.</p>'+
       (d.vip?'':'<p class="small-t gap">O seu plano VIP acabou: o que você já ganhou fica guardado, mas novas figurinhas e trocas voltam quando você renovar.</p><div class="actions"><button type="button" class="btn small" data-plans>Ver planos</button></div>')+
       '<div class="actions gap"><button type="button" class="btn" id="mirOpen">Abrir meu álbum</button><button type="button" class="btn ghost small" id="mirOff">Deixar de ser amigo</button></div>';
     FC.confirmClick($("#mirOff"),"Toque de novo para confirmar",async function(){

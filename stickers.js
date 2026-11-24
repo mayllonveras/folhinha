@@ -45,7 +45,7 @@ FC.tierName=function(tier){return tier==="ultra"?"Ultrarrara":tier==="rara"?"Rar
 FC.rarityLegend=function(themeId){
   var t=FC.theme(themeId);if(!t.rarity)return "";
   var u=[],r=[];Object.keys(t.rarity).forEach(function(k){var nm=FC.stickerInfo(themeId,Number(k)).name;(t.rarity[k]==="ultra"?u:r).push(nm)});
-  return '<p class="muted small-t rarity-legend"><b>Ultrarraras:</b> '+u.map(FC.esc).join(", ")+'. <b>Raras:</b> '+r.map(FC.esc).join(", ")+'. As outras '+(FC.ALBUM_SIZE-u.length-r.length)+' são comuns. A figurinha da semana é sorteada, e as raras saem com menos chance.</p>';
+  return '<p class="muted small-t rarity-legend"><b>Ultrarraras:</b> '+u.map(FC.esc).join(", ")+'. <b>Raras:</b> '+r.map(FC.esc).join(", ")+'. As outras '+(FC.ALBUM_SIZE-u.length-r.length)+' são comuns. As raras e as ultrarraras são difíceis de sair: saem bem menos que as comuns, e a ultrarrara é a mais difícil de todas.</p>';
 };
 FC.theme=function(id){for(var i=0;i<FC.THEMES.length;i++)if(FC.THEMES[i].id===id)return FC.THEMES[i];return FC.THEMES[0]};
 FC.stickerInfo=function(themeId,slot){
