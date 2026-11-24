@@ -12,7 +12,7 @@ var P={
   BLOCO_MIN:3,BLOCO_MAX:4,REPS_NOVO:3,REINSERCOES:4,APRENDENDO_MAX:8,
   CORRETAS_APRENDENDO:3,DIAS_APRENDENDO:2,SESSOES_BOAS:2,ACERTO_MIN:.8,
   REVISOES:[1,3,7,14,30],MADURO:21,
-  APARELHO_MIN_SESSOES:5,
+  APARELHO_MIN_SESSOES:0,         /* 0 = o aparelho não pesa na promoção: toda sessão conta, em qualquer aparelho (decisão de 24/11/2026; antes eram 5) */
   CHUTE_MS:500,CHUTE_FRAC:.5,CHUTE_MIN_TENT:8,
   NIVELAMENTO_MAX:12,NIVELAMENTO_LENTO_MS:8000,NIVELAMENTO_POR_DIA:15,
   T1_MIN:250                      /* abaixo disto o tempo até o primeiro toque é impossível (antecipou a resposta ou tocou antes da conta aparecer): não vale para promover */
@@ -225,7 +225,7 @@ function finalizarSessao(st,sess){
       precisaRevisar(f,dia,f.s);
     }else if(f.s===3){
       /* "duas sessões boas seguidas": uma sessão sem erro mas lenta, com dica ou contando zera a sequência.
-         Sessão em aparelho novo não conta nem zera. */
+         O aparelho não pesa: toda sessão conta (APARELHO_MIN_SESSOES = 0). */
       if(!sess.aparelhoNovo&&!semTempo){
         if(limpa&&noTempo&&acertoRecente>=P.ACERTO_MIN){
           f.boas++;

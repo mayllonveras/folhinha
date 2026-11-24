@@ -1,5 +1,5 @@
 /* Motor da Trilha Turbo (turbo.js). Rodar com: node testes/turbo.test.js
-   Cobre: catálogo e famílias, portões, montagem da sessão, promoção e rebaixamento dos fatos, critério de tempo, regra de aparelho novo,
+   Cobre: catálogo e famílias, portões, montagem da sessão, promoção e rebaixamento dos fatos, critério de tempo, aparelho sem peso na promoção,
    meta de tempo, recompensa do dia, nivelamento da primeira entrada e uma simulação de 120 dias. */
 global.window=global;
 require('../turbo.js');
@@ -216,32 +216,31 @@ function jogar(st,dia,o){
   igual(T.dicaPara(pôr(aluno(),"+:1:1",{s:3,stub:true})),"after","teimoso: dica depois");
 }
 
-/* ---------- 9. aparelho novo não promove por tempo, mas erro conta ---------- */
+/* ---------- 9. o aparelho não decide nada: toda sessão conta, em qualquer aparelho ---------- */
 {
-  const st=aluno(),id="+:4:5";st.aparelhos.celular=0;
+  /* alternando celular, tablet e computador, sem nenhuma sessão anterior em nenhum deles, duas sessões boas seguidas promovem */
+  const st=T.novoAluno({idade:8}),id="+:4:5";
   pôr(st,id,{s:3,atingiu:true,due:0,n:6,diasOk:3});
-  for(let d=0;d<4;d++)sessaoCom(st,d,"celular",[{id,ok:true,t1:600}]);
-  igual(T.fato(st,id).s,3,"no celular novo, tempo perfeito não promove");
-  igual(st.aparelhos.celular,4,"cada sessão conta para o aparelho");
-  /* mesmo fato, no tablet de sempre, promove */
-  for(let d=4;d<6;d++)sessaoCom(st,d,"tablet",[{id,ok:true,t1:600}]);
-  igual(T.fato(st,id).s,4,"no aparelho de sempre promove");
-  /* depois de 5 sessões a classe deixa de ser nova */
-  const st2=aluno(),id2="+:5:5";st2.aparelhos.celular=5;pôr(st2,id2,{s:3,atingiu:true,due:0,n:6,diasOk:3});
-  for(let d=0;d<2;d++)sessaoCom(st2,d,"celular",[{id:id2,ok:true,t1:600}]);
-  igual(T.fato(st2,id2).s,4,"com 5 sessões no celular, ele promove");
-  /* erro no aparelho novo conta normalmente */
-  const st3=aluno(),id3="+:6:6";st3.aparelhos.celular=0;pôr(st3,id3,{s:4,rev:1,due:0,atingiu:true});
+  sessaoCom(st,0,"celular",[{id,ok:true,t1:600}]);
+  igual(T.fato(st,id).boas,1,"a primeira sessão boa conta, mesmo num aparelho estreante");
+  sessaoCom(st,1,"tablet",[{id,ok:true,t1:600}]);
+  igual(T.fato(st,id).s,4,"trocar de aparelho não atrasa a promoção");
+  igual(st.aparelhos.celular+st.aparelhos.tablet,2,"cada sessão continua registrada no seu aparelho");
+  /* sessão lenta em aparelho estreante zera a sequência, como em qualquer outro */
+  const st2=T.novoAluno({idade:8}),id2="+:5:5";pôr(st2,id2,{s:3,atingiu:true,due:0,n:6,diasOk:3,boas:1});
+  sessaoCom(st2,0,"computador",[{id:id2,ok:true,t1:4000}]);
+  igual(T.fato(st2,id2).boas,0,"lenta zera a sequência em qualquer aparelho");
+  /* erro rebaixa e revisão de provável avança */
+  const st3=T.novoAluno({idade:8}),id3="+:6:6";pôr(st3,id3,{s:4,rev:1,due:0,atingiu:true});
   sessaoCom(st3,0,"celular",[{id:id3,ok:false,t1:2500}]);
-  igual(T.fato(st3,id3).s,3,"erro em aparelho novo rebaixa");
-  /* revisão de provável feita no aparelho novo não avança */
-  const st4=aluno(),id4="+:7:7";st4.aparelhos.celular=0;pôr(st4,id4,{s:4,rev:1,due:0});
+  igual(T.fato(st3,id3).s,3,"erro rebaixa");
+  const st4=T.novoAluno({idade:8}),id4="+:7:7";pôr(st4,id4,{s:4,rev:1,due:0});
   sessaoCom(st4,0,"celular",[{id:id4,ok:true,t1:600}]);
-  igual(T.fato(st4,id4).rev,1,"revisão em aparelho novo não avança o calendário");
-  /* o estado é do aluno: uma sessão em aparelho novo enxerga o que o tablet fez */
+  igual(T.fato(st4,id4).rev,2,"revisão de provável avança o calendário em qualquer aparelho");
+  /* o estado é do aluno: um aparelho de primeira vez enxerga o que os outros fizeram */
   const st5=aluno();pôr(st5,"+:1:3",{s:2,due:0,n:2});
   const sess=T.iniciarSessao(st5,{dia:0,aparelho:"celular-da-avo",rnd:T.rng(1)});
-  ok(sess.aparelhoNovo&&sess.fila.some(i=>i.id==="+:1:3"),"aparelho novo continua de onde parou");
+  ok(!sess.aparelhoNovo&&sess.fila.some(i=>i.id==="+:1:3"),"aparelho de primeira vez continua de onde parou");
 }
 
 /* ---------- 10. meta de tempo ---------- */
