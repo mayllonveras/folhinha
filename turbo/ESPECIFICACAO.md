@@ -60,7 +60,7 @@ Status: *heurística*. O 85% é proposta e deve ser editável.
 Regras de detalhe que o motor aplica:
 
 - **Aprendendo para consolidando:** 3 recuperações corretas **em pelo menos 2 dias diferentes**. Três acertos na mesma sessão não bastam.
-- **Duas sessões boas seguidas:** uma sessão sem erro, mas lenta, com dica antes da tentativa ou contando nos dedos, **zera a sequência**. Sessão em aparelho novo não conta nem zera.
+- **Duas sessões boas seguidas:** uma sessão sem erro, mas lenta, com dica antes da tentativa ou contando nos dedos, **zera a sequência**. O aparelho não pesa: toda sessão conta (item 5.2).
 - **Revisão lenta ou com apoio de um fato provável:** não avança o calendário e o fato volta a ser conferido no dia seguinte.
 - **Calendário de revisões de um fato provável:** 1, 3, 7, 14 e 30 dias. Passando a de 30 dias, vira maduro (revisão a cada 21 dias). Um erro em maduro volta a provável com revisão em 7 dias ou mais.
 - **Teimoso:** erra depois de já ter chegado a consolidando. Sai da marca ao voltar a provável.
@@ -95,13 +95,11 @@ Status: *a testar*.
 
 Status: *heurística*, a calibrar com as primeiras crianças.
 
-### 5.2 Aparelho novo não bloqueia nem promove
+### 5.2 O aparelho não pesa na promoção (decisão de 24/11/2026)
 
-Uma sessão numa classe de aparelho com menos de 5 sessões da criança:
+Toda sessão conta para promover, rebaixar e avançar o calendário, em **qualquer** aparelho, inclusive um que a criança nunca usou. Antes, uma classe de aparelho com menos de 5 sessões não promovia. Isso travou o Samuel: ele alternava celular, tablet e computador (2 sessões em cada) e, em 6 dias com 95 a 100% de acerto, nenhum fato foi promovido.
 
-- erros contam normalmente e podem rebaixar fatos;
-- **não promove** fatos por causa do tempo (os fatos continuam acumulando acertos);
-- fica registrada com a classe do aparelho;
+- a sessão continua registrada com a classe do aparelho (`APARELHO_MIN_SESSOES = 0` em `turbo.js`), para o painel e para o ajuste do item 5.3;
 - não aparece para a criança como teste. Um aquecimento de cerca de 6 toques ("toque o número que aparece") pode aparecer e é pulável.
 
 O estado de cada fato fica no servidor, preso à criança, então um link aberto em outro aparelho retoma de onde parou.
@@ -206,7 +204,7 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 
 | Parte | Estado |
 |---|---|
-| Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
+| Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, aparelho sem peso na promoção, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
 | Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** **Corrigida no mesmo dia** (item 15: `student_turbo_get` passou a volátil). Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
