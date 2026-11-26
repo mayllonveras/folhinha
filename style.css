@@ -1218,3 +1218,19 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .stamp.dball.on.gold{background:var(--sun-500);color:var(--on-reward);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun-500) 30%,transparent)}
 .stamp.dball.gold .i{width:58%;height:58%;fill:currentColor;stroke-width:1.5}
 .stamp.dball.gold.lvl .i{width:68%;height:68%;fill:none;stroke-width:5.6;transform:rotate(8deg)}
+
+/* Histórico, lista de dias em celular: título e tempo numa linha, selos embaixo (sem passar por cima da porcentagem), sem a seta de abrir */
+@media (max-width:520px){
+  button.hday{display:grid;grid-template-columns:38px minmax(0,1fr) auto auto;column-gap:10px;row-gap:0;align-items:center;padding:12px 12px}
+  button.hday>.hday-d{grid-column:1;grid-row:1;flex-basis:auto;align-self:center}
+  button.hday>.hday-m{display:contents}
+  button.hday .hday-m>b{grid-column:2;grid-row:1;line-height:1.25}
+  .hday-t{display:block}
+  .hday-dot{display:none}
+  button.hday>.hday-pct{grid-column:3;grid-row:1}
+  button.hday>.stamp{grid-column:4;grid-row:1;margin-left:0}
+  button.hday .hday-tags{grid-column:1/-1;grid-row:2;margin-top:8px}
+  button.hday .hday-tags .tag{white-space:normal}
+  button.hday>.hday-go{display:none}
+  .hday.off{gap:10px;padding-inline:12px}
+}
