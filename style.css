@@ -1213,3 +1213,11 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
   .sk-prize.open .sk-art{animation:skBounce 1s ease-in-out infinite alternate}
   @keyframes skBounce{to{transform:translateY(-4px) scale(1.06)}}
 }
+
+/* Histórico: dia de ouro e mudança de nível se destacam na lista de dias */
+.tag.gold{display:inline-flex;align-items:center;gap:4px;font-weight:700;background:color-mix(in srgb,var(--sun-500) 30%,transparent);color:var(--reward-text)}
+.tag.gold svg.i{width:13px;height:13px;stroke-width:2.2}
+.hday.hi{background:color-mix(in srgb,var(--sun-500) 14%,var(--soft));box-shadow:inset 4px 0 0 var(--reward-edge)}
+button.hday.hi:hover,button.hday.hi:focus-visible{background:color-mix(in srgb,var(--sun-500) 24%,var(--soft))}
+.hday .tag.gold{background:color-mix(in srgb,var(--sun-500) 30%,transparent)}
+.dstamp-panel.gold{background:color-mix(in srgb,var(--sun-500) 14%,var(--soft));box-shadow:inset 4px 0 0 var(--reward-edge)}

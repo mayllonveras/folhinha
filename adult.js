@@ -1048,8 +1048,10 @@ async function detail(id,day){
   function pl(n,um,varios){return n+" "+(n===1?um:varios)}
   function dayTags(d){
     var x=byDay[d],t=H.tlog&&H.tlog[d],mv=moveBy[d]||[],h="";
-    if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"ok")+'">'+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
-    else if(x&&x.adv)h+='<span class="tag ok">subiu de nível</span>';
+    var sr=stampBy[d];
+    if(sr&&sr.stamp&&sr.why==="ouro")h+='<span class="tag gold">'+FC.icon("star")+'Dia de ouro'+(sr.gained>1?' · '+sr.gained+' carimbos':'')+'</span>';
+    if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"gold")+'">'+(m.kind==="voltou"?"":FC.icon("up"))+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
+    else if(x&&x.adv)h+='<span class="tag gold">'+FC.icon("up")+'subiu de nível</span>';
     if(x&&d<today&&s.study_days.indexOf(FC.dow(d))>=0&&x.sheets.length<quotaOf(s))h+='<span class="tag warn">'+(quotaOf(s)-x.sheets.length===1?"faltou 1 folha":"faltaram "+(quotaOf(s)-x.sheets.length)+" folhas")+'</span>';
     if(t)h+='<span class="tag">Turbo: '+t.ok+' de '+t.rows.length+'</span>';
     return h;
@@ -1092,6 +1094,10 @@ async function detail(id,day){
     return '<p><b>Sem carimbo neste dia.</b> '+nome+' fechou as '+r.done+' folhas, mas '+(r.why==="acertos_tempo"?"não alcançou nem os acertos nem o tempo":r.why==="acertos"?"não alcançou o mínimo de acertos":"passou do tempo")+' que o carimbo pede.</p>'+lista+
       '<p class="muted small-t">Fechar o dia, mesmo sem carimbo, vale a figurinha da perseverança. Amanhã tem outra chance, e as contas erradas voltam nas próximas folhas.</p>'+nota;
   }
+  /* Destaque do dia na lista: dia de ouro ou mudança de nível ganham o cartão dourado. */
+  function dayHi(d){var r=stampBy[d],mv=moveBy[d]||[],x=byDay[d];
+    var up=mv.some(function(m){return m.kind!=="voltou"})||!!(x&&x.adv)||!!(r&&r.stamp&&r.why==="salto");
+    return (r&&r.stamp&&r.why==="ouro"||up)?" hi":""}
   function weekOf(d){return FC.addDays(d,-((FC.dow(d)+6)%7))}
   function histList(){
     var from=FC.addDays(today,-(H.span-1)),more=from>oldest;if(!more)from=oldest;
@@ -1107,7 +1113,7 @@ async function detail(id,day){
       var dia='<span class="hday-d"><b>'+FC.DOW[FC.dow(d)]+'</b><small class="num">'+FC.dm(d)+'</small></span>';
       if(!x&&!t){list+='<div class="hday off">'+dia+'<span class="hday-m"><span class="muted">Não estudou</span></span>'+stampBall(d,30)+'</div>';continue}
       var pct=x&&x.tot?Math.round(100*x.ok/x.tot):null;
-      list+='<button type="button" class="hday" data-day="'+d+'" aria-label="Abrir o dia '+esc(FC.dayLabel(d))+'">'+dia+
+      list+='<button type="button" class="hday'+dayHi(d)+'" data-day="'+d+'" aria-label="Abrir o dia '+esc(FC.dayLabel(d))+'">'+dia+
         '<span class="hday-m"><b>'+(x?pl(x.sheets.length,"folha","folhas")+' <span class="muted small-t num">· '+FC.fmtTime(x.secs)+'</span>':'Só a Trilha Turbo')+'</b><span class="hday-tags">'+dayTags(d)+'</span></span>'+
         (pct!=null?'<span class="hday-pct '+(pct>=80?"ok":"warn")+'"><b class="num">'+pct+'%</b><small>de primeira</small></span>':'')+stampBall(d,34)+FC.icon("back","hday-go")+'</button>';
     }
@@ -1128,7 +1134,8 @@ async function detail(id,day){
       '<div class="pagehead"><h2 class="hd-title">'+esc(FC.dayLabel(d))+'</h2><span class="hday-tags">'+dayTags(d).replace(/<span class="tag">Turbo:[^<]*<\/span>/,"")+'</span></div>';
     if(!x&&!t)return head+'<div class="panel"><p class="muted">'+(H.tlog===null&&turboOn?"Carregando…":"Nenhum registro de estudo neste dia.")+'</p></div>';
     var won=dayWon(d);
-    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
+    var sr=stampBy[d],ouro=!!(sr&&sr.stamp&&sr.why==="ouro");
+    var carimbo='<div class="panel dstamp-panel'+(ouro?" gold":"")+'">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(ouro?"Dia de ouro: ganhou "+sr.gained+" carimbos":won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
       '<button type="button" class="iconbtn" data-why="'+d+'" aria-label="Por que '+(won?"ganhou":"não ganhou")+' o carimbo neste dia?">'+FC.icon("help")+'</button></div>';
     var stats='<div class="stats fit">'+
       '<div class="panel stat"><div class="eyebrow">Folhas</div><div class="v">'+(x?x.sheets.length:0)+'</div></div>'+
