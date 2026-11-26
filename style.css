@@ -1217,7 +1217,7 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 /* Histórico: dia de ouro e mudança de nível se destacam na lista de dias */
 .tag.gold{display:inline-flex;align-items:center;gap:4px;font-weight:700;background:color-mix(in srgb,var(--sun-500) 30%,transparent);color:var(--reward-text)}
 .tag.gold svg.i{width:13px;height:13px;stroke-width:2.2}
-.hday.hi{background:color-mix(in srgb,var(--sun-500) 14%,var(--soft));box-shadow:inset 4px 0 0 var(--reward-edge)}
-button.hday.hi:hover,button.hday.hi:focus-visible{background:color-mix(in srgb,var(--sun-500) 24%,var(--soft))}
-.hday .tag.gold{background:color-mix(in srgb,var(--sun-500) 30%,transparent)}
-.dstamp-panel.gold{background:color-mix(in srgb,var(--sun-500) 14%,var(--soft));box-shadow:inset 4px 0 0 var(--reward-edge)}
+.hday.hi,.dstamp-panel.gold{background:var(--soft);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--reward-edge) 70%,transparent),inset 6px 0 0 var(--reward-edge)}
+button.hday.hi:hover,button.hday.hi:focus-visible{background:color-mix(in srgb,var(--primary) 12%,var(--soft))}
+.hday-tags .tag.gold{white-space:normal;max-width:100%;min-width:0}
+.hday-tags .tag.gold{border-radius:12px;line-height:1.25;padding-block:4px}
