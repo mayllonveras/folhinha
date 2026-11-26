@@ -1243,3 +1243,57 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
   .nbtn .pill{width:36px;height:36px}
 }
 @media (max-width:350px){.nbtn{font-size:.6rem}}
+
+/* Trilha Turbo: detalhe de uma operação (caminho, mapa e por vir) */
+button.tp-open{all:unset;box-sizing:border-box;display:block;width:calc(100% + 24px);margin:12px -12px 0;padding:10px 12px;border-radius:14px;cursor:pointer;background:color-mix(in srgb,var(--soft) 55%,transparent)}
+button.tp-open:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tp-open .tp-row{margin-top:0}
+.tp-go{display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:var(--primary);font-size:.85rem;font-weight:600}
+.chev{font-size:1.3rem;line-height:1}
+.ov-card.tdov{width:min(100%,460px);text-align:left}
+.tdov h2{text-align:center}
+.tdov h2{margin-bottom:4px}
+.tdov h4{margin:18px 0 4px;font:700 .95rem var(--font-display)}
+.tdtabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:99px;margin:10px 0 12px}
+.tdtabs button{all:unset;flex:1;box-sizing:border-box;text-align:center;padding:8px 4px;border-radius:99px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer}
+.tdtabs button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(20,33,61,.18)}
+.tdtabs button:focus-visible{outline:3px solid var(--accent)}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+.s5,.sw.s5{background:var(--ok-fill);color:#fff}
+.s4,.sw.s4{background:color-mix(in srgb,var(--ok-fill) 70%,#fff);color:#06352a}
+.s3,.sw.s3{background:color-mix(in srgb,var(--ok-fill) 24%,var(--surface));color:var(--ink)}
+.s2,.sw.s2{background:#FFE7A8;color:#6A4300}
+.s1,.sw.s1{background:var(--surface);color:#6A4300;box-shadow:inset 0 0 0 2px #FFB92B}
+.s0,.sw.s0{background:var(--soft);color:var(--muted)}
+.tag.ch{font-size:.82rem}
+.tdlg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--muted);margin-top:12px}
+.tdlg span{display:inline-flex;align-items:center;gap:6px}
+.tdfam{border-top:1px solid var(--line);padding:12px 0}
+.tdfam:first-child{border-top:0}
+.tdfam summary{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;align-items:center;list-style:none;color:var(--ink)}
+.tdfam summary::-webkit-details-marker{display:none}
+.tdfam .chev{color:var(--muted);transition:transform .15s}
+.tdfam[open] .chev{transform:rotate(90deg)}
+.tdnm b{display:block;font-size:.95rem}.tdnm small{color:var(--muted);font-size:.78rem}
+.tdmini{grid-column:1/-1;display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--soft);margin-top:8px}
+.tdmini i{display:block;height:100%}
+.tdmini .f{background:var(--ok-fill)}.tdmini .l{background:color-mix(in srgb,var(--ok-fill) 38%,var(--soft))}.tdmini .n{background:#FFB92B}
+.tdico{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.tdico.d{background:var(--ok-fill);color:#fff}.tdico.t{background:color-mix(in srgb,var(--ok-fill) 28%,var(--surface));color:var(--ok)}.tdico.p{background:#FFE7A8;color:#6A4300}.tdico.w{background:var(--soft);color:var(--muted)}
+.tdfam .tp-chips{margin-top:10px}
+.tdgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:10px}
+.tdgrid>*{aspect-ratio:1;border-radius:6px;display:grid;place-items:center;font:600 .72rem var(--font-num);font-style:normal;padding:0;border:0;min-width:0}
+.tdgrid .h{background:transparent;color:var(--muted);font-weight:500}
+.tdgrid button{cursor:pointer}
+.tdgrid button.sel{outline:3px solid var(--primary);outline-offset:1px}
+.tdgrid button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.tddet{background:var(--soft);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:.88rem}
+.tddet .big{font-size:1.3rem;color:var(--ink)}
+.tdtl{list-style:none;margin:8px 0 0;padding:0 0 0 0;border-left:2px solid var(--line)}
+.tdtl li{position:relative;padding:0 0 12px 16px;font-size:.88rem}
+.tdtl li::before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--ok-fill)}
+.tdtl li.far::before{background:var(--line)}
+.tdtl li b{display:block}.tdtl li span{color:var(--muted);font-size:.8rem}
+.tdgate{margin-top:10px}
+.tdgbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin:6px 0 4px}
+.tdgbar i{display:block;height:100%;background:var(--ok-fill);border-radius:99px}
