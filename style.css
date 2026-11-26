@@ -1234,3 +1234,12 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
   button.hday>.hday-go{display:none}
   .hday.off{gap:10px;padding-inline:12px}
 }
+
+/* Menu inferior com 7 abas (painel dos pais): rótulos menores e sem encostar um no outro em telas estreitas */
+@media (max-width:480px){
+  .navbottom{padding-inline:2px}
+  .nbtn{font-size:.66rem;letter-spacing:-.01em;gap:2px}
+  .nbtn>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nbtn .pill{width:36px;height:36px}
+}
+@media (max-width:350px){.nbtn{font-size:.6rem}}
