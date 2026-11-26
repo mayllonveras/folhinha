@@ -1250,7 +1250,7 @@ button.tp-open:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .tp-open .tp-row{margin-top:0}
 .tp-go{display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:var(--primary);font-size:.85rem;font-weight:600}
 .chev{font-size:1.3rem;line-height:1}
-.ov-card.tdov{width:min(100%,460px);text-align:left}
+.ov-card.tdov{max-width:380px;text-align:left}
 .tdov h2{text-align:center}
 .tdov h2{margin-bottom:4px}
 .tdov h4{margin:18px 0 4px;font:700 .95rem var(--font-display)}
@@ -1297,3 +1297,23 @@ button.tp-open:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .tdgate{margin-top:10px}
 .tdgbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin:6px 0 4px}
 .tdgbar i{display:block;height:100%;background:var(--ok-fill);border-radius:99px}
+
+/* Detalhe da Turbo: celular fica estreito; tablet na horizontal e computador aproveitam a largura */
+.tdtabs{max-width:420px}
+@media (min-width:760px){
+  .ov-card.tdov{max-width:760px;padding:28px 32px}
+  .tdov h2{text-align:left}
+  .tdfams{columns:2;column-gap:14px}
+  .tdfam,.tdfam:first-child{break-inside:avoid;border-top:0;background:color-mix(in srgb,var(--soft) 45%,transparent);border-radius:14px;padding:12px 14px;margin:0 0 14px}
+  .tdmapw{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:28px;align-items:start}
+  .tdmapr{position:sticky;top:0;padding-top:8px}
+  .tdmapr .tddet{margin-top:0}
+  .tdgrid>*{font-size:.8rem}
+  .tdpv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;align-items:start}
+  .tdpv h4:first-child{margin-top:4px}
+}
+@media (min-width:1100px){
+  .ov-card.tdov{max-width:980px}
+  .tdfams{columns:3}
+  .tdmapw{grid-template-columns:minmax(0,500px) minmax(0,1fr)}
+}

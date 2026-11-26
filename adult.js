@@ -408,13 +408,13 @@ async function turboOpen(id,op,t,today){
   function mapa(){
     var rows=op==="div"?10:11,M=[];for(var i=0;i<rows;i++)M.push([]);
     fs.forEach(function(f){f.cells.forEach(function(c){if(M[c[0]])M[c[0]][c[1]]=f})});
-    var h='<p class="muted small-t">Cada quadradinho é uma conta da tabuada, e o número é o resultado. Toque para ver o estado dela.</p><div class="tdgrid" role="group" aria-label="Mapa dos fatos"><i class="h"></i>';
+    var h='<div class="tdmapw"><div class="tdmapl"><p class="muted small-t">Cada quadradinho é uma conta da tabuada, e o número é o resultado. Toque para ver o estado dela.</p><div class="tdgrid" role="group" aria-label="Mapa dos fatos"><i class="h"></i>';
     for(var c=0;c<=10;c++)h+='<i class="h">'+c+'</i>';
     M.forEach(function(row,ri){
       h+='<i class="h">'+(op==="div"?ri+1:ri)+'</i>';
       for(var c2=0;c2<=10;c2++){var f=row[c2];h+=f?'<button type="button" class="s'+st(f)+(sel===f.id?' sel':'')+'" data-fid="'+esc(f.id)+'" aria-label="'+esc(f.eq)+' = '+f.res+': '+TD_NOME[st(f)].toLowerCase()+'">'+f.res+'</button>':'<i></i>'}
     });
-    h+='</div>'+tdLegend();
+    h+='</div>'+tdLegend()+'</div><div class="tdmapr">';
     var f=sel&&T.porId(sel);
     if(f){
       var b=by[f.id]||{s:0},bits=[TD_NOME[b.s]];
@@ -422,13 +422,13 @@ async function turboOpen(id,op,t,today){
       if(b.stub)bits.push('voltou a errar, então a Turbo traz com dica');
       if(b.s>=3&&b.due){var n=T.diaDe(b.due)-dToday;bits.push('próxima revisão '+(n<=0?'hoje':'<b>'+tdData(b.due)+'</b> ('+tdRel(n)+')'))}
       h+='<div class="tddet"><div class="big num">'+esc(f.eq)+' = '+f.res+'</div><span class="muted">'+bits.join(' · ')+'</span></div>';
-    }else h+='<p class="muted small-t gap">Nenhuma conta escolhida.</p>';
-    return h;
+    }else h+='<p class="muted small-t">Nenhuma conta escolhida.</p>';
+    return h+'</div></div>';
   }
   function porVir(){
     var due={},later=0,sem=0;
     fs.forEach(function(f){var b=by[f.id];if(!b||b.s<3||!b.due)return;var n=Math.max(0,T.diaDe(b.due)-dToday);if(n>7)later++;else{var k=n;due[k]=(due[k]||0)+1}});
-    var h='<h4>Próximas revisões</h4>';
+    var h='<div class="tdpv"><div class="tdpvl"><h4>Próximas revisões</h4>';
     var ks=Object.keys(due).map(Number).sort(function(a,b){return a-b});
     if(ks.length||later){
       h+='<ul class="tdtl">'+ks.map(function(n){var d=new Date(+today.slice(0,4),+today.slice(5,7)-1,+today.slice(8,10)+n),iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -436,7 +436,7 @@ async function turboOpen(id,op,t,today){
         (later?'<li class="far"><b>Mais adiante · '+later+(later===1?' fato':' fatos')+'</b><span>revisões depois de 7 dias</span></li>':'')+'</ul>';
     }else h+='<p class="muted small-t">Nenhuma revisão marcada ainda.</p>';
     var learn=cnt[1]+cnt[2];
-    h+='<h4>Em aprendizado e na fila</h4><p class="small-t">'+(learn?'<b>'+learn+'</b> '+(learn===1?'fato aparece':'fatos aparecem')+' em toda sessão até ficarem consolidados. ':'Nenhum fato em aprendizado agora. ')+
+    h+='</div><div class="tdpvr"><h4>Em aprendizado e na fila</h4><p class="small-t">'+(learn?'<b>'+learn+'</b> '+(learn===1?'fato aparece':'fatos aparecem')+' em toda sessão até ficarem consolidados. ':'Nenhum fato em aprendizado agora. ')+
       (cnt[0]?'<b>'+cnt[0]+'</b> '+(cnt[0]===1?'espera':'esperam')+' na fila e '+(cnt[0]===1?'entra':'entram')+' aos poucos, no máximo 8 em aprendizado ao mesmo tempo.':'Todos os '+fs.length+' fatos já apareceram.')+'</p>';
     var deps=T.ORDEM.filter(function(o){return T.REQ[o]===op});
     if(deps.length){
@@ -449,7 +449,7 @@ async function turboOpen(id,op,t,today){
       });
       h+='<p class="muted small-t gap">Cada operação abre quando a base chega a '+Math.round(T.P.GATE*100)+'% de fatos firmes.</p>';
     }
-    return h;
+    return h+'</div></div>';
   }
   function draw(){
     var tabs=[["caminho","Caminho"],["mapa","Mapa"],["porvir","Por vir"]];
