@@ -1217,4 +1217,4 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 /* Histórico: dia de ouro e mudança de nível se destacam na lista de dias */
 .stamp.dball.on.gold{background:var(--sun-500);color:var(--on-reward);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun-500) 30%,transparent)}
 .stamp.dball.gold .i{width:58%;height:58%;fill:currentColor;stroke-width:1.5}
-.stamp.dball.gold.lvl .i{width:66%;height:66%;fill:none;stroke-width:4.2}
+.stamp.dball.gold.lvl .i{width:68%;height:68%;fill:none;stroke-width:5.6;transform:rotate(8deg)}
