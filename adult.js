@@ -1048,10 +1048,8 @@ async function detail(id,day){
   function pl(n,um,varios){return n+" "+(n===1?um:varios)}
   function dayTags(d){
     var x=byDay[d],t=H.tlog&&H.tlog[d],mv=moveBy[d]||[],h="";
-    var sr=stampBy[d];
-    if(sr&&sr.stamp&&sr.why==="ouro")h+='<span class="tag gold">'+FC.icon("star")+'Dia de ouro'+(sr.gained>1?' · '+sr.gained+' carimbos':'')+'</span>';
-    if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"gold")+'">'+(m.kind==="voltou"?"":FC.icon("up"))+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
-    else if(x&&x.adv)h+='<span class="tag gold">'+FC.icon("up")+'subiu de nível</span>';
+    if(mv.length)h+=mv.map(function(m){var b=FC.LEVELS[m.to_idx];return '<span class="tag '+(m.kind==="voltou"?"warn":"ok")+'">'+(m.kind==="salto"?"pulou para o nível ":m.kind==="voltou"?"voltou para o nível ":"subiu para o nível ")+esc(b?b.id:"?")+'</span>'}).join("");
+    else if(x&&x.adv)h+='<span class="tag ok">subiu de nível</span>';
     if(x&&d<today&&s.study_days.indexOf(FC.dow(d))>=0&&x.sheets.length<quotaOf(s))h+='<span class="tag warn">'+(quotaOf(s)-x.sheets.length===1?"faltou 1 folha":"faltaram "+(quotaOf(s)-x.sheets.length)+" folhas")+'</span>';
     if(t)h+='<span class="tag">Turbo: '+t.ok+' de '+t.rows.length+'</span>';
     return h;
@@ -1059,8 +1057,10 @@ async function detail(id,day){
   /* Carimbo do dia: a bola carimbada (ganhou) ou só o lugar tracejado (não ganhou). */
   function dayWon(d){var r=stampBy[d],x=byDay[d];return r?!!r.stamp:!!(x&&x.stamp)}
   function stampBall(d,sz){
-    var won=dayWon(d),r=stampBy[d],ouro=won&&!!r&&r.why==="ouro";
-    return '<span class="stamp dball'+(won?" on":"")+(ouro?" gold":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(ouro?"Dia de ouro":won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon(ouro?"star":"check"):"")+'</span>';
+    var won=dayWon(d),r=stampBy[d],x=byDay[d],mv=moveBy[d]||[];
+    var ouro=won&&!!r&&r.why==="ouro";
+    var up=won&&!ouro&&(mv.some(function(m){return m.kind!=="voltou"})||!!(x&&x.adv)||!!(r&&r.why==="salto"));
+    return '<span class="stamp dball'+(won?" on":"")+(ouro?" gold":up?" gold lvl":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(ouro?"Dia de ouro":up?"Subiu de nível":won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon(ouro?"star":up?"up":"check"):"")+'</span>';
   }
   /* Por que ganhou ou não ganhou o carimbo: texto montado com o que ficou gravado no banco (limites e números do próprio dia). */
   function stampWhy(d){
