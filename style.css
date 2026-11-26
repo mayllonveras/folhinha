@@ -1213,3 +1213,8 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
   .sk-prize.open .sk-art{animation:skBounce 1s ease-in-out infinite alternate}
   @keyframes skBounce{to{transform:translateY(-4px) scale(1.06)}}
 }
+
+/* Histórico: dia de ouro e mudança de nível se destacam na lista de dias */
+.stamp.dball.on.gold{background:var(--sun-500);color:var(--on-reward);box-shadow:0 0 0 3px color-mix(in srgb,var(--sun-500) 30%,transparent)}
+.stamp.dball.gold .i{width:58%;height:58%;fill:currentColor;stroke-width:1.5}
+.stamp.dball.gold.lvl .i{width:68%;height:68%;fill:none;stroke-width:5.6;transform:rotate(8deg)}

@@ -1057,8 +1057,10 @@ async function detail(id,day){
   /* Carimbo do dia: a bola carimbada (ganhou) ou só o lugar tracejado (não ganhou). */
   function dayWon(d){var r=stampBy[d],x=byDay[d];return r?!!r.stamp:!!(x&&x.stamp)}
   function stampBall(d,sz){
-    var won=dayWon(d);
-    return '<span class="stamp dball'+(won?" on":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon("check"):"")+'</span>';
+    var won=dayWon(d),r=stampBy[d],x=byDay[d],mv=moveBy[d]||[];
+    var ouro=won&&!!r&&r.why==="ouro";
+    var up=won&&!ouro&&(mv.some(function(m){return m.kind!=="voltou"})||!!(x&&x.adv)||!!(r&&r.why==="salto"));
+    return '<span class="stamp dball'+(won?" on":"")+(ouro?" gold":up?" gold lvl":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(ouro?"Dia de ouro":up?"Subiu de nível":won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon(ouro?"star":up?"up":"check"):"")+'</span>';
   }
   /* Por que ganhou ou não ganhou o carimbo: texto montado com o que ficou gravado no banco (limites e números do próprio dia). */
   function stampWhy(d){
@@ -1128,7 +1130,8 @@ async function detail(id,day){
       '<div class="pagehead"><h2 class="hd-title">'+esc(FC.dayLabel(d))+'</h2><span class="hday-tags">'+dayTags(d).replace(/<span class="tag">Turbo:[^<]*<\/span>/,"")+'</span></div>';
     if(!x&&!t)return head+'<div class="panel"><p class="muted">'+(H.tlog===null&&turboOn?"Carregando…":"Nenhum registro de estudo neste dia.")+'</p></div>';
     var won=dayWon(d);
-    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
+    var sr=stampBy[d],ouro=!!(sr&&sr.stamp&&sr.why==="ouro");
+    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(ouro?"Dia de ouro: ganhou "+sr.gained+" carimbos":won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
       '<button type="button" class="iconbtn" data-why="'+d+'" aria-label="Por que '+(won?"ganhou":"não ganhou")+' o carimbo neste dia?">'+FC.icon("help")+'</button></div>';
     var stats='<div class="stats fit">'+
       '<div class="panel stat"><div class="eyebrow">Folhas</div><div class="v">'+(x?x.sheets.length:0)+'</div></div>'+
