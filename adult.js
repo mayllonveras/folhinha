@@ -363,8 +363,9 @@ function turboPanel(t,s,today){
   T.ORDEM.forEach(function(o){var req=T.REQ[o];bloq[o]=(o!=="soma"&&unl.indexOf(o)<0)||(!!req&&(bloq[req]||pct[req]<T.P.GATE))});
   var rows=T.ORDEM.filter(function(o){return !bloq[o]}).map(function(o){
     var total=cat[o].facts.length,x=ops[o]||{},firm=x.firm||0,lrn=x.learning||0;
-    return '<div class="tp-row"><div class="split"><b>'+esc(cat[o].nome)+'</b><span class="muted small-t num">'+firm+' de '+total+' firmes'+(lrn?' · '+lrn+' em treino':'')+'</span></div>'+
-      '<div class="tp-bar" role="img" aria-label="'+esc(cat[o].nome)+': '+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div></div>';
+    return '<button type="button" class="tp-open" data-tdop="'+o+'" aria-label="'+esc(cat[o].nome)+': '+firm+' de '+total+' firmes, '+lrn+' em treino. Ver os fatos"><div class="tp-row"><div class="split"><b>'+esc(cat[o].nome)+'</b><span class="muted small-t num">'+firm+' de '+total+' firmes'+(lrn?' · '+lrn+' em treino':'')+'</span></div>'+
+      '<div class="tp-bar" role="img" aria-label="'+firm+' fatos firmes e '+lrn+' em treino, de '+total+'"><i class="f" style="width:'+(100*firm/total).toFixed(1)+'%"></i><i class="l" style="width:'+(100*lrn/total).toFixed(1)+'%"></i></div></div>'+
+      '<span class="tp-go"><span>Ver os fatos</span><span class="chev" aria-hidden="true">›</span></span></button>';
   }).join("");
   /* operações fechadas: as que os pais não liberaram e as que esperam a base ficar firme, numa linha cada grupo */
   function nomes(l){l=l.map(function(o){return cat[o].nome.toLowerCase()});return l.length>1?l.slice(0,-1).join(", ")+" e "+l[l.length-1]:l[0]}
@@ -387,14 +388,108 @@ function turboPanel(t,s,today){
   var comecou=T.ORDEM.some(function(o){return ops[o]&&ops[o].registered>0});
   return '<div class="panel" id="turboBox"><div class="split"><div class="eyebrow">Trilha Turbo</div>'+tag+'</div>'+alerta+
     (comecou?rows+fechadas:'<p class="muted gap">'+(cfg.placement||cfg.skip_placement?'Ele ainda não treinou nenhum fato na Turbo.':'Ele ainda não começou a Turbo. Na primeira vez, ela abre com um jogo rápido para descobrir por onde começar.')+'</p>')+
-    '<details class="gap tp-more"><summary>Como ler este quadro</summary><p class="muted small-t">Fato firme é a conta que ele já responde sem pensar muito e que acertou em dias diferentes. Na barra, a parte escura são os firmes; a clara, os que estão em treino. As contas de cada dia ficam no Histórico, e os fatos que pedem ajuda, na aba Atenção.</p>'+
+    '<details class="gap tp-more"><summary>Como ler este quadro</summary><p class="muted small-t">Fato firme é a conta que ele já responde sem pensar muito e que acertou em dias diferentes. Na barra, a parte escura são os firmes; a clara, os que estão em treino. Toque numa operação para ver cada fato, o mapa da tabuada e o que vem pela frente. As contas de cada dia ficam no Histórico, e os fatos que pedem ajuda, na aba Atenção.</p>'+
     '<p class="muted small-t">'+esc(niv)+'.'+(devs?' Aparelhos usados (sessões): '+devs+'.':'')+'</p></details></div>';
+}
+/* ---------- Trilha Turbo: detalhe de uma operação ----------
+   Toque na barra de uma operação: "Caminho" (famílias de truques, com cada fato), "Mapa" (a tabuada colorida) e "Por vir" (revisões marcadas,
+   fatos na fila e quando a próxima operação abre). Lê turbo_facts do aluno; sem dado novo no banco. */
+var TD_DIA=["dom","seg","ter","qua","qui","sex","sáb"];
+function tdData(iso){var p=iso.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return TD_DIA[d.getDay()]+" "+FC.dm(iso)}
+function tdRel(n){return n<=0?"hoje":n===1?"amanhã":"em "+n+" dias"}
+function tdRev(m){return Object.keys(m).length}
+var TD_NOME=["Na fila","Novo","Aprendendo","Consolidando","Firme","Firme há mais tempo"];   /* os estados 4 e 5 contam como firmes no quadro; só o 5 já passou pelas revisões mais longas */
+function tdLegend(){
+  return '<div class="tdlg">'+[5,4,3,2,1,0].map(function(k){return '<span><i class="sw s'+k+'"></i>'+TD_NOME[k]+'</span>'}).join("")+'</div>';
+}
+async function turboOpen(id,op,t,today){
+  var T=FC.turbo,cat=T.catalogo(),C=cat[op],cfg=(t&&t.cfg)||{},unl=cfg.unlocked||["soma"];
+  var ov=FC.overlay('<h2>'+esc(C.nome)+': os fatos</h2><div id="tdBody"><p class="loading">Carregando…</p></div>',{cls:"tdov"});
+  var r;try{r=await sb.from("turbo_facts").select("fact_id,state,due,ok_days,stubborn").eq("student_id",id)}catch(e){r={error:e}}
+  var box=ov.el.querySelector("#tdBody");if(!box)return;
+  if(r.error){box.innerHTML='<p class="msg bad">Não deu para carregar os fatos agora. Tente de novo em instantes.</p>';return}
+  var by={};(r.data||[]).forEach(function(x){by[x.fact_id]={s:x.state,due:x.due,ok:x.ok_days||0,stub:!!x.stubborn}});
+  function st(f){return by[f.id]?by[f.id].s:0}
+  var fs=C.facts,cnt=[0,0,0,0,0,0];fs.forEach(function(f){cnt[st(f)]++});
+  var firm=cnt[4]+cnt[5],view="caminho",sel=null,dToday=T.diaDe(today);
+  function chip(f){return '<span class="tag num ch s'+st(f)+'" title="'+TD_NOME[st(f)]+'">'+esc(f.eq)+'</span>'}
+  function caminho(){
+    var h='<p class="muted small-t">A Turbo ensina por famílias de truques, uma de cada vez. Toque numa família para ver as contas.</p><div class="tdfams">';
+    C.fams.forEach(function(nm,fi){
+      var l=fs.filter(function(f){return f.fam===fi});if(!l.length)return;
+      var n=[0,0,0,0,0,0];l.forEach(function(f){n[st(f)]++});
+      var fm=n[4]+n[5],tot=l.length,learn=n[1]+n[2],
+        k=n[0]===tot?["w","○","Na fila"]:fm===tot?["d","✓","Firme"]:learn?["p","●","Aprendendo agora"]:n[0]?["t","↻","Em andamento"]:["t","↻","Consolidando"];
+      h+='<details class="tdfam"><summary><span class="tdico '+k[0]+'" aria-hidden="true">'+k[1]+'</span><span class="tdnm"><b>'+esc(nm)+'</b><small>'+k[2]+' · '+fm+' de '+tot+' firmes</small></span><span class="chev" aria-hidden="true">›</span>'+
+        '<span class="tdmini"><i class="f" style="width:'+(100*fm/tot)+'%"></i><i class="l" style="width:'+(100*n[3]/tot)+'%"></i><i class="n" style="width:'+(100*learn/tot)+'%"></i></span></summary>'+
+        '<div class="tp-chips">'+l.map(chip).join(" ")+'</div></details>';
+    });
+    return h+'</div>'+tdLegend();
+  }
+  function mapa(){
+    var rows=op==="div"?10:11,M=[];for(var i=0;i<rows;i++)M.push([]);
+    fs.forEach(function(f){f.cells.forEach(function(c){if(M[c[0]])M[c[0]][c[1]]=f})});
+    var h='<div class="tdmapw"><div class="tdmapl"><p class="muted small-t">Cada quadradinho é uma conta da tabuada, e o número é o resultado. Toque para ver o estado dela.</p><div class="tdgrid" role="group" aria-label="Mapa dos fatos"><i class="h"></i>';
+    for(var c=0;c<=10;c++)h+='<i class="h">'+c+'</i>';
+    M.forEach(function(row,ri){
+      h+='<i class="h">'+(op==="div"?ri+1:ri)+'</i>';
+      for(var c2=0;c2<=10;c2++){var f=row[c2];h+=f?'<button type="button" class="s'+st(f)+(sel===f.id?' sel':'')+'" data-fid="'+esc(f.id)+'" aria-label="'+esc(f.eq)+' = '+f.res+': '+TD_NOME[st(f)].toLowerCase()+'">'+f.res+'</button>':'<i></i>'}
+    });
+    h+='</div>'+tdLegend()+'</div><div class="tdmapr">';
+    var f=sel&&T.porId(sel);
+    if(f){
+      var b=by[f.id]||{s:0},bits=[TD_NOME[b.s]];
+      if(b.ok)bits.push('acertou em '+b.ok+(b.ok===1?' dia':' dias'));
+      if(b.stub)bits.push('voltou a errar, então a Turbo traz com dica');
+      if(b.s>=3&&b.due){var n=T.diaDe(b.due)-dToday;bits.push('próxima revisão '+(n<=0?'hoje':'<b>'+tdData(b.due)+'</b> ('+tdRel(n)+')'))}
+      h+='<div class="tddet"><div class="big num">'+esc(f.eq)+' = '+f.res+'</div><span class="muted">'+bits.join(' · ')+'</span></div>';
+    }else h+='<p class="muted small-t">Nenhuma conta escolhida.</p>';
+    return h+'</div></div>';
+  }
+  function porVir(){
+    var due={},later=0,sem=0;
+    fs.forEach(function(f){var b=by[f.id];if(!b||b.s<3||!b.due)return;var n=Math.max(0,T.diaDe(b.due)-dToday);if(n>7)later++;else{var k=n;due[k]=(due[k]||0)+1}});
+    var h='<div class="tdpv"><div class="tdpvl"><h4>Próximas revisões</h4>';
+    var ks=Object.keys(due).map(Number).sort(function(a,b){return a-b});
+    if(ks.length||later){
+      h+='<ul class="tdtl">'+ks.map(function(n){var d=new Date(+today.slice(0,4),+today.slice(5,7)-1,+today.slice(8,10)+n),iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+        return '<li><b>'+(n===0?'Hoje ou atrasados':tdData(iso))+' · '+due[n]+(due[n]===1?' fato':' fatos')+'</b><span>'+(n===0?'entram na próxima sessão':tdRel(n))+'</span></li>'}).join("")+
+        (later?'<li class="far"><b>Mais adiante · '+later+(later===1?' fato':' fatos')+'</b><span>revisões depois de 7 dias</span></li>':'')+'</ul>';
+    }else h+='<p class="muted small-t">Nenhuma revisão marcada ainda.</p>';
+    var learn=cnt[1]+cnt[2];
+    h+='</div><div class="tdpvr"><h4>Em aprendizado e na fila</h4><p class="small-t">'+(learn?'<b>'+learn+'</b> '+(learn===1?'fato aparece':'fatos aparecem')+' em toda sessão até ficarem consolidados. ':'Nenhum fato em aprendizado agora. ')+
+      (cnt[0]?'<b>'+cnt[0]+'</b> '+(cnt[0]===1?'espera':'esperam')+' na fila e '+(cnt[0]===1?'entra':'entram')+' aos poucos, no máximo 8 em aprendizado ao mesmo tempo.':'Todos os '+fs.length+' fatos já apareceram.')+'</p>';
+    var deps=T.ORDEM.filter(function(o){return T.REQ[o]===op});
+    if(deps.length){
+      h+='<h4>Depois '+(op==="soma"?'da':'de')+' '+esc(C.nome.toLowerCase())+'</h4>';
+      deps.forEach(function(o){
+        var need=Math.ceil(T.P.GATE*fs.length-1e-9),falta=Math.max(0,need-firm),lib=unl.indexOf(o)>=0;
+        h+='<div class="tdgate"><b>'+esc(cat[o].nome)+'</b><div class="tdgbar"><i style="width:'+(100*Math.min(firm,need)/need).toFixed(1)+'%"></i></div>'+
+          '<div class="split small-t"><span class="muted">'+firm+' de '+need+' firmes</span><span>'+(falta?'<b>faltam '+falta+'</b> para abrir':'<b>base pronta</b>')+'</span></div>'+
+          (lib?'':'<p class="muted small-t">Ainda não liberada para este aluno (aba Programa).</p>')+'</div>';
+      });
+      h+='<p class="muted small-t gap">Cada operação abre quando a base chega a '+Math.round(T.P.GATE*100)+'% de fatos firmes.</p>';
+    }
+    return h+'</div></div>';
+  }
+  function draw(){
+    var tabs=[["caminho","Caminho"],["mapa","Mapa"],["porvir","Por vir"]];
+    box.innerHTML='<p class="muted small-t num">'+firm+' firmes · '+(cnt[1]+cnt[2]+cnt[3])+' em treino · '+cnt[0]+' na fila</p>'+
+      '<div class="tdtabs" role="tablist">'+tabs.map(function(x){return '<button type="button" role="tab" aria-selected="'+(view===x[0])+'" class="'+(view===x[0]?'on':'')+'" data-v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+
+      '<div class="tdpane">'+(view==="caminho"?caminho():view==="mapa"?mapa():porVir())+'</div>';
+    $$("[data-v]",box).forEach(function(b){b.onclick=function(){view=b.getAttribute("data-v");draw()}});
+    $$("[data-fid]",box).forEach(function(b){b.onclick=function(){sel=b.getAttribute("data-fid");draw()}});
+  }
+  draw();
+}
+function bindTurboPanel(id,t,today){
+  $$("[data-tdop]").forEach(function(b){b.onclick=function(){turboOpen(id,b.getAttribute("data-tdop"),t,today)}});
 }
 /* ---------- Trilha Turbo no Histórico e na Atenção ----------
    Histórico: as contas de cada dia entram na página do dia. Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender
    do consentimento. Sem a tabela, o Histórico segue só com as folhas.
    Atenção: fatos teimosos, fatos mais demorados e o que está em treino agora. */
-var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
+var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Firme","Firme há mais tempo"];
 var TURBO_OP={"+":"soma","-":"sub","×":"mult","÷":"div"};
 function turboTempo(ms,meta){
   if(ms==null)return "";
@@ -1078,8 +1173,10 @@ async function detail(id,day){
   /* Carimbo do dia: a bola carimbada (ganhou) ou só o lugar tracejado (não ganhou). */
   function dayWon(d){var r=stampBy[d],x=byDay[d];return r?!!r.stamp:!!(x&&x.stamp)}
   function stampBall(d,sz){
-    var won=dayWon(d);
-    return '<span class="stamp dball'+(won?" on":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon("check"):"")+'</span>';
+    var won=dayWon(d),r=stampBy[d],x=byDay[d],mv=moveBy[d]||[];
+    var ouro=won&&!!r&&r.why==="ouro";
+    var up=won&&!ouro&&(mv.some(function(m){return m.kind!=="voltou"})||!!(x&&x.adv)||!!(r&&r.why==="salto"));
+    return '<span class="stamp dball'+(won?" on":"")+(ouro?" gold":up?" gold lvl":"")+'" style="--sz:'+sz+'px" role="img" aria-label="'+(ouro?"Dia de ouro":up?"Subiu de nível":won?"Ganhou o carimbo do dia":"Sem carimbo neste dia")+'">'+(won?FC.icon(ouro?"star":up?"up":"check"):"")+'</span>';
   }
   /* Por que ganhou ou não ganhou o carimbo: texto montado com o que ficou gravado no banco (limites e números do próprio dia). */
   function stampWhy(d){
@@ -1129,7 +1226,7 @@ async function detail(id,day){
       if(!x&&!t){list+='<div class="hday off">'+dia+'<span class="hday-m"><span class="muted">Não estudou</span></span>'+stampBall(d,30)+'</div>';continue}
       var pct=x&&x.tot?Math.round(100*x.ok/x.tot):null;
       list+='<button type="button" class="hday" data-day="'+d+'" aria-label="Abrir o dia '+esc(FC.dayLabel(d))+'">'+dia+
-        '<span class="hday-m"><b>'+(x?pl(x.sheets.length,"folha","folhas")+' <span class="muted small-t num">· '+FC.fmtTime(x.secs)+'</span>':'Só a Trilha Turbo')+'</b><span class="hday-tags">'+dayTags(d)+'</span></span>'+
+        '<span class="hday-m"><b>'+(x?pl(x.sheets.length,"folha","folhas")+' <span class="muted small-t num hday-t"><i class="hday-dot">· </i>'+FC.fmtTime(x.secs)+'</span>':'Só a Trilha Turbo')+'</b><span class="hday-tags">'+dayTags(d)+'</span></span>'+
         (pct!=null?'<span class="hday-pct '+(pct>=80?"ok":"warn")+'"><b class="num">'+pct+'%</b><small>de primeira</small></span>':'')+stampBall(d,34)+FC.icon("back","hday-go")+'</button>';
     }
     var stats='<div class="stats fit">'+
@@ -1149,7 +1246,8 @@ async function detail(id,day){
       '<div class="pagehead"><h2 class="hd-title">'+esc(FC.dayLabel(d))+'</h2><span class="hday-tags">'+dayTags(d).replace(/<span class="tag">Turbo:[^<]*<\/span>/,"")+'</span></div>';
     if(!x&&!t)return head+'<div class="panel"><p class="muted">'+(H.tlog===null&&turboOn?"Carregando…":"Nenhum registro de estudo neste dia.")+'</p></div>';
     var won=dayWon(d);
-    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
+    var sr=stampBy[d],ouro=!!(sr&&sr.stamp&&sr.why==="ouro");
+    var carimbo='<div class="panel dstamp-panel">'+stampBall(d,52)+'<div class="dstamp-t"><div class="eyebrow">Carimbo do dia</div><b>'+(ouro?"Dia de ouro: ganhou "+sr.gained+" carimbos":won?"Ganhou o carimbo":"Sem carimbo neste dia")+'</b></div>'+
       '<button type="button" class="iconbtn" data-why="'+d+'" aria-label="Por que '+(won?"ganhou":"não ganhou")+' o carimbo neste dia?">'+FC.icon("help")+'</button></div>';
     var stats='<div class="stats fit">'+
       '<div class="panel stat"><div class="eyebrow">Folhas</div><div class="v">'+(x?x.sheets.length:0)+'</div></div>'+
@@ -1314,7 +1412,7 @@ async function detail(id,day){
     if(r.error){anoOk.disabled=false;return FC.toast(FC.err(r.error),true)}
     FC.toast("Ano escolar confirmado.");detail(id);
   };
-  loadSlow(id);loadTurboNow(id);loadMirror(id,s.name,free);loadFriends(id,s.name,free);loadTrades(id);loadAnalise(id);
+  bindTurboPanel(id,turbo,today);loadSlow(id);loadTurboNow(id);loadMirror(id,s.name,free);loadFriends(id,s.name,free);loadTrades(id);loadAnalise(id);
   $("#cp").onclick=function(){FC.copy(link,$("#lnk"))};
   $("#qrBtn").onclick=function(){showQr(s.name,link)};
   FC.confirmClick($("#rstPin"),"Toque de novo para confirmar",async function(){
