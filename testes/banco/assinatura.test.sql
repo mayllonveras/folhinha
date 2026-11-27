@@ -59,6 +59,7 @@ select pg_temp.t('pagamento confirmado leva a próxima cobrança para o vencimen
 select pg_temp.t('com assinatura ativa não assina de novo', pg_temp.err($$select public.billing_can_start('00000000-0000-0000-0000-0000000000b1')$$) like '%assinatura_ativa%');
 -- 2ª anuidade, paga no vencimento: o VIP passa a ir até 2 anos + 3 dias
 select pg_temp.pay('evt4', 'PAYMENT_RECEIVED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'RECEIVED') as r4 \gset
+select pg_temp.t('Pix: próxima cobrança vai para depois do 2º pagamento', (select next_due = (current_date + interval '2 years')::date from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.t('2º pagamento estende o VIP e não pede mais troca de valor', (select ends_at::date = current_date + interval '2 years' + interval '3 days' from entitlements where user_id='00000000-0000-0000-0000-0000000000b1')
   and jsonb_array_length(:'r4'::jsonb->'actions')=0 and (select paid_cycles=2 from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.pay('evt5', 'PAYMENT_OVERDUE', 'pay3', 'sub_pix', 'cus_pix', 199, (current_date + interval '2 years')::date, 'OVERDUE');
@@ -82,6 +83,7 @@ select pg_temp.t('novo link substitui o antigo que ainda aguardava', (select sta
 select pg_temp.pay('evt7', 'PAYMENT_CONFIRMED', 'payc1', 'sub_card', 'cus_card', 14.90, current_date, 'CONFIRMED');
 select pg_temp.t('cartão confirmado liga a assinatura do Checkout e dá VIP', (select status='ativa' and asaas_subscription_id='sub_card' from subscriptions where asaas_checkout_id='chk1')
   and public._is_vip('00000000-0000-0000-0000-0000000000c1'));
+select pg_temp.t('cartão: próxima cobrança calculada na confirmação (sem esperar o SUBSCRIPTION_CREATED)', (select next_due = (current_date + interval '1 month')::date from subscriptions where asaas_subscription_id='sub_card'));
 select pg_temp.t('VIP do mensal: 1 mês + 3 dias', (select ends_at::date = current_date + interval '1 month' + interval '3 days' from entitlements where user_id='00000000-0000-0000-0000-0000000000c1' and source='assinatura'));
 select public.billing_webhook(jsonb_build_object('id', 'evt8', 'event', 'SUBSCRIPTION_CREATED', 'subscription', jsonb_build_object('id', 'sub_card', 'customer', 'cus_card', 'nextDueDate', (current_date + interval '1 month')::date::text)));
 select pg_temp.t('SUBSCRIPTION_CREATED atualiza o próximo vencimento', (select next_due = (current_date + interval '1 month')::date from subscriptions where asaas_subscription_id='sub_card'));
