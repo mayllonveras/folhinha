@@ -165,10 +165,31 @@ function bindBilling(){
   $$("[data-sub]").forEach(function(b){b.onclick=function(){subscribeForm(b.getAttribute("data-sub"))}});
   $$("[data-perfil]").forEach(function(b){b.onclick=showProfile});
 }
-function paidReturn(){   // volta do Asaas depois de pagar
+/* Volta do Asaas depois de pagar. O aviso do Asaas (webhook) chega alguns segundos depois da volta do pai:
+   se a assinatura ainda não está ativa, consulta de novo a cada 3 s (até 1 min) e redesenha a tela sozinha. */
+var PAYPOLL=null;
+function paidReturn(){
   if(!/[?&]pagamento=ok/.test(location.search))return;
   try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
-  FC.toast("Pagamento enviado! O VIP é liberado assim que o Asaas confirmar, em instantes.");
+  var s=BILL&&BILL.subscription;
+  if(s&&(s.status==="ativa"||s.status==="atrasada"))return FC.toast("Pagamento confirmado! O VIP já está liberado.");
+  FC.toast("Pagamento enviado! Confirmando com o Asaas…");
+  waitPayment();
+}
+function waitPayment(){
+  if(PAYPOLL)return;
+  var tries=0;
+  function stop(){clearInterval(PAYPOLL);PAYPOLL=null}
+  PAYPOLL=setInterval(async function(){
+    var onPerfil=/^#\/perfil/.test(location.hash),onPlanos=/^#\/planos/.test(location.hash);
+    if(!onPerfil&&!onPlanos)return stop();   // o pai saiu destas telas: não redesenha por cima do que ele está vendo
+    if(++tries>20)return stop();
+    var b=await loadBilling(),s=b&&b.subscription;
+    if(s&&(s.status==="ativa"||s.status==="atrasada")){
+      stop();FC.toast("Pagamento confirmado! O VIP já está liberado.");
+      if(onPerfil)showProfile();else showPlans();
+    }
+  },3000);
 }
 /* ---------- Meu perfil: conta, dados de pagamento (do Asaas) e o plano, com cancelamento ---------- */
 var ORIGEM_PLANO={teste:"Teste do VIP",fundador:"VIP Fundador",concessao:"VIP (concedido)",cupom:"VIP (cupom)",assinatura:"Assinatura VIP",indicacao:"VIP (indicação)"};
