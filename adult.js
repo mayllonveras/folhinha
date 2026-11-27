@@ -377,7 +377,7 @@ var TD_DIA=["dom","seg","ter","qua","qui","sex","sáb"];
 function tdData(iso){var p=iso.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return TD_DIA[d.getDay()]+" "+FC.dm(iso)}
 function tdRel(n){return n<=0?"hoje":n===1?"amanhã":"em "+n+" dias"}
 function tdRev(m){return Object.keys(m).length}
-var TD_NOME=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
+var TD_NOME=["Na fila","Novo","Aprendendo","Consolidando","Firme","Firme há mais tempo"];   /* os estados 4 e 5 contam como firmes no quadro; só o 5 já passou pelas revisões mais longas */
 function tdLegend(){
   return '<div class="tdlg">'+[5,4,3,2,1,0].map(function(k){return '<span><i class="sw s'+k+'"></i>'+TD_NOME[k]+'</span>'}).join("")+'</div>';
 }
@@ -468,7 +468,7 @@ function bindTurboPanel(id,t,today){
    Histórico: as contas de cada dia entram na página do dia. Lê turbo_log (migracoes/2026-11-18-turbo-historico.sql), gravado sempre, sem depender
    do consentimento. Sem a tabela, o Histórico segue só com as folhas.
    Atenção: fatos teimosos, fatos mais demorados e o que está em treino agora. */
-var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Quase firme","Firme"];
+var TURBO_ESTADO=["Na fila","Novo","Aprendendo","Consolidando","Firme","Firme há mais tempo"];
 var TURBO_OP={"+":"soma","-":"sub","×":"mult","÷":"div"};
 function turboTempo(ms,meta){
   if(ms==null)return "";
