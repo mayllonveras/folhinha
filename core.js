@@ -47,6 +47,8 @@ FC.toast=function(msg,bad){
 FC.err=function(e){
   var m=(e&&(e.message||e.error_description))||String(e||"");
   var map=[["Invalid login credentials","E-mail ou senha incorretos."],
+    ["Email not confirmed","Confirme seu e-mail pelo link que enviamos antes de entrar."],
+    ["email_nao_confirmado","Confirme seu e-mail para cadastrar alunos."],
     ["User already registered","Este e-mail já tem cadastro. Entre com a senha."],
     ["sessao_invalida","Sessão expirada."],
     ["sem_folha_hoje","Hoje não é dia de folha para este aluno."],
@@ -133,7 +135,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v118";
+FC.VERSAO="folhinha-v119";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
