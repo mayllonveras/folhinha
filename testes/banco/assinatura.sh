@@ -11,7 +11,7 @@ case "$PSQL" in *supabase*) echo "PSQL aponta para o Supabase: recusado."; exit 
 run() { $PSQL -v ON_ERROR_STOP=1 -q "$@"; }
 run -d postgres -c "drop database if exists assinatura_test" -c "create database assinatura_test" 2>/dev/null
 for f in replica/0-supabase.sql replica/1-esquema.sql replica/2-permissoes.sql replica/3-config.sql \
-         ../../migracoes/2026-11-17-plano-vip.sql ../../migracoes/2026-11-18-cupons.sql ../../migracoes/2026-11-18-assinatura.sql; do
+         ../../migracoes/2026-11-17-plano-vip.sql ../../migracoes/2026-11-18-cupons.sql ../../migracoes/2026-11-18-assinatura.sql ../../migracoes/2026-11-27-estorno-cancela-assinatura.sql; do
   run -d assinatura_test -f "$f" >/dev/null
 done
 saida="$($PSQL -q -d assinatura_test -f assinatura.test.sql 2>&1 | grep -E "FALHOU|TOTAL|ERROR" || true)"
