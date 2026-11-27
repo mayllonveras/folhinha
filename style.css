@@ -1260,7 +1260,7 @@ button.tp-open:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .tdtabs button:focus-visible{outline:3px solid var(--accent)}
 .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
 .s5,.sw.s5{background:var(--ok-fill);color:#fff}
-.s4,.sw.s4{background:color-mix(in srgb,var(--ok-fill) 70%,#fff);color:#06352a}
+.s4,.sw.s4{background:color-mix(in srgb,var(--ok-fill) 42%,var(--surface));color:var(--ink);box-shadow:inset 0 0 0 2px var(--ok-fill)}   /* firme: tom mais claro, com contorno, para não se confundir com o "há mais tempo" */
 .s3,.sw.s3{background:color-mix(in srgb,var(--ok-fill) 24%,var(--surface));color:var(--ink)}
 .s2,.sw.s2{background:#FFE7A8;color:#6A4300}
 .s1,.sw.s1{background:var(--surface);color:#6A4300;box-shadow:inset 0 0 0 2px #FFB92B}
