@@ -600,7 +600,7 @@ function start(){
 FC.adultApp=async function(){
   FC.nav.handler=route;
   sb.auth.onAuthStateChange(function(ev){
-    if(ev==="SIGNED_OUT"){U.user=null;showAuth("login")}
+    if(ev==="SIGNED_OUT"){U.user=null;U.mailAsked=false;showAuth("login")}
     if(ev==="PASSWORD_RECOVERY")showNewPassword();
   });
   var recovery=/type=recovery/.test(location.hash);
@@ -610,12 +610,62 @@ FC.adultApp=async function(){
   showAuth("login");
 };
 
+/* ---------- e-mail ainda não confirmado ----------
+   Quem se cadastra entra normalmente (opção "Allow unverified email sign-ins" do Supabase). Enquanto não confirma, aparece um aviso fixo
+   no topo, um pop-up ao entrar e o cadastro de aluno fica bloqueado. A trava de verdade está no banco (migracoes/2026-11-27-email-confirmado.sql). */
+function emailPendente(){return !!(U.user&&U.user.email&&!U.user.email_confirmed_at)}
+function mailBarHtml(){
+  if(!emailPendente())return "";
+  return '<div class="mailbar" role="status"><span>Confirme seu e-mail: enviamos um link para <b>'+esc(U.user.email)+'</b>.</span><button type="button" class="link" id="mbResend">Reenviar e-mail</button></div>';
+}
+var RESEND_AT=0;
+async function resendConfirm(btn){
+  var wait=Math.ceil((RESEND_AT+60000-Date.now())/1000);
+  if(wait>0)return FC.toast("Espere "+wait+" segundos para reenviar.",true);
+  if(btn)btn.disabled=true;
+  try{
+    var r=await sb.auth.resend({type:"signup",email:U.user.email,options:{emailRedirectTo:location.origin+"/"}});
+    if(r.error)throw r.error;
+    RESEND_AT=Date.now();FC.toast("Enviamos de novo. Olhe também a caixa de spam.");
+  }catch(e){FC.toast(FC.err(e),true)}
+  if(btn)btn.disabled=false;
+}
+/* "Já confirmei": pergunta ao servidor se o e-mail já aparece como confirmado */
+async function refreshEmail(){
+  try{var g=await sb.auth.getUser();if(g.data&&g.data.user)U.user=g.data.user}catch(e){}
+  return !emailPendente();
+}
+/* Janela que pede a confirmação. aoConfirmar roda quando o servidor passa a mostrar o e-mail como confirmado. */
+function mailOverlay(titulo,texto,fechar,aoConfirmar){
+  var ov=FC.overlay('<h2>'+esc(titulo)+'</h2><p>'+texto+'</p><p class="muted small-t">Não achou a mensagem? Olhe a caixa de spam. Digitou o e-mail errado? Toque em Sair e crie a conta de novo com o e-mail certo.</p>'+
+    '<p class="msg bad" id="mpMsg" role="alert"></p><div class="actions"><button type="button" class="btn" id="mpDone">Já confirmei</button><button type="button" class="btn ghost" id="mpResend">Reenviar e-mail</button></div>',{button:fechar});
+  $("#mpResend",ov.el).onclick=function(){resendConfirm(this)};
+  $("#mpDone",ov.el).onclick=async function(){
+    var b=this;b.disabled=true;
+    var ok=await refreshEmail();b.disabled=false;
+    if(!ok){$("#mpMsg",ov.el).textContent="Ainda não aparece como confirmado. Abra o link do e-mail e toque aqui de novo.";return}
+    ov.close();FC.toast("E-mail confirmado! Obrigado.");aoConfirmar();
+  };
+  return ov;
+}
+/* Pop-up ao entrar: uma vez por acesso, até o e-mail ser confirmado. */
+function mailPopup(){
+  if(!emailPendente()||U.mailAsked)return;
+  U.mailAsked=true;
+  mailOverlay("Confirme seu e-mail","Enviamos um link para <b>"+esc(U.user.email)+"</b>. Enquanto você não confirmar, o cadastro de alunos fica bloqueado. O resto você já pode usar.","Lembrar depois",dash);
+}
+/* Trava do botão "Cadastrar aluno": devolve true (e explica) se o e-mail ainda não foi confirmado. */
+function bloqueioEmail(){
+  if(!emailPendente())return false;
+  mailOverlay("Confirme seu e-mail primeiro","Para cadastrar um aluno, confirme o e-mail <b>"+esc(U.user.email)+"</b>. É só abrir o link que enviamos.","Voltar",showForm);
+  return true;
+}
 function topbar(extra){
   var name=U.profile?esc(U.profile.name||"")+(U.profile.role==="professor"?" · professor(a)":" · responsável"):"";
   return '<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><b>Folhinha VIP</b><small>'+(extra||"Painel para pais e professores")+'</small></div>'+
-    (U.user?'<div class="who"><span class="who-name">'+name+'</span>'+(U.admin?'<a class="iconbtn" id="admBtn" href="/adm" title="Área administrativa" aria-label="Área administrativa">'+FC.icon("shield")+'</a>':'')+'<button type="button" class="iconbtn" id="profileBtn" aria-label="Meu perfil" title="Meu perfil">'+FC.icon("user")+'</button><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>';
+    (U.user?'<div class="who"><span class="who-name">'+name+'</span>'+(U.admin?'<a class="iconbtn" id="admBtn" href="/adm" title="Área administrativa" aria-label="Área administrativa">'+FC.icon("shield")+'</a>':'')+'<button type="button" class="iconbtn" id="profileBtn" aria-label="Meu perfil" title="Meu perfil">'+FC.icon("user")+'</button><button class="btn ghost small" id="logout">Sair</button></div>':'')+'</header>'+mailBarHtml();
 }
-function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()};var pf=$("#profileBtn");if(pf)pf.onclick=showProfile}
+function bindTop(){var b=$("#logout");if(b)b.onclick=function(){sb.auth.signOut()};var pf=$("#profileBtn");if(pf)pf.onclick=showProfile;var mr=$("#mbResend");if(mr)mr.onclick=function(){resendConfirm(mr)}}
 function errScreen(e,retry){
   FC.render(topbar()+'<div class="panel center"><h1>Não deu para carregar</h1><p class="muted">'+esc(FC.err(e))+'</p><p><button class="btn" id="retry">Tentar de novo</button></p></div>');
   bindTop();$("#retry").onclick=retry||dash;
@@ -682,6 +732,9 @@ function showAuth(tab,msg,ok){
         var r=await sb.auth.signUp({email:email,password:pass,options:{data:{name:name,role:role}}});
         if(r.error)throw r.error;
         if(r.data.session){U.user=r.data.session.user;return dash()}
+        /* Com "Allow unverified email sign-ins" ligada, o login já funciona sem confirmar; desligada, ele falha e vale a tela de confirmação. */
+        var l2=await sb.auth.signInWithPassword({email:email,password:pass});
+        if(!l2.error){U.user=l2.data.user;return dash()}
         return showConfirmEmail(email);
       }
       var l=await sb.auth.signInWithPassword({email:email,password:pass});
@@ -770,6 +823,7 @@ async function dash(){
   bindTop();FC.refreshInstall();var consentP=offerConsent();var ts=$("#trialSub");if(ts)ts.onclick=showPlans;
   var obCtx={user:U.user,name:U.profile.name,students:students,sheets:sheets};   // checklist e passeio guiado (onboarding.js)
   $("#newStudent").onclick=function(){
+    if(bloqueioEmail())return;
     /* Limite de alunos do plano: explica antes de abrir o formulário (o banco recusa do mesmo jeito) */
     if(PLAN&&PLAN.students>=PLAN.max_students){
       var ov=FC.overlay('<h2>Limite de alunos do plano</h2><p class="muted">'+(PLAN.vip?'Seu plano permite '+PLAN.max_students+' aluno'+(PLAN.max_students===1?'':'s')+'.':'No plano Grátis você cadastra 1 criança. No VIP, a família cadastra até '+planLim("alunos_vip",4)+'.')+'</p>'+
@@ -786,7 +840,7 @@ async function dash(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-share")})[0];if(s)shareStudent(s.name,linkFor(s.link_code));
   }});
   /* Primeiro a janela de autorização; só depois o checklist e o passeio guiado. */
-  consentP.catch(function(){}).then(function(){paidReturn();FC.onboarding.mount(obCtx)});
+  consentP.catch(function(){}).then(function(){paidReturn();mailPopup();FC.onboarding.mount(obCtx)});
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
@@ -1013,6 +1067,7 @@ function readProgram(){
 }
 
 async function showForm(){
+  if(emailPendente()){await dash();bloqueioEmail();return}   // entrou direto por #/novo sem confirmar o e-mail
   await ensurePub();
   FC.render(topbar("Novo aluno")+'<div class="panel"><form id="stForm" class="form" novalidate><div class="split"><h1>Cadastrar aluno</h1>'+advButton()+'</div>'+programFields(null)+
     '<p class="msg bad" id="fMsg" role="alert"></p><div class="actions"><button class="btn" type="submit" id="fBtn">Cadastrar e gerar link</button><button class="btn ghost" type="button" id="fBack">Voltar</button></div></form></div>');

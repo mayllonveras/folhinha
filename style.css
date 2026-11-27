@@ -866,6 +866,7 @@ tr[hidden]{display:none}
 .turbo-ok{color:var(--ok);font-weight:700}
 
 /* ---------- plano Grátis / VIP ---------- */
+.mailbar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 14px;margin:0 0 14px;padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--sun-500) 22%,transparent);color:var(--ink);font-size:.92rem;text-align:center}
 .plan-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;border-left:4px solid var(--line)}
 .plan-banner p{margin:4px 0 0}
 .plan-banner.plan-vip{border-left-color:var(--reward)}
