@@ -165,31 +165,28 @@ function bindBilling(){
   $$("[data-sub]").forEach(function(b){b.onclick=function(){subscribeForm(b.getAttribute("data-sub"))}});
   $$("[data-perfil]").forEach(function(b){b.onclick=showProfile});
 }
-/* Volta do Asaas depois de pagar. O aviso do Asaas (webhook) chega alguns segundos depois da volta do pai:
-   se a assinatura ainda não está ativa, consulta de novo a cada 3 s (até 1 min) e redesenha a tela sozinha. */
-var PAYPOLL=null;
+/* Volta do Asaas depois de pagar: o site abre na tela principal (Meus alunos) com um aviso no meio da tela.
+   O aviso do Asaas (webhook) chega alguns segundos depois da volta do pai, então o aviso começa em "Confirmando…"
+   e consulta a assinatura a cada 3 s (até cerca de 1 min) até ela ficar ativa. start() liga PAYRET; dash() chama paidReturn(). */
+var PAYRET=false;
 function paidReturn(){
-  if(!/[?&]pagamento=ok/.test(location.search))return;
-  try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
-  var s=BILL&&BILL.subscription;
-  if(s&&(s.status==="ativa"||s.status==="atrasada"))return FC.toast("Pagamento confirmado! O VIP já está liberado.");
-  FC.toast("Pagamento enviado! Confirmando com o Asaas…");
-  waitPayment();
-}
-function waitPayment(){
-  if(PAYPOLL)return;
-  var tries=0;
-  function stop(){clearInterval(PAYPOLL);PAYPOLL=null}
-  PAYPOLL=setInterval(async function(){
-    var onPerfil=/^#\/perfil/.test(location.hash),onPlanos=/^#\/planos/.test(location.hash);
-    if(!onPerfil&&!onPlanos)return stop();   // o pai saiu destas telas: não redesenha por cima do que ele está vendo
-    if(++tries>20)return stop();
-    var b=await loadBilling(),s=b&&b.subscription;
-    if(s&&(s.status==="ativa"||s.status==="atrasada")){
-      stop();FC.toast("Pagamento confirmado! O VIP já está liberado.");
-      if(onPerfil)showProfile();else showPlans();
+  if(!PAYRET)return;
+  PAYRET=false;
+  var closed=false,ov=FC.overlay('<h2 id="payTit">Pagamento recebido</h2><p class="muted" id="payMsg">Confirmando com o Asaas. Leva só alguns segundos…</p>',{button:"Fechar",onClose:function(){closed=true}});
+  function say(tit,msg,btn){if(closed)return;$("#payTit",ov.el).textContent=tit;$("#payMsg",ov.el).textContent=msg;$("#ovClose",ov.el).textContent=btn}
+  (async function(){
+    for(var i=0;i<21;i++){
+      var b=await loadBilling(),s=b&&b.subscription;
+      if(s&&s.status==="ativa"){
+        say("Pagamento confirmado!","Seu VIP está ativo. Obrigado por assinar.","Continuar");
+        if(closed)FC.toast("Pagamento confirmado! O VIP já está liberado.");
+        if(FC.nav.path()==="/")dash();   // atualiza a tela principal por baixo do aviso (plano e limites já mudaram)
+        return;
+      }
+      await new Promise(function(r){setTimeout(r,3000)});
     }
-  },3000);
+    say("Ainda aguardando o Asaas","O pagamento ainda não foi confirmado. Pode levar alguns minutos, principalmente no Pix e no boleto. O VIP é liberado sozinho; acompanhe em Meu perfil.","Fechar");
+  })();
 }
 /* ---------- Meu perfil: conta, dados de pagamento (do Asaas) e o plano, com cancelamento ---------- */
 var ORIGEM_PLANO={teste:"Teste do VIP",fundador:"VIP Fundador",concessao:"VIP (concedido)",cupom:"VIP (cupom)",assinatura:"Assinatura VIP",indicacao:"VIP (indicação)"};
@@ -226,7 +223,6 @@ async function showProfile(){
   FC.render('<p class="loading">Carregando…</p>');
   if(!U.profile||U.profile.data_consent===undefined){try{U.profile=await q(sb.from("profiles").select("name,role,data_consent,data_consent_at").eq("id",U.user.id).maybeSingle())}catch(e){}}
   await Promise.all([loadPlan(),loadBilling(),loadPerfil()]);
-  paidReturn();
   var pf=PERFIL;
   FC.render(topbar("Meu perfil")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
     '<div class="section-head"><h1>Meu perfil</h1></div>'+
@@ -274,7 +270,6 @@ function editPayData(pf){
 async function showPlans(){
   FC.render('<p class="loading">Carregando…</p>');
   await Promise.all([loadPlan(),loadBilling()]);
-  paidReturn();
   var used=PLAN?PLAN.students+" de "+PLAN.max_students+" aluno"+(PLAN.max_students===1?"":"s"):"";
   FC.render(topbar("Planos")+'<div class="pagehead"><button type="button" class="link crumb" id="back">'+FC.icon("back")+'Meus alunos</button></div>'+
     '<div class="section-head"><h1>Planos</h1></div>'+
@@ -594,6 +589,10 @@ function route(path){
   dash();   // "/", "/cadastrado" e qualquer endereço desconhecido
 }
 function start(){
+  if(/[?&]pagamento=ok/.test(location.search)){   // volta do Asaas: sempre cai na tela principal, com o aviso de pagamento
+    PAYRET=true;
+    try{history.replaceState(null,"",location.pathname)}catch(e){}   // tira o ?pagamento=ok e o #/perfil antigo do endereço
+  }
   var p=FC.nav.path();
   if(p!=="/")FC.nav.seed("/");   // entrou por um endereço de dentro do app: o voltar leva para a lista
   route(p);
@@ -787,7 +786,7 @@ async function dash(){
     var s=students.filter(function(x){return x.id===b.getAttribute("data-share")})[0];if(s)shareStudent(s.name,linkFor(s.link_code));
   }});
   /* Primeiro a janela de autorização; só depois o checklist e o passeio guiado. */
-  consentP.catch(function(){}).then(function(){FC.onboarding.mount(obCtx)});
+  consentP.catch(function(){}).then(function(){paidReturn();FC.onboarding.mount(obCtx)});
   $("#invForm").onsubmit=async function(e){
     e.preventDefault();var code=$("#invCode").value.trim();if(!code)return;
     var r=await sb.rpc("redeem_invite",{p_code:code});
