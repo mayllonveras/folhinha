@@ -120,8 +120,9 @@ function bodyFato(eq,hint,opts){
   opts=opts||{};
   return '<div class="tr-hint" id="trHint"'+(hint?'':' hidden')+'>'+(hint?hintBox(hint):'')+'</div>'+
     '<div class="tr-q" id="trQ"><span class="tr-eq">'+esc(eq)+'</span><span class="tr-sign">=</span><span class="tr-ans" id="trAns" aria-live="polite">&nbsp;</span></div>'+
-    '<div class="tr-fb" id="trFb" aria-live="polite"></div>'+keypadHtml()+
-    '<div class="tr-actions">'+(opts.dica?'<button type="button" class="btn ghost" id="trDica">Dica</button>':'')+'<button type="button" class="btn ghost" id="trNao">Não sei</button></div>';
+    '<div class="tr-fb" id="trFb" aria-live="polite"></div>'+
+    /* "Não sei" fica ACIMA do teclado: embaixo do ✓ ele era apertado sem querer. */
+    '<div class="tr-actions">'+(opts.dica?'<button type="button" class="btn ghost" id="trDica">Dica</button>':'')+'<button type="button" class="btn ghost" id="trNao">Não sei</button></div>'+keypadHtml();
 }
 /* Controle de digitação: guarda o que foi digitado, a hora do primeiro toque e a hora em que a conta apareceu. */
 function entry(max,onSubmit){
@@ -361,7 +362,7 @@ function preItem(i){
     },1400);
   }else{
     body.innerHTML='<p class="tr-say">Tem '+it.a+' bolinhas. Junte mais '+it.b+'. Quantas ficam?</p>'+dots(it.a,it.b)+
-      '<div class="tr-q"><span class="tr-ans" id="trAns" aria-live="polite">&nbsp;</span></div>'+keypadHtml()+'<div class="tr-actions"><button type="button" class="btn ghost" id="trNao">Não sei</button></div>';
+      '<div class="tr-q"><span class="tr-ans" id="trAns" aria-live="polite">&nbsp;</span></div><div class="tr-actions"><button type="button" class="btn ghost" id="trNao">Não sei</button></div>'+keypadHtml();
     var E=run.E=entry(2,function(val){fim(val===it.certa)});
     bindPad(E);bindNao(E,function(){fim(false)});E.start();
   }
