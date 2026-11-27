@@ -441,11 +441,13 @@ async function turboOpen(id,op,t,today){
     var deps=T.ORDEM.filter(function(o){return T.REQ[o]===op});
     if(deps.length){
       h+='<h4>Depois '+(op==="soma"?'da':'de')+' '+esc(C.nome.toLowerCase())+'</h4>';
-      deps.forEach(function(o){
+      deps.forEach(function(o,di){
+        var outras=deps.filter(function(x){return x!==o}).map(function(x){return cat[x].nome.toLowerCase()}),
+          junto=!outras.length?'':'<p class="muted small-t">Abre junto com a '+esc(outras.join(" e a "))+'. '+(di===0?'Se as duas estiverem liberadas, os fatos novos desta vêm primeiro.':'Se as duas estiverem liberadas, os fatos novos desta só entram quando os da '+esc(outras[0])+' acabarem.')+'</p>';
         var need=Math.ceil(T.P.GATE*fs.length-1e-9),falta=Math.max(0,need-firm),lib=unl.indexOf(o)>=0;
         h+='<div class="tdgate"><b>'+esc(cat[o].nome)+'</b><div class="tdgbar"><i style="width:'+(100*Math.min(firm,need)/need).toFixed(1)+'%"></i></div>'+
           '<div class="split small-t"><span class="muted">'+firm+' de '+need+' firmes</span><span>'+(falta?'<b>faltam '+falta+'</b> para abrir':'<b>base pronta</b>')+'</span></div>'+
-          (lib?'':'<p class="muted small-t">Ainda não liberada para este aluno (aba Programa).</p>')+'</div>';
+          junto+(lib?'':'<p class="muted small-t">Ainda não liberada para este aluno (aba Programa).</p>')+'</div>';
       });
       h+='<p class="muted small-t gap">Cada operação abre quando a base chega a '+Math.round(T.P.GATE*100)+'% de fatos firmes.</p>';
     }
