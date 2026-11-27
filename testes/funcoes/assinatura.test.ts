@@ -208,6 +208,23 @@ Deno.test("webhook: grava o aviso e volta o valor ao preço cheio", async () => 
   assertEquals(r.calls[1], { fn: "billing_value_updated", args: { p_id: "s1", p_value: 199 } });
 });
 
+Deno.test("webhook: estorno apaga a assinatura no Asaas", async () => {
+  const a = asaasFake({ "DELETE /subscriptions/sub_pix": { deleted: true } });
+  const r = rpcFake({ billing_webhook: { actions: [{ action: "cancel_subscription", id: "s1", asaas_subscription_id: "sub_pix" }] } });
+  const body = { id: "evt_2", event: "PAYMENT_REFUNDED", payment: { id: "pay_1" } };
+  const res = await webhook(new Request("https://x", { method: "POST", headers: { "asaas-access-token": env.webhookToken }, body: JSON.stringify(body) }), { env, fetch: a.f, rpc: r.rpc });
+  assertEquals(res.status, 200);
+  assertEquals(a.calls.map((c) => c.method + " " + c.url), ["DELETE /subscriptions/sub_pix"]);
+  assertEquals(r.calls.map((c) => c.fn), ["billing_webhook"]);   // o banco já cancelou; o webhook só apaga no Asaas
+});
+
+Deno.test("webhook: assinatura que já não existe no Asaas (404) não é erro", async () => {
+  const f = async () => new Response(JSON.stringify({ errors: [{ description: "Assinatura não encontrada" }] }), { status: 404 });
+  const r = rpcFake({ billing_webhook: { actions: [{ action: "cancel_subscription", id: "s1", asaas_subscription_id: "sub_x" }] } });
+  const res = await webhook(new Request("https://x", { method: "POST", headers: { "asaas-access-token": env.webhookToken }, body: JSON.stringify({ id: "evt_3", event: "PAYMENT_CHARGEBACK_REQUESTED" }) }), { env, fetch: f, rpc: r.rpc });
+  assertEquals(res.status, 200);
+});
+
 Deno.test("webhook: banco fora do ar responde 500 para o Asaas tentar de novo", async () => {
   const r = rpcFake({ billing_webhook: new Error("conexão") });
   const res = await webhook(new Request("https://x", { method: "POST", headers: { "asaas-access-token": env.webhookToken }, body: JSON.stringify({ id: "e", event: "X" }) }), { env, fetch: asaasFake({}).f, rpc: r.rpc });
