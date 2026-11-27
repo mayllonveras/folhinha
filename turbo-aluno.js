@@ -85,13 +85,13 @@ function cardHtml(){
     return '<section class="hero turbo">'+head+'<h2>Vamos começar a Turbo</h2><p>Primeiro um jogo rápido, de uns 5 minutos, para descobrir por onde começar. Não vale nota.</p>'+
       '<button class="btn reward block" data-turbo="nivel">Começar</button></section>';
   if(t.status==="done")
-    return '<section class="hero turbo">'+head+'<h2>Turbo de hoje concluída!</h2><p>'+(t.pack_given?"Você ganhou o pacotinho de hoje. ":"")+'Até o próximo dia de estudo.</p></section>';
+    return '<section class="hero turbo">'+head+'<h2>Turbo de hoje concluída!</h2><p>'+(t.pack_given?"Você ganhou a figurinha de hoje. ":"")+'Até o próximo dia de estudo.</p></section>';
   var plan=T.planoDoDia(D.st,D.dia,deviceClass());
   if(plan.semTarefa)
     return '<section class="hero turbo">'+head+'<h2>Nada para treinar hoje</h2><p>Seus fatos estão descansando. A Turbo volta quando for hora de revisar.</p></section>';
   var started=t.status==="started"&&(t.attempts||0)>0;
   return '<section class="hero turbo">'+head+'<h2>'+(started?"Continue a Turbo":"Turbo do dia")+'</h2>'+
-    '<p>'+(plan.revisoes?plan.revisoes+" revisões":"Sem revisões")+(plan.novos?" · "+plan.novos+" fatos novos":"")+' · cerca de '+plan.minutos+' min.<br>Ao concluir, você ganha 1 pacotinho de figurinha.</p>'+
+    '<p>'+(plan.revisoes?plan.revisoes+" revisões":"Sem revisões")+(plan.novos?" · "+plan.novos+" fatos novos":"")+' · cerca de '+plan.minutos+' min.<br>Ao concluir, você ganha 1 figurinha.</p>'+
     '<button class="btn reward block" data-turbo="start">'+(started?"Continuar":"Começar a Turbo")+'</button></section>';
 }
 function bind(){
@@ -226,7 +226,7 @@ function answer(val,ts,naoSei){
   var t1=(naoSei||E.first==null)?null:E.t1(),total=E.total(ts);
   var dicaDepois=it.dica==="after"||!ok;
   var dica=q.hintShown==="before"?"before":q.hintShown==="demand"?"demand":(dicaDepois?"after":"none");
-  T.registrar(D.st,run.sess,{id:f.id,tipo:it.tipo,ok:ok,t1:t1,total:total,dica:dica,contou:false});
+  T.registrar(D.st,run.sess,{id:f.id,tipo:it.tipo,ok:ok,resp:naoSei?null:val,t1:t1,total:total,dica:dica,contou:false});
   q.stage="done";
   var a=$("#trAns"),fb=$("#trFb");
   if(ok){
@@ -280,17 +280,17 @@ async function finish(sair){
 function resultado(r){
   var fin=r.fin,sv=r.sv,m=X.me,ganhou=!!(sv.ok&&sv.res&&sv.res.pack_new);
   FC.nav.at("/resultado",true);
-  var nota=fin.chute?"Algumas respostas foram rápidas demais. Da próxima vez, pense um pouquinho antes de responder para ganhar o pacotinho."
+  var nota=fin.chute?"Algumas respostas foram rápidas demais. Da próxima vez, pense um pouquinho antes de responder para ganhar a figurinha."
     :!fin.concluida?"Você parou no meio, e o que você fez ficou guardado."
-    :ganhou?"Você concluiu a Turbo de hoje e ganhou um pacotinho de figurinha!"
-    :(sv.ok&&sv.res&&sv.res.pack_given)?"Você já tinha ganhado o pacotinho de hoje."
+    :ganhou?"Você concluiu a Turbo de hoje e ganhou uma figurinha!"
+    :(sv.ok&&sv.res&&sv.res.pack_given)?"Você já tinha ganhado a figurinha de hoje."
     :sv.ok?"Turbo de hoje concluída!":"Turbo concluída! Não deu para enviar agora: seu resultado fica guardado neste aparelho e sobe quando tiver conexão.";
   FC.render('<div class="res panel turbo-res"><div class="score"><div class="big">'+r.acertos+'/'+r.total+'</div>'+
     '<div class="seal'+(fin.concluida&&!fin.chute?"":" no")+'">Turbo</div>'+
     '<div class="grow"><h2>'+(fin.concluida&&!fin.chute?"Turbo concluída":"Turbo")+', '+esc(m.name)+'</h2><div class="muted">'+esc(nota)+'</div></div></div>'+
     '<div class="kv"><div><b>'+r.total+'</b><span>contas respondidas</span></div><div><b>'+r.novos+'</b><span>fatos novos hoje</span></div>'+
     '<div><b>'+fin.promovidos.length+'</b><span>fatos que ficaram mais firmes</span></div></div>'+
-    '<div class="actions">'+(ganhou?'<button class="btn reward" id="trPack">Abrir pacotinho</button>':'')+'<button class="btn ghost" id="trHome">Ir ao início</button></div></div>');
+    '<div class="actions">'+(ganhou?'<button class="btn reward" id="trPack">Abrir figurinha</button>':'')+'<button class="btn ghost" id="trHome">Ir ao início</button></div></div>');
   if(ganhou){FC.sfx.pack();FC.confetti();$("#trPack").onclick=function(){X.openPack()}}
   else if(fin.concluida&&!fin.chute)FC.sfx.stamp();
   $("#trHome").onclick=function(){X.goHome().catch(X.fail)};
@@ -379,7 +379,7 @@ function sondagem(){
     var ok=!naoSei&&val===f.res,t1=(naoSei||E.first==null)?null:E.t1(),total=E.total(ts);
     var r=T.nivelamento.classificar(t1,ok,T.metaDe(D.st));
     T.nivelamento.registrar(nv,nx.fam,r);
-    run.log.push({fact:f.id,kind:"nivelamento",ok:ok,t1:t1,total:total,hint:"none",counted:false,stateBefore:0});
+    run.log.push({fact:f.id,kind:"nivelamento",ok:ok,answer:naoSei?null:val,t1:t1,total:total,hint:"none",counted:false,stateBefore:0});
     $("#trFb").textContent="Anotado!";
     later(sondagem,350);
   }

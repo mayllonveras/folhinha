@@ -33,8 +33,53 @@ window.addEventListener("pagehide",function(){saveDraft();flush()});
 
 /* Endereços da criança: #/inicio, #/album, #/trocas, #/amigos, #/progresso (abas), #/folha e #/resultado. Voltar durante a folha pergunta antes de sair. */
 var TABS=["inicio","album","trocas","amigos","progresso"];
+var MIRROR_TABS=["album","trocas","amigos"];   // modo responsável (álbum do adulto): só estas abas
+function isMirror(){return !!(S.me&&S.me.mirror)}
 function homePath(){return "/"+(FC.tabState.aluno||"inicio")}
 function goHome(){if(FC.nav.up(homePath()))return Promise.resolve();return loadHome()}
+/* Dia da semana do dia de estudo que fica k dias de estudo depois de from (k negativo = antes). */
+function studyWeekday(m,from,k){
+  var d=from,step=k<0?-1:1,n=Math.abs(k);
+  for(var g=0;n>0&&g<800;g++){d=FC.addDays(d,step);if(m.study_days.indexOf(FC.dow(d))>=0)n--}
+  return FC.DOW[FC.dow(d)];
+}
+/* Tela de dias seguidos, depois do resultado do dia fechado: a trilha em fileiras de 7 dias, com a figurinha da meta
+   (a capa do pacote do álbum que está na mesa) em cima do dia em que ela sai. Segue as mesmas metas de FC.nextMarco. */
+function streakBody(m,st,g,qty,reached,nx,from){
+  var r=Math.floor((g-st)/7),end=g-7*r,start=end-6;
+  if(start<1){start=1;end=Math.min(g,7)}
+  var n=end-start+1,isGoalRow=end===g,dn=Math.min(st,end)-start;
+  var dId=deskOf(m)[0],art=dId?FC.themePack(dId):FC.packSvg(),pw=46;
+  var check='<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+  function figs(q){return q+" figurinha"+(q===1?"":"s")}
+  var days="";
+  for(var d=start;d<=end;d++){
+    var cls="sk-d"+(d<=st?" done":"")+(d===st?" today":"")+(d===g?" goal":"");
+    var prize=(d===g)?'<div class="sk-prize'+(n>=5?" right":"")+(reached?" open":"")+'" style="--pw:'+pw+'px"><span class="sk-pill">+'+figs(qty)+'</span><span class="sk-art">'+art+'</span></div>':"";
+    days+='<div class="'+cls+'">'+prize+'<span class="sk-wd">'+studyWeekday(m,from,d-st)+'</span><span class="sk-dot">'+(d<=st?check:d)+'</span></div>';
+  }
+  var left=g-st,msg=reached?'Meta alcançada! Você ganhou <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!':
+    'Faltam <b>'+left+' dia'+(left===1?"":"s")+'</b> de estudo para ganhar <b>'+figs(qty)+'</b> extra'+(qty===1?"":"s")+'!';
+  var hint=reached?'Próxima meta: <b>'+nx.at+' dias</b> seguidos (+'+nx.packs+')':
+    (isGoalRow?'':'A meta fica no dia '+g+'. ')+'Só contam os dias de estudo.<br>Faltar a um deles zera a sequência.';
+  return '<div class="sk-hero"><div class="eyebrow">Perseverança</div><div class="sk-num">'+st+'<div class="sk-unit">'+(st===1?"dia seguido":"dias seguidos")+'</div></div></div>'+
+    '<div class="sk-trail"'+(isGoalRow?'':' style="padding-top:22px"')+'><div class="sk-days" role="img" aria-label="'+st+' de '+g+' dias seguidos" style="--n:'+n+';--p:'+(n>1?Math.max(0,dn)/(n-1):0)+'">'+days+'</div></div>'+
+    '<p class="sk-msg">'+msg+'</p><p class="sk-hint">'+hint+'</p>';
+}
+/* Card da tela inicial: a mesma trilha da tela de dias seguidos, a partir do último dia que fechou a sequência. */
+function streakCard(m){
+  var st=m.streak||0,nx=m.next_marco||FC.nextMarco(st);
+  return '<div class="sk sk-card">'+streakBody(m,st,nx.at,nx.packs,false,nx,st>0?(m.last_streak_day||FC.lastStreakDay(m,FC.today())):FC.today())+
+    '<p class="muted small-t sk-best">Melhor sequência: <b>'+(m.best_streak||0)+'</b> dia'+((m.best_streak||0)===1?"":"s")+'.</p></div>';
+}
+function streakScreen(res,pk){
+  var st=res.streak,reached=(pk.marco||0)>0,nx=res.next_marco||FC.nextMarco(st);
+  FC.nav.at("/sequencia",true);
+  FC.render('<div class="sk">'+streakBody(S.me,st,reached?res.marco_streak:nx.at,reached?pk.marco:nx.packs,reached,nx,FC.today())+
+    '<button class="btn block" id="skGo">Continuar</button></div>');
+  if(reached){FC.sfx.pack();FC.confetti({gold:true,n:60})}
+  $("#skGo").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
+}
 function leaveSheet(path){
   saveDraft();
   if(cur&&cur.secs==null)track("folha_abandono",{level:cur.level,sheet:cur.id,data:{respondidas:cur.items.filter(function(i){return i.tries>0}).length,itens:cur.items.length,segundos:Math.round((Date.now()-cur.t0)/1000)}});
@@ -55,6 +100,7 @@ function route(path){
   }
   var m=/^\/([a-z]+)$/.exec(path),tab=m&&TABS.indexOf(m[1])>=0?m[1]:null;
   if(!tab){tab=FC.tabState.aluno||"inicio";FC.nav.at("/"+tab,true)}   // "/folha" ou "/resultado" ao avançar ou recarregar, ou endereço desconhecido: tela inicial
+  if(isMirror()&&MIRROR_TABS.indexOf(tab)<0){tab="album";FC.nav.at("/album",true)}   // o responsável não tem Início nem Progresso
   FC.tabState.aluno=tab;try{sessionStorage.setItem("fc_tab_aluno",tab)}catch(e){}
   if(FC.$('.shell[data-scope="aluno"]'))return FC.gotoTab(tab,true);
   loadHome().catch(fail);
@@ -147,11 +193,33 @@ function turboCtx(){
 }
 async function loadHome(){
   S.me=await rpc("student_me",{p_token:S.token,p_day:FC.today()});
+  if(isMirror()){mirrorHome();return}
   if(FC.turboUi&&isVip()){try{await FC.turboUi.load(turboCtx())}catch(e){if(FC.isSessionErr(e))throw e}}
   home();
-  if(S.me.welcome_pending)showWelcome();
+  firstSteps();
+}
+/* Modo responsável: o adulto que virou amigo da criança (painel dos pais > Acesso) entra aqui com uma sessão criada pelo painel.
+   Só aparecem o álbum dele, as trocas e a criança como amiga. Não há folha, nível, Turbo nem progresso. */
+function mirrorHome(){
+  FC.setKeys(null);cur=null;clearInterval(timerId);
+  var m=S.me,vip=isVip();
+  var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Álbum de</small><b>'+esc(m.name)+'</b></div>'+
+    '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="mirBack" aria-label="Voltar ao painel dos pais">'+FC.icon("back")+'</button></header>';
+  FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
+    {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
+    {id:"trocas",label:"Trocas",icon:"swap",html:vip?tradesPane():vipLockKid("Trocas com "+(m.mirror_child||"a criança"),"As trocas fazem parte do plano VIP. Volte ao painel dos pais para ver o seu plano.")},
+    {id:"amigos",label:"Amigos",icon:"friends",html:vip?'<div id="frBox"><p class="loading">Carregando…</p></div>':vipLockKid("Amigos","Ser amigo de "+(m.mirror_child||"a criança")+" faz parte do plano VIP. Volte ao painel dos pais para ver o seu plano.")}]})+'</div>');
+  FC.nav.at("/"+FC.tabState.aluno);
+  FC.bindTabs("aluno",null,function(id){return "/"+id});
+  $("#mirBack").onclick=function(){location.href="./"};
+  function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
+  sndLabel();
+  $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
+  bindPack();bindAlbum();
+  if(vip){friendsLoad();TR.step="home";trLoad()}
 }
 function home(){
+  if(isMirror())return mirrorHome();   // vários pontos do app chamam home() para redesenhar (ex.: ao fechar a figurinha nova)
   FC.setKeys(null);cur=null;clearInterval(timerId);
   var m=S.me,L=FC.LEVELS[m.level_idx],today=FC.today(),left=m.quota-m.done_today;
   var status,canStart=false;
@@ -175,23 +243,23 @@ function home(){
   else hero='<section class="hero"><span class="eyebrow">Trilha BNCC · Hoje</span><h2>'+(m.quota===0?"Sem folha hoje":"Meta de hoje cumprida!")+'</h2><p>'+status+'</p></section>';
   var rows=m.recent.map(function(r){
     return "<tr><td>"+FC.dm(r.day)+"</td><td>"+esc(FC.lv(r.level))+"</td><td>"+r.ok+"/"+r.total+"</td><td>"+FC.fmtTime(r.secs)+"</td><td>"+(r.advanced?'<span class="tag ok">subiu de nível</span>':r.stamp?'<span class="tag ok">carimbo do dia</span>':'')+"</td></tr>"}).join("");
-  var vip=isVip(),turboCard=!FC.turboUi?"":vip?FC.turboUi.cardHtml():vipLockKid("Trilha Turbo","Treino rápido de mais, menos, vezes e dividir, com pacotinho todo dia. Faz parte do plano VIP: peça para seu responsável conhecer!");
+  var vip=isVip(),turboCard=!FC.turboUi?"":vip?FC.turboUi.cardHtml():vipLockKid("Trilha Turbo","Treino rápido de mais, menos, vezes e dividir, com figurinha todo dia. Faz parte do plano VIP: peça para seu responsável conhecer!");
   var inicio=offerHtml(m,L)+'<div class="duo">'+hero+turboCard+'</div>'+packPanel(m)+
     '<section class="panel"><div class="split"><b>Carimbos do nível '+L.id+'</b><span class="muted small-t">'+Math.min(m.stamps,need)+' de '+need+'</span></div><div class="stamps gap">'+stamps+'</div>'+
-    '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. '+(vip?'Cada carimbo vale um pacotinho de figurinhas. ':'')+'Com '+need+' carimbos você sobe de nível.</p></section>'+
-    '<section class="panel">'+FC.streakHtml(m)+'</section>'+FC.installBox();
+    '<p class="muted small-t gap">Um carimbo por dia, com '+(m.normal_acertos||80)+'% ou mais de acertos de primeira. '+(vip?'Cada carimbo vale uma figurinha. ':'')+'Com '+need+' carimbos você sobe de nível.</p></section>'+
+    '<section class="panel">'+streakCard(m)+'</section>'+FC.installBox();
   var progresso='<section class="panel now"><span class="eyebrow">Nível atual</span><div class="lvl">'+L.id+'</div>'+
     '<div><div class="nm">'+esc(L.name)+'</div><div class="muted">'+esc(L.hint)+'</div></div>'+
     '<div class="stamps">'+stamps+'<span>'+Math.min(m.stamps,need)+' de '+need+'</span></div></section>'+
     '<section class="panel rule"><b>Como ganhar o carimbo</b><p class="small-t">Cada dia em que você acerta <b>'+(m.normal_acertos||80)+'% ou mais</b> das contas de primeira, com tempo médio de até <b>'+FC.fmtTime(L.target)+'</b> por folha, vale <b>1 carimbo</b>. Com '+need+' carimbos você sobe de nível. As contas que você errar voltam nas próximas folhas, até no nível seguinte.</p>'+
       '<p class="small-t"><b>Dia de ouro:</b> acertando <b>'+(m.ouro_acertos||95)+'% ou mais</b> de primeira, com tempo médio de até <b>'+FC.fmtTime(Math.round(L.target*(m.ouro_tempo||80)/100))+'</b> por folha, o dia vale <b>'+(m.ouro_carimbos||2)+' carimbos</b>. E quem já sabe o assunto pode até <b>pular direto</b> para o próximo nível.</p></section>'+
-    '<section class="panel rule"><b>Como ganhar pacotinhos de figurinhas</b><ul class="plain small-t">'+
-      (vip?'<li><b>Carimbo do dia:</b> 1 pacotinho.</li>'+
-      '<li><b>Perseverança:</b> fechou todas as folhas do dia, mesmo sem carimbo? 1 pacotinho.</li>':'<li>No plano Grátis, os pacotinhos vêm dos <b>dias seguidos</b> de estudo. Com o VIP, o carimbo e a perseverança também dão pacotinho.</li>')+
-      '<li><b>Dias seguidos de estudo:</b> pacotinhos extras com 3, 7 e 14 dias, e depois a cada 30 dias. Faltar a um dia de estudo zera a sequência.</li></ul></section>'+
+    '<section class="panel rule"><b>Como ganhar figurinhas</b><ul class="plain small-t">'+
+      (vip?'<li><b>Carimbo do dia:</b> 1 figurinha.</li>'+
+      '<li><b>Perseverança:</b> fechou todas as folhas do dia, mesmo sem carimbo? 1 figurinha.</li>':'<li>No plano Grátis, as figurinhas vêm dos <b>dias seguidos</b> de estudo. Com o VIP, o carimbo e a perseverança também dão figurinha.</li>')+
+      '<li><b>Dias seguidos de estudo:</b> figurinhas extras com 3, 7 e 14 dias, e depois a cada 30 dias. Faltar a um dia de estudo zera a sequência.</li></ul></section>'+
     '<section class="panel"><div class="eyebrow">Suas últimas folhas</div>'+(rows?'<div class="tablewrap gap"><table><thead><tr><th>Dia</th><th>Nível</th><th>Acertos</th><th>Tempo</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="muted gap">Você ainda não fez nenhuma folha.</p>')+'</section>';
   var head='<header class="appbar"><img src="icons/icon-192.png" alt=""><div class="grow"><small>Oi,</small><b>'+esc(m.name)+'</b></div>'+
-    '<button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
+    '<button type="button" class="iconbtn" id="helpBtn" aria-label="Ver o vídeo de boas-vindas">'+FC.icon("help")+'</button><button type="button" class="iconbtn" id="sndBtn"></button><button type="button" class="iconbtn" id="logout" aria-label="Sair">'+FC.icon("logout")+'</button></header>';
   FC.render('<div class="tone-aluno">'+FC.tabsShell({scope:"aluno",head:head,tabs:[
     {id:"inicio",label:"Início",icon:"home",html:inicio},
     {id:"album",label:"Álbum",icon:"album",html:albumPane(m)},
@@ -201,6 +269,7 @@ function home(){
   FC.nav.at("/"+FC.tabState.aluno);
   FC.bindTabs("aluno",function(id){if(S.tabSeen)track("aba",{data:{para:id}});S.tabSeen=true},function(id){return "/"+id});FC.refreshInstall();
   $("#logout").onclick=logout;
+  $("#helpBtn").onclick=function(){showOnboarding({auto:true})};
   function sndLabel(){var on=FC.sfx.enabled(),b=$("#sndBtn");b.innerHTML=FC.icon(on?"sound":"soundoff");b.setAttribute("aria-label",on?"Som ligado. Tocar para desligar":"Som desligado. Tocar para ligar")}
   sndLabel();
   $("#sndBtn").onclick=function(){var on=!FC.sfx.enabled();FC.sfx.set(on);sndLabel();if(on)FC.sfx.stamp()};
@@ -250,21 +319,25 @@ function friendsList(){
     return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">esperando a resposta</div></div><button class="btn ghost small" data-rm="'+x.id+'">Cancelar</button></div>'}).join("");
   var fr=f.friends.map(function(x){
     var L=FC.LEVELS[x.level_idx];
-    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+' · '+x.stamps+' de 5 carimbos</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+    var sub=x.mirror?"Responsável":"Nível "+L.id+" · "+x.stamps+" de 5 carimbos";   // o responsável não estuda: não tem nível nem carimbos
+    return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">'+sub+'</div></div><button class="btn small" data-see="'+x.id+'">Ver álbum</button></div>'}).join("");
+  var mir=isMirror();   // o responsável só tem a criança como amiga: sem código nem convites
   box.innerHTML=
-    '<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
+    (mir?"":'<section class="panel center"><div class="eyebrow">Seu código de amigo</div><div class="fr-code" id="frCode">'+esc(FC.fmtCode(f.code))+'</div>'+
       '<p class="muted small-t">Passe este código para quem você quer como amigo.</p><button class="btn ghost small" id="frCopy">Copiar código</button></section>'+
     '<section class="panel"><b>Convidar um amigo</b><p class="muted small-t">Digite o código que ele passou para você.</p>'+
-      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>'+
+      '<form class="fr-add" id="frForm" novalidate><input id="frIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código do amigo" placeholder="ABC-DEF"><button class="btn" type="submit">Enviar convite</button></form></section>')+
     (inc?'<section class="panel"><b>Convites para você</b>'+inc+'</section>':'')+
-    '<section class="panel"><b>Seus amigos</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
-      '<p class="muted small-t gap">Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.</p></section>'+
+    '<section class="panel"><b>'+(mir?"Seu amigo":"Seus amigos")+'</b>'+(fr||'<p class="muted small-t gap">Ainda não há amigos por aqui.</p>')+
+      '<p class="muted small-t gap">'+(mir?"Você é amigo de "+esc(S.me.mirror_child||"a criança")+" enquanto a opção estiver ligada no painel dos pais. Quem desliga lá deixa de ser amigo.":"Amigos veem só o seu nível, os seus carimbos e as suas figurinhas. Mais nada.")+'</p></section>'+
     (out?'<section class="panel"><b>Convites enviados</b>'+out+'</section>':'');
-  $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
-  $("#frForm").onsubmit=function(e){
-    e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
-    friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
-  };
+  if(!mir){
+    $("#frCopy").onclick=function(){var i=document.createElement("input");var fc=FC.fmtCode(f.code);i.value=fc;FC.copy(fc,i,"código")};
+    $("#frForm").onsubmit=function(e){
+      e.preventDefault();var c=$("#frIn").value.trim();if(!c)return;
+      friendsAct("student_friend_invite",{p_token:S.token,p_code:c},function(r){return r.state==="aceito"?"Agora você e "+r.name+" são amigos!":"Convite enviado para "+r.name+"."});
+    };
+  }
   $$("[data-ans]",box).forEach(function(b){b.onclick=function(){
     var ok=!!b.getAttribute("data-ok");
     friendsAct("student_friend_answer",{p_token:S.token,p_id:b.getAttribute("data-ans"),p_accept:ok},ok?"Amizade feita!":"Convite recusado.")}});
@@ -279,36 +352,45 @@ async function friendView(id){
   var got=gotOf(v,tid),th=FC.theme(tid);
   var tabs=ids.length>1?'<div class="album-tabs">'+ids.map(function(x){return '<button type="button" class="chip-btn'+(x===tid?" on":"")+'" data-ft="'+x+'">'+esc(FC.theme(x).name)+'</button>'}).join("")+'</div>':"";
   box.innerHTML='<div class="pagehead"><button type="button" class="link crumb" id="frBack">'+FC.icon("back")+'Amigos</button></div>'+
-    '<section class="panel"><h2>'+esc(v.name)+'</h2><div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
-      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>'+
+    '<section class="panel"><h2>'+esc(v.name)+'</h2>'+(v.mirror?'<div class="muted">Responsável</div></section>':'<div class="muted">Nível '+L.id+' · '+esc(L.name)+'</div>'+
+      '<div class="stamps gap">'+stamps+'<span>'+v.stamps+' de 5</span></div></section>')+
     '<section class="panel">'+tabs+'<div class="split"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
       '<div class="gap">'+FC.albumHtml(tid,got)+'</div>'+
-      '<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p></section>';
+      (v.mirror||isMirror()?'<p class="muted small-t gap">Esta amizade é do painel dos pais: quem liga e desliga é o responsável.</p>':'<p class="muted small-t gap"><button type="button" class="btn ghost small" id="frUn">Desfazer amizade</button></p>')+'</section>';
   $("#frBack").onclick=friendsLoad;
   $$("[data-ft]",box).forEach(function(b){b.onclick=function(){S.frTheme=b.getAttribute("data-ft");friendView(id)}});
-  FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
+  if($("#frUn"))FC.confirmClick($("#frUn"),"Toque de novo para confirmar",function(){friendsAct("student_friend_remove",{p_token:S.token,p_id:id},"Amizade desfeita.")});
 }
 /* ---------- trocas de figurinhas repetidas ---------- */
 /* Fluxo: Trocas > Nova troca > escolher o amigo > escolher uma repetida minha que ele ainda não tem (e cujo álbum ele tem)
-   > escolher uma repetida dele que ainda não tenho (e cujo álbum eu tenho) > pedir. O amigo aceita ou recusa na aba Trocas.
+   > escolher uma repetida dele que ainda não tenho > pedir. O amigo aceita ou recusa na aba Trocas.
+   Conversão por número: os álbuns dos dois podem ser diferentes. Vale o NÚMERO da figurinha: a repetida vira a mesma nº no álbum de quem recebe
+   (item {theme, slot, to}: theme = álbum de origem, to = álbum de destino; sem to = o mesmo álbum).
    O aviso chega em tempo real, mas só aparece ENTRE as folhas (nunca com a folha aberta). */
 var TR={sub:"repetidas",step:"home",fid:null,fname:"",opts:null,give:null,want:null,data:null,ch:null,poll:null,announced:{}};
 function stk(t,sl,badge){return FC.stickerHtml(t,sl,{noflip:true,badge:badge||0})}
 function tradesPane(){return '<div id="trBox"><p class="loading">Carregando…</p></div>'}
 function canNotify(){return !busy&&(!cur||cur.secs!=null)}
-/* Valor de cada figurinha na troca: comum 1, rara 2, ultrarrara 3. Precisa bater com public._tier_value no banco. */
-var TR_VAL={comum:1,rara:2,ultra:3};
-function valOf(x){return TR_VAL[FC.tierOf(x.theme,x.slot)]||1}
+/* Valor de cada figurinha na troca: comum 1, rara 4, ultrarrara 12. Precisa bater com public._tier_value no banco. */
+var TR_VAL={comum:1,rara:4,ultra:12};
+/* O valor é o da carta que CHEGA (álbum de destino), o mesmo que public._trade_side/_tier_value usam no banco. */
+function dstOf(x){return x.to||x.theme}
+function valOf(x){return TR_VAL[FC.tierOf(dstOf(x),x.slot)]||1}
 function sumVal(list){return (list||[]).reduce(function(a,x){return a+valOf(x)},0)}
-function setHtml(list,label){
-  return '<div class="tr-set"><div class="muted small-t center">'+label+' · valor '+sumVal(list)+'</div><div class="tr-set-row">'+list.map(function(x){return stk(x.theme,x.slot)}).join("")+'</div></div>';
+/* recv: a carta aparece como ficará no meu álbum (destino). give: é a minha carta de origem. Convertidas ganham a linha "nº 15: Gatinhos → Bandeiras". */
+function convNote(list){
+  var c=(list||[]).filter(function(x){return dstOf(x)!==x.theme});
+  return c.length?'<div class="muted small-t center tr-conv">'+c.map(function(x){return 'nº '+(x.slot+1)+': '+esc(FC.theme(x.theme).name)+' → '+esc(FC.theme(dstOf(x)).name)}).join('<br>')+'</div>':"";
 }
-/* recv e give são listas de {theme,slot}. */
+function setHtml(list,label,recv){
+  return '<div class="tr-set"><div class="muted small-t center">'+label+' · valor '+sumVal(list)+'</div><div class="tr-set-row">'+list.map(function(x){return recv?stk(dstOf(x),x.slot):stk(x.theme,x.slot)}).join("")+'</div>'+convNote(list)+'</div>';
+}
+/* recv e give são listas de {theme,slot,to}. */
 function pairHtml(recv,give){
-  return '<div class="tr-swap">'+setHtml(recv,"Você recebe")+FC.icon("swap")+setHtml(give,"Você dá")+'</div>';
+  return '<div class="tr-swap">'+setHtml(recv,"Você recebe",true)+FC.icon("swap")+setHtml(give,"Você dá",false)+'</div>';
 }
-function namesOf(list){return (list||[]).map(function(x){return nameOf(x.theme,x.slot)}).join(", ")}
+function namesOf(list,recv){return (list||[]).map(function(x){return nameOf(recv?dstOf(x):x.theme,x.slot)}).join(", ")}
 function nameOf(t,sl){return FC.stickerInfo(t,sl).name}
 async function trLoad(){
   if(!S.token)return;
@@ -374,7 +456,7 @@ async function trAnnounce(){
   if(d.answers.length){
     var got=0;
     d.answers.forEach(function(a){
-      if(a.status==="aceita"){got++;FC.toast(a.name+" aceitou a troca! Você ganhou "+namesOf(a.wants)+".")}
+      if(a.status==="aceita"){got++;FC.toast(a.name+" aceitou a troca! Você ganhou "+namesOf(a.wants,true)+".")}
       else if(a.status==="recusada")FC.toast(a.name+" não quis trocar desta vez.");
       else FC.toast("A troca com "+a.name+" não valeu mais.",true);
     });
@@ -400,9 +482,9 @@ function trRender(){
       pairHtml(x.wants,x.gives)+'<div class="muted small-t center">Esperando a resposta</div></div>'}).join("");
   var total=dups.reduce(function(a,x){return a+x.spare},0);
   var rep=dups.length?'<div class="album gap">'+dups.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>':
-    '<p class="muted small-t gap">Você ainda não tem repetidas. Quando um pacotinho trouxer uma figurinha que você já tem, ela aparece aqui, pronta para trocar.</p>';
+    '<p class="muted small-t gap">Você ainda não tem repetidas. Quando você abrir uma figurinha que já tem, ela aparece aqui, pronta para trocar.</p>';
   box.innerHTML=
-    '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem.</p>'+
+    '<section class="panel"><b>Trocar com um amigo</b><p class="muted small-t">Escolha um amigo e veja quais das suas repetidas ele ainda não tem. Os álbuns podem ser diferentes: vale o número da figurinha.</p>'+
       (friends.length?(dups.length?'<button class="btn" id="trNew">Nova troca</button>':'<p class="muted small-t gap">Você precisa de pelo menos uma figurinha repetida.</p>'):'<p class="muted small-t gap">Primeiro faça amigos na aba Amigos.</p>')+'</section>'+
     '<section class="panel"><div class="album-tabs" role="tablist">'+
       '<button type="button" class="chip-btn'+(TR.sub==="pedidos"?" on":"")+'" role="tab" aria-selected="'+(TR.sub==="pedidos")+'" data-trsub="pedidos">Pedidos ('+(d.incoming.length+d.outgoing.length)+')'+(d.incoming.length?'<span class="tr-dot">'+d.incoming.length+'</span>':'')+'</button>'+
@@ -429,7 +511,7 @@ function histHtml(){
   return h.map(function(x){
     return '<div class="tr-req"><div class="muted small-t">'+FC.dm(String(x.at).slice(0,10))+' · com <b>'+esc(x.friend)+'</b></div>'+
       pairHtml(x.got,x.gave)+
-      '<div class="muted small-t center">Você deu '+esc(namesOf(x.gave))+' e recebeu '+esc(namesOf(x.got))+'.</div></div>'}).join("");
+      '<div class="muted small-t center">Você deu '+esc(namesOf(x.gave))+' e recebeu '+esc(namesOf(x.got,true))+'.</div></div>'}).join("");
 }
 async function trAnswer(id,ok,btn){
   $$("#trBox button").forEach(function(b){b.disabled=true});
@@ -448,7 +530,7 @@ function trFlow(){
   if(TR.step==="friend"){
     var fr=(S.fr&&S.fr.friends)||[];
     box.innerHTML=back("Trocas")+'<section class="panel"><b>Com quem você quer trocar?</b>'+fr.map(function(x){
-      var L=FC.LEVELS[x.level_idx];return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">Nível '+L.id+'</div></div><button class="btn small" data-tf="'+x.id+'" data-nm="'+esc(x.name)+'">Escolher</button></div>'}).join("")+'</section>';
+      var L=FC.LEVELS[x.level_idx];return '<div class="fr-row"><div class="grow"><b>'+esc(x.name)+'</b><div class="muted small-t">'+(x.mirror?"Responsável":"Nível "+L.id)+'</div></div><button class="btn small" data-tf="'+x.id+'" data-nm="'+esc(x.name)+'">Escolher</button></div>'}).join("")+'</section>';
     $("#trBack").onclick=function(){trBack("home")};
     $$("[data-tf]",box).forEach(function(b){b.onclick=async function(){
       b.disabled=true;TR.fid=b.getAttribute("data-tf");TR.fname=b.getAttribute("data-nm");
@@ -461,27 +543,41 @@ function trFlow(){
   if(TR.step==="friend"||!o)return;
   if(!o.give.length||!o.get.length){
     box.innerHTML=back("Escolher outro amigo")+'<section class="panel"><b>Ainda não dá para trocar com '+nm+'</b><p class="muted small-t gap">'+
-      (!o.give.length?'Nenhuma das suas repetidas serve para '+nm+': ele já tem todas, ou não tem o álbum delas. ':'')+
-      (!o.get.length?nm+' não tem repetidas que faltam para você, nos álbuns que vocês dois têm. ':'')+'Volte depois de abrir mais pacotinhos.</p></section>';
+      (!o.give.length?'Nenhuma das suas repetidas serve para '+nm+': ele já tem o número de todas elas nos álbuns da mesa dele. ':'')+
+      (!o.get.length?nm+' não tem repetidas com números que faltam nos álbuns da sua mesa. ':'')+'Volte depois de abrir mais figurinhas.</p></section>';
     $("#trBack").onclick=function(){TR.step="friend";trFlow()};return;
   }
-  /* Monta a troca: escolhe-se 1 ou mais figurinhas de cada lado (até 6); os dois lados precisam valer o mesmo. */
+  /* Monta a troca: escolhe-se 1 ou mais figurinhas de cada lado (até 6); os dois lados precisam valer o mesmo.
+     TR.sel[lado][tema|nº]=álbum de destino escolhido (o do mesmo tema vem primeiro; se houver mais de um destino, aparece um seletor). */
   TR.sel=TR.sel||{give:{},want:{}};
-  function grid(side,list){
-    return '<div class="album gap">'+list.map(function(x,i){
-      var on=TR.sel[side][x.theme+"|"+x.slot];
-      return '<button type="button" class="tr-pick'+(on?" on":"")+'" data-side="'+side+'" data-i="'+i+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+(side==="give"?"Oferecer ":"Pedir ")+esc(nameOf(x.theme,x.slot))+', valor '+valOf(x)+'">'+stk(x.theme,x.slot,x.spare)+'</button>'}).join("")+'</div>';
+  var KEY=function(x){return x.theme+"|"+x.slot};
+  var listOf=function(side){return side==="give"?o.give:o.get};
+  function asItem(x,dst){return {theme:x.theme,slot:x.slot,to:dst}}
+  function chosen(side){return listOf(side).filter(function(x){return TR.sel[side][KEY(x)]}).map(function(x){return asItem(x,TR.sel[side][KEY(x)])})}
+  /* destino livre: o primeiro da lista que nenhuma outra carta escolhida deste lado já usa nesse número */
+  function freeDst(side,x){
+    var used={};listOf(side).forEach(function(y){var d=TR.sel[side][KEY(y)];if(d&&y.slot===x.slot&&KEY(y)!==KEY(x))used[d]=1});
+    for(var i=0;i<x.to.length;i++)if(!used[x.to[i]])return x.to[i];
+    return null;
   }
+  function tile(side,x,i){
+    var d=TR.sel[side][KEY(x)],on=!!d,dd=d||x.to[0],v=valOf(asItem(x,dd)),conv=dd!==x.theme;
+    var sel=on&&x.to.length>1?'<label class="tr-dest small-t">Vira no álbum: <select data-side="'+side+'" data-i="'+i+'">'+x.to.map(function(t){return '<option value="'+esc(t)+'"'+(t===dd?" selected":"")+'>'+esc(FC.theme(t).name)+'</option>'}).join("")+'</select></label>':"";
+    return '<div class="tr-cell"><button type="button" class="tr-pick'+(on?" on":"")+'" data-side="'+side+'" data-i="'+i+'" aria-pressed="'+(on?"true":"false")+'" aria-label="'+(side==="give"?"Oferecer ":"Pedir ")+esc(nameOf(x.theme,x.slot))+', número '+(x.slot+1)+(conv?', vira número '+(x.slot+1)+' do álbum '+esc(FC.theme(dd).name):"")+', valor '+v+'">'+stk(x.theme,x.slot,x.spare)+'</button>'+
+      '<div class="muted small-t center tr-cv">'+(conv?'vira nº '+(x.slot+1)+' de '+esc(FC.theme(dd).name)+' · ':'')+'vale '+v+'</div>'+sel+'</div>';
+  }
+  function grid(side){return '<div class="album gap tr-grid">'+listOf(side).map(function(x,i){return tile(side,x,i)}).join("")+'</div>'}
   box.innerHTML=back("Escolher outro amigo")+
-    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Valores: <b>comum vale 1</b>, <b>rara vale 2</b> e <b>ultrarrara vale 3</b>. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 2 comuns.</p></section>'+
-    '<section class="panel"><b>1. O que você oferece</b><p class="muted small-t">Suas repetidas que '+nm+' ainda não tem.</p>'+grid("give",o.give)+'</section>'+
-    '<section class="panel"><b>2. O que você quer de '+nm+'</b><p class="muted small-t">Repetidas dele que ainda faltam para você.</p>'+grid("want",o.get)+'</section>'+
+    '<section class="panel"><b>Monte a troca com '+nm+'</b><p class="muted small-t">Os álbuns de vocês podem ser diferentes: vale o <b>número</b> da figurinha. Se você der a nº 15 de um álbum, ela vira a nº 15 no álbum de '+nm+' (e o contrário). A figurinha que chega só entra em álbum que está na <b>mesa</b>, não na gaveta. Valores: <b>comum vale 1</b>, <b>rara vale 4</b> e <b>ultrarrara vale 12</b>, contando a figurinha que chega. Os dois lados precisam valer o mesmo. Por exemplo, 1 rara por 4 comuns. Como cada lado leva até 6 figurinhas, uma ultrarrara só se troca por raras ou outra ultrarrara.</p></section>'+
+    '<section class="panel"><b>1. O que você oferece</b><p class="muted small-t">Suas repetidas (de qualquer álbum) com um número que '+nm+' ainda não tem na mesa dele.</p><div id="trGive"></div></section>'+
+    '<section class="panel"><b>2. O que você quer de '+nm+'</b><p class="muted small-t">Repetidas dele com um número que ainda falta nos álbuns da sua mesa.</p><div id="trWant"></div></section>'+
     '<section class="panel center tr-sum" id="trSum"></section>';
   $("#trBack").onclick=function(){TR.sel=null;TR.step="friend";trFlow()};
-  function chosen(side,list){return list.filter(function(x){return TR.sel[side][x.theme+"|"+x.slot]})}
   function summary(){
-    var g=chosen("give",o.give),w=chosen("want",o.get),vg=sumVal(g),vw=sumVal(w),ok=vg>0&&vg===vw,msg;
-    if(!g.length&&!w.length)msg="Escolha as figurinhas dos dois lados.";
+    var g=chosen("give"),w=chosen("want"),vg=sumVal(g),vw=sumVal(w),ok=vg>0&&vg===vw,msg;
+    var dup=function(l){var k={};return l.some(function(x){var z=x.to+"|"+x.slot;if(k[z])return true;k[z]=1;return false})};
+    if(dup(g)||dup(w)){ok=false;msg="Duas figurinhas cairiam na mesma posição do mesmo álbum. Troque o álbum de destino de uma delas."}
+    else if(!g.length&&!w.length)msg="Escolha as figurinhas dos dois lados.";
     else if(!g.length)msg="Escolha o que você oferece.";
     else if(!w.length)msg="Escolha o que você quer.";
     else if(vg>vw)msg="Você oferece "+(vg-vw)+" ponto"+(vg-vw>1?"s":"")+" a mais. Peça mais figurinhas para igualar.";
@@ -493,25 +589,31 @@ function trFlow(){
       '<p class="muted small-t">'+nm+' vai receber o aviso e pode aceitar ou recusar. O pedido vale por 7 dias.</p>';
     $("#trSend").onclick=async function(){
       this.disabled=true;
-      var pick=function(l){return l.map(function(x){return{theme:x.theme,slot:x.slot}})};
       try{
-        await rpc("student_trade_propose",{p_token:S.token,p_friendship:TR.fid,p_gives:pick(g),p_wants:pick(w)});
+        await rpc("student_trade_propose",{p_token:S.token,p_friendship:TR.fid,p_gives:g,p_wants:w});
         FC.toast("Pedido enviado para "+TR.fname+"!");TR.step="home";TR.sel=null;
       }catch(e){FC.toast(FC.err(e),true);this.disabled=false;return}
       trLoad();trRender();
     };
   }
-  $$(".tr-pick",box).forEach(function(b){b.onclick=function(){
-    var side=b.getAttribute("data-side"),x=(side==="give"?o.give:o.get)[Number(b.getAttribute("data-i"))],k=x.theme+"|"+x.slot;
-    if(TR.sel[side][k]){delete TR.sel[side][k]}
-    else if(Object.keys(TR.sel[side]).length>=6){FC.toast("No máximo 6 figurinhas de cada lado.",true);return}
-    else TR.sel[side][k]=1;
-    b.classList.toggle("on",!!TR.sel[side][k]);b.setAttribute("aria-pressed",TR.sel[side][k]?"true":"false");
+  function paint(){
+    $("#trGive").innerHTML=grid("give");$("#trWant").innerHTML=grid("want");
+    $$(".tr-pick",box).forEach(function(b){b.onclick=function(){
+      var side=b.getAttribute("data-side"),x=listOf(side)[Number(b.getAttribute("data-i"))],k=KEY(x);
+      if(TR.sel[side][k])delete TR.sel[side][k];
+      else if(Object.keys(TR.sel[side]).length>=6){FC.toast("No máximo 6 figurinhas de cada lado.",true);return}
+      else TR.sel[side][k]=freeDst(side,x)||x.to[0];
+      paint();
+    }});
+    $$(".tr-dest select",box).forEach(function(se){se.onchange=function(){
+      var side=se.getAttribute("data-side"),x=listOf(side)[Number(se.getAttribute("data-i"))];
+      TR.sel[side][KEY(x)]=se.value;paint();
+    }});
     summary();
-  }});
-  summary();
+  }
+  paint();
 }
-/* ---------- álbuns e pacotinhos ---------- */
+/* ---------- álbuns e figurinhas ---------- */
 function themesOf(m){return (m.sticker_themes&&m.sticker_themes.length)?m.sticker_themes:[m.sticker_theme||"dinossauros"]}
 /* Cada cópia ganha é uma linha em m.stickers. gotOf = as figurinhas diferentes do álbum (sem contar repetidas). */
 function gotOf(m,id){
@@ -532,12 +634,13 @@ function dupsOf(m){
   return out;
 }
 function isFull(m,id){return gotOf(m,id).length>=FC.ALBUM_SIZE}
-/* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai o pacotinho); gaveta = o resto que ainda não está completo. */
-function deskLimit(m){return m.desk_limit||2}
+/* Mesa e gaveta. Liberados (themesOf) = o que os pais liberaram; mesa = até "desk_limit" deles (os ativos, de onde sai a figurinha); gaveta = o resto que ainda não está completo. */
+function deskLimit(m){return m.mirror?99:1}   // a mesa tem um álbum só (o limite do banco não vale mais)
 function deskOf(m){
   var lib=themesOf(m);
-  var d=(m.desk_themes||lib.slice(0,deskLimit(m))).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
-  return d;
+  if(m.mirror)return lib.filter(function(x){return !isFull(m,x)});   // álbum do responsável: sem mesa, todos os álbuns que faltam ficam à mostra
+  var d=(m.desk_themes||lib).filter(function(x){return lib.indexOf(x)>=0&&!isFull(m,x)});
+  return d.slice(0,deskLimit(m));
 }
 function drawerOf(m){var d=deskOf(m);return themesOf(m).filter(function(x){return d.indexOf(x)<0&&!isFull(m,x)})}
 function doneAlbums(m){return themesOf(m).filter(function(x){return isFull(m,x)})}
@@ -546,7 +649,7 @@ function coverCard(attr,id,label){
   var th=FC.theme(id);
   return '<button type="button" class="cover-card" '+attr+'="'+id+'" aria-label="'+esc(th.name)+', '+esc(label)+'">'+FC.themeCapa(id)+'<span class="cover-badge num">'+esc(label)+'</span></button>';
 }
-/* Troca mesa e gaveta (a criança pode a qualquer momento, menos no meio da abertura de um pacotinho). */
+/* Troca mesa e gaveta (a criança pode a qualquer momento, menos no meio da abertura de uma figurinha). */
 async function setDesk(list){
   if(S.opening)return false;
   try{var r=await rpc("student_set_desk",{p_token:S.token,p_desk:list});S.me.desk_themes=r.desk;if(r.limit)S.me.desk_limit=r.limit;track("mesa_trocada",{data:{mesa:r.desk}});return true}
@@ -568,18 +671,32 @@ async function moveAlbum(id,to){
     if(await setDesk(d.filter(function(x){return x!==out}).concat([id])))afterDesk();
   }});
 }
+/* Álbum do responsável: cada figurinha já vem com o álbum da figurinha que a criança abriu (pending_by_theme). */
+function mirrorOpen(m){
+  var by=m.pending_by_theme||{};
+  return themesOf(m).filter(function(x){return (by[x]||0)>0&&!isFull(m,x)});
+}
+function mirrorPackPanel(m){
+  var by=m.pending_by_theme||{},ids=mirrorOpen(m),n=ids.reduce(function(a,x){return a+by[x]},0);
+  if(!n)return "";
+  var who=esc(m.mirror_child||"a criança");
+  return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' figurinha'+(n>1?'s':'')+' para abrir!</b>'+
+    '<div class="muted small-t">São as mesmas figurinhas que '+who+' abriu, do mesmo álbum.'+(ids.length>1?' Escolha de qual álbum abrir.':'')+'</div></div>'+
+    '<button class="btn reward" data-pack>Abrir figurinha</button></section>';
+}
 function packPanel(m){
+  if(m.mirror)return mirrorPackPanel(m);
   var n=m.pending_packs||0;
   var open=deskOf(m);
   if(m.albums_done&&themesOf(m).every(function(x){return isFull(m,x)}))
-    return '<section class="panel packbox"><div class="grow"><b>Você completou todos os álbuns! 🎉</b><div class="muted small-t">'+(n?'Seus '+n+' pacotinho'+(n>1?'s ficam':' fica')+' guardado'+(n>1?'s':'')+'. ':'')+'Peça aos seus pais para liberarem um álbum novo e você volta a ganhar figurinhas.</div></div></section>';
+    return '<section class="panel packbox"><div class="grow"><b>Você completou todos os álbuns! 🎉</b><div class="muted small-t">'+(n?(n>1?'Suas '+n+' figurinhas ficam guardadas. ':'Sua figurinha fica guardada. '):'')+'Peça aos seus pais para liberarem um álbum novo e você volta a ganhar figurinhas.</div></div></section>';
   if(n<1)return "";
   if(!open.length&&drawerOf(m).length)
-    return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+    return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' figurinha'+(n>1?'s':'')+' para abrir!</b>'+
       '<div class="muted small-t">Sua mesa está vazia. Coloque um álbum da gaveta na mesa para abrir.</div></div><button class="btn reward" data-pack>Arrumar a mesa</button></section>';
-  return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' pacotinho'+(n>1?'s':'')+' para abrir!</b>'+
+  return '<section class="panel packbox"><div class="goalicon open">'+FC.packSvg()+'</div><div class="grow"><b>Você tem '+n+' figurinha'+(n>1?'s':'')+' para abrir!</b>'+
     '<div class="muted small-t">'+(open.length>1?'Escolha de qual álbum da mesa você quer a figurinha.':'Toque para descobrir a figurinha.')+'</div></div>'+
-    '<button class="btn reward" data-pack>Abrir pacotinho</button></section>';
+    '<button class="btn reward" data-pack>Abrir figurinha</button></section>';
 }
 /* Aba Álbum: três abas. Mesa e Gaveta mostram só as capas (com "3 de 52"); tocar numa capa abre o álbum grande com todas as figurinhas.
    Repetidas mostra, por álbum, quantas repetidas há; tocar abre só as repetidas, com um único botão Trocar. */
@@ -596,35 +713,38 @@ function albumPane(m){
   /* álbum aberto (de Mesa ou Gaveta): capa grande e todas as figurinhas, as ganhas e as que faltam */
   if(sub!=="repetidas"&&S.albOpen){
     var id=S.albOpen,th=FC.theme(id),got=gotOf(m,id),onDesk=d.indexOf(id)>=0,full=isFull(m,id);
-    var mv=full?"":onDesk?'<button type="button" class="btn ghost small" data-move="'+id+'" data-to="gaveta">Guardar na gaveta</button>':'<button type="button" class="btn small" data-move="'+id+'" data-to="mesa">Pôr na mesa</button>';
+    var mv=(full||m.mirror)?"":onDesk?'<button type="button" class="btn ghost small" data-move="'+id+'" data-to="gaveta">Guardar na gaveta</button>':'<button type="button" class="btn small" data-move="'+id+'" data-to="mesa">Pôr na mesa</button>';
     return head+'<section class="panel" id="albumBox"><div class="pagehead"><button type="button" class="link crumb" data-albback>'+FC.icon("back")+'Álbuns</button></div>'+
       '<div class="album-big">'+FC.themeCapa(id)+'</div>'+
       '<div class="split gap"><b>'+esc(th.name)+'</b><span class="muted small-t num">'+got.length+' de '+FC.ALBUM_SIZE+'</span></div>'+
       '<div class="bar"><i style="width:'+Math.round(got.length/FC.ALBUM_SIZE*100)+'%"></i></div>'+
-      '<div class="split gap"><span class="muted small-t">'+(full?"Álbum completo!":onDesk?"Está na mesa":"Está na gaveta")+'</span>'+mv+'</div>'+
-      '<p class="muted small-t gap">'+(full?'Álbum completo! Parabéns! As repetidas ficam na aba Repetidas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':'Feche as folhas do dia para ganhar o primeiro pacotinho. As figurinhas que faltam aparecem com um ponto de interrogação.')+'</p>'+
+      '<div class="split gap"><span class="muted small-t">'+(full?"Álbum completo!":m.mirror?"":onDesk?"Está na mesa":"Está na gaveta")+'</span>'+mv+'</div>'+
+      '<p class="muted small-t gap">'+(full?'Álbum completo! Parabéns! As repetidas ficam na aba Repetidas.':got.length?'Toque em uma figurinha para virar e ver os detalhes.':m.mirror?'As figurinhas chegam quando '+esc(m.mirror_child||"a criança")+' abre os dela. As figurinhas que faltam aparecem com um ponto de interrogação.':'Feche as folhas do dia para ganhar o primeiro figurinha. As figurinhas que faltam aparecem com um ponto de interrogação.')+'</p>'+
       '<div class="gap">'+FC.albumHtml(id,got)+'</div></section>';
   }
   var tabs='<div class="album-tabs" role="tablist">'+
-    [["mesa","Mesa ("+d.length+")"],["gaveta","Gaveta ("+(g.length+fu.length)+")"],["repetidas","Repetidas ("+total+")"]].map(function(t){
+    [["mesa",m.mirror?"Álbuns ("+d.length+")":"Mesa ("+d.length+")"],["gaveta",m.mirror?"Completos ("+fu.length+")":"Gaveta ("+(g.length+fu.length)+")"],["repetidas","Repetidas ("+total+")"]].map(function(t){
       return '<button type="button" class="chip-btn'+(sub===t[0]?" on":"")+'" role="tab" aria-selected="'+(sub===t[0])+'" data-albsub="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>';
   var body;
   if(sub==="mesa"){
-    body=(d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">A mesa está vazia. Coloque um álbum da gaveta aqui.</p>')+
-      '<p class="muted small-t gap">A mesa cabe '+lim+' álbum'+(lim>1?'s':'')+'. É dela que saem os seus pacotinhos.'+(d.length<lim&&g.length?' Tem lugar! Escolha um álbum na gaveta.':'')+'</p>';
+    body=m.mirror?
+      (d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">Todos os seus álbuns estão completos!</p>')+
+      '<p class="muted small-t gap">Cada figurinha que '+esc(m.mirror_child||"a criança")+' abre vale uma figurinha para você, do mesmo álbum. As repetidas de vocês dois podem ser trocadas na aba Trocas.</p>':
+      (d.length?'<div class="cover-grid">'+d.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">A mesa está vazia. Coloque um álbum da gaveta aqui.</p>')+
+      '<p class="muted small-t gap">A mesa cabe '+lim+' álbum'+(lim>1?'s':'')+'. É dela que saem as suas figurinhas.'+(d.length<lim&&g.length?' Tem lugar! Escolha um álbum na gaveta.':'')+'</p>';
   }else if(sub==="gaveta"){
-    body=(g.length?'<div class="cover-grid">'+g.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':'<p class="muted small-t">Nenhum álbum na gaveta.</p>')+
+    body=(g.length?'<div class="cover-grid">'+g.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':m.mirror?(fu.length?'':'<p class="muted small-t">Nenhum álbum completo ainda.</p>'):'<p class="muted small-t">Nenhum álbum na gaveta.</p>')+
       (fu.length?'<div class="eyebrow gap">Completos ('+fu.length+')</div><div class="cover-grid">'+fu.map(function(x){return coverCard("data-album",x,gotOf(m,x).length+" de "+FC.ALBUM_SIZE)}).join("")+'</div>':"");
   }else if(!S.repOpen){
     var withDup=ids.filter(function(x){return by[x]});
     body=withDup.length?'<p class="muted small-t">Toque no álbum para ver as repetidas e trocar com um amigo.</p><div class="cover-grid gap">'+withDup.map(function(x){var n=spareOf(by[x]);return coverCard("data-rep",x,n+(n>1?" repetidas":" repetida"))}).join("")+'</div>':
-      '<p class="muted small-t">Você ainda não tem repetidas. Quando um pacotinho trouxer uma figurinha que você já tem, ela aparece aqui, pronta para trocar.</p>';
+      '<p class="muted small-t">Você ainda não tem repetidas. Quando você abrir uma figurinha que já tem, ela aparece aqui, pronta para trocar.</p>';
   }else{
     var rid=S.repOpen,list=by[rid],n=spareOf(list);
     body='<div class="pagehead"><button type="button" class="link crumb" data-repback>'+FC.icon("back")+'Repetidas</button></div>'+
-      '<div class="album-head">'+FC.themeCapa(rid)+'<div class="grow"><b>'+esc(FC.theme(rid).name)+'</b><div class="muted small-t">'+n+(n>1?' repetidas':' repetida')+' neste álbum</div></div></div>'+
-      '<div class="album gap">'+list.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>'+
-      '<div class="gap"><button type="button" class="btn reward" data-trocar>'+FC.icon("swap")+' Trocar</button></div>';
+      '<div class="album-head">'+FC.themeCapa(rid)+'<div class="grow"><b>'+esc(FC.theme(rid).name)+'</b><div class="muted small-t">'+n+(n>1?' repetidas':' repetida')+' neste álbum</div>'+
+        '<div class="gap"><button type="button" class="btn reward small" data-trocar>'+FC.icon("swap")+' Trocar</button></div></div></div>'+
+      '<div class="album gap">'+list.map(function(x){return stk(x.theme,x.slot,x.spare)}).join("")+'</div>';
   }
   return head+'<section class="panel" id="albumBox">'+tabs+body+'</section>';
 }
@@ -638,7 +758,7 @@ function startTrade(){
   var b=$('.navtop [data-tab="trocas"]');if(b)b.click();
   trFlow();
 }
-/* Atualiza na tela, na hora, o aviso de pacotinhos (Início) e o álbum (Álbum) com os dados atuais de S.me. */
+/* Atualiza na tela, na hora, o aviso de figurinhas (Início) e o álbum (Álbum) com os dados atuais de S.me. */
 function refreshPacks(){
   var m=S.me;if(!m)return;
   $$(".packbox").forEach(function(el){
@@ -662,24 +782,35 @@ function bindAlbum(){
   $$("[data-trocar]",pane).forEach(function(b){b.onclick=startTrade});
   $$("[data-move]",pane).forEach(function(b){b.onclick=function(){moveAlbum(b.getAttribute("data-move"),b.getAttribute("data-to"))}});
 }
-/* Ganhou pacotinho: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
+/* Ganhou figurinha: com mais de um álbum disponível, a criança escolhe de qual quer a figurinha. */
 function openPackFlow(){
   var m=S.me;if(!(m.pending_packs>0))return;
+  if(m.mirror){   // álbum do responsável: a figurinha já tem álbum, então não há mesa nem gaveta
+    var mo=mirrorOpen(m),by=m.pending_by_theme||{};
+    if(!mo.length){FC.toast("Suas figurinhas são de álbuns que já estão completos.");return}
+    if(mo.length===1)return openPack(mo[0]);
+    var mv=FC.overlay('<h2>Escolha a figurinha!</h2><p class="muted">Cada figurinha é uma surpresa, do mesmo álbum que '+esc(m.mirror_child||"a criança")+' abriu.</p>'+
+      '<div class="pack-choices">'+mo.map(function(id){
+        return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(FC.theme(id).name)+'</b><small>'+by[id]+' figurinha'+(by[id]>1?'s':'')+'</small></button>';
+      }).join("")+'</div>',{button:"Agora não"});
+    $$(".pack-choice",mv.el).forEach(function(b){b.onclick=function(){mv.close();openPack(b.getAttribute("data-t"))}});
+    return;
+  }
   var open=deskOf(m);
-  if(!isVip()&&m.free_album){   // plano Grátis: o pacotinho abre só no álbum principal
+  if(!isVip()&&m.free_album){   // plano Grátis: a figurinha abre só no álbum principal
     open=open.filter(function(x){return x===m.free_album});
-    if(!open.length){FC.toast("No plano Grátis os pacotinhos abrem no álbum "+FC.theme(m.free_album).name+". Coloque-o na mesa.");var at=$$('[data-tab="album"]')[0];if(at)at.click();return}
+    if(!open.length){FC.toast("No plano Grátis as figurinhas abrem no álbum "+FC.theme(m.free_album).name+". Coloque-o na mesa.");var at=$$('[data-tab="album"]')[0];if(at)at.click();return}
   }
   if(!open.length){
     if(drawerOf(m).length){   // mesa vazia: leva a criança para arrumar a mesa
       var tab=$$('[data-tab="album"]')[0];
       if(tab)tab.click();
-      FC.toast("Coloque um álbum na mesa para abrir o pacotinho.");return;
+      FC.toast("Coloque um álbum na mesa para abrir a figurinha.");return;
     }
     FC.toast("Seus álbuns já estão completos!");return;
   }
   if(open.length===1)return openPack(open[0]);
-  var ov=FC.overlay('<h2>Escolha o seu pacotinho!</h2><p class="muted">Cada pacotinho tem uma figurinha surpresa. De qual álbum da mesa você quer?</p>'+
+  var ov=FC.overlay('<h2>Escolha a sua figurinha!</h2><p class="muted">Cada figurinha é uma surpresa. De qual álbum da mesa você quer?</p>'+
     '<div class="pack-choices">'+open.map(function(id){
       var th=FC.theme(id),n=gotOf(m,id).length;
       return '<button class="pack-choice" data-t="'+id+'"><span class="pc-art">'+FC.themePack(id)+'</span><b>'+esc(th.name)+'</b><small>'+n+' de '+FC.ALBUM_SIZE+'</small></button>';
@@ -693,6 +824,7 @@ async function openPack(theme){
   catch(e){S.opening=false;FC.toast(FC.err(e),true);try{await loadHome()}catch(x){}return}
   S.opening=false;
   m.pending_packs=res.pending;
+  if(m.mirror&&m.pending_by_theme&&m.pending_by_theme[res.theme])m.pending_by_theme[res.theme]--;
   track("pacote_aberto",{data:{album:res.theme,raridade:res.tier,repetida:!!res.repeated}});
   if(res.desk)m.desk_themes=res.desk;if(res.albums_done!=null)m.albums_done=res.albums_done;
   m.stickers=(m.stickers||[]).concat([{theme:res.theme,slot:res.slot,end:res.period_end}]);
@@ -751,7 +883,7 @@ function showWelcome(){
         var cells="";res.stickers.filter(function(x){return x.theme===id}).sort(function(a,b){return a.slot-b.slot}).forEach(function(x){cells+=FC.stickerHtml(id,x.slot,{noflip:true})});
         return '<h3 class="gap">'+esc(FC.theme(id).name)+'</h3><div class="album welcome-grid" style="max-height:none;overflow:visible">'+cells+'</div><p class="muted small-t">Você já tem <b>'+gotOf(S.me,id).length+' de '+FC.ALBUM_SIZE+'</b> neste álbum.</p>';
       }).join("");
-      card.innerHTML='<h2>Suas '+n+' figurinhas!</h2>'+blocos+'<p class="muted gap">Para ganhar mais, feche as folhas do dia: cada carimbo vale um pacotinho!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
+      card.innerHTML='<h2>Suas '+n+' figurinhas!</h2>'+blocos+'<p class="muted gap">Para ganhar mais, feche as folhas do dia: cada carimbo vale uma figurinha!</p><div class="actions ov-actions"><button class="btn reward" id="wEnd">Começar</button></div>';
       card.querySelector("#wEnd").onclick=ov.close;FC.confetti({gold:true,n:70});return;
     }
     var st=res.stickers[i],th=FC.theme(st.theme),tier=st.tier||"comum";
@@ -774,9 +906,9 @@ function showWelcome(){
 function completedMsg(m,id){
   var th=FC.theme(id),all=themesOf(m).every(function(x){return isFull(m,x)});
   return '<p class="tier-msg">🎉 Você completou o álbum '+esc(th.name)+'! Ele saiu da mesa e foi para os completos.'+
-    (all?' Você completou TODOS os seus álbuns! Peça aos seus pais para liberarem um álbum novo.':drawerOf(m).length?' Na aba Álbum, escolha outro álbum da gaveta para colocar na mesa.':'')+'</p>';
+    (m.mirror?'':all?' Você completou TODOS os seus álbuns! Peça aos seus pais para liberarem um álbum novo.':drawerOf(m).length?' Na aba Álbum, escolha outro álbum da gaveta para colocar na mesa.':'')+'</p>';
 }
-/* Figurinha nova: aviso no meio da tela, com o pacotinho abrindo e a figurinha aparecendo. */
+/* Figurinha nova: aviso no meio da tela, com o envelope abrindo e a figurinha aparecendo. */
 function showAward(aw){
   var m=S.me;
   var th=FC.theme(aw.theme),n=aw.count||gotOf(m,aw.theme).length,tier=aw.tier||FC.tierOf(aw.theme,aw.slot);
@@ -784,7 +916,7 @@ function showAward(aw){
   var titulo=tier==="ultra"?(rep_?"ULTRARRARA repetida!":"Figurinha ULTRARRARA!"):tier==="rara"?(rep_?"Rara repetida!":"Figurinha RARA!"):(rep_?"Figurinha repetida":"Figurinha nova!");
   var linha=tier==="comum"?"":'<p class="tier-msg">'+(tier==="ultra"?"Uma das mais difíceis do álbum inteiro!":"Uma figurinha difícil de conseguir!")+'</p>';
   var ov=FC.overlay('<div class="pack-reveal" id="packReveal"><div class="pack-closed">'+FC.themePack(th.id)+'</div><div class="pack-card">'+FC.stickerHtml(th.id,aw.slot,{big:true})+'</div></div>'+
-    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(!rep_&&n>=FC.ALBUM_SIZE?completedMsg(m,aw.theme):'')+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' pacotinho'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
+    '<h2 class="'+(tier==="comum"?"":"tier-title tier-"+tier)+'">'+titulo+'</h2>'+linha+'<p class="muted">Você já tem <b>'+n+' de '+FC.ALBUM_SIZE+'</b> no álbum '+esc(th.name)+'.</p>'+(!rep_&&n>=FC.ALBUM_SIZE?completedMsg(m,aw.theme):'')+(rep_?'<p class="tier-msg">Você já tinha esta! Ela foi para as suas repetidas, na aba Trocas, e dá para trocar com um amigo.</p>':'')+(m.pending_packs>0?'<p class="muted small-t">Você ainda tem '+m.pending_packs+' figurinha'+(m.pending_packs>1?'s':'')+' para abrir.</p>':''),{button:rep_?"Guardar nas repetidas":"Colar no álbum",cls:tier==="comum"?"":"tier-"+tier,onClose:function(){if(!cur&&S.me===m&&document.querySelector('.shell[data-scope="aluno"]'))home()}});
   /* O botão (Colar no álbum / Guardar nas repetidas) só aparece quando a figurinha termina de aparecer.
      Até lá, nem o clique fora da janela nem o Esc fecham a janela. */
   var acts=ov.el.querySelector(".ov-actions"),ready=false;
@@ -802,6 +934,50 @@ function showAward(aw){
     setTimeout(function(){FC.sfx[tier==="ultra"?"ultra":"rare"]();FC.confetti({gold:true,n:tier==="ultra"?90:64});
       if(tier==="ultra")setTimeout(function(){FC.confetti({gold:true,n:70})},700)},350);
   },800);
+}
+/* ---------- vídeo de boas-vindas ----------
+   Abre uma vez por aluno e aparelho, antes de qualquer outra coisa (até antes do pacote de boas-vindas). A criança assiste ou pula;
+   o botão "?" do topo abre de novo quando ela quiser. "Já viu" fica no localStorage; se o aparelho não deixar guardar, só vale até fechar o app. */
+var OB={src:"video/boas-vindas.mp4",poster:"video/boas-vindas.jpg",vtt:"video/boas-vindas.vtt"};
+function obKey(){return "fc_onb_"+S.code}
+function obSeen(){try{return localStorage.getItem(obKey())==="1"}catch(e){return false}}
+function obMark(){try{localStorage.setItem(obKey(),"1")}catch(e){}}
+function firstSteps(){
+  var then=function(){if(S.me&&S.me.welcome_pending)showWelcome()};
+  if(!S.obShown&&!obSeen()){S.obShown=true;showOnboarding({first:true,then:then});return}
+  then();
+}
+function showOnboarding(o){
+  o=o||{};
+  var v=null,played=false,ended=false,failed=false;
+  var ov=FC.overlay('<h2>Conheça a Folhinha</h2>'+
+    '<div class="onb-video"><video id="obVid" playsinline preload="metadata" poster="'+OB.poster+'"><source src="'+OB.src+'" type="video/mp4"><track kind="captions" srclang="pt-BR" label="Português" src="'+OB.vtt+'"></video>'+
+    '<button type="button" class="onb-play" id="obPlay" aria-label="Assistir o vídeo">'+FC.icon("play")+'</button></div>'+
+    '<p class="muted small-t" id="obMsg">Um vídeo de 35 segundos mostra como tudo funciona.</p>',
+    {button:o.first?"Pular":"Fechar",cls:"onb",onClose:function(){
+      try{if(v)v.pause()}catch(e){}
+      obMark();
+      track("onboarding",{data:{acao:ended?"assistiu":played?"parou":"pulou",primeira:!!o.first}});
+      if(o.then)o.then();
+    }});
+  v=ov.el.querySelector("#obVid");
+  var play=ov.el.querySelector("#obPlay"),msg=ov.el.querySelector("#obMsg"),close=ov.el.querySelector("#ovClose"),acts=ov.el.querySelector(".ov-actions");
+  var again=document.createElement("button");again.type="button";again.className="btn ghost";again.textContent="Ver de novo";again.hidden=true;acts.insertBefore(again,close);
+  function start(){
+    if(failed)return;
+    played=true;ended=false;play.hidden=true;again.hidden=true;v.controls=true;msg.textContent="";
+    var p=v.play();if(p&&p.catch)p.catch(function(){play.hidden=false;v.controls=false;played=false});
+  }
+  /* sem som no app (botão do alto-falante): a legenda já vem ligada */
+  try{if(!FC.sfx.enabled()&&v.textTracks&&v.textTracks[0])v.textTracks[0].mode="showing"}catch(e){}
+  play.onclick=start;
+  again.onclick=function(){v.currentTime=0;start()};
+  v.onended=function(){ended=true;v.controls=false;again.hidden=false;msg.textContent="Quer ver de novo? Toque em Ver de novo.";close.textContent=o.first?"Começar":"Fechar"};
+  v.querySelector("source").addEventListener("error",function(){
+    failed=true;play.hidden=true;msg.textContent="Não deu para carregar o vídeo agora. Você pode ver depois no botão ? do topo.";close.textContent="Continuar";
+    track("onboarding",{data:{acao:"erro"}});
+  });
+  if(o.auto)start();
 }
 async function logout(){
   track("sair");await flush();
@@ -825,10 +1001,10 @@ async function buildSheet(){
     items=plan.repeat.map(FC.plainItem);
     intro="Esta é a mesma folha da última vez. Agora dá para acertar tudo! "+intro;
   }else if(plan&&plan.mode==="reforco"&&plan.weak&&plan.weak.length){
-    items=ordena(FC.makeItems(m.level_idx,plan.weak,{teto:teto,sheetNo:m.done_today}));
+    items=ordena(FC.makeItems(m.level_idx,plan.weak,{teto:teto,sheetNo:m.done_today,folhas:m.quota}));
     var w=plan.weak.length;
     intro="Esta folha traz "+w+" conta"+(w>1?"s":"")+" que você errou antes, para treinar. "+intro;
-  }else{items=ordena(FC.makeItems(m.level_idx,null,{teto:teto,sheetNo:m.done_today}))}
+  }else{items=ordena(FC.makeItems(m.level_idx,null,{teto:teto,sheetNo:m.done_today,folhas:m.quota}))}
   var Lv=FC.LEVELS[m.level_idx];if(Lv&&Lv.intro)intro=Lv.intro+" "+intro;
   if(teto)intro="Você já concluiu tudo o que dá para avançar por enquanto. Hoje é folha de revisão: contas dos níveis que você já fez. "+intro;
   /* Se o aluno já tinha uma folha aberta hoje (saiu e voltou, ou outro aparelho), o banco devolve a mesma. */
@@ -1005,7 +1181,7 @@ function showQ(i){
     next.textContent=corr?(pos>=pend.length-1||pos<0?"Conferir correções":"Próxima"):(i>=n-1?"Revisar":"Próxima");
   }
   updateMapa();saveDraftSoon();window.scrollTo(0,0);
-  if(i<n){startDwell(i);setTimeout(function(){if(cur&&cur.q===i&&!cur.pauseAt)focusItem(i)},30)}
+  if(i<n){startDwell(i);if(!cur.pauseAt)focusItem(i);setTimeout(function(){if(cur&&cur.q===i&&!cur.pauseAt&&document.activeElement!==$("#in"+i))focusItem(i)},30)}   // foco já na conta, no mesmo toque (o teclado abre sem o aluno clicar)
 }
 function stepNext(){
   if(!cur||cur.modo!=="uma")return;
@@ -1090,7 +1266,7 @@ function renderSheet(){
 function focusItem(i){
   var it=cur&&cur.items[i];if(!it)return;
   var el=(it.extra&&it.extra.opts)?$("#r"+i+" .opt"):$("#in"+i);
-  if(el&&el.focus)el.focus();
+  if(el&&el.focus){try{el.focus({preventScroll:true})}catch(e){el.focus()}}
 }
 function setMsg(t,bad){var m=$("#shMsg");m.textContent=t;m.classList.toggle("bad",!!bad)}
 function submit(){
@@ -1169,27 +1345,27 @@ async function send(payload,score){
   else if(res.day_closed&&res.stamp)note="Dia fechado com carimbo e perseverança! Você acertou "+res.day_ok+" de "+res.day_total+" contas de primeira ("+res.day_pct+"%), com tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha.";
   else if(res.day_closed){
     var acertos="Hoje você acertou "+res.day_pct+"% de primeira (o carimbo pede "+npct+"% ou mais)",tempo="o tempo médio de "+FC.fmtTime(res.day_avg_secs)+" por folha passou da meta de "+FC.fmtTime(L.target);
-    note=(res.why==="tempo"?"Você acertou "+res.day_pct+"% de primeira, mas "+tempo+".":res.why==="acertos_tempo"?acertos+", e "+tempo+".":acertos+".")+" Sem carimbo hoje, mas você fechou o dia e ganhou o pacotinho da perseverança. Amanhã tem outra chance. As contas que você errou voltam nas próximas folhas.";
-  }else note="Acertos de primeira hoje: "+res.day_ok+" de "+res.day_total+" ("+res.day_pct+"%). O carimbo e os pacotinhos do dia saem ao fechar a última folha. O carimbo pede "+rules+"."+(fixes>0?" As contas que você errou voltam nas próximas folhas.":"");
+    note=(res.why==="tempo"?"Você acertou "+res.day_pct+"% de primeira, mas "+tempo+".":res.why==="acertos_tempo"?acertos+", e "+tempo+".":acertos+".")+" Sem carimbo hoje, mas você fechou o dia e ganhou a figurinha da perseverança. Amanhã tem outra chance. As contas que você errou voltam nas próximas folhas.";
+  }else note="Acertos de primeira hoje: "+res.day_ok+" de "+res.day_total+" ("+res.day_pct+"%). O carimbo e as figurinhas do dia saem ao fechar a última folha. O carimbo pede "+rules+"."+(fixes>0?" As contas que você errou voltam nas próximas folhas.":"");
   var newL=FC.LEVELS[res.level_idx];
   S.me.level_idx=res.level_idx;S.me.stamps=res.stamps;S.me.done_today++;S.me.today_ok=res.day_ok;S.me.today_total=res.day_total;
   S.me.offer_back=res.offer_back;S.me.streak=res.streak;S.me.best_streak=res.best_streak;S.me.next_marco=res.next_marco;S.me.pending_packs=res.pending_packs;
   var pk=res.packs||{},got=(pk.carimbo||0)+(pk.perseveranca||0)+(pk.marco||0);
   var left=S.me.quota-S.me.done_today,need=res.stamps_needed,shown=res.shown_stamps,row=FC.stampSet(need,shown,(res.stamp&&!res.advanced)?shown-(res.gained||1):null);
+  var showSeq=res.day_closed&&!res.free_day&&res.streak>0;   // a sequência só anda ao fechar um dia de estudo
   var seal=res.day_closed?(res.tier==="salto"?"Salto!":res.tier==="ouro"?"Ouro!":res.stamp?"Carimbo":"Sem carimbo"):"Folha "+res.day_done+" de "+res.day_quota;
   FC.nav.at("/resultado",true);   // a folha vira o resultado: voltar leva para a tela inicial, não para a folha entregue
   FC.render('<div class="res panel">'+
     '<div class="score"><div class="big">'+score+'/10</div><div class="seal'+(res.day_closed&&res.stamp?"":" no")+'">'+seal+'</div>'+
     '<div class="grow"><h2>'+(res.tier==="salto"?"Salto de nível":res.tier==="ouro"?"Dia de ouro":res.stamp?"Muito bem":"Folha entregue")+', '+esc(S.me.name)+'</h2><div class="muted">'+note+'</div></div></div>'+
     '<div class="kv"><div><b>'+FC.fmtTime(secs)+'</b><span>seu tempo (meta '+FC.fmtTime(L.target)+')</span></div>'+
-    '<div><b>'+(res.day_closed?"+"+got:"–")+'</b><span>'+(res.day_closed?"pacotinho"+(got===1?"":"s")+" ganho"+(got===1?"":"s")+" hoje":"pacotinhos saem ao fechar o dia")+'</span></div>'+
-    '<div><b>'+res.streak+'</b><span>dia'+(res.streak===1?"":"s")+' seguido'+(res.streak===1?"":"s")+' de estudo</span></div></div>'+
+    '<div><b>'+(res.day_closed?"+"+got:"–")+'</b><span>'+(res.day_closed?"figurinha"+(got===1?"":"s")+" ganha"+(got===1?"":"s")+" hoje":"figurinhas saem ao fechar o dia")+'</span></div>'+
+    '</div>'+
     '<div class="stamprow"><span>'+(res.advanced?"Nível "+L.id+" concluído":"Carimbos do nível "+L.id)+'</span><span class="row-gap">'+row+'</span><span>'+shown+' de '+need+'</span></div>'+
     (res.teto?'<div class="panel offer"><b>Você completou os carimbos deste nível!</b><div class="muted small-t">Peça ao seu responsável para liberar os próximos níveis. Enquanto isso, continue treinando e ganhando figurinhas.</div></div>':'')+
     (res.advanced?'<div class="levelup" id="levelup"><div class="lu-badge">'+newL.id+'</div><div><div class="lu-title">'+(res.tier==="salto"?"Você pulou direto de nível!":"Você subiu de nível!")+'</div><div class="muted">Agora você está no nível '+newL.id+' · '+esc(newL.name)+'. As contas que você ainda errou vêm junto para as próximas folhas.</div></div></div>':'')+
-    '<div class="trailbox">'+FC.streakHtml(res)+'</div>'+
     '<p class="muted">'+(left>0?"Faltam "+left+" folha"+(left>1?"s":"")+" para fechar o dia.":"Dia fechado. Até o próximo dia de estudo!")+'</p>'+
-    '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
+    '<div class="actions">'+(left>0?'<button class="btn" id="resNext">Próxima folha</button>':showSeq?'<button class="btn" id="resSeq">Continuar</button>':'')+'<button class="btn ghost" id="resHome">Ir ao início</button></div></div>');
   if(got>0){
     var why=[];
     if(pk.carimbo)why.push("1 pelo carimbo do dia");
@@ -1197,7 +1373,7 @@ async function send(payload,score){
     if(pk.marco)why.push(pk.marco+" pelos "+res.marco_streak+" dias seguidos");
     setTimeout(function(){
       FC.sfx.pack();FC.confetti(pk.marco?{gold:true,n:70}:undefined);
-      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" pacotinhos!":"Você ganhou um pacotinho!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Seus pacotinhos estão esperando na tela inicial. Toque em <b>Abrir pacotinho</b> quando quiser'+(deskOf(S.me).length>1?' e escolha de qual álbum da mesa quer a figurinha':'')+'.</p>',
+      FC.overlay('<div class="pack-reveal opened"><div class="goalicon open" style="width:120px;margin:0 auto">'+FC.packSvg()+'</div></div><h2>'+(got>1?"Você ganhou "+got+" figurinhas!":"Você ganhou uma figurinha!")+'</h2><p class="muted">'+why.join(", ")+'.</p><p class="muted small-t">Suas figurinhas estão esperando na tela inicial. Toque em <b>Abrir figurinha</b> quando quiser'+(deskOf(S.me).length>1?' e escolha de qual álbum da mesa quer a figurinha':'')+'.</p>',
         {button:"Entendi"});
     },res.advanced?3600:2300);
   }
@@ -1205,6 +1381,7 @@ async function send(payload,score){
   setTimeout(trAnnounce,2500);   // entre uma folha e outra a criança pode receber o aviso de troca
   if(res.advanced)setTimeout(function(){if($("#levelup")){FC.sfx.levelUp();FC.confetti()}},1000);
   if(left>0){$("#resNext").onclick=startSheet;prepare()}
+  if(showSeq)$("#resSeq").onclick=function(){streakScreen(res,pk)};
   $("#resHome").onclick=async function(){try{await goHome()}catch(e){fail(e)}};
 }
 })();

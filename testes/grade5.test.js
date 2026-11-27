@@ -35,13 +35,14 @@ ok(FC.G5.every(e=>FC.LEVELS[163+e.nivel].espec&&FC.LEVELS[163+e.nivel].espec.tip
 // nível 1
 const ext=new Map();for(let n=1;n<=999999;n++){const e=FC.extenso4(n);if(ext.has(e))falha("extenso repetido: "+n+" e "+ext.get(e));ext.set(e,n);if(/^um mil/.test(e))falha("um mil em "+n)}
 ok(FC.extenso4(234567)==="duzentos e trinta e quatro mil, quinhentos e sessenta e sete"&&FC.extenso4(100000)==="cem mil"&&FC.extenso4(200005)==="duzentos mil e cinco"&&FC.extenso4(101000)==="cento e um mil"&&FC.extenso4(999999)==="novecentos e noventa e nove mil, novecentos e noventa e nove","exemplos do extenso");
-let zeros=0;
-gera(1,it=>{const i=it._info;ok(i.n>=100000&&i.n<=999999,"n1 fora de 100 000 a 999 999");if(/0/.test(String(i.n)))zeros++;
+let zeros=0,velhas=0;
+gera(1,it=>{const i=it._info;if(i.k>=5)return;velhas++;   /* os desafios novos (k 5 a 8) têm teste próprio (aberturas.test.js) */
+  ok(i.n>=100000&&i.n<=999999,"n1 fora de 100 000 a 999 999");if(/0/.test(String(i.n)))zeros++;
   if(i.k===1){const e=it.pre.replace(/^Escreva em algarismos: /,"").replace(/\.$/,"");ok(ext.get(e)===it.a&&it.a===i.n,"n1 ida e volta "+it.pre)}
   else if(i.k===2){ok(num(it.pre.match(/número ([\d ]+)\?/)[1])===i.n&&opt(it)===FC.extenso4(i.n),"n1 extenso certo");ok(new Set(it.extra.opts).size===3||new Set(it.extra.opts).size===it.extra.opts.length,"n1 opções repetidas")}
   else if(i.k===3){const m=it.pre.match(/^No número ([\d ]+), quanto vale o algarismo (\d)\?$/),n=num(m[1]),d=+m[2],s=String(n);ok(s.split(String(d)).length===2,"n1 algarismo repetido");ok(d*Math.pow(10,s.length-1-s.indexOf(String(d)))===it.a,"n1 valor "+it.pre)}
   else{const m=it.pre.match(/^Que algarismo está na casa (.*) de ([\d ]+)\?$/),casas=["das centenas de milhar","das dezenas de milhar","das unidades de milhar","das centenas","das dezenas","das unidades"];ok(+String(num(m[2]))[casas.indexOf(m[1])]===it.a,"n1 casa "+it.pre)}});
-ok(zeros/N>.15&&zeros/N<.6,"n1: zero em 15% a 60% dos números ("+(zeros/N).toFixed(2)+")");
+ok(zeros/velhas>.15&&zeros/velhas<.6,"n1: zero em 15% a 60% dos números ("+(zeros/velhas).toFixed(2)+")");
 // nível 2
 gera(2,it=>{const i=it._info,p=sem(it.pre);
   if(i.k===1||i.k===2){const o=it.extra.opts.map(num);ok(o.length===3&&new Set(o).size===3,"n2 opções");ok(num(opt(it))===(i.k===1?Math.max(...o):Math.min(...o)),"n2 maior/menor")}

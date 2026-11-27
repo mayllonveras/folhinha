@@ -47,16 +47,18 @@ FC.toast=function(msg,bad){
 FC.err=function(e){
   var m=(e&&(e.message||e.error_description))||String(e||"");
   var map=[["Invalid login credentials","E-mail ou senha incorretos."],
+    ["Email not confirmed","Confirme seu e-mail pelo link que enviamos antes de entrar."],
+    ["email_nao_confirmado","Confirme seu e-mail para cadastrar alunos."],
     ["User already registered","Este e-mail já tem cadastro. Entre com a senha."],
     ["sessao_invalida","Sessão expirada."],
     ["sem_folha_hoje","Hoje não é dia de folha para este aluno."],
-    ["min_folhas","O mínimo é de 5 folhas por dia."],
+    ["min_folhas","O mínimo é de 3 folhas por dia."],
     ["min_dias","O mínimo é de 3 dias de estudo por semana."],
     ["min_meta","A meta precisa ser de pelo menos 70% do máximo de pontos da semana."],
-    ["sem_pacote","Você não tem pacotinho para abrir agora."],
+    ["sem_pacote","Você não tem figurinha para abrir agora."],
     ["album_completo","Este álbum já está completo. Escolha outro."],
     ["album_invalido","Este álbum não está disponível para você."],
-    ["album_fora_da_mesa","Este álbum está na gaveta. Coloque-o na mesa para abrir o pacotinho."],
+    ["album_fora_da_mesa","Este álbum está na gaveta. Coloque-o na mesa para abrir a figurinha."],
     ["mesa_cheia","A mesa está cheia. Guarde um álbum na gaveta antes."],
     ["mesa_vazia","Escolha pelo menos um álbum para a mesa."],
     ["sem_album","Marque pelo menos um álbum para a criança."],
@@ -72,6 +74,7 @@ FC.err=function(e){
     ["amizade_invalida","Essa amizade não existe mais."],
     ["sem_repetida","Você não tem mais essa figurinha repetida."],
     ["amigo_ja_tem","Seu amigo já conseguiu essa figurinha."],
+    ["destino_fora_da_mesa","A figurinha só pode chegar em um álbum que está na mesa. Troque o álbum de destino ou mude a mesa."],
     ["amigo_sem_repetida","Seu amigo não tem mais essa repetida."],
     ["voce_ja_tem","Você já conseguiu essa figurinha."],
     ["pedido_repetido","Você já fez esse mesmo pedido de troca."],
@@ -96,11 +99,16 @@ FC.err=function(e){
     ["cupom_em_uso","Esse cupom já foi usado: dá para mudar validade, limite e observação, mas não o tipo nem o valor."],
     ["cupom_codigo_invalido","O código do cupom tem de 3 a 30 letras, números ou hífen, sem espaço."],
     ["plano_albuns","No plano Grátis a criança tem 1 álbum. Com o VIP, todos os álbuns ficam liberados."],
-    ["plano_album","No plano Grátis os pacotinhos abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
+    ["plano_album","No plano Grátis as figurinhas abrem só no álbum principal. Peça para seu responsável conhecer o VIP!"],
     ["plano_alunos","Você chegou ao limite de alunos do seu plano. No VIP, a família cadastra até 4 crianças."],
     ["amigo_sem_vip","Seu amigo está no plano Grátis: amigos e trocas são do VIP."],
     ["plano_vip","Isso faz parte do plano VIP. Peça para seu responsável conhecer o VIP!"],
+    ["amizade_do_responsavel","Essa amizade é do responsável: quem liga e desliga é ele, no painel dos pais."],
+    ["espelho_inexistente","Ligue primeiro a opção de ser amigo da criança."],
+    ["nome_invalido","Escreva um nome de 1 a 40 letras para a criança ver."],
     ["conta_nao_encontrada","Não existe conta com esse e-mail."],
+    ["admin_raiz","A conta principal não pode perder o acesso de administrador."],
+    ["nao_e_admin","Essa conta não é administradora."],
     ["dias_invalidos","Escolha de 1 a 3650 dias (ou deixe em branco para vitalício)."],
     ["alunos_invalidos","O limite de alunos vai de 1 a 200."],
     ["Password should be","A senha precisa ter pelo menos 8 caracteres."],
@@ -127,7 +135,7 @@ FC.fmtCode=function(c){
 FC.pauseCredit=function(o,now){return o.pauseAt?Math.max(0,now-o.pauseAt):0};
 FC.elapsedMs=function(o,now){return Math.max(0,now-o.t0-(o.pauseMs||0)-FC.pauseCredit(o,now))};
 /* Versão do app: igual ao nome do cache em sw.js (um teste confere). Vai junto com os eventos de uso. */
-FC.VERSAO="folhinha-v75";
+FC.VERSAO="folhinha-v119";
 FC.normCode=function(c){return String(c==null?"":c).replace(/[^A-Za-z0-9]/g,"").toLowerCase()};
 
 FC.copy=function(text,input,what){
@@ -193,10 +201,10 @@ function reviewLevel(levelIdx,teto){
   return Math.floor(Math.random()*levelIdx);
 }
 FC.reviewLevel=reviewLevel;
-/* levelIdx: nível atual; keep: contas de reforço (até 4); opts.teto: folha de revisão do teto. */
+/* levelIdx: nível atual; keep: contas de reforço (até 4); opts.teto: folha de revisão do teto; opts.semRevisao: as 10 contas são do nível (só a administração usa, para conferir o nível). */
 FC.makeItems=function(levelIdx,keep,opts){
   opts=opts||{};
-  var teto=!!opts.teto&&levelIdx>0,revN=teto?10:(levelIdx>0?2:0);
+  var teto=!!opts.teto&&levelIdx>0,revN=teto?10:(levelIdx>0&&!opts.semRevisao?2:0);
   var items=(keep||[]).slice(0,teto?4:10-revN-2).map(FC.plainItem),seen={},g=0,tries=0;
   items.forEach(function(p){seen[itemKey(p)]=1});
   var added=0;
@@ -271,7 +279,7 @@ FC.sfx={
     [1046.5,1318.5,1568,2093].forEach(function(f){tone(f,0.85,1.1,"sine",0.14)});tone(261.6,0.85,1.1,"sawtooth",0.06);
   },
   flip:function(){if(!FC.sfx.enabled())return;tone(420,0,0.09,"triangle",0.1);tone(760,0.07,0.12,"sine",0.09)},
-  pack:function(){   // rasgar o pacotinho e revelar
+  pack:function(){   // rasgar a figurinha e revelar
     if(!FC.sfx.enabled())return;
     tone(260,0,0.1,"sawtooth",0.08);tone(420,0.06,0.1,"sawtooth",0.07);tone(640,0.12,0.1,"sawtooth",0.06);
     [1318.5,1568,2093,2637].forEach(function(f,i){tone(f,0.5+i*0.08,0.3,"sine",0.15)});
@@ -409,6 +417,15 @@ FC.streakNow=function(s,today){
   if(ref===today&&s.last_streak_day===prev(ref))return s.streak;
   return 0;
 };
+/* Último dia de estudo que entrou na sequência (o dia em que está o último cheque da trilha).
+   A sequência que o banco devolve na tela inicial é a "viva": se hoje é dia de estudo e a cota ainda não fechou,
+   ela termina no dia de estudo anterior, e não hoje. m = {study_days,start_date,done_today,quota}. */
+FC.lastStreakDay=function(m,today){
+  function isStudy(d){return m.study_days.indexOf(FC.dow(d))>=0&&d>=m.start_date}
+  if(isStudy(today)&&(m.done_today||0)>=(m.quota||0)&&(m.quota||0)>0)return today;
+  for(var i=1;i<=14;i++){var x=FC.addDays(today,-i);if(x<m.start_date)break;if(isStudy(x))return x}
+  return today;
+};
 /* Perseverança: sequência de dias de estudo com a cota fechada e o caminho até o próximo marco.
    i = {streak,best_streak,next_marco}. */
 /* Carimbos do nível: uma fileira de bolas, uma por carimbo. */
@@ -423,8 +440,8 @@ FC.streakHtml=function(i,o){
   var pct=Math.max(0,Math.min(100,(st-base)/(nx.at-base)*100)),left=nx.at-st,span=nx.at-base,dots="";
   if(span<=14){var dn=Math.max(0,Math.min(span,st-base));for(var d=0;d<span;d++)dots+='<i class="'+(d<dn?"on":"")+(d===span-1?" goal":"")+'"></i>'}
   else dots='<div class="fill" style="width:'+pct.toFixed(1)+'%"></div>';
-  var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" pacotinhos extras.":
-    "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" pacotinhos extras.";
+  var msg=o.adult?"Próximo marco: "+nx.at+" dias seguidos, com "+nx.packs+" figurinhas extras.":
+    "Faltam <b>"+left+"</b> dia"+(left>1?"s":"")+" de estudo para ganhar "+nx.packs+" figurinhas extras.";
   return '<div class="trail"><div class="eyebrow">Perseverança</div>'+
     '<div class="big-pts">'+st+'<span> '+(st===1?"dia seguido":"dias seguidos")+'</span></div>'+
     '<div class="trail-line"><div class="'+(span<=14?"sdots":"track")+'" role="progressbar" aria-label="Caminho até o próximo marco de sequência" aria-valuemin="0" aria-valuemax="'+nx.at+'" aria-valuenow="'+st+'">'+dots+

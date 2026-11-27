@@ -12,9 +12,10 @@ var P={
   BLOCO_MIN:3,BLOCO_MAX:4,REPS_NOVO:3,REINSERCOES:4,APRENDENDO_MAX:8,
   CORRETAS_APRENDENDO:3,DIAS_APRENDENDO:2,SESSOES_BOAS:2,ACERTO_MIN:.8,
   REVISOES:[1,3,7,14,30],MADURO:21,
-  APARELHO_MIN_SESSOES:5,
+  APARELHO_MIN_SESSOES:0,         /* 0 = o aparelho não pesa na promoção: toda sessão conta, em qualquer aparelho (decisão de 24/11/2026; antes eram 5) */
   CHUTE_MS:500,CHUTE_FRAC:.5,CHUTE_MIN_TENT:8,
-  NIVELAMENTO_MAX:12,NIVELAMENTO_LENTO_MS:8000,NIVELAMENTO_POR_DIA:15
+  NIVELAMENTO_MAX:12,NIVELAMENTO_LENTO_MS:8000,NIVELAMENTO_POR_DIA:15,
+  T1_MIN:250                      /* abaixo disto o tempo até o primeiro toque é impossível (antecipou a resposta ou tocou antes da conta aparecer): não vale para promover */
 };
 var ORDEM=["soma","sub","mult","div"];
 var REQ={sub:"soma",mult:"soma",div:"mult"};
@@ -158,7 +159,8 @@ function iniciarSessao(st,o){
   var bloco=proximoBloco(st,pt);
   var vagas=Math.max(0,P.TETO_TENT-bloco.length*P.REPS_NOVO-P.REINSERCOES);
   var fila=[];
-  vencidas.slice(0,vagas).forEach(function(f){fila.push({id:f.id,tipo:"revisao"})});
+  /* quem entra é decidido pela prioridade acima; a ordem de apresentação é embaralhada, senão a criança adivinha a próxima conta (0+0, 0+1, 0+2…) */
+  embaralhar(vencidas.slice(0,vagas),rnd).forEach(function(f){fila.push({id:f.id,tipo:"revisao"})});
   bloco.forEach(function(f){fila.push({id:f.id,tipo:"novo",rep:0})});
   for(var r=1;r<P.REPS_NOVO;r++)embaralhar(bloco,rnd).forEach(function(f){fila.push({id:f.id,tipo:"novo",rep:r})});
   var aparelho=o.aparelho||"desconhecido";
@@ -171,12 +173,13 @@ function proximo(st,sess){
   var it=sess.fila.shift(),f=fato(st,it.id);
   return {id:it.id,tipo:it.tipo,rep:it.rep,dica:dicaPara(f)};
 }
-/* a: {id, tipo ('revisao'|'novo'|'reinsercao'), ok, t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
+/* a: {id, tipo ('revisao'|'novo'|'reinsercao'), ok, resp (número digitado; nulo = "não sei"), t1 (ms até o primeiro toque), total (ms até confirmar), dica ('none'|'before'|'after'|'demand'), contou (bool)} */
 function registrar(st,sess,a){
   var f=fato(st,a.id),dia=sess.dia,antes=f.s;
   if(f.s===0){f.s=1;f.due=dia}
-  var reg={ok:!!a.ok,t1:a.t1==null?null:a.t1,dica:a.dica||"none",contou:!!a.contou,aparelho:sess.aparelho};
-  (sess.log=sess.log||[]).push({fact:a.id,kind:a.tipo||"revisao",ok:reg.ok,t1:reg.t1,total:a.total!=null?a.total:null,hint:reg.dica,counted:reg.contou,stateBefore:antes});
+  var rapido=a.t1!=null&&a.t1<P.T1_MIN;
+  var reg={ok:!!a.ok,t1:a.t1==null||rapido?null:a.t1,rapido:rapido,dica:a.dica||"none",contou:!!a.contou,aparelho:sess.aparelho};
+  (sess.log=sess.log||[]).push({fact:a.id,kind:a.tipo||"revisao",ok:reg.ok,answer:a.resp==null?null:a.resp,t1:a.t1==null?null:a.t1,total:a.total!=null?a.total:null,hint:reg.dica,counted:reg.contou,stateBefore:antes});
   f.recent.push(reg);if(f.recent.length>10)f.recent.shift();
   var lista=sess.att[a.id]||(sess.att[a.id]=[],sess.ordemAtt.push(a.id),sess.att[a.id]);
   lista.push(reg);
@@ -196,7 +199,7 @@ function concluida(sess){return !sess.fila.length||sess.n>=P.TETO_TENT||sess.ms>
 function ehChute(sess){
   if(sess.n<P.CHUTE_MIN_TENT)return false;
   var ruins=0,total=0;
-  sess.ordemAtt.forEach(function(id){sess.att[id].forEach(function(a){total++;if(!a.ok&&a.t1!=null&&a.t1<P.CHUTE_MS)ruins++})});
+  sess.ordemAtt.forEach(function(id){sess.att[id].forEach(function(a){total++;if(!a.ok&&(a.rapido||(a.t1!=null&&a.t1<P.CHUTE_MS)))ruins++})});
   return ruins/total>=P.CHUTE_FRAC;
 }
 function precisaRevisar(f,dia,s){
@@ -213,6 +216,8 @@ function finalizarSessao(st,sess){
     var limpa=atts.every(function(a){return !a.contou&&a.dica!=="before"&&!(f.s>=4&&a.dica==="demand")});
     var tempos=atts.filter(function(a){return a.ok&&a.t1!=null}).map(function(a){return a.t1});
     var med=mediana(tempos),noTempo=med!=null&&med<=sess.meta;
+    /* acertou, mas só com tempos impossíveis (abaixo de T1_MIN): a sessão não prova nem desmente o fato, não conta e não zera */
+    var semTempo=!errou&&!tempos.length&&atts.some(function(a){return a.ok&&a.rapido});
     var acertoRecente=f.recent.length?f.recent.filter(function(r){return r.ok}).length/f.recent.length:0;
     if(errou){
       if(f.s>=4){f.s--;f.boas=0;f.rev=f.s===4?Math.min(f.rev,2):0;rebaixados.push(id);if(f.s<=3&&f.atingiu)f.stub=true}
@@ -220,8 +225,8 @@ function finalizarSessao(st,sess){
       precisaRevisar(f,dia,f.s);
     }else if(f.s===3){
       /* "duas sessões boas seguidas": uma sessão sem erro mas lenta, com dica ou contando zera a sequência.
-         Sessão em aparelho novo não conta nem zera. */
-      if(!sess.aparelhoNovo){
+         O aparelho não pesa: toda sessão conta (APARELHO_MIN_SESSOES = 0). */
+      if(!sess.aparelhoNovo&&!semTempo){
         if(limpa&&noTempo&&acertoRecente>=P.ACERTO_MIN){
           f.boas++;
           if(f.boas>=P.SESSOES_BOAS){f.s=4;f.rev=0;f.stub=false;promovidos.push(id)}
@@ -229,7 +234,8 @@ function finalizarSessao(st,sess){
       }
       precisaRevisar(f,dia,f.s);
     }else if(f.s===4){
-      if(!sess.aparelhoNovo){
+      if(semTempo)f.due=dia+1;
+      else if(!sess.aparelhoNovo){
         if(limpa&&noTempo){
           f.rev++;
           if(f.rev>=P.REVISOES.length){f.s=5;promovidos.push(id)}
@@ -289,10 +295,15 @@ function classificar(t1,ok,meta){
   if(!ok||t1==null||t1>P.NIVELAMENTO_LENTO_MS)return "falhou";
   return t1<=meta?"rapido":"lento";
 }
-function nivelamentoAplicar(st,nv,dia){
-  var c=catalogo(),H=nv.lo,j=0,ids=[];
+function nivelamentoAplicar(st,nv,dia,rnd){
+  var c=catalogo(),H=nv.lo,j=0,ids=[];rnd=rnd||Math.random;
   if(H>=0){
-    c[nv.op].facts.filter(function(f){return f.fam<=H&&estado(st,f.id)===0}).forEach(function(f){
+    /* Revisões espalhadas (NIVELAMENTO_POR_DIA por dia): primeiro as famílias lentas, depois as mais difíceis; dentro de cada família, em ordem embaralhada.
+       Na ordem do catálogo a criança revisava 0+0, 0+1, 0+2… por dias seguidos, o que é fácil demais e previsível. */
+    var lenta=function(f){return nv.resultados[f.fam]==="lento"?1:0};
+    var alvos=c[nv.op].facts.filter(function(f){return f.fam<=H&&estado(st,f.id)===0});
+    alvos=embaralhar(alvos,rnd).sort(function(a,b){return lenta(b)-lenta(a)||b.fam-a.fam});
+    alvos.forEach(function(f){
       var alvo=nv.resultados[f.fam]==="lento"?2:3,x=fato(st,f.id);
       x.s=alvo;x.atingiu=alvo===3;x.boas=0;x.due=dia+1+Math.floor(j++/P.NIVELAMENTO_POR_DIA);ids.push(f.id);
     });
@@ -305,7 +316,7 @@ function nivelamentoAplicar(st,nv,dia){
 /* O motor conta dias como números (dias desde 1970-01-01); o banco guarda datas AAAA-MM-DD. */
 function diaDe(s){if(s==null)return null;var p=String(s).slice(0,10).split("-");return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/86400000)}
 function dataDe(n){return n==null?null:new Date(n*86400000).toISOString().slice(0,10)}
-/* Resposta de student_turbo_get -> estado do motor. dia = hoje (número); se o pacotinho de hoje já saiu, o motor sabe. */
+/* Resposta de student_turbo_get -> estado do motor. dia = hoje (número); se a figurinha de hoje já saiu, o motor sabe. */
 function deBanco(d,dia){
   var st=novoAluno({idade:d.age,liberadas:d.unlocked});
   st.aparelhos=Object.assign({},d.devices||{});

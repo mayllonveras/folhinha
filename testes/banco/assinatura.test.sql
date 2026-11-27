@@ -55,6 +55,7 @@ select pg_temp.t('aviso repetido vale uma vez só', (public.billing_webhook((sel
   and (select paid_cycles=1 from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.pay('evt3', 'PAYMENT_CONFIRMED', 'pay1', 'sub_pix', 'cus_pix', 99.50, current_date, 'CONFIRMED');
 select pg_temp.t('CONFIRMED depois de RECEIVED da mesma cobrança não conta de novo', (select paid_cycles=1 from subscriptions where asaas_subscription_id='sub_pix'));
+select pg_temp.t('pagamento confirmado leva a próxima cobrança para o vencimento + 1 ciclo', (select next_due = (current_date + interval '1 year')::date from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.t('com assinatura ativa não assina de novo', pg_temp.err($$select public.billing_can_start('00000000-0000-0000-0000-0000000000b1')$$) like '%assinatura_ativa%');
 -- 2ª anuidade, paga no vencimento: o VIP passa a ir até 2 anos + 3 dias
 select pg_temp.pay('evt4', 'PAYMENT_RECEIVED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'RECEIVED') as r4 \gset
@@ -63,8 +64,12 @@ select pg_temp.t('2º pagamento estende o VIP e não pede mais troca de valor', 
   and jsonb_array_length(:'r4'::jsonb->'actions')=0 and (select paid_cycles=2 from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.pay('evt5', 'PAYMENT_OVERDUE', 'pay3', 'sub_pix', 'cus_pix', 199, (current_date + interval '2 years')::date, 'OVERDUE');
 select pg_temp.t('cobrança vencida: assinatura atrasada', (select status='atrasada' from subscriptions where asaas_subscription_id='sub_pix'));
-select pg_temp.pay('evt6', 'PAYMENT_REFUNDED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'REFUNDED');
+select pg_temp.pay('evt6', 'PAYMENT_REFUNDED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'REFUNDED') as r6 \gset
 select pg_temp.t('estorno encerra o VIP na hora', not public._is_vip('00000000-0000-0000-0000-0000000000b1'));
+select pg_temp.t('estorno cancela a assinatura e pede para apagá-la no Asaas', (select status='cancelada' and canceled_at is not null from subscriptions where asaas_subscription_id='sub_pix')
+  and (:'r6'::jsonb->'actions'->0->>'action')='cancel_subscription' and (:'r6'::jsonb->'actions'->0->>'asaas_subscription_id')='sub_pix');
+select pg_temp.pay('evt6b', 'PAYMENT_REFUNDED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'REFUNDED') as r6b \gset
+select pg_temp.t('segundo aviso de estorno da mesma assinatura não pede de novo', jsonb_array_length(:'r6b'::jsonb->'actions')=0);
 
 -- ---------- cartão: a assinatura nasce no Checkout ----------
 select public.billing_set_customer('00000000-0000-0000-0000-0000000000c1', 'cus_card');
@@ -107,7 +112,7 @@ select pg_temp.t('aviso sem id é recusado', pg_temp.err($$select public.billing
 
 -- ---------- painel, parâmetros e permissões ----------
 select pg_temp.como('00000000-0000-0000-0000-0000000000b1');
-select pg_temp.t('painel lista as cobranças', (select jsonb_array_length(b->'payments')=3 and b->'subscription'->>'status'='atrasada' from (select public.adult_billing() b) x));
+select pg_temp.t('painel lista as cobranças e mostra a assinatura estornada como cancelada', (select jsonb_array_length(b->'payments')=3 and b->'subscription'->>'status'='cancelada' from (select public.adult_billing() b) x));
 select pg_temp.como('00000000-0000-0000-0000-0000000000ad');
 select pg_temp.err($$select public.admin_set_settings('{"preco_mensal_centavos":2990,"assinatura_carencia_dias":5}')$$) as rs \gset
 select pg_temp.t('admin muda o preço', :'rs'='ok' and (public.billing_quote('00000000-0000-0000-0000-0000000000ad', 'mensal')->>'full')::numeric=29.90, :'rs');

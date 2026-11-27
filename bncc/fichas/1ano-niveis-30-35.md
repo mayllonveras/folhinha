@@ -95,7 +95,7 @@ Todos os desenhos usam `currentColor` para linhas e textos (legíveis no tema cl
   - **Impossível:** "Uma pessoa viva ter 300 anos de idade." / "Uma pessoa nascer com 10 anos de idade." / "Uma semana ter dez dias." / "Sair o número 7 ao lançar um dado comum." /
     "Um dado comum mostrar o número zero." / "Depois da segunda-feira vir a quinta-feira." / "O dia ter trinta e cinco horas." / "Um mês do calendário ter 40 dias."
   - **Talvez:** "Chover amanhã." / "Sair cara ao lançar uma moeda." / "Sortear um menino numa turma de meninos e meninas." / "Encontrar um amigo no parque." /
-    "Sair o número 3 ao lançar um dado." / "Ganhar um jogo de cartas." / "Fazer sol no sábado." / "Tirar uma figurinha repetida do pacotinho."
+    "Sair o número 3 ao lançar um dado." / "Ganhar um jogo de cartas." / "Fazer sol no sábado." / "Tirar uma figurinha repetida do pacote."
 - **O que a revisão mudou:** saiu "O Sol vai aparecer amanhã de manhã" (em dia nublado a criança pode achar que "talvez"); entrou o dado de 1 a 6. Saíram as três frases de
   **fantasia** ("um cachorro falar português", "uma árvore andar sozinha pela rua", "um sapato nascer de uma semente de feijão"), porque uma criança que gosta de histórias pode achar
   que "talvez"; entraram "nascer com 10 anos", "dado mostrar o zero" e "mês com 40 dias". O dado aparece nas três respostas (certeza: de 1 a 6; talvez: sair o 3; impossível: 7 e zero),

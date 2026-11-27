@@ -18,13 +18,16 @@ function fila(passo,v,k){
   return it;
 }
 
-/* Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10 até 100 (EF02MA09, EF02MA11). Os termos são múltiplos do passo. */
+/* Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10 até 100 (EF02MA09, EF02MA11). Os termos são múltiplos do passo.
+   40% das contas são a fila com um espaço; o resto são situações do dia a dia, pulos e "qual não faz parte" (FC.abertura.contagem2). */
 function gContarDe(){
   var passo=pick([2,5,10]),sobe=Math.random()<.7,v=[],i,s;
   if(sobe)s=passo*rnd(0,Math.floor((100-4*passo)/passo));else s=passo*rnd(4,Math.floor(100/passo));
   for(i=0;i<5;i++)v.push(sobe?s+i*passo:s-i*passo);
   return fila(passo,v,rnd(1,3));
 }
+
+function gContarMisto(){return Math.random()<.4?gContarDe():FC.abertura.contagem2()}
 
 /* Nível 2 — Centenas, dezenas e unidades com o material dourado (EF02MA04). */
 function legenda(){return "Cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1. "}
@@ -808,7 +811,7 @@ function gTabelas(){
 }
 
 FC.G2=[
-  {nivel:1,id:"g2n01",nome:"Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10",hab:["EF02MA09","EF02MA11"],meta:90,gen:gContarDe,ano:2},
+  {nivel:1,id:"g2n01",nome:"Nível 1 — Contar de 2 em 2, de 5 em 5 e de 10 em 10",hab:["EF02MA09","EF02MA11"],meta:90,gen:gContarMisto,ano:2},
   {nivel:2,id:"g2n02",nome:"Nível 2 — Centenas, dezenas e unidades (material dourado)",hab:["EF02MA04"],meta:100,gen:gMaterial,ano:2},
   {nivel:3,id:"g2n03",nome:"Nível 3 — Valor posicional e o zero",hab:["EF02MA01","EF02MA04"],meta:110,gen:gPosicional,ano:2},
   {nivel:4,id:"g2n04",nome:"Nível 4 — Decompor números até 999",hab:["EF02MA04"],meta:110,gen:gDecompor3,ano:2},
@@ -878,7 +881,8 @@ function porNum2(rotulos,ranks,extra){
 function contaNota(it){var i=it._info;return (i.op==="+"?cv2(i.a,i.b):br2(i.a,i.b)+1)*2+nz2(i.a)+nz2(i.b)+dg2(Math.max(i.a,i.b))}
 var tabuada=function(nomes){return porNome2(nomes,[0,1,2,2],function(it,i){return (i.k||0)*(i.n||0)/6})};
 var ESPEC2={
- 1:unico("contar de 2 em 2, 5 em 5, 10 em 10",function(it){var i=it._info;return ({2:0,10:2,5:3}[i.passo]||1)+(i.k-1)*.5}),
+ 1:{tipos:["completar a fila","situação do dia a dia","pulos","qual não faz parte"],tipo:function(it){return ({situacao:1,pulos:2,naofaz:3})[it._info.tipo]||0},
+    nota:function(it){var i=it._info;return i.tipo?FC.abertura.nota(it):({2:0,10:2,5:3}[i.passo]||1)+(i.k-1)*.5}},
  2:porGrupo("n2:t",["valor da figura","quantas peças","casa vazia"],[0,1,2],function(it){return nz2(it.a)}),
  3:porGrupo("n3:t",["montar o número","valor do algarismo"],[0,1],function(it){return 2*nz2(maxN2(it))+Math.min(4,maxN2(it)/250)}),
  4:porGrupo("n4:t",["falta a unidade","falta a dezena","falta a centena","montar o número","falta o resto"],[0,2,1,0,1],function(it){return 2*nz2(maxN2(it))}),
@@ -923,13 +927,13 @@ var ESPEC2={
  41:porNum2(["ler um valor","mais ou menos votos","soma de duas turmas"],[0,1,2],function(it,i){return (i.tab?1:0)+dg2(it.a)})
 };
 /* Ordem dos tipos do mais fácil ao mais difícil (média da nota de cada tipo, medida em 4 000 contas por nível). O rodízio reserva o 1º da lista à folha 1, o 2º à folha 2 e assim por diante: fixa de propósito, para que as 5 folhas do dia sempre cubram todos os tipos. */
-var ORDEM2={"1":[0],"2":[0,1,2],"3":[0,1],"4":[0,3,4,2,1],"5":[0,1],"6":[0],"7":[0],"8":[0],"9":[0],"10":[0],"11":[0],"12":[0,1,2,3],"13":[0,1,2,3,4],"14":[0,1],"15":[0,1,2,3],"16":[0,1],"17":[0,1,2,3],"18":[1,0,2,3],"19":[1,0],"20":[0,1,2],"21":[0,1,2],"22":[0,1,2],"23":[0,1,2],"24":[0,1,3,2],"25":[0,1,2],"26":[0,1,4,2,3],"27":[0,1,2],"28":[0,1,2],"29":[0,1],"30":[0,1],"31":[0,1,2],"32":[0,1,2],"33":[1,0,2],"34":[0,1],"35":[0,1,2],"36":[0,2,1,3],"37":[0,1,2,3],"38":[0,1,2],"39":[0,1,2],"40":[0,1],"41":[0,1,2]};
+var ORDEM2={"1":[1,0,3,2],"2":[0,1,2],"3":[0,1],"4":[0,3,4,2,1],"5":[0,1],"6":[0],"7":[0],"8":[0],"9":[0],"10":[0],"11":[0],"12":[0,1,2,3],"13":[0,1,2,3,4],"14":[0,1],"15":[0,1,2,3],"16":[0,1],"17":[0,1,2,3],"18":[1,0,2,3],"19":[1,0],"20":[0,1,2],"21":[0,1,2],"22":[0,1,2],"23":[0,1,2],"24":[0,1,3,2],"25":[0,1,2],"26":[0,1,4,2,3],"27":[0,1,2],"28":[0,1,2],"29":[0,1],"30":[0,1],"31":[0,1,2],"32":[0,1,2],"33":[1,0,2],"34":[0,1],"35":[0,1,2],"36":[0,2,1,3],"37":[0,1,2,3],"38":[0,1,2],"39":[0,1,2],"40":[0,1],"41":[0,1,2]};
 Object.keys(ORDEM2).forEach(function(n){ESPEC2[n].ordem=ORDEM2[n]});
 /* ===================== O 2º ano na grade do app: FC.LEVELS (a trilha é uma só: os níveis do 2º ano seguem os 35 do 1º) ===================== */
 /* Os números das fichas (1 a 41) são do 2º ano; no app o aluno vê a numeração corrida, de 36 a 76. */
 var BASE=FC.LEVELS.length;                          /* 35 */
 var BLOCOS2=[[7,"Números até 1000"],[18,"Adição e subtração até 1000"],[26,"Multiplicação, dobro e metade"],[28,"Padrões e regularidades"],[32,"Geometria"],[39,"Medidas, tempo e dinheiro"],[41,"Dados e acaso"]];
-var DICAS2={1:"Complete o número que falta, contando de 2 em 2, de 5 em 5 ou de 10 em 10.",2:"Cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo e o que o zero faz.",
+var DICAS2={1:"Conte de 2 em 2, de 5 em 5 ou de 10 em 10: complete a fila, resolva as situações e ache o número que não faz parte.",2:"Cada placa vale 100, cada barra vale 10 e cada quadradinho vale 1.",3:"Descubra o valor de cada algarismo e o que o zero faz.",
   4:"Decomponha o número, como 345 = 300 + 40 + 5.",5:"Escolha o maior, o menor ou a ordem certa dos números.",6:"Complete a fila de números, de 1 em 1, de 10 em 10 ou de 100 em 100.",
   7:"Compare a mancha de pontos com o quadro de 100 e escolha o número mais perto.",8:"Somas de dois algarismos sem passar da dezena, como 23 + 45.",9:"Somas de dois algarismos com \"vai um\", como 47 + 38.",
   10:"Subtrações de dois algarismos sem emprestar, como 78 − 45.",11:"Subtrações de dois algarismos com empréstimo, como 82 − 29.",12:"Somas e subtrações de dois algarismos, misturadas.",

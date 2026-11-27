@@ -1,5 +1,5 @@
 /* Motor da Trilha Turbo (turbo.js). Rodar com: node testes/turbo.test.js
-   Cobre: catálogo e famílias, portões, montagem da sessão, promoção e rebaixamento dos fatos, critério de tempo, regra de aparelho novo,
+   Cobre: catálogo e famílias, portões, montagem da sessão, promoção e rebaixamento dos fatos, critério de tempo, aparelho sem peso na promoção,
    meta de tempo, recompensa do dia, nivelamento da primeira entrada e uma simulação de 120 dias. */
 global.window=global;
 require('../turbo.js');
@@ -216,32 +216,31 @@ function jogar(st,dia,o){
   igual(T.dicaPara(pôr(aluno(),"+:1:1",{s:3,stub:true})),"after","teimoso: dica depois");
 }
 
-/* ---------- 9. aparelho novo não promove por tempo, mas erro conta ---------- */
+/* ---------- 9. o aparelho não decide nada: toda sessão conta, em qualquer aparelho ---------- */
 {
-  const st=aluno(),id="+:4:5";st.aparelhos.celular=0;
+  /* alternando celular, tablet e computador, sem nenhuma sessão anterior em nenhum deles, duas sessões boas seguidas promovem */
+  const st=T.novoAluno({idade:8}),id="+:4:5";
   pôr(st,id,{s:3,atingiu:true,due:0,n:6,diasOk:3});
-  for(let d=0;d<4;d++)sessaoCom(st,d,"celular",[{id,ok:true,t1:600}]);
-  igual(T.fato(st,id).s,3,"no celular novo, tempo perfeito não promove");
-  igual(st.aparelhos.celular,4,"cada sessão conta para o aparelho");
-  /* mesmo fato, no tablet de sempre, promove */
-  for(let d=4;d<6;d++)sessaoCom(st,d,"tablet",[{id,ok:true,t1:600}]);
-  igual(T.fato(st,id).s,4,"no aparelho de sempre promove");
-  /* depois de 5 sessões a classe deixa de ser nova */
-  const st2=aluno(),id2="+:5:5";st2.aparelhos.celular=5;pôr(st2,id2,{s:3,atingiu:true,due:0,n:6,diasOk:3});
-  for(let d=0;d<2;d++)sessaoCom(st2,d,"celular",[{id:id2,ok:true,t1:600}]);
-  igual(T.fato(st2,id2).s,4,"com 5 sessões no celular, ele promove");
-  /* erro no aparelho novo conta normalmente */
-  const st3=aluno(),id3="+:6:6";st3.aparelhos.celular=0;pôr(st3,id3,{s:4,rev:1,due:0,atingiu:true});
+  sessaoCom(st,0,"celular",[{id,ok:true,t1:600}]);
+  igual(T.fato(st,id).boas,1,"a primeira sessão boa conta, mesmo num aparelho estreante");
+  sessaoCom(st,1,"tablet",[{id,ok:true,t1:600}]);
+  igual(T.fato(st,id).s,4,"trocar de aparelho não atrasa a promoção");
+  igual(st.aparelhos.celular+st.aparelhos.tablet,2,"cada sessão continua registrada no seu aparelho");
+  /* sessão lenta em aparelho estreante zera a sequência, como em qualquer outro */
+  const st2=T.novoAluno({idade:8}),id2="+:5:5";pôr(st2,id2,{s:3,atingiu:true,due:0,n:6,diasOk:3,boas:1});
+  sessaoCom(st2,0,"computador",[{id:id2,ok:true,t1:4000}]);
+  igual(T.fato(st2,id2).boas,0,"lenta zera a sequência em qualquer aparelho");
+  /* erro rebaixa e revisão de provável avança */
+  const st3=T.novoAluno({idade:8}),id3="+:6:6";pôr(st3,id3,{s:4,rev:1,due:0,atingiu:true});
   sessaoCom(st3,0,"celular",[{id:id3,ok:false,t1:2500}]);
-  igual(T.fato(st3,id3).s,3,"erro em aparelho novo rebaixa");
-  /* revisão de provável feita no aparelho novo não avança */
-  const st4=aluno(),id4="+:7:7";st4.aparelhos.celular=0;pôr(st4,id4,{s:4,rev:1,due:0});
+  igual(T.fato(st3,id3).s,3,"erro rebaixa");
+  const st4=T.novoAluno({idade:8}),id4="+:7:7";pôr(st4,id4,{s:4,rev:1,due:0});
   sessaoCom(st4,0,"celular",[{id:id4,ok:true,t1:600}]);
-  igual(T.fato(st4,id4).rev,1,"revisão em aparelho novo não avança o calendário");
-  /* o estado é do aluno: uma sessão em aparelho novo enxerga o que o tablet fez */
+  igual(T.fato(st4,id4).rev,2,"revisão de provável avança o calendário em qualquer aparelho");
+  /* o estado é do aluno: um aparelho de primeira vez enxerga o que os outros fizeram */
   const st5=aluno();pôr(st5,"+:1:3",{s:2,due:0,n:2});
   const sess=T.iniciarSessao(st5,{dia:0,aparelho:"celular-da-avo",rnd:T.rng(1)});
-  ok(sess.aparelhoNovo&&sess.fila.some(i=>i.id==="+:1:3"),"aparelho novo continua de onde parou");
+  ok(!sess.aparelhoNovo&&sess.fila.some(i=>i.id==="+:1:3"),"aparelho de primeira vez continua de onde parou");
 }
 
 /* ---------- 10. meta de tempo ---------- */
@@ -259,24 +258,50 @@ function jogar(st,dia,o){
 /* ---------- 11. recompensa do Turbo do dia ---------- */
 {
   const st=aluno(),a=jogar(st,0,{acerto:1,t1:900});
-  ok(a.res.concluida&&a.res.premio&&a.res.premio.tipo==="pacote"&&a.res.premio.fonte==="turbo","sessão concluída dá 1 pacotinho de origem 'turbo'");
-  const b=jogar(st,0,{acerto:1,t1:900});ok(b.res.premio===null,"só 1 pacotinho por dia");
-  const c=jogar(st,1,{acerto:1,t1:900});ok(c.res.premio&&c.res.premio.dia===1,"no dia seguinte, outro pacotinho");
+  ok(a.res.concluida&&a.res.premio&&a.res.premio.tipo==="pacote"&&a.res.premio.fonte==="turbo","sessão concluída dá 1 figurinha de origem 'turbo'");
+  const b=jogar(st,0,{acerto:1,t1:900});ok(b.res.premio===null,"só 1 figurinha por dia");
+  const c=jogar(st,1,{acerto:1,t1:900});ok(c.res.premio&&c.res.premio.dia===1,"no dia seguinte, outro figurinha");
   /* parou no meio: sem prêmio, mas o progresso fica */
   const st2=aluno(),s2=T.iniciarSessao(st2,{dia:0,aparelho:"tablet",rnd:T.rng(9)});
   const it=T.proximo(st2,s2);T.registrar(st2,s2,{id:it.id,ok:true,t1:900,total:1500});
-  const r2=T.finalizarSessao(st2,s2);ok(!r2.concluida&&r2.premio===null,"parou no meio: sem pacotinho");
+  const r2=T.finalizarSessao(st2,s2);ok(!r2.concluida&&r2.premio===null,"parou no meio: sem figurinha");
   igual(T.fato(st2,it.id).s,2,"mas o fato avançou");
   /* sessão de chute: muitas respostas erradas e rápidas demais */
   const st3=aluno(),s3=T.iniciarSessao(st3,{dia:0,aparelho:"tablet",rnd:T.rng(9)});
   let x;while((x=T.proximo(st3,s3)))T.registrar(st3,s3,{id:x.id,ok:false,t1:200,total:300});
-  const r3=T.finalizarSessao(st3,s3);ok(r3.chute&&r3.premio===null,"chute não dá pacotinho");
-  /* nada a fazer: sem pacotinho */
+  const r3=T.finalizarSessao(st3,s3);ok(r3.chute&&r3.premio===null,"chute não dá figurinha");
+  /* nada a fazer: sem figurinha */
   const st4=aluno();T.catalogo().soma.facts.forEach(f=>pôr(st4,f.id,{s:5,due:999,rev:5}));
   const s4=T.iniciarSessao(st4,{dia:0,aparelho:"tablet",rnd:T.rng(1)});
-  const r4=T.finalizarSessao(st4,s4);ok(s4.semTarefa&&r4.semTarefa&&r4.premio===null,"sem tarefa: sem pacotinho");
+  const r4=T.finalizarSessao(st4,s4);ok(s4.semTarefa&&r4.semTarefa&&r4.premio===null,"sem tarefa: sem figurinha");
   /* a recompensa não depende de acertar tudo */
-  const st5=aluno(),r5=jogar(st5,0,{acerto:.5,t1:1500}).res;ok(r5.concluida&&r5.premio,"o pacotinho vale pela sessão feita, não pela nota");
+  const st5=aluno(),r5=jogar(st5,0,{acerto:.5,t1:1500}).res;ok(r5.concluida&&r5.premio,"a figurinha vale pela sessão feita, não pela nota");
+}
+
+/* ---------- 11b. tempos impossíveis (abaixo de T1_MIN) ---------- */
+{
+  const dia=10;
+  const roda=(st,id,t1)=>{const sess=T.iniciarSessao(st,{dia,aparelho:"tablet",rnd:()=>.5});sess.aparelhoNovo=false;
+    T.registrar(st,sess,{id,tipo:"revisao",ok:true,resp:1,t1,total:t1+300,dica:"none",contou:false});return T.finalizarSessao(st,sess)};
+  const st=aluno();pôr(st,"+:0:1",{s:3,n:5,diasOk:3,boas:1,atingiu:true,due:dia});
+  roda(st,"+:0:1",40);
+  igual(st.fatos["+:0:1"].boas,1,"tempo impossível: não conta e não zera a sequência");
+  igual(st.fatos["+:0:1"].s,3,"tempo impossível: não promove");
+  igual(st.fatos["+:0:1"].due,dia+1,"tempo impossível: confere no dia seguinte");
+  ok(st.fatos["+:0:1"].lat==null||st.fatos["+:0:1"].lat>=P.T1_MIN,"tempo impossível não entra na latência do fato");
+  roda(st,"+:0:1",900);
+  igual(st.fatos["+:0:1"].s,4,"tempo válido depois: segunda sessão boa promove");
+  /* o log guarda o tempo cru, para análise */
+  const st2=aluno(),sess=T.iniciarSessao(st2,{dia,aparelho:"tablet",rnd:()=>.5});
+  T.registrar(st2,sess,{id:"+:0:0",tipo:"novo",ok:true,resp:0,t1:12,total:400,dica:"before",contou:false});
+  igual(sess.log[0].t1,12,"log guarda o t1 cru");
+  /* revisões embaralhadas: a ordem muda com a semente, mas o conjunto é o mesmo */
+  const st3=aluno();for(let k=0;k<11;k++)pôr(st3,"+:0:"+k,{s:3,n:5,diasOk:3,due:dia});
+  const ids=r=>T.iniciarSessao(st3,{dia,aparelho:"tablet",rnd:T.rng(r)}).fila.map(i=>i.id);
+  const a1=ids(1),a2=ids(2);
+  ok(a1.slice().sort().join()===a2.slice().sort().join(),"mesmas revisões");
+  ok(a1.join()!==a2.join(),"ordem embaralhada");
+  ok(a1.join()!==Array.from({length:11},(_,k)=>"+:0:"+k).join(),"não segue a ordem do catálogo");
 }
 
 /* ---------- 12. nivelamento da primeira entrada ---------- */
@@ -308,6 +333,18 @@ function jogar(st,dia,o){
   const porDia={};fs.forEach(f=>{const x=st.fatos[f.id];if(x&&x.s>0)porDia[x.due]=(porDia[x.due]||0)+1});
   ok(Object.values(porDia).every(v=>v<=P.NIVELAMENTO_POR_DIA),"vencimentos espalhados: "+JSON.stringify(porDia));
   ok(Object.keys(porDia).every(d=>+d>=1),"nada vence no próprio dia do teste");
+  /* revisões espalhadas: as famílias lentas e as mais difíceis vêm primeiro, não a ordem do catálogo (0+0, 0+1, 0+2…) */
+  {
+    const st3=aluno(),nv3=N.inicio("soma",7);let i3;
+    while((i3=N.proximo(nv3)))N.registrar(nv3,i3.fam,i3.fam===4?"lento":"rapido");   // passa tudo; só a família 4 é lenta
+    N.aplicar(st3,nv3,0,T.rng(7));
+    const dia1=fs.filter(f=>st3.fatos[f.id]&&st3.fatos[f.id].due===1);
+    ok(dia1.length===P.NIVELAMENTO_POR_DIA,"primeiro dia: "+dia1.length+" revisões");
+    ok(dia1.every(f=>f.fam===4)||dia1.filter(f=>f.fam===4).length===fs.filter(f=>f.fam===4).length,"as lentas (família 4) vêm primeiro");
+    ok(!dia1.some(f=>f.fam===0),"o primeiro dia não é de somar zero");
+    const ord=fs.filter(f=>st3.fatos[f.id]&&st3.fatos[f.id].due<=2).map(f=>f.id);
+    ok(ord.length>0,"há revisões nos dois primeiros dias");
+  }
   /* idempotente: o que já tinha estado não é sobrescrito */
   const st2=aluno();pôr(st2,"+:0:0",{s:5,due:50});const nv2=N.inicio("soma",7);let i2;while((i2=N.proximo(nv2)))N.registrar(nv2,i2.fam,"rapido");N.aplicar(st2,nv2,0);
   igual(T.estado(st2,"+:0:0"),5,"não rebaixa fato que já era maduro");
@@ -342,7 +379,7 @@ function jogar(st,dia,o){
     if(d===119)console.log("  simulação:",JSON.stringify(Object.fromEntries(T.ORDEM.map(o=>[o,Math.round(100*T.resumo(st).ops[o].pct)+"% firmes"]))),"| prêmios:",premios.length,"| máx tentativas:",maxTent);
   }
   ok(maxTent<=P.TETO_TENT,"nenhuma sessão passou de "+P.TETO_TENT+" tentativas");
-  ok(premios.length>100,"quase todo dia dá o pacotinho (dias com tarefa): "+premios.length);
+  ok(premios.length>100,"quase todo dia dá a figurinha (dias com tarefa): "+premios.length);
   const rs=T.resumo(st);
   ok(rs.ops.soma.pct>=.5,"em 120 dias a criança boa leva a soma a pelo menos 50% firme: "+Math.round(rs.ops.soma.pct*100)+"%");
   /* intervalos respeitados: de provável a maduro leva ao menos 1+3+7+14+30 dias */
@@ -378,14 +415,16 @@ function jogar(st,dia,o){
   let difere=0;ids.forEach(id=>{const a=st.fatos[id],b=volta.fatos[id];["s","n","diasOk","ultimoDiaOk","boas","rev","due","stub","atingiu"].forEach(k=>{if(a[k]!==b[k])difere++});if((a.lat==null?null:Math.round(a.lat))!==b.lat)difere++});
   igual(difere,0,"estado igual depois de ida e volta pelo formato do banco");
   igual(T.iniciarSessao(st,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,T.iniciarSessao(volta,{dia:hoje+8,aparelho:"tablet",rnd:T.rng(1)}).fila,"mesma fila do dia");
-  /* pacotinho de hoje já entregue vira premio no motor */
+  /* figurinha de hoje já entregue vira premio no motor */
   const v2=T.deBanco({age:8,unlocked:["soma"],devices:{},today:{pack_given:true},facts:[]},hoje);igual(v2.premios[hoje],1,"pack_given vira prêmio do dia");
   const s2=T.iniciarSessao(v2,{dia:hoje,aparelho:"tablet",rnd:T.rng(1)});let x;while((x=T.proximo(v2,s2)))T.registrar(v2,s2,{id:x.id,tipo:x.tipo,ok:true,t1:900,total:1500,dica:x.dica});
-  ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º pacotinho do dia, mesmo depois de recarregar");
+  ok(T.finalizarSessao(v2,s2).premio===null,"não dá o 2º figurinha do dia, mesmo depois de recarregar");
   /* registro das tentativas para o banco */
   const s3=T.iniciarSessao(aluno(),{dia:hoje,aparelho:"tablet",rnd:T.rng(2)}),st3=aluno();
-  const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,t1:850,total:1400,dica:it.dica,contou:false});
-  igual(s3.log[0],{fact:it.id,kind:"novo",ok:true,t1:850,total:1400,hint:"before",counted:false,stateBefore:0},"log da tentativa");
+  const it=T.proximo(st3,s3);T.registrar(st3,s3,{id:it.id,tipo:it.tipo,ok:true,resp:T.porId(it.id).res,t1:850,total:1400,dica:it.dica,contou:false});
+  igual(s3.log[0],{fact:it.id,kind:"novo",ok:true,answer:T.porId(it.id).res,t1:850,total:1400,hint:"before",counted:false,stateBefore:0},"log da tentativa (com a resposta digitada)");
+  const it2=T.proximo(st3,s3);T.registrar(st3,s3,{id:it2.id,tipo:it2.tipo,ok:false,resp:null,t1:null,total:900,dica:"after",contou:false});
+  ok(s3.log[1].ok===false&&s3.log[1].answer===null,"\"não sei\" vai para o log sem resposta");
   /* carga reduzida: 1 a 2 fatos novos */
   const cr=aluno();cr.cargaReduzida=true;const b=T.proximoBloco(cr);ok(b.length>=1&&b.length<=2,"carga reduzida: bloco de 1 a 2 fatos ("+b.length+")");
   igual(T.deBanco({age:7,unlocked:["soma"],devices:{},placement:{pre:{falhou:true}},facts:[]}).cargaReduzida,true,"carga reduzida vem do nivelamento");

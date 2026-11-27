@@ -17,7 +17,7 @@ insert into public.app_settings select * from jsonb_populate_record(null::public
 insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "teto_anos_padrao", "value": 1, "updated_at": "2026-11-14T10:51:31.581713+00:00", "updated_by": null}');
 insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "virada_mes", "value": 1, "updated_at": "2026-11-14T10:51:31.581713+00:00", "updated_by": null}');
 insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "virada_dia", "value": 1, "updated_at": "2026-11-14T10:51:31.581713+00:00", "updated_by": null}');
-insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "limite_mesa", "value": 2, "updated_at": "2026-11-15T13:17:15.882759+00:00", "updated_by": null}');
+insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "limite_mesa", "value": 1, "updated_at": "2026-11-15T13:17:15.882759+00:00", "updated_by": null}');
 insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "pausas_max", "value": 2, "updated_at": "2026-11-15T18:52:39.81245+00:00", "updated_by": null}');
 insert into public.app_settings select * from jsonb_populate_record(null::public.app_settings, '{"key": "modo_folha", "value": 1, "updated_at": "2026-11-15T20:18:46.659317+00:00", "updated_by": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 2, "idx": 35, "code": "36", "target": 90, "stamps_needed": null}');
@@ -62,7 +62,7 @@ insert into public.levels select * from jsonb_populate_record(null::public.level
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 2, "idx": 74, "code": "75", "target": 100, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 2, "idx": 75, "code": "76", "target": 130, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 76, "code": "77", "target": 130, "stamps_needed": null}');
-insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 77, "code": "78", "target": 120, "stamps_needed": null}');
+insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 77, "code": "78", "target": 130, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 78, "code": "79", "target": 120, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 79, "code": "80", "target": 120, "stamps_needed": null}');
 insert into public.levels select * from jsonb_populate_record(null::public.levels, '{"ano": 3, "idx": 80, "code": "81", "target": 110, "stamps_needed": null}');

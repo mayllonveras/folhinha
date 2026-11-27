@@ -2,9 +2,11 @@
 
 Estado: **decisões do professor registradas (17/11/2026), motor escrito e testado, ainda não ligado ao app**. O motor está em `turbo.js` e os testes em `testes/turbo.test.js` (`node testes/turbo.test.js`). Faltam banco, telas e painel (item 12). A página de apresentação com dados de exemplo é o artefato "Trilha Turbo" (claude.ai).
 
-A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível nem sequência de dias da trilha BNCC. **Ao concluir a sessão do dia, a criança ganha 1 pacotinho de figurinha** (item 6.1).
+A Trilha Turbo é uma trilha **separada** da trilha BNCC. A criança faz as duas no mesmo dia, em qualquer ordem, e cada uma fica marcada como concluída quando a meta do dia dela é cumprida. A Turbo não mexe em carimbos, nível nem sequência de dias da trilha BNCC. **Ao concluir a sessão do dia, a criança ganha 1 figurinha** (item 6.1).
 
 **Objetivo:** que a criança resolva contas de aritmética básica (+, −, ×, ÷) rapidamente ao olhar, isto é, por recuperação direta da memória.
+
+Base científica completa (ciclos 1 e 2 da pesquisa, com fontes): [`docs/BASE-CIENTIFICA-TURBO.md`](../docs/BASE-CIENTIFICA-TURBO.md).
 
 Cada parâmetro abaixo traz o **status da evidência**: *validado*, *heurística* (proposta coerente com a pesquisa, sem estudo específico em fatos aritméticos infantis) ou *a testar* (experimento no app).
 
@@ -58,7 +60,7 @@ Status: *heurística*. O 85% é proposta e deve ser editável.
 Regras de detalhe que o motor aplica:
 
 - **Aprendendo para consolidando:** 3 recuperações corretas **em pelo menos 2 dias diferentes**. Três acertos na mesma sessão não bastam.
-- **Duas sessões boas seguidas:** uma sessão sem erro, mas lenta, com dica antes da tentativa ou contando nos dedos, **zera a sequência**. Sessão em aparelho novo não conta nem zera.
+- **Duas sessões boas seguidas:** uma sessão sem erro, mas lenta, com dica antes da tentativa ou contando nos dedos, **zera a sequência**. O aparelho não pesa: toda sessão conta (item 5.2).
 - **Revisão lenta ou com apoio de um fato provável:** não avança o calendário e o fato volta a ser conferido no dia seguinte.
 - **Calendário de revisões de um fato provável:** 1, 3, 7, 14 e 30 dias. Passando a de 30 dias, vira maduro (revisão a cada 21 dias). Um erro em maduro volta a provável com revisão em 7 dias ou mais.
 - **Teimoso:** erra depois de já ter chegado a consolidando. Sai da marca ao voltar a provável.
@@ -93,13 +95,11 @@ Status: *a testar*.
 
 Status: *heurística*, a calibrar com as primeiras crianças.
 
-### 5.2 Aparelho novo não bloqueia nem promove
+### 5.2 O aparelho não pesa na promoção (decisão de 24/11/2026)
 
-Uma sessão numa classe de aparelho com menos de 5 sessões da criança:
+Toda sessão conta para promover, rebaixar e avançar o calendário, em **qualquer** aparelho, inclusive um que a criança nunca usou. Antes, uma classe de aparelho com menos de 5 sessões não promovia. Isso travou o Samuel: ele alternava celular, tablet e computador (2 sessões em cada) e, em 6 dias com 95 a 100% de acerto, nenhum fato foi promovido.
 
-- erros contam normalmente e podem rebaixar fatos;
-- **não promove** fatos por causa do tempo (os fatos continuam acumulando acertos);
-- fica registrada com a classe do aparelho;
+- a sessão continua registrada com a classe do aparelho (`APARELHO_MIN_SESSOES = 0` em `turbo.js`), para o painel e para o ajuste do item 5.3;
 - não aparece para a criança como teste. Um aquecimento de cerca de 6 toques ("toque o número que aparece") pode aparecer e é pulável.
 
 O estado de cada fato fica no servidor, preso à criança, então um link aberto em outro aparelho retoma de onde parou.
@@ -132,12 +132,12 @@ Status: *validado* para prática de recuperação e feedback imediato; *heuríst
 
 Decisão do professor (17/11/2026): **concluir a sessão do dia dá uma figurinha.**
 
-Como o app já entrega figurinha por "pacotinho" que a criança abre, o Turbo do dia dá **1 pacotinho** com origem nova, `turbo`:
+Como o app já entrega figurinha a cada abertura que a criança faz, o Turbo do dia dá **1 figurinha** com origem nova, `turbo`:
 
 - **No máximo 1 por dia.** O índice único `awards_pack_once` (aluno, dia, origem, posição) já garante isso.
-- **Vale pela sessão concluída, não pela nota.** Concluída quer dizer: a fila do dia acabou, ou bateu o teto de 40 tentativas ou 5 minutos. Acertar menos não tira o pacotinho, para a criança não ter motivo para ter pressa.
+- **Vale pela sessão concluída, não pela nota.** Concluída quer dizer: a fila do dia acabou, ou bateu o teto de 40 tentativas ou 5 minutos. Acertar menos não tira a figurinha, para a criança não ter motivo para ter pressa.
 - **Não ganha** quem parou no meio, quem não tinha nada a fazer naquele dia e quem "chutou" (8 tentativas ou mais com metade ou mais errada e respondida em menos de 0,5 s). Isso é heurística.
-- **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e o pacotinho da BNCC continua independente.
+- **Não mexe** em carimbos, nível nem sequência de dias da trilha BNCC, e a figurinha da BNCC continua independente.
 - A figurinha vem do mesmo álbum e das mesmas regras de abertura que o app já tem (`student_open_pack`).
 
 Efeito no banco: a restrição `awards.source` agora aceita `turbo` (migração `2026-11-17-trilha-turbo.sql`, aplicada em produção em 17/11/2026).
@@ -197,29 +197,29 @@ São testes internos de produto, não substituem um ensaio controlado externo. P
 1. **Teste da primeira entrada:** roda por padrão, e os pais podem pular no cadastro. O aquecimento de 6 toques vale para todos.
 2. **Parte B (pré-requisitos):** só para os pequenos (até cerca de 7 anos) ou para quem for mal na sondagem de fatos.
 3. **Primeiro corte do app:** só a soma liberada. O motor já nasce com as quatro operações; as demais ficam bloqueadas (`liberadas` no estado do aluno) até os dados mostrarem que o portão funciona.
-4. **Recompensa:** **1 figurinha (pacotinho) ao concluir o Turbo do dia**, no lugar do selo próprio que eu tinha proposto. Detalhes no item 6.1.
+4. **Recompensa:** **1 figurinha ao concluir o Turbo do dia**, no lugar do selo próprio que eu tinha proposto. Detalhes no item 6.1.
 5. **Painel dos pais, o mínimo útil:** se a Turbo de hoje foi feita; barra de fatos firmes por operação; os 3 fatos mais teimosos ou lentos; aparelhos usados; aviso neutro quando a criança passa 3 sessões sem progresso. Sem milissegundos crus, sem comparação com outras crianças, sem ranking.
 
 ## 12. Estado da implementação
 
 | Parte | Estado |
 |---|---|
-| Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, regra de aparelho novo, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
+| Motor (`turbo.js`): catálogo, portões, sessão, promoção e rebaixamento, aparelho sem peso na promoção, meta de tempo, recompensa, nivelamento | feito, com testes (`testes/turbo.test.js`) |
 | Ajuste automático entre aparelhos (item 5.3) | **não feito**: depende de dados reais de duas classes de aparelho |
 | Ligação do motor ao app (`index.html`, `sw.js` e versão `folhinha-v60`) | feita |
 | Migração SQL (`migracoes/2026-11-17-trilha-turbo.sql`): tabelas `turbo_*`, funções `student_turbo_get`, `student_turbo_save`, `adult_turbo_summary`, visão `v_turbo_uso` e origem `turbo` em `awards.source` | **aplicada em produção (`folhinha-calculo`) em 17/11/2026, com autorização do professor.** **Corrigida no mesmo dia** (item 15: `student_turbo_get` passou a volátil). Antes, validada num Postgres local de teste (`testes/banco/turbo.sh`, 39 verificações); depois, conferida no banco real com um teste desfeito. Não reaplicar |
-| Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e pacotinho | **feitas e testadas no navegador** (item 13) |
+| Telas do aluno (`turbo-aluno.js`): dois cartões na tela inicial, sessão do dia, nivelamento da primeira entrada, resultado e figurinha | **feitas e testadas no navegador** (item 13) |
 | Painel dos pais (`adult.js`): resumo da Turbo na aba Resumo, linha "Turbo de hoje" na lista de alunos, opções no cadastro e na aba Programa | **feito e testado** (item 14) |
 
 ## 13. Telas do aluno: o que foram e o que ficou de fora
 
 Arquivo `turbo-aluno.js`, ligado ao `student.js` por `FC.turboUi` (o `student.js` só ganhou o contexto, o cartão e o botão voltar).
 
-**Tela inicial:** a trilha BNCC e a Turbo aparecem em dois cartões, lado a lado no tablet e empilhados no celular. A criança escolhe a ordem. O cartão da Turbo muda conforme o dia: convite para o nivelamento, "Turbo do dia" (revisões, fatos novos e minutos), "Continue a Turbo", "concluída" (com o pacotinho), "nada para treinar hoje" e "sem Turbo hoje" em dia de descanso. Se o banco não responder, o cartão não aparece e a BNCC segue normal.
+**Tela inicial:** a trilha BNCC e a Turbo aparecem em dois cartões, lado a lado no tablet e empilhados no celular. A criança escolhe a ordem. O cartão da Turbo muda conforme o dia: convite para o nivelamento, "Turbo do dia" (revisões, fatos novos e minutos), "Continue a Turbo", "concluída" (com a figurinha), "nada para treinar hoje" e "sem Turbo hoje" em dia de descanso. Se o banco não responder, o cartão não aparece e a BNCC segue normal.
 
 **Sessão do dia:** uma conta por vez, com o teclado numérico do PIN (e o teclado do aparelho). O tempo até o primeiro toque é medido no toque do dedo. Não há relógio na tela. Dica antes da tentativa só na primeira exposição; em erro, a resposta aparece por 1,8 s, a dica vem depois e a criança tenta de novo na hora (essa segunda tentativa não conta nas regras); "Dica" sob demanda e "Não sei". Voltar ou sair no meio pergunta antes e guarda o que foi feito. Se sair do aplicativo no meio de uma conta, o tempo daquela conta recomeça.
 
-**Fim da sessão:** resultado, botão **Abrir pacotinho** (usa o fluxo de figurinhas que já existe) e volta ao início. Se não houver conexão ao enviar, a sessão fica guardada no aparelho e sobe na próxima vez.
+**Fim da sessão:** resultado, botão **Abrir figurinha** (usa o fluxo de figurinhas que já existe) e volta ao início. Se não houver conexão ao enviar, a sessão fica guardada no aparelho e sobe na próxima vez.
 
 **Nivelamento (primeira entrada):** aquecimento de 6 números; jogos de pré-requisito (6 comparações, 4 de pontinhos, 3 de contagem) só até 7 anos, ou depois da sondagem para quem não passou nem na primeira família; sondagem de fatos por busca binária, sem mostrar acerto ou erro. Falhar nos pré-requisitos (menos de 60% de acertos) liga a carga reduzida de 1 a 2 fatos novos por sessão.
 
@@ -259,3 +259,16 @@ Em `adult.js`, sem nova aba (o menu do celular já tem 6). Decisão 5 do item 11
 - O teste de banco (`testes/banco/`) passou a simular a atualização do `last_seen` e a exigir que `student_turbo_get` e `student_turbo_save` sejam voláteis. Com a função estável de volta, o teste falha; com a correção, passa. O script de teste também passou a falhar quando alguma verificação dá `ERROR` (antes ele só contava as que terminavam, e uma verificação com erro de sintaxe passava como sucesso).
 - Se a Turbo falhar ao carregar, o cartão agora mostra "A Turbo não carregou" com **Tentar de novo**, em vez de sumir em silêncio. Só some de vez se o banco não tiver a Turbo. Com o consentimento dos pais ligado, o erro também vai para os dados de uso (`turbo_erro`).
 
+## 16. Ajuste de 20/11/2026: revisões do nivelamento previsíveis e tempos impossíveis
+
+**O que o professor viu:** o Samuel, que passou até a última família da soma no nivelamento, fazia só contas de 0 + e 1 +.
+
+**Causa:** o nivelamento espalha as revisões (15 por dia) na ordem do catálogo, então vinham 0+0, 0+1, 0+2… por dias seguidos. Como a ordem era previsível, o tempo até o primeiro toque saía de 0 a 70 ms (mediana de 317 ms), impossível para recuperação de memória, e contaminava o critério de domínio.
+
+**Mudanças (`turbo.js`):**
+
+- **Espalhamento do nivelamento:** as famílias que a criança passou devagar vêm primeiro, depois as mais difíceis; dentro de cada família a ordem é embaralhada.
+- **Sessão:** as revisões escolhidas são apresentadas em ordem embaralhada (quais entram continua pela prioridade de antes).
+- **`T1_MIN` = 250 ms:** tempo até o primeiro toque abaixo disso não vale. Um acerto só com tempos assim **não conta como sessão boa, não zera a sequência e não promove**; o fato volta a ser conferido no dia seguinte. O tempo não entra na latência do fato. O log de tentativas guarda o tempo cru, para análise.
+
+**Dados do Samuel não foram alterados:** os vencimentos já gravados continuam como estão; só a ordem de apresentação e a validade do tempo mudam daqui para frente.

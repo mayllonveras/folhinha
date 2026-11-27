@@ -23,7 +23,7 @@ const regraE=(txt,n)=>{                                            // vírgula o
  const e=(r<100||r%100===0);return e?/mil e /.test(txt)&&!/mil, /.test(txt):/mil, /.test(txt)&&!/mil e /.test(txt)};
 
 /* ---- Nível 1 ---- */
-{const its=draw(G.g3n01);let t1=0,t2=0,zero=0;
+{const its=draw(G.g3n01).filter(p=>/^(algarismos|extenso)$/.test(p._info.tipo)),M=its.length;let t1=0,t2=0,zero=0;   /* só ler e escrever: os desafios novos têm teste próprio (aberturas.test.js) */
  for(const p of its){
   let n,m;
   if((m=p.pre.match(/^Escreva em algarismos: (.+)\.$/))){t1++;n=lerExtenso(m[1]);if(n!==p.a)falha(1,"extenso "+m[1]+" → "+p.a+" (lido "+n+")");
@@ -37,8 +37,8 @@ const regraE=(txt,n)=>{                                            // vírgula o
   else{falha(1,"pergunta: "+p.pre);continue}
   if(/0/.test(String(n)))zero++;if(n<1000||n>9999)falha(1,"fora de 1000 a 9999");
  }
- console.log("nível 1: algarismos",(100*t1/N).toFixed(0)+"%, extenso",(100*t2/N).toFixed(0)+"%, com zero",(100*zero/N).toFixed(0)+"%");
- if(Math.abs(t1/N-.5)>.04)falha(1,"proporção dos tipos");if(zero/N<.2||zero/N>.45)falha(1,"zero fora de 20% a 45%")}
+ console.log("nível 1: algarismos",(100*t1/M).toFixed(0)+"%, extenso",(100*t2/M).toFixed(0)+"%, com zero",(100*zero/M).toFixed(0)+"%");
+ if(Math.abs(t1/M-.5)>.04)falha(1,"proporção dos tipos");if(zero/M<.2||zero/M>.45)falha(1,"zero fora de 20% a 45%")}
 { // ida e volta de todos os números de 1 a 9999
  let ruim=0;for(let n=1000;n<=9999;n++){const t=FC.extenso(n);if(lerExtenso(t)!==n||!regraE(t,n))ruim++}
  console.log("extenso de 1000 a 9999: erros de ida e volta",ruim);if(ruim)falha(1,ruim+" números com extenso errado")}

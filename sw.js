@@ -1,7 +1,7 @@
 /* Service worker: a tela do app abre mesmo sem internet; os dados continuam vindo do Supabase.
    Estratégia: rede primeiro (sempre a versão nova quando online), cache como reserva. */
-var CACHE = "folhinha-v75";
-var SHELL = ["./", "index.html", "style.css", "core.js", "stickers.js", "dinos.js", "pets.js", "bandeiras.js", "ameacados.js", "espaco.js", "exercicios.js", "grade1.js", "grade2.js", "grade3.js", "grade4.js", "grade5.js", "plano.js", "habilidades.js", "analise.js", "student.js", "adult.js", "admin.js", "main.js", "config.js",
+var CACHE = "folhinha-v119";
+var SHELL = ["./", "index.html", "style.css", "core.js", "stickers.js", "dinos.js", "pets.js", "bandeiras.js", "ameacados.js", "espaco.js", "exercicios.js", "grade1.js", "grade2.js", "grade3.js", "grade4.js", "grade5.js", "plano.js", "habilidades.js", "analise.js", "student.js", "onboarding.js", "adult.js", "admin.js", "main.js", "config.js", "theme.js",
   "vendor/supabase.js", "vendor/qrcode.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png",
   "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 
@@ -17,6 +17,7 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request, url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;   // Supabase e fontes passam direto
+  if (url.pathname.indexOf("/video/") === 0) return;   // vídeo: o navegador cuida (pede pedaços do arquivo; não cabe no cache)
   e.respondWith(fetch(req).then(function (res) {
     if (res.ok) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
     return res;

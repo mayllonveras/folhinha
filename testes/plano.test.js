@@ -1,5 +1,5 @@
 /* Rodízio de tipos e rampa de dificuldade (plano.js), níveis do 1º ao 5º ano. Rodar com: node testes/plano.test.js
-   Para cada nível: em cada dia de 5 folhas todos os tipos aparecem (garantido, não sorteado); a dificuldade média nunca desce da folha 1 à 5;
+   Para cada nível, com 5 e com 3 folhas por dia (opts.folhas): em cada dia todos os tipos aparecem (garantido, não sorteado); a dificuldade média nunca desce da primeira folha à última;
    dentro de cada folha as contas do nível vão do mais fácil ao mais difícil; cada folha tem 10 contas sem repetição e 2 de revisão. */
 global.window=global;global.addEventListener=function(){};global.removeEventListener=function(){};
 global.document={querySelector(){return null},querySelectorAll(){return[]},body:{classList:{remove(){}}}};
@@ -11,15 +11,15 @@ const DIAS=Number(process.env.DIAS||120);
 const L=FC.LEVELS,idx4=L.map((l,i)=>l.ano>=1?i:-1).filter(i=>i>=0);
 if(idx4.length!==211)falha("211 níveis (1º ao 5º ano) com espec");
 let semTipo=0,resumo=[];
-for(const i of idx4){
+for(const N of [5,3])for(const i of idx4){
   const E=L[i].espec;if(!E||!E.tipos.length||typeof E.tipo!=="function"||typeof E.nota!=="function"){falha("nível "+L[i].id+" sem espec");continue}
   if(!E.ordem||E.ordem.length!==E.tipos.length||[...E.ordem].sort((a,b)=>a-b).some((v,j)=>v!==j))falha("nível "+L[i].id+": ordem dos tipos não é uma permutação");
   for(let n=0;n<300;n++){const q=L[i].gen();if(!Number.isFinite(E.nota(q))){falha("nível "+L[i].id+": nota não é um número: "+q.pre);break}}
-  const T=E.tipos.length,medias=[0,0,0,0,0];let faltou=0,desceu=0,fora=0,rep=0,revErr=0,tam=0;
+  const T=E.tipos.length,medias=new Array(N).fill(0);let faltou=0,desceu=0,fora=0,rep=0,revErr=0,tam=0;
   for(let d=0;d<DIAS;d++){
     const vistos=new Set(),pm=[];
-    for(let s=0;s<5;s++){
-      const it=FC.makeItems(i,null,{sheetNo:s});
+    for(let s=0;s<N;s++){
+      const it=FC.makeItems(i,null,{sheetNo:s,folhas:N});
       if(it.length!==10)tam++;
       if(new Set(it.map(FC.itemKey)).size<10)rep++;
       if(it.filter(p=>p._rev).length!==(i>0?2:0))revErr++;
@@ -33,19 +33,22 @@ for(const i of idx4){
     if(vistos.size!==T)faltou++;
     pm.forEach((v,s)=>medias[s]+=v/DIAS);
   }
-  for(let s=1;s<5;s++)if(medias[s]<medias[s-1]-0.02)desceu++;
-  if(faltou)falha("nível "+L[i].id+": em "+faltou+" de "+DIAS+" dias algum tipo não apareceu nas 5 folhas");
-  if(desceu)falha("nível "+L[i].id+": a dificuldade média desce entre folhas: "+medias.map(x=>Math.round(x*100)).join(" → "));
-  if(medias[4]-medias[0]<.1)falha("nível "+L[i].id+": rampa fraca: "+medias.map(x=>Math.round(x*100)).join(" → "));
+  for(let s=1;s<N;s++)if(medias[s]<medias[s-1]-0.02)desceu++;
+  if(faltou)falha("nível "+L[i].id+" ("+N+" folhas): em "+faltou+" de "+DIAS+" dias algum tipo não apareceu nas "+N+" folhas");
+  if(desceu)falha("nível "+L[i].id+" ("+N+" folhas): a dificuldade média desce entre folhas: "+medias.map(x=>Math.round(x*100)).join(" → "));
+  if(medias[N-1]-medias[0]<.1)falha("nível "+L[i].id+" ("+N+" folhas): rampa fraca: "+medias.map(x=>Math.round(x*100)).join(" → "));
   if(fora)falha("nível "+L[i].id+": contas fora de ordem ("+fora+")");
   if(rep)falha("nível "+L[i].id+": "+rep+" folhas com conta repetida");
   if(revErr)falha("nível "+L[i].id+": folha sem 2 contas de revisão");
   if(tam)falha("nível "+L[i].id+": folha sem 10 contas");
-  resumo.push(L[i].id+": "+medias.map(x=>Math.round(x*100)).join(" → ")+" ("+T+" tipo"+(T>1?"s":"")+")");
+  resumo.push(N+" folhas, "+L[i].id+": "+medias.map(x=>Math.round(x*100)).join(" → ")+" ("+T+" tipo"+(T>1?"s":"")+")");
 }
 if(semTipo)falha("contas com tipo fora da lista: "+semTipo);
 // níveis sem espec seguem o sorteio livre, sem a ordenação
 if(L.some(l=>!l.espec))falha("todo nível tem espec (rodízio e rampa)");
+// faixas de dificuldade: 5 folhas como sempre, 3 folhas de 0-40 a 60-100
+if(JSON.stringify(FC.plano.BANDAS)!==JSON.stringify([[0,.4],[.15,.55],[.3,.7],[.45,.85],[.6,1]]))falha("faixas de 5 folhas mudaram");
+if(JSON.stringify(FC.plano.bandas(3))!==JSON.stringify([[0,.4],[.3,.7],[.6,1]]))falha("faixas de 3 folhas");
 // teto: folha de revisão do 4º ano não usa o rodízio
 const t=FC.makeItems(idx4[3],null,{teto:true,sheetNo:2});if(t.ordenada||t.length!==10)falha("folha de revisão do teto não usa o rodízio");
 if(process.env.VERBOSO)console.log(resumo.join("\n"));

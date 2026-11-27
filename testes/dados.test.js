@@ -20,7 +20,12 @@ ok(/catch\(e\)\{\/\* o registro nunca atrapalha/.test(st),"falha no registro nã
 const v1=/FC\.VERSAO="(folhinha-v\d+)"/.exec(core),v2=/CACHE = "(folhinha-v\d+)"/.exec(sw);
 ok(v1&&v2&&v1[1]===v2[1],"FC.VERSAO ("+(v1&&v1[1])+") igual ao cache do sw.js ("+(v2&&v2[1])+")");
 // tela dos pais
-ok(/id="pConsent"/.test(ad)&&/p_consent:true/.test(ad),"cadastro pede e envia a autorização");
-ok(/Para cadastrar, marque a autorização/.test(ad),"cadastro não segue sem a autorização");
-ok(/delete patch\.consent/.test(ad)&&/patch\.consent_at=null/.test(ad),"edição grava ou retira a autorização (sem mandar coluna inexistente)");
+ok(/id="pConsent"/.test(ad)&&/delete patch\.consent/.test(ad)&&/patch\.consent_at=null/.test(ad),"edição do aluno grava ou retira a autorização (sem mandar coluna inexistente)");
+// autorização única do responsável (pop-up no cadastro)
+const m2=rd("migracoes/2026-11-19-autorizacao-dos-pais.sql");
+["data_consent boolean","data_consent_at timestamptz","raw_user_meta_data->>'consent'","set_data_consent","coalesce(p_consent, (select data_consent from profiles"].forEach(k=>ok(m2.indexOf(k)>=0,"migração 19/11 tem: "+k));
+ok(!/askConsent\("Voltar"\)/.test(ad)&&!/consent:cons[,}]/.test(ad)&&/showConfirmEmail\(email\)/.test(ad),"cadastro do responsável não abre o pop-up e vai direto para a tela de confirmar o e-mail");
+ok(/offerConsent\(\)/.test(ad)&&/data_consent!=null/.test(ad),"conta sem resposta recebe o pop-up no painel");
+ok(!/p_consent:true/.test(ad)&&!/Para cadastrar, marque a autorização/.test(ad),"cadastro de aluno não pede nem força autorização por aluno");
+ok(/id="consentChange"/.test(ad)&&/set_data_consent/.test(ad),"Meu perfil permite mudar ou retirar a autorização");
 console.log(falhas?"\n"+falhas+" falha(s)":"dados: tudo certo");process.exit(falhas?1:0);

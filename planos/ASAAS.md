@@ -12,7 +12,7 @@ A chave do Asaas fica só nos segredos das Edge Functions. Nunca vai para o site
 
 - **Cartão de crédito:** o pai vai para o Asaas Checkout, digita o cartão na página do Asaas e a assinatura **renova sozinha** todo mês ou todo ano.
 - **Pix ou boleto:** o Asaas cria uma assinatura e manda uma **fatura** a cada mês ou ano. O pai escolhe Pix ou boleto na própria fatura.
-- **Quando o VIP é liberado:** cada pagamento confirmado libera o VIP até o vencimento da cobrança + 1 ciclo + 3 dias de carência. Estorno ou chargeback encerram o VIP na hora.
+- **Quando o VIP é liberado:** cada pagamento confirmado libera o VIP até o vencimento da cobrança + 1 ciclo + 3 dias de carência. Estorno ou chargeback encerram o VIP na hora e cancelam a assinatura (o webhook também apaga a assinatura no Asaas, para ele não cobrar de novo).
 - **Cancelamento:** cancelar apaga a assinatura no Asaas, e o VIP vale até o fim do que já foi pago.
 
 ## Passo a passo (primeiro no Sandbox, que é o ambiente de teste)

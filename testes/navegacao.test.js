@@ -49,7 +49,7 @@ const hash=()=>loc.hash;
   const o2={id:2,closeByBack(){}};N.openOverlay(o2);await sleep(5);
   const posAntes=pos;N.closedOverlay(o2);await sleep(30);
   ok(pos===posAntes-1&&!(entries[pos].state&&entries[pos].state.ov),"fechar a janela pelo botão tira a entrada do histórico");
-  /* fechar a janela e abrir outra logo em seguida (escolha de pacotinho): a segunda não pode ser fechada à toa */
+  /* fechar a janela e abrir outra logo em seguida (escolha de figurinha): a segunda não pode ser fechada à toa */
   const o3={id:3,closeByBack(){}};N.openOverlay(o3);await sleep(5);
   const o4={id:4,closeByBack(){}};
   N.closedOverlay(o3);N.openOverlay(o4);await sleep(40);
@@ -69,7 +69,7 @@ const hash=()=>loc.hash;
   const rd=f=>fs.readFileSync(path.join(root,f),"utf8");
   const ad=rd("adult.js"),st=rd("student.js"),am=rd("admin.js"),co=rd("core.js");
   ok(/FC\.nav\.handler=route/.test(ad)&&/FC\.nav\.handler=route/.test(st)&&/FC\.nav\.handler=admRoute/.test(am),"as três áreas (pais, aluno, administração) registram suas rotas");
-  ok(/FC\.bindTabs\("pai",null,function\(tab\)/.test(ad)&&/FC\.bindTabs\("aluno"/.test(st),"abas dos pais e da criança entram no histórico");
+  ok(/FC\.bindTabs\("pai",.*function\(tab\)\{return "\/aluno\/"/.test(ad)&&/FC\.bindTabs\("aluno"/.test(st),"abas dos pais e da criança entram no histórico");
   ok(/FC\.nav\.at\("\/folha"\)/.test(st)&&/FC\.nav\.at\("\/resultado",true\)/.test(st),"folha e resultado têm endereço (o resultado troca a entrada da folha)");
   ok(/Sair da folha\?/.test(st)&&/FC\.nav\.forward\(\)/.test(st),"voltar na folha com respostas digitadas pergunta antes de sair");
   ok(/FC\.nav\.openOverlay/.test(co)&&/FC\.nav\.closedOverlay/.test(co),"janelas (overlay) entram no histórico");
