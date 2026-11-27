@@ -1119,8 +1119,9 @@ details.danger-zone summary{color:var(--danger);font-weight:500}
 .card-foot .card-share{flex:0 0 48px}
 .card-foot .card-share svg.i{width:17px;height:17px}
 .card-foot .card-qr:hover,.card-foot .card-share:hover,.card-foot .card-share:focus-visible,.card-foot .card-open:hover,.card-foot .card-qr:focus-visible,.card-foot .card-open:focus-visible{color:var(--primary);background:var(--soft)}
-.cards:has(.cardwrap){grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-.card-foot .card-qr,.card-foot .card-open{white-space:nowrap}
+.cards:has(.cardwrap){grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card-foot .card-qr,.card-foot .card-open{white-space:nowrap;min-width:0;padding-inline:8px}
+.card-foot .card-open span,.card-foot .card-qr span{overflow:hidden;text-overflow:ellipsis}
 
 
 /* ---------- primeiros passos e passeio guiado dos adultos (onboarding.js) ---------- */
