@@ -1,12 +1,21 @@
 -- Estorno ou chargeback agora cancelam a assinatura, e não só tiram o VIP.
 -- Antes, a assinatura continuava "ativa" (com botão Cancelar plano, próxima cobrança e valor na tela) e o Asaas seguia cobrando.
 -- Agora: o VIP termina na hora (como antes), a assinatura vira "cancelada" e a função devolve a ação cancel_subscription,
--- que o asaas-webhook executa apagando a assinatura no Asaas. Só muda o trecho PAYMENT_REFUNDED / PAYMENT_CHARGEBACK_REQUESTED.
+-- que o asaas-webhook executa apagando a assinatura no Asaas.
+--
+-- ATENÇÃO: esta função parte da versão que está em PRODUÇÃO, que tinha um trecho a mais do que 2026-11-18-assinatura.sql:
+-- a cada pagamento confirmado, next_due = o vencimento desta cobrança + 1 ciclo (nunca volta para trás). Esse trecho estava só no
+-- banco e não no repositório; ele é mantido aqui e passa a existir também nas migrações.
+--
 -- Para quem já foi estornado antes desta migração, veja o reparo manual no fim do arquivo.
 begin;
 
-create or replace function public._billing_event(p jsonb) returns jsonb
-language plpgsql security definer set search_path to 'public' as $$
+CREATE OR REPLACE FUNCTION public._billing_event(p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare ev text := p->>'event'; pay jsonb := p->'payment'; sub jsonb := p->'subscription'; chk jsonb := p->'checkout';
   sid uuid; s subscriptions%rowtype; pr payments%rowtype; due date; new_end timestamptz; eid uuid; actions jsonb := '[]'::jsonb;
   grace int := coalesce(app_setting('assinatura_carencia_dias', 3)::int, 3);
@@ -54,7 +63,10 @@ begin
           returning id into eid;
         update subscriptions set entitlement_id = eid where id = sid;
       end if;
-      update subscriptions set status = 'ativa', paid_cycles = paid_cycles + 1, updated_at = now() where id = sid;
+      -- próxima cobrança: o vencimento desta + 1 ciclo (nunca volta para trás; o aviso SUBSCRIPTION_* do Asaas, quando chega, confirma a data)
+      update subscriptions set status = 'ativa', paid_cycles = paid_cycles + 1, updated_at = now(),
+             next_due = greatest(next_due, (coalesce(due, current_date) + case s.plan when 'mensal' then interval '1 month' else interval '1 year' end)::date)
+       where id = sid;
       -- cupom: na 1ª cobrança paga ele passa a "usado"; ao acabarem as cobranças com desconto, o valor volta ao cheio no Asaas
       if s.coupon_code is not null then
         if s.paid_cycles = 0 then
@@ -83,7 +95,7 @@ begin
     end if;
   end if;
   return jsonb_build_object('subscription', sid, 'payment', pr.asaas_payment_id, 'actions', actions);
-end $$;
+end $function$;
 
 commit;
 

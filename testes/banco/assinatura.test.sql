@@ -55,6 +55,7 @@ select pg_temp.t('aviso repetido vale uma vez só', (public.billing_webhook((sel
   and (select paid_cycles=1 from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.pay('evt3', 'PAYMENT_CONFIRMED', 'pay1', 'sub_pix', 'cus_pix', 99.50, current_date, 'CONFIRMED');
 select pg_temp.t('CONFIRMED depois de RECEIVED da mesma cobrança não conta de novo', (select paid_cycles=1 from subscriptions where asaas_subscription_id='sub_pix'));
+select pg_temp.t('pagamento confirmado leva a próxima cobrança para o vencimento + 1 ciclo', (select next_due = (current_date + interval '1 year')::date from subscriptions where asaas_subscription_id='sub_pix'));
 select pg_temp.t('com assinatura ativa não assina de novo', pg_temp.err($$select public.billing_can_start('00000000-0000-0000-0000-0000000000b1')$$) like '%assinatura_ativa%');
 -- 2ª anuidade, paga no vencimento: o VIP passa a ir até 2 anos + 3 dias
 select pg_temp.pay('evt4', 'PAYMENT_RECEIVED', 'pay2', 'sub_pix', 'cus_pix', 199, (current_date + interval '1 year')::date, 'RECEIVED') as r4 \gset
